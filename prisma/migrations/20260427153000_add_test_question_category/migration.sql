@@ -1,0 +1,15 @@
+-- CreateEnum
+CREATE TYPE "QuestionCategory" AS ENUM (
+  'VISUALIZATION',
+  'OBSERVATION',
+  'PROBLEM_SOLVING',
+  'CREATIVITY',
+  'COMMUNICATION',
+  'TIME_MANAGEMENT',
+  'AESTHETIC_SENSE',
+  'CONCEPT'
+);
+
+-- AlterTable
+ALTER TABLE "TestQuestion"
+ADD COLUMN "category" "QuestionCategory" NOT NULL DEFAULT 'CONCEPT';

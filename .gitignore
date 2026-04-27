@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+# python
+.venv/
+
 # testing
 /coverage
 
@@ -23,6 +26,14 @@
 # misc
 .DS_Store
 *.pem
+divergent.pdf
+divergent.zip
+divergent_lms.md
+divergent/
+.zencoder/
+.zenflow/
+test-err*.js
+lms.ms
 
 # debug
 npm-debug.log*
@@ -39,3 +50,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+/public/uploads/live-class-sketches
+/tmp/live-class-sketches
+/public/uploads/live-class-messages
+/tmp/live-class-messages
+/tmp/live-class-assignments.json
