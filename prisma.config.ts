@@ -4,6 +4,80 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+function isSupabasePoolerUrl(value: string) {
+  try {
+    return new URL(value).hostname.endsWith(".pooler.supabase.com");
+  } catch {
+    return false;
+  }
+}
+
+function getSupabaseProjectRef(candidate: URL) {
+  const supabaseProjectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (supabaseProjectUrl) {
+    try {
+      return new URL(supabaseProjectUrl).hostname.split(".")[0] ?? null;
+    } catch {
+      // Fall through to deriving from the username.
+    }
+  }
+
+  const usernameParts = decodeURIComponent(candidate.username).split(".");
+  return usernameParts.length > 1 ? usernameParts.slice(1).join(".") : null;
+}
+
+function deriveSupabaseDirectUrl(value?: string) {
+  if (!value) return null;
+
+  let candidate: URL;
+
+  try {
+    candidate = new URL(value);
+  } catch {
+    return null;
+  }
+
+  if (!candidate.hostname.endsWith(".pooler.supabase.com")) {
+    return candidate.toString();
+  }
+
+  const projectRef = getSupabaseProjectRef(candidate);
+  const usernameParts = decodeURIComponent(candidate.username).split(".");
+  const databaseUser = usernameParts[0];
+
+  if (!projectRef || !databaseUser) return null;
+
+  candidate.hostname = `db.${projectRef}.supabase.co`;
+  candidate.port = "5432";
+  candidate.username = databaseUser;
+  candidate.searchParams.delete("connection_limit");
+  candidate.searchParams.delete("pgbouncer");
+
+  if (!candidate.searchParams.has("sslmode")) {
+    candidate.searchParams.set("sslmode", "require");
+  }
+
+  return candidate.toString();
+}
+
+function resolveDirectUrl() {
+  const explicitDirectUrl = process.env.DIRECT_URL?.trim();
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+
+  if (explicitDirectUrl && !isSupabasePoolerUrl(explicitDirectUrl)) {
+    return explicitDirectUrl;
+  }
+
+  return (
+    deriveSupabaseDirectUrl(explicitDirectUrl) ??
+    deriveSupabaseDirectUrl(databaseUrl) ??
+    explicitDirectUrl ??
+    databaseUrl ??
+    ""
+  );
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -14,6 +88,6 @@ export default defineConfig({
     // Fall back to empty string so `prisma generate` (schema-only) works
     // even when DATABASE_URL is not yet available (e.g. during Vercel install).
     url: process.env.DATABASE_URL ?? "",
-    directUrl: process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? "",
+    directUrl: resolveDirectUrl(),
   },
 });
