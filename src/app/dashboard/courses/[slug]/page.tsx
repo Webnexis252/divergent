@@ -151,6 +151,37 @@ function buildLearningItems({
   ];
 }
 
+async function getCourseEnrollment(userId: string, courseId: string) {
+  try {
+    return await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId,
+          courseId,
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+        progressPercent: true,
+      },
+    });
+  } catch {
+    return prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId,
+          courseId,
+        },
+      },
+      select: {
+        id: true,
+        progressPercent: true,
+      },
+    });
+  }
+}
+
 export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
   const auth = await getPageAuth(["STUDENT"]);
   const { slug } = await params;
@@ -228,25 +259,15 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
   }
 
   const enrollment = auth?.userId
-    ? await prisma.enrollment.findUnique({
-        where: {
-          userId_courseId: {
-            userId: auth.userId,
-            courseId: course.id,
-          },
-        },
-        select: {
-          id: true,
-          status: true,
-          progressPercent: true,
-        },
-      })
+    ? await getCourseEnrollment(auth.userId, course.id)
     : null;
 
   const isEnrolled =
-    enrollment?.status === EnrollmentStatus.ACTIVE ||
-    enrollment?.status === EnrollmentStatus.COMPLETED ||
-    enrollment?.status === EnrollmentStatus.PAUSED;
+    enrollment && "status" in enrollment
+      ? enrollment.status === EnrollmentStatus.ACTIVE ||
+        enrollment.status === EnrollmentStatus.COMPLETED ||
+        enrollment.status === EnrollmentStatus.PAUSED
+      : Boolean(enrollment?.id);
 
   const teacherName = course.teachers?.[0]?.name ?? "Expert Mentors";
   const totalLessons = countLessons(course.chapters);

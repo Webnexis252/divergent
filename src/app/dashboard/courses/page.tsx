@@ -90,6 +90,56 @@ function countLessons(chapters: Array<{ _count: { lessons: number } }>) {
   return chapters.reduce((sum, chapter) => sum + chapter._count.lessons, 0);
 }
 
+async function getRecentStudentEnrollments(userId: string) {
+  const baseQuery = {
+    orderBy: { updatedAt: "desc" as const },
+    take: 4,
+    select: {
+      progressPercent: true,
+      course: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          thumbnail: true,
+          description: true,
+          price: true,
+          isPublished: true,
+          teachers: {
+            select: { name: true },
+          },
+          _count: {
+            select: {
+              chapters: true,
+              tests: true,
+            },
+          },
+          chapters: {
+            select: {
+              _count: { select: { lessons: true } },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  try {
+    return await prisma.enrollment.findMany({
+      where: {
+        userId,
+        status: EnrollmentStatus.ACTIVE,
+      },
+      ...baseQuery,
+    });
+  } catch {
+    return prisma.enrollment.findMany({
+      where: { userId },
+      ...baseQuery,
+    });
+  }
+}
+
 export default async function DashboardCoursesPage() {
   const auth = await getPageAuth(["STUDENT"]);
 
@@ -101,42 +151,7 @@ export default async function DashboardCoursesPage() {
         })
       : null,
     auth?.userId
-      ? prisma.enrollment.findMany({
-          where: {
-            userId: auth.userId,
-            status: EnrollmentStatus.ACTIVE,
-          },
-          orderBy: { updatedAt: "desc" },
-          take: 4,
-          select: {
-            progressPercent: true,
-            course: {
-              select: {
-                id: true,
-                title: true,
-                slug: true,
-                thumbnail: true,
-                description: true,
-                price: true,
-                isPublished: true,
-                teachers: {
-                  select: { name: true },
-                },
-                _count: {
-                  select: {
-                    chapters: true,
-                    tests: true,
-                  },
-                },
-                chapters: {
-                  select: {
-                    _count: { select: { lessons: true } },
-                  },
-                },
-              },
-            },
-          },
-        })
+      ? getRecentStudentEnrollments(auth.userId)
       : [],
     prisma.course.findMany({
       where: { isPublished: true },
