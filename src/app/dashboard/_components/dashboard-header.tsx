@@ -25,74 +25,54 @@ export function DashboardHeader() {
   return (
     <motion.header
       animate={{ opacity: 1, y: 0 }}
-      className="sticky top-0 z-40 border-b border-white/80 bg-[rgba(247,246,246,0.82)] backdrop-blur-2xl"
+      className="sticky top-0 z-40 border-b border-gray-100 bg-white/90 backdrop-blur-xl"
       initial={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.26 }}
     >
-      <div className="mx-auto flex max-w-[1920px] items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-[1920px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <BrandLogo href="/dashboard" size="sm" />
 
         <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
           <GlobalSearch />
-
           <Badge tone="neutral">
             {pathname === "/dashboard" ? "Overview" : pathname.replace("/dashboard/", "").replaceAll("-", " ")}
           </Badge>
         </div>
 
-        <div className="ml-auto flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             aria-label="Notifications"
-            className="grid h-11 w-11 place-items-center rounded-full border border-[var(--line-soft)] bg-white/88 text-[var(--text-muted)] shadow-[var(--shadow-soft)] transition-colors duration-[var(--transition-fast)] hover:text-[var(--text-strong)]"
+            className="grid h-10 w-10 place-items-center rounded-full border border-gray-100 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50"
             type="button"
           >
-            <Bell className="h-4.5 w-4.5" />
+            <Bell className="h-5 w-5" />
           </button>
 
           <Link
-            className={cx(
-              buttonStyles({ variant: "secondary", size: "sm" }),
-              "hidden sm:inline-flex",
-            )}
-            href="/dashboard/settings"
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-gray-100 bg-white px-4 text-[14px] font-semibold text-[#0f172a] shadow-sm transition-colors hover:bg-gray-50"
+            href="/dashboard/profile"
           >
-            <Settings className="h-4 w-4" />
-            Settings
+            <Settings className="h-4.5 w-4.5" />
+            <span className="sm:inline">Settings</span>
           </Link>
 
           <Link
             href="/dashboard/profile"
-            className="flex items-center gap-3 rounded-[var(--radius-pill)] border border-[var(--line-soft)] bg-white/88 px-1.5 py-1.5 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--line-strong)]"
+            className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-white bg-[#925fe2] shadow-sm ring-1 ring-gray-100"
           >
-            {/* Avatar with purple ring — shows photo if available, else initials */}
-            <div className="relative h-9 w-9 shrink-0">
-              <div className="absolute inset-0 rounded-full bg-[#925fe2] p-[2px]">
-                <div className="h-full w-full overflow-hidden rounded-full bg-[var(--brand-primary-strong)]">
-                  {user?.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      alt={user.name ?? "avatar"}
-                      src={user.image}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[13px] font-semibold text-white">
-                      {initials}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="hidden min-w-0 pr-1 sm:block">
-              <p className="truncate text-[13px] font-semibold text-[var(--text-strong)]">
-                {user?.name ?? "Student"}
-              </p>
-              <p className="truncate text-[12px] text-[var(--text-subtle)]">
-                {user?.email ?? "student@divergent.in"}
-              </p>
-            </div>
-            <ChevronDown className="mr-1 hidden h-4 w-4 text-[var(--text-subtle)] sm:block" />
+            <span className="text-[14px] font-bold text-white">
+              {initials}
+            </span>
           </Link>
+
+          <div className="hidden min-w-0 pr-1 lg:block">
+            <p className="truncate text-[13px] font-semibold text-[var(--text-strong)]">
+              {user?.name ?? "Student"}
+            </p>
+            <p className="truncate text-[12px] text-[var(--text-subtle)]">
+              {user?.email ?? "student@divergent.in"}
+            </p>
+          </div>
         </div>
       </div>
     </motion.header>

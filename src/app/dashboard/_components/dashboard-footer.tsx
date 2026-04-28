@@ -90,7 +90,7 @@ export function DashboardFooter() {
           : footerVariants.public;
 
   return (
-    <footer className="border-t border-white/70 px-4 py-8 sm:px-6 lg:px-8">
+    <footer className="hidden border-t border-white/70 px-4 py-8 sm:block sm:px-6 lg:px-8">
       <motion.div
         animate={{ opacity: 1, y: 0 }}
         className="mx-auto flex max-w-[1920px] flex-col gap-8 rounded-[var(--radius-xl)] border border-white/80 bg-[rgba(13,13,20,0.96)] px-6 py-8 text-white shadow-[0_28px_60px_rgba(13,13,20,0.2)]"

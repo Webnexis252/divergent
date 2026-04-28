@@ -63,7 +63,7 @@ export default function AdminCohortsPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-8 px-6 py-10 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
 
         <RevealSection>
           <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#7c3aed] via-[#8b5cf6] to-[#38c1ff] px-8 py-10 text-white shadow-[0_24px_60px_rgba(124,58,237,0.25)]">

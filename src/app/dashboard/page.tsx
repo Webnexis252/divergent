@@ -35,16 +35,16 @@ import type { UpcomingOverviewResponse } from "@/lib/upcoming-overview";
 import { AnnouncementsPanel } from "./_components/announcements-panel";
 
 const assets = {
-  bannerIllustration: "https://www.figma.com/api/mcp/asset/ed4da357-c8f5-410a-8e68-45347e8c1af8",
-  bell: "https://www.figma.com/api/mcp/asset/00ad5465-b013-404e-ace0-32e8775e166b",
-  headerAvatar: "https://www.figma.com/api/mcp/asset/a837ccce-b7e2-4308-895f-5d48fccd59c5",
-  courseStat: "https://www.figma.com/api/mcp/asset/5890be02-a91e-46c1-86e1-2c309e51e4c9",
-  streakStat: "https://www.figma.com/api/mcp/asset/78a502ad-9c8c-4041-b5b4-0820b424e6b5",
-  scoreStat: "https://www.figma.com/api/mcp/asset/3fda4e93-3e77-4bb0-8b50-0d4624b13ec4",
-  profileAvatar: "https://www.figma.com/api/mcp/asset/fc3f5059-8416-4446-afdc-6f0f59d0684a",
-  quickClasses: "https://www.figma.com/api/mcp/asset/eca2f1b3-8eda-4618-ad15-f4480af00794",
-  quickExam: "https://www.figma.com/api/mcp/asset/7f05925d-67c8-48cc-8236-da89d98f6254",
-  quickAssignment: "https://www.figma.com/api/mcp/asset/ad53f3b3-4ffe-4ea7-a943-e1f9db54a171",
+  bannerIllustration: "/assets/dashboard/banner-illustration.png",
+  bell: "https://api.dicebear.com/9.x/shapes/svg?seed=00ad5465-b013-404e-ace0-32e8775e166b",
+  headerAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=a837ccce-b7e2-4308-895f-5d48fccd59c5",
+  courseStat: "/assets/dashboard/course-stat.png",
+  streakStat: "/assets/dashboard/streak-stat.png",
+  scoreStat: "/assets/dashboard/score-stat.png",
+  profileAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=fc3f5059-8416-4446-afdc-6f0f59d0684a",
+  quickClasses: "/assets/dashboard/quick-classes.png",
+  quickExam: "/assets/dashboard/quick-exam.png",
+  quickAssignment: "/assets/dashboard/quick-assignment.png",
 } as const;
 
 const overviewNavItems: Array<{
@@ -88,11 +88,11 @@ function OverviewSidebar() {
   return (
     <motion.aside
       animate={{ opacity: 1, x: 0 }}
-      className="overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] px-4 py-4 shadow-[0_18px_48px_rgba(254,198,0,0.18)] xl:sticky xl:top-6 xl:min-h-[530px] xl:rounded-l-[0] xl:rounded-r-[40px] xl:px-7 xl:py-12"
+      className="sticky top-3 z-20 -mx-1 overflow-hidden rounded-[28px] border border-[#ffe08a] bg-[linear-gradient(180deg,#ffcb2f_0%,#ffe58f_100%)] px-3 py-3 shadow-[0_16px_36px_rgba(254,198,0,0.22)] xl:static xl:mx-0 xl:rounded-l-[0] xl:rounded-r-[40px] xl:border-none xl:bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] xl:px-7 xl:py-12 xl:shadow-[0_18px_48px_rgba(254,198,0,0.18)]"
       initial={{ opacity: 0, x: -14 }}
       transition={{ duration: 0.32 }}
     >
-      <nav className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:gap-1 xl:overflow-visible">
+      <nav className="scrollbar-none flex snap-x gap-2 overflow-x-auto pb-0.5 xl:flex-col xl:gap-1 xl:overflow-visible">
         {overviewNavItems.map((item) => {
           let href: string = item.href;
           if (item.label === "Profile" && user?.role === "MENTOR") {
@@ -112,8 +112,10 @@ function OverviewSidebar() {
             >
               <Link
                 className={cx(
-                  "flex min-w-max items-center gap-3 rounded-[22px] px-4 py-3 text-[15px] font-medium text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:px-5 xl:text-[18px]",
-                  active && "bg-white/16",
+                  "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
+                  active
+                    ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/16 xl:shadow-none"
+                    : "hover:bg-white/46 xl:hover:bg-white/20",
                 )}
                 href={href}
               >
@@ -139,23 +141,27 @@ function OverviewStatCard({
 }) {
   return (
     <motion.article
-      className="rounded-[20px] bg-[#72d3ff] px-5 py-4 text-white shadow-[0_4px_9.2px_rgba(0,0,0,0.25)]"
+      className="min-w-[200px] flex-1 rounded-[24px] bg-[#72d3ff] p-5 text-white shadow-[0_8px_20px_rgba(0,0,0,0.12)] sm:min-w-0"
       transition={{ duration: 0.2 }}
       whileHover={{ y: -4 }}
     >
-      <div className="flex items-start justify-between gap-4">
-        <Image
-          alt={title}
-          className="h-auto w-[5.5rem] object-contain sm:w-[6.8rem]"
-          height={96}
-          src={image}
-          width={109}
-        />
-        <p className="pt-3 text-[clamp(2.6rem,6vw,3.75rem)] leading-none text-[#fec600]">
+      <div className="flex items-start justify-between gap-2">
+        <div className="relative w-[80px] shrink-0 sm:w-[7rem] lg:w-[8.5rem]">
+          <Image
+            alt={title}
+            className="h-auto w-full object-contain drop-shadow-lg"
+            height={160}
+            src={image}
+            width={160}
+          />
+        </div>
+        <p className="text-[2.6rem] font-bold leading-none text-[#fec600] sm:text-[clamp(2.6rem,5vw,3.5rem)]">
           {value}
         </p>
       </div>
-      <p className="mt-4 text-[clamp(1rem,2vw,1.5rem)] font-semibold text-white">{title}</p>
+      <p className="mt-3 text-[1rem] font-bold text-white sm:text-[clamp(1rem,1.8vw,1.35rem)]">
+        {title}
+      </p>
     </motion.article>
   );
 }
@@ -240,8 +246,8 @@ function QuickStartCard({
         className="flex items-center gap-4 rounded-[24px] bg-[#72d3ff] px-4 py-3 shadow-[0_4px_9.2px_rgba(0,0,0,0.18)]"
         href={href}
       >
-        <div className="flex h-[64px] w-[64px] items-center justify-center rounded-[18px] bg-white">
-          <Image alt={label} className="h-auto w-[2.9rem] object-contain" height={73} src={image} width={74} />
+        <div className="flex h-[96px] w-[96px] shrink-0 items-center justify-center rounded-[24px] bg-white shadow-[0_8px_16px_rgba(0,0,0,0.06)]">
+          <Image alt={label} className="h-auto w-[4.8rem] object-contain" height={120} src={image} width={120} />
         </div>
 
         <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
@@ -253,67 +259,7 @@ function QuickStartCard({
   );
 }
 
-function DashboardTopBar({ displayName, userImage }: { displayName: string; userImage?: string | null }) {
-  const initials = displayName
-    .split(" ")
-    .map((p) => p[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
-  return (
-    <motion.header
-      animate={{ opacity: 1, y: 0 }}
-      className="border-b border-black/5 bg-white/82 backdrop-blur-xl"
-      initial={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.28 }}
-    >
-      <div className="mx-auto flex max-w-[1920px] items-center gap-4 px-5 py-4 sm:px-6 lg:px-8 xl:px-14">
-        <Link className="shrink-0" href="/dashboard">
-          <Image
-            alt={brand.fullName}
-            className="h-auto w-[150px] object-contain sm:w-[177px]"
-            height={74}
-            priority
-            src={brand.logoSrc}
-            width={177}
-          />
-        </Link>
-
-        <div className="hidden min-w-0 flex-1 lg:block">
-          <GlobalSearch />
-        </div>
-
-        <div className="ml-auto flex items-center gap-3">
-          <NotificationsDropdown />
-
-          <Link href="/dashboard/profile" className="flex items-center gap-2.5 rounded-full transition-opacity hover:opacity-80">
-            {/* Avatar with purple ring */}
-            <div className="relative h-[48px] w-[48px] shrink-0">
-              <div className="absolute inset-0 rounded-full bg-[#925fe2] p-[3px]">
-                <div className="h-full w-full overflow-hidden rounded-full bg-[var(--brand-primary-strong)] shadow-[8px_8px_48px_8px_rgba(0,0,0,0.24)]">
-                  {userImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      alt={displayName}
-                      src={userImage}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[14px] font-semibold text-white">
-                      {initials}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <p className="hidden text-[15px] font-semibold text-black sm:block">{displayName}</p>
-          </Link>
-        </div>
-      </div>
-    </motion.header>
-  );
-}
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
@@ -402,62 +348,65 @@ export default function DashboardPage() {
 
   return (
     <PageTransition>
-      <main className="min-h-screen overflow-x-hidden bg-[#f7f5f4]">
-        <DashboardTopBar displayName={displayName} userImage={user?.image} />
+      <main className="min-h-screen overflow-x-hidden bg-[#f9fafb] pb-24 sm:bg-[#f7f5f4] sm:pb-0">
 
-        <div className="mx-auto max-w-[1920px] px-4 py-6 sm:px-6 lg:px-8 xl:px-0 xl:py-8">
+
+        <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-0 xl:py-8">
           <div className="grid gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
-            <div className="xl:pr-7">
+            <div className="hidden xl:block xl:pr-7">
               <OverviewSidebar />
             </div>
 
-            <section className="space-y-6 px-0 xl:pr-10">
+            <section className="min-w-0 space-y-5 px-0 sm:space-y-6 xl:pr-10">
               <RevealSection>
-                <div className="relative overflow-hidden rounded-[24px] bg-[#38c1ff] px-6 py-6 text-white shadow-[0_4px_9.2px_rgba(0,0,0,0.2)] sm:px-10 sm:py-7">
-                  <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(250px,323px)]">
+                <div className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(145deg,#38c1ff_0%,#00a7fa_100%)] px-5 py-6 text-white shadow-[0_12px_32px_rgba(56,193,255,0.25)] sm:px-10 sm:py-7 sm:shadow-[0_18px_44px_rgba(56,193,255,0.24)]">
+                  <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl sm:hidden" />
+                  <div className="relative z-10 grid items-center gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(250px,323px)]">
                     <div className="max-w-[33rem]">
-                      <p className="text-[16px] text-white/92">{displayDate}</p>
-                      <h1 className="mt-5 text-[clamp(2rem,4vw,3rem)] font-semibold tracking-[-0.03em] text-white">
+                      <p className="text-[14px] font-medium text-white/92 sm:text-[16px]">{displayDate}</p>
+                      <h1 className="mt-3 text-[2.1rem] font-bold leading-tight tracking-[-0.03em] text-white sm:mt-5 sm:text-[clamp(2rem,4vw,3rem)] sm:leading-normal">
                         Welcome back, {firstName}!
                       </h1>
-                      <p className="mt-2 text-[clamp(1.05rem,2vw,1.5rem)] text-white/92">
+                      <p className="mt-2 text-[15px] leading-relaxed text-white/92 sm:text-[clamp(1.05rem,2vw,1.5rem)]">
                         Always stay updated in your student portal
                       </p>
                     </div>
 
-                    <FloatPulse className="mx-auto flex w-full max-w-[323px] justify-center lg:justify-end">
+                    <FloatPulse className="hidden sm:mx-auto sm:flex sm:w-full sm:max-w-[323px] sm:justify-center lg:justify-end">
                       <Image
                         alt="Student dashboard illustration"
-                        className="h-auto w-full max-w-[323px] object-contain"
-                        height={300}
+                        className="h-auto w-full max-w-[480px] object-contain lg:max-w-[550px]"
+                        height={500}
                         priority
                         src={assets.bannerIllustration}
-                        width={323}
+                        width={550}
                       />
                     </FloatPulse>
                   </div>
                 </div>
               </RevealSection>
 
-              <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_293px]">
-                <div className="space-y-8">
-                  <StaggerGrid className="grid gap-4 md:grid-cols-3">
-                    <OverviewStatCard
-                      image={assets.courseStat}
-                      title="Courses Enrolled"
-                      value={statsLoading ? "…" : String(stats?.enrollmentCount ?? 0)}
-                    />
-                    <OverviewStatCard
-                      image={assets.streakStat}
-                      title="Current Streak"
-                      value={statsLoading ? "…" : String(stats?.streakCount ?? 0)}
-                    />
-                    <OverviewStatCard
-                      image={assets.scoreStat}
-                      title="Current Score"
-                      value={statsLoading ? "…" : String(stats?.xpPoints ?? 0)}
-                    />
-                  </StaggerGrid>
+              <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_293px]">
+                <div className="min-w-0 space-y-6 sm:space-y-8">
+                  <RevealSection delay={0.04}>
+                    <div className="scrollbar-none -mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-3 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0">
+                      <OverviewStatCard
+                        image={assets.courseStat}
+                        title="Courses Enrolled"
+                        value={statsLoading ? "…" : String(stats?.enrollmentCount ?? 0)}
+                      />
+                      <OverviewStatCard
+                        image={assets.streakStat}
+                        title="Current Streak"
+                        value={statsLoading ? "…" : String(stats?.streakCount ?? 0)}
+                      />
+                      <OverviewStatCard
+                        image={assets.scoreStat}
+                        title="Current Score"
+                        value={statsLoading ? "…" : String(stats?.xpPoints ?? 0)}
+                      />
+                    </div>
+                  </RevealSection>
 
                   <RevealSection delay={0.05}>
                     <AnnouncementsPanel />
@@ -507,7 +456,7 @@ export default function DashboardPage() {
                   </RevealSection>
                 </div>
 
-                <div className="space-y-6">
+                <div className="min-w-0 space-y-6">
                   <RevealSection delay={0.08}>
                     <div className="relative overflow-hidden rounded-[20px] border border-white/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.92),rgba(237,245,246,0.92))] px-6 py-8 shadow-[0_4px_10px_rgba(0,0,0,0.12)]">
                       <div className="flex flex-col items-center text-center">

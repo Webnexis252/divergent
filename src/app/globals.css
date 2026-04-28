@@ -84,6 +84,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
@@ -94,6 +95,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-app-display);
   min-height: 100%;
+  overflow-x: clip;
 }
 
 ::selection {
@@ -113,6 +115,13 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 a {
@@ -278,5 +287,51 @@ a {
 
   .text-pretty {
     text-wrap: pretty;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --radius-sm: 0.85rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.25rem;
+    --radius-xl: 1.55rem;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top right, rgba(56, 193, 255, 0.1), transparent 32%),
+      radial-gradient(circle at left center, rgba(254, 198, 0, 0.1), transparent 28%),
+      linear-gradient(180deg, #fbfbfc 0%, var(--background) 28%, var(--background-alt) 100%);
+  }
+
+  .surface-panel,
+  .surface-elevated,
+  .surface-muted,
+  .surface-dark,
+  .card-base {
+    border-radius: var(--radius-lg);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  }
+
+  .card-base {
+    padding: 1.125rem;
+  }
+
+  .section-eyebrow {
+    gap: 0.4rem;
+    letter-spacing: 0.14em;
+  }
+
+  .section-eyebrow::before {
+    width: 1.75rem;
   }
 }

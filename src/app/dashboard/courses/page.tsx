@@ -26,20 +26,20 @@ import {
 export const dynamic = "force-dynamic";
 
 const assets = {
-  headerAvatar: "https://www.figma.com/api/mcp/asset/021745ae-afe4-4dce-ad5c-2dd5ad2195e1",
-  bell: "https://www.figma.com/api/mcp/asset/92fab2e3-ea1c-457a-9960-57a498a07bd3",
+  headerAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=021745ae-afe4-4dce-ad5c-2dd5ad2195e1",
+  bell: "https://api.dicebear.com/9.x/shapes/svg?seed=92fab2e3-ea1c-457a-9960-57a498a07bd3",
   currentCourseFallback:
-    "https://www.figma.com/api/mcp/asset/973b6412-1165-4257-8071-b30234e453cb",
-  exploreModules: "https://www.figma.com/api/mcp/asset/ec3c37a2-608f-4442-a85b-67aeb82d9f2d",
-  exploreTests: "https://www.figma.com/api/mcp/asset/7dcb155f-9707-435b-8e5b-ad32fe9d0283",
-  exploreLibrary: "https://www.figma.com/api/mcp/asset/e0d8ff55-839d-49e1-b314-12e168841302",
-  dashboardIcon: "https://www.figma.com/api/mcp/asset/cf63ebaf-2c2d-461d-b303-52e41d36c645",
-  coursesIcon: "https://www.figma.com/api/mcp/asset/f5a0a60c-baa8-428d-b6e0-24fe7150e184",
-  liveClassesIcon: "https://www.figma.com/api/mcp/asset/95f74062-c186-4036-9109-4876860c1840",
-  communityIcon: "https://www.figma.com/api/mcp/asset/2adf51c8-f658-4f1e-84e4-26a5345706d5",
-  assignmentsIcon: "https://www.figma.com/api/mcp/asset/ffea850b-8a37-4bd9-9bcf-92f2122bf9d0",
-  progressIcon: "https://www.figma.com/api/mcp/asset/4c09dd54-76f0-47cb-81bd-6df94c0bdcf9",
-  calendarIcon: "https://www.figma.com/api/mcp/asset/4853766a-1632-4bc4-912e-5e43efdf5ec1",
+    "https://api.dicebear.com/9.x/shapes/svg?seed=973b6412-1165-4257-8071-b30234e453cb",
+  exploreModules: "/assets/dashboard/explore-modules.png",
+  exploreTests: "/assets/dashboard/explore-tests.png",
+  exploreLibrary: "/assets/dashboard/explore-library.png",
+  dashboardIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=cf63ebaf-2c2d-461d-b303-52e41d36c645",
+  coursesIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=f5a0a60c-baa8-428d-b6e0-24fe7150e184",
+  liveClassesIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=95f74062-c186-4036-9109-4876860c1840",
+  communityIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=2adf51c8-f658-4f1e-84e4-26a5345706d5",
+  assignmentsIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=ffea850b-8a37-4bd9-9bcf-92f2122bf9d0",
+  progressIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=4c09dd54-76f0-47cb-81bd-6df94c0bdcf9",
+  calendarIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=4853766a-1632-4bc4-912e-5e43efdf5ec1",
 } as const;
 
 const sidebarItems = [
@@ -177,54 +177,22 @@ export default async function DashboardCoursesPage() {
 
   return (
     <PageTransition>
-      <main className="min-h-screen overflow-x-hidden bg-[#f7f5f4]">
-        <header className="border-b border-black/5 bg-white/88 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-[1920px] items-center gap-4 px-5 py-4 sm:px-6 lg:px-8 xl:px-14">
-            <Link className="shrink-0" href="/dashboard">
-              <Image
-                alt={brand.fullName}
-                className="h-auto w-[150px] object-contain sm:w-[177px]"
-                height={74}
-                priority
-                src={brand.logoSrc}
-                width={177}
-              />
-            </Link>
+      <main className="min-h-screen overflow-x-hidden bg-[#f9fafb] pb-24 sm:bg-[#f7f5f4] sm:pb-0">
 
-            <div className="hidden min-w-0 flex-1 lg:block">
-              <GlobalSearch />
-            </div>
-
-            <div className="ml-auto flex items-center gap-3">
-              <NotificationsDropdown />
-
-              <div className="flex items-center gap-2.5">
-                <div className="overflow-hidden rounded-full border-4 border-[#925fe2] bg-white shadow-[8px_8px_48px_8px_rgba(0,0,0,0.24)]">
-                  <Image
-                    alt={displayName}
-                    className="h-10 w-10 object-cover"
-                    height={48}
-                    src={assets.headerAvatar}
-                    width={48}
-                  />
-                </div>
-                <p className="hidden text-[15px] font-semibold text-black sm:block">{displayName}</p>
-              </div>
-            </div>
-          </div>
-        </header>
 
         <div className="mx-auto max-w-[1920px] px-4 py-6 sm:px-6 lg:px-8 xl:px-0 xl:py-8">
           <div className="grid gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
-            <RevealSection className="xl:pr-7">
-              <aside className="overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] px-4 py-4 shadow-[0_18px_48px_rgba(254,198,0,0.18)] xl:sticky xl:top-6 xl:min-h-[530px] xl:rounded-l-[0] xl:rounded-r-[40px] xl:px-7 xl:py-12">
-                <nav className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:gap-1 xl:overflow-visible">
+            <RevealSection className="hidden xl:block xl:pr-7">
+              <aside className="sticky top-3 z-20 -mx-1 overflow-hidden rounded-[28px] border border-[#ffe08a] bg-[linear-gradient(180deg,#ffcb2f_0%,#ffe58f_100%)] px-3 py-3 shadow-[0_16px_36px_rgba(254,198,0,0.22)] xl:static xl:mx-0 xl:rounded-l-[0] xl:rounded-r-[40px] xl:border-none xl:bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] xl:px-7 xl:py-12 xl:shadow-[0_18px_48px_rgba(254,198,0,0.18)]">
+                <nav className="scrollbar-none flex snap-x gap-2 overflow-x-auto pb-0.5 xl:flex-col xl:gap-1 xl:overflow-visible">
                   {sidebarItems.map((item) => (
                     <Link
                       key={item.href}
                       className={cx(
-                        "flex min-w-max items-center gap-4 rounded-[22px] px-4 py-3 text-[15px] font-medium text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:px-5 xl:text-[18px]",
-                        ("active" in item && item.active) && "bg-white/16",
+                        "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
+                        ("active" in item && item.active)
+                          ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/16 xl:shadow-none"
+                          : "hover:bg-white/46 xl:hover:bg-white/20",
                       )}
                       href={item.href}
                     >
@@ -236,7 +204,7 @@ export default async function DashboardCoursesPage() {
               </aside>
             </RevealSection>
 
-            <section className="px-0 xl:pr-10">
+            <section className="min-w-0 px-0 sm:px-4 xl:pr-10">
               <div className="mx-auto max-w-[1160px] space-y-10">
                 <div className="flex flex-col gap-10">
                   <RevealSection className="space-y-6">
@@ -344,10 +312,10 @@ export default async function DashboardCoursesPage() {
                           >
                             <Image
                               alt={item.label}
-                              className="h-auto w-[6.25rem] object-contain"
-                              height={108}
+                              className="h-auto w-[140px] object-contain drop-shadow-2xl"
+                              height={140}
                               src={item.image}
-                              width={101}
+                              width={140}
                             />
                             <span className="text-[24px] font-semibold">{item.label}</span>
                           </Link>

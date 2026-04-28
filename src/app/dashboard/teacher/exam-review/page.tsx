@@ -224,7 +224,7 @@ export default function ExamReviewPage() {
     <div className="mx-auto grid max-w-[1920px] gap-0 lg:grid-cols-[280px_minmax(0,1fr)]">
       <TeacherSidebar />
 
-      <main className="min-h-screen bg-[#f8fafc] px-4 py-8 sm:px-6 lg:px-10">
+      <main className="min-h-screen bg-[#f8fafc] px-3 py-5 sm:px-6 sm:py-8 lg:px-10">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-[28px] font-bold tracking-tight text-[#111827]">Sketch Review</h1>

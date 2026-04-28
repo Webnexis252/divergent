@@ -40,11 +40,11 @@ import {
 } from "./motion-wrappers";
 
 const assets = {
-  headerAvatar: "https://www.figma.com/api/mcp/asset/021745ae-afe4-4dce-ad5c-2dd5ad2195e1",
-  heroIllustration: "https://www.figma.com/api/mcp/asset/ed4da357-c8f5-410a-8e68-45347e8c1af8",
-  todayStat: "https://www.figma.com/api/mcp/asset/5890be02-a91e-46c1-86e1-2c309e51e4c9",
-  weekStat: "https://www.figma.com/api/mcp/asset/78a502ad-9c8c-4041-b5b4-0820b424e6b5",
-  liveStat: "https://www.figma.com/api/mcp/asset/3fda4e93-3e77-4bb0-8b50-0d4624b13ec4",
+  headerAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=021745ae-afe4-4dce-ad5c-2dd5ad2195e1",
+  heroIllustration: "/assets/dashboard/live-classes-hero.png",
+  todayStat: "/assets/dashboard/stat-upcoming.png",
+  weekStat: "/assets/dashboard/stat-past.png",
+  liveStat: "/assets/dashboard/stat-live.png",
 } as const;
 
 const sidebarItems = [
@@ -118,26 +118,36 @@ function LiveStatCard({
   href?: string;
 }) {
   const content = (
-    <article className="h-full rounded-[20px] bg-[#72d3ff] px-5 py-4 text-white shadow-[0_4px_9.2px_rgba(0,0,0,0.25)] transition-colors hover:bg-[#6ed0fc]">
-      <div className="flex items-start justify-between gap-4">
-        <Image
-          alt={title}
-          className="h-auto w-[5.5rem] object-contain sm:w-[6.8rem]"
-          height={96}
-          src={image}
-          width={109}
-        />
-        <p className="pt-3 text-[clamp(2.6rem,6vw,3.75rem)] leading-none text-[#fec600]">
+    <article className="relative flex h-full flex-col rounded-[28px] bg-[#72d3ff] p-5 text-white shadow-[0_10px_25px_-5px_rgba(56,193,255,0.3),0_8px_10px_-6px_rgba(56,193,255,0.3)] transition-all duration-300 hover:translate-y-[-4px] hover:bg-[#6ed0fc] hover:shadow-[0_20px_25px_-5px_rgba(56,193,255,0.4),0_10px_10px_-5px_rgba(56,193,255,0.4)] sm:p-6">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="w-[104px] shrink-0 sm:w-[8.75rem]">
+          <Image
+            alt=""
+            aria-hidden
+            className="h-auto w-full object-contain drop-shadow-xl"
+            height={140}
+            src={image}
+            width={140}
+          />
+        </div>
+        <p className="text-[2.6rem] font-bold leading-none text-[#fec600] sm:text-[clamp(2.6rem,5vw,3.5rem)]">
           {value}
         </p>
       </div>
-      <p className="mt-4 text-[clamp(1rem,2vw,1.5rem)] font-semibold text-white">{title}</p>
-      <p className="mt-1 text-[13px] text-white/90">{meta}</p>
+
+      <div className="mt-3">
+        <p className="text-[1.1rem] font-bold leading-tight text-white sm:text-[1.25rem]">
+          {title}
+        </p>
+        <p className="mt-1 max-w-[18rem] text-[12px] leading-relaxed text-white/88 sm:text-[13px]">
+          {meta}
+        </p>
+      </div>
     </article>
   );
 
   return (
-    <AnimCard className="h-full">
+    <AnimCard className="h-full min-w-[200px] shrink-0 sm:min-w-0">
       {href ? (
         <Link className="block h-full" href={href}>
           {content}
@@ -164,52 +174,52 @@ function LiveClassCard({
 
   return (
     <AnimCard>
-      <article className="rounded-[24px] bg-white p-5 shadow-[0_4px_10px_rgba(0,0,0,0.12)]">
+      <article className="rounded-[24px] bg-white p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] ring-1 ring-black/5 sm:rounded-[24px] sm:p-6 sm:shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={statusMeta[item.status].badgeTone}>
+              <Badge tone={statusMeta[item.status].badgeTone} className="text-[10px] sm:text-[12px] px-2.5 py-0.5">
                 {statusMeta[item.status].label}
               </Badge>
-              <span className="rounded-full bg-[#f7f5f4] px-3 py-1 text-[12px] text-black/58">
+              <span className="rounded-full bg-[#f7f5f4] px-2.5 py-1 text-[11px] font-medium text-black/60 sm:text-[12px]">
                 {formatShortDate(item.startTime)}
               </span>
             </div>
 
             <div>
-              <h3 className="text-[clamp(1.25rem,2vw,1.55rem)] font-medium leading-[1.15] text-black">
+              <h3 className="text-[1.15rem] font-semibold leading-[1.2] text-black sm:text-[clamp(1.25rem,2vw,1.55rem)]">
                 {item.title}
               </h3>
-              <p className="mt-1 text-[14px] text-[#8b8888]">{item.courseTitle}</p>
+              <p className="mt-1 text-[13px] text-[#8b8888] sm:text-[14px]">{item.courseTitle}</p>
             </div>
           </div>
 
-          <div className="grid h-[60px] w-[60px] shrink-0 place-items-center rounded-[18px] bg-[#38c1ff]/12 text-[#38c1ff]">
+          <div className="grid h-[50px] w-[50px] shrink-0 place-items-center rounded-[16px] bg-[#38c1ff]/10 text-[#38c1ff] sm:h-[60px] sm:w-[60px] sm:rounded-[18px]">
             {item.status === "completed" ? (
-              <CalendarClock className="h-6 w-6" />
+              <CalendarClock className="h-5 w-5 sm:h-6 sm:w-6" />
             ) : (
-              <Video className="h-6 w-6" />
+              <Video className="h-5 w-5 sm:h-6 sm:w-6" />
             )}
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[14px] bg-[#f7f5f4] px-4 py-3">
-            <div className="flex items-center gap-2 text-[13px] text-black/62">
-              <Clock3 className="h-4 w-4 text-black/40" />
-              <span>{formatScheduleTime(item.startTime, item.duration)}</span>
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+          <div className="rounded-[12px] bg-[#f7f5f4] px-3 py-2.5 sm:rounded-[14px] sm:px-4 sm:py-3">
+            <div className="flex items-center gap-2 text-[12px] font-medium text-black/60 sm:text-[13px]">
+              <Clock3 className="h-3.5 w-3.5 text-black/40" />
+              <span className="truncate">{formatScheduleTime(item.startTime, item.duration)}</span>
             </div>
           </div>
-          <div className="rounded-[14px] bg-[#f7f5f4] px-4 py-3">
-            <div className="flex items-center gap-2 text-[13px] text-black/62">
-              <Users className="h-4 w-4 text-black/40" />
-              <span>{item.attendeeCount} joined</span>
+          <div className="rounded-[12px] bg-[#f7f5f4] px-3 py-2.5 sm:rounded-[14px] sm:px-4 sm:py-3">
+            <div className="flex items-center gap-2 text-[12px] font-medium text-black/60 sm:text-[13px]">
+              <Users className="h-3.5 w-3.5 text-black/40" />
+              <span className="truncate">{item.attendeeCount} joined</span>
             </div>
           </div>
-          <div className="rounded-[14px] bg-[#f7f5f4] px-4 py-3">
-            <div className="flex items-center gap-2 text-[13px] text-black/62">
-              <CalendarClock className="h-4 w-4 text-black/40" />
-              <span>
+          <div className="col-span-2 rounded-[12px] bg-[#f7f5f4] px-3 py-2.5 sm:col-span-1 sm:rounded-[14px] sm:px-4 sm:py-3">
+            <div className="flex items-center gap-2 text-[12px] font-medium text-black/60 sm:text-[13px]">
+              <CalendarClock className="h-3.5 w-3.5 text-black/40" />
+              <span className="truncate">
                 {item.status === "live"
                   ? "Already started"
                   : formatRelativeTime(item.startTime)}
@@ -218,13 +228,13 @@ function LiveClassCard({
           </div>
         </div>
 
-        <div className="mt-5 flex flex-col gap-3 border-t border-black/6 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-[32rem] text-[13px] leading-6 text-black/54">
+        <div className="mt-5 flex flex-col gap-3 border-t border-black/5 pt-4 sm:mt-6 sm:gap-4 sm:pt-5">
+          <p className="max-w-[32rem] text-[13px] leading-relaxed text-black/50">
             {item.status === "completed"
               ? "Revisit the session details and any follow-up material from your class history."
               : "Jump straight into the live classroom experience without leaving the dashboard."}
           </p>
-          <Link className={actionButtonStyles("h-[38px] px-4 text-[13px]")} href={href}>
+          <Link className={actionButtonStyles("h-[40px] w-full px-4 text-[13px] sm:h-[42px] sm:w-auto")} href={href}>
             {actionLabel}
           </Link>
         </div>
@@ -247,25 +257,25 @@ function ScheduleSection({
   title: string;
 }) {
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
         <div>
-          <h2 className="text-[clamp(1.7rem,3vw,1.95rem)] font-medium text-black">{title}</h2>
-          <p className="mt-2 max-w-[42rem] text-[15px] leading-6 text-black/56">
+          <h2 className="text-[1.75rem] font-bold tracking-tight text-black sm:text-[clamp(2.2rem,4vw,2.5rem)]">{title}</h2>
+          <p className="mt-2.5 max-w-[42rem] text-[15px] leading-relaxed text-black/50 sm:text-[17px]">
             {description}
           </p>
         </div>
-        <div className="shrink-0">{accent}</div>
+        <div className="shrink-0 self-start sm:self-auto mt-1 sm:mt-0">{accent}</div>
       </div>
 
       {items.length > 0 ? (
-        <StaggerGrid className="grid gap-5 xl:grid-cols-2">
+        <StaggerGrid className="grid gap-3 sm:gap-5 xl:grid-cols-2">
           {items.map((item) => (
             <LiveClassCard item={item} key={item.id} />
           ))}
         </StaggerGrid>
       ) : (
-        <div className="rounded-[20px] bg-white px-6 py-12 text-center text-[15px] text-black/50 shadow-[0_4px_10px_rgba(0,0,0,0.06)]">
+        <div className="rounded-[20px] bg-white px-5 py-10 text-center text-[14px] text-black/40 ring-1 ring-black/5 sm:px-6 sm:py-12 sm:text-[15px] sm:shadow-[0_4px_10px_rgba(0,0,0,0.04)]">
           {emptyDescription}
         </div>
       )}
@@ -281,17 +291,17 @@ function NextRoomCard({
   if (!item) {
     return (
       <AnimCard>
-        <aside className="rounded-[24px] bg-white px-5 py-6 shadow-[0_4px_10px_rgba(0,0,0,0.12)]">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-black/45">
+        <aside className="rounded-[32px] bg-white px-6 py-8 shadow-[0_14px_40px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+          <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-black/40">
             Next Room
           </p>
-          <p className="mt-4 text-[1.1rem] font-semibold text-black">Nothing scheduled yet</p>
-          <p className="mt-2 text-[14px] leading-7 text-black/58">
+          <p className="mt-5 text-[1.4rem] font-bold text-black">Nothing scheduled yet</p>
+          <p className="mt-3 text-[14px] leading-relaxed text-black/50">
             When a new live session is published for one of your enrolled courses,
             it will appear here with the fastest route into class.
           </p>
           <Link
-            className={actionButtonStyles("mt-5 h-[38px] px-4 text-[13px]")}
+            className={actionButtonStyles("mt-7 h-[44px] px-6 text-[14px] w-full")}
             href="/dashboard/courses"
           >
             Browse Courses
@@ -303,39 +313,39 @@ function NextRoomCard({
 
   return (
     <AnimCard>
-      <aside className="rounded-[24px] bg-white px-5 py-6 shadow-[0_4px_10px_rgba(0,0,0,0.12)]">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-black/45">
+      <aside className="rounded-[32px] bg-white px-6 py-8 shadow-[0_14px_40px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+        <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-black/40">
           {item.status === "completed" ? "Latest Replay" : "Next Room"}
         </p>
-        <div className="mt-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <Badge tone={statusMeta[item.status].badgeTone}>
+        <div className="mt-5 space-y-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge tone={statusMeta[item.status].badgeTone} className="px-3 py-1 text-[12px]">
               {statusMeta[item.status].label}
             </Badge>
-            <span className="rounded-full bg-[#f7f5f4] px-3 py-1 text-[12px] text-black/58">
+            <span className="rounded-full bg-[#f7f5f4] px-3 py-1.5 text-[12px] font-medium text-black/60">
               {formatShortDate(item.startTime)}
             </span>
           </div>
           <div>
-            <h3 className="text-[1.25rem] font-semibold leading-[1.15] text-black">
+            <h3 className="text-[1.65rem] font-bold leading-tight text-black">
               {item.title}
             </h3>
-            <p className="mt-1 text-[14px] text-[#8b8888]">{item.courseTitle}</p>
+            <p className="mt-1.5 text-[15px] text-[#8b8888]">{item.courseTitle}</p>
           </div>
-          <div className="rounded-[16px] bg-[#f7f5f4] px-4 py-4">
-            <div className="flex items-center gap-2 text-[13px] text-black/62">
-              <Clock3 className="h-4 w-4 text-black/40" />
+          <div className="rounded-[20px] bg-[#f7f5f4] p-5">
+            <div className="flex items-center gap-3 text-[14px] font-medium text-black/60">
+              <Clock3 className="h-4.5 w-4.5 shrink-0 text-black/40" />
               <span>{formatScheduleTime(item.startTime, item.duration)}</span>
             </div>
-            <div className="mt-2 flex items-center gap-2 text-[13px] text-black/62">
-              <CalendarClock className="h-4 w-4 text-black/40" />
+            <div className="mt-3 flex items-center gap-3 text-[14px] font-medium text-black/60">
+              <CalendarClock className="h-4.5 w-4.5 shrink-0 text-black/40" />
               <span>
                 {item.status === "live" ? "Already started" : formatRelativeTime(item.startTime)}
               </span>
             </div>
           </div>
           <Link
-            className={actionButtonStyles("h-[40px] w-full gap-2 text-[14px]")}
+            className={actionButtonStyles("h-[48px] w-full gap-3 text-[15px]")}
             href={getScheduleHref(item)}
           >
             {item.status === "live"
@@ -343,7 +353,7 @@ function NextRoomCard({
               : item.status === "completed"
                 ? "Open Replay"
                 : "Open Classroom"}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4.5 w-4.5" />
           </Link>
         </div>
       </aside>
@@ -365,15 +375,15 @@ function QuickRouteCard({
   return (
     <AnimCard>
       <Link
-        className="flex items-start gap-3 rounded-[20px] bg-white px-4 py-4 shadow-[0_4px_10px_rgba(0,0,0,0.08)]"
+        className="flex items-start gap-3.5 rounded-[20px] bg-white px-4 py-4 shadow-[0_4px_16px_rgba(15,23,42,0.04)] ring-1 ring-black/5 transition-transform active:scale-[0.98] sm:rounded-[20px] sm:shadow-[0_4px_10px_rgba(0,0,0,0.06)]"
         href={href}
       >
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-[#38c1ff]/12 text-[#38c1ff]">
+        <div className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[14px] bg-[#38c1ff]/10 text-[#38c1ff] sm:h-11 sm:w-11">
           <Icon className="h-5 w-5" />
         </div>
-        <div className="space-y-1">
-          <p className="text-[15px] font-semibold text-black">{title}</p>
-          <p className="text-[13px] leading-6 text-black/54">{description}</p>
+        <div className="space-y-0.5 sm:space-y-1">
+          <p className="text-[14px] font-bold text-black sm:text-[15px]">{title}</p>
+          <p className="text-[12px] leading-relaxed text-black/50 sm:text-[13px] sm:leading-6">{description}</p>
         </div>
       </Link>
     </AnimCard>
@@ -441,63 +451,29 @@ export function StudentLiveClassSchedule() {
 
   return (
     <PageTransition>
-      <main className="min-h-screen overflow-x-hidden bg-[#f7f5f4]">
-        <header className="border-b border-black/5 bg-white/88 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-[1920px] items-center gap-4 px-5 py-4 sm:px-6 lg:px-8 xl:px-14">
-            <Link className="shrink-0" href="/dashboard">
-              <Image
-                alt={brand.fullName}
-                className="h-auto w-[150px] object-contain sm:w-[177px]"
-                height={74}
-                priority
-                src={brand.logoSrc}
-                width={177}
-              />
-            </Link>
+      <main className="min-h-screen overflow-x-hidden bg-[#f9fafb] pb-24 sm:bg-[#f7f5f4] sm:pb-0">
 
-            <div className="hidden min-w-0 flex-1 lg:block">
-              <GlobalSearch />
-            </div>
 
-            <div className="ml-auto flex items-center gap-3">
-              <NotificationsDropdown />
-
-              <div className="flex items-center gap-2.5">
-                <div className="overflow-hidden rounded-full border-4 border-[#925fe2] bg-white shadow-[8px_8px_48px_8px_rgba(0,0,0,0.24)]">
-                  <Image
-                    alt={displayName}
-                    className="h-10 w-10 object-cover"
-                    height={48}
-                    src={assets.headerAvatar}
-                    width={48}
-                  />
-                </div>
-                <p className="hidden text-[15px] font-semibold text-black sm:block">
-                  {displayName}
-                </p>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="mx-auto max-w-[1920px] px-4 py-6 sm:px-6 lg:px-8 xl:px-0 xl:py-8">
-          <div className="grid gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
-            <RevealSection className="xl:pr-7">
-              <aside className="overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] px-4 py-4 shadow-[0_18px_48px_rgba(254,198,0,0.18)] xl:sticky xl:top-6 xl:min-h-[530px] xl:rounded-l-[0] xl:rounded-r-[40px] xl:px-7 xl:py-12">
-                <nav className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:gap-1 xl:overflow-visible">
+        <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-0 xl:py-8">
+          <div className="grid gap-4 sm:gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
+            <RevealSection className="hidden xl:block xl:pr-7">
+              <aside className="sticky top-3 z-20 overflow-hidden rounded-l-[0] rounded-r-[40px] bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] px-4 py-12 shadow-[0_18px_48px_rgba(254,198,0,0.18)]">
+                <nav className="flex flex-col gap-1">
                   {sidebarItems.map((item) => {
                     const Icon = item.icon;
                     return (
                       <Link
                         key={item.href}
                         className={cx(
-                          "flex min-w-max items-center gap-4 rounded-[22px] px-4 py-3 text-[15px] font-medium text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:px-5 xl:text-[18px]",
-                          ("active" in item && item.active) ? "bg-white/40 shadow-sm" : "hover:bg-white/20",
+                          "flex items-center min-h-[56px] gap-4 rounded-[22px] px-5 py-3 text-[18px] font-medium text-black transition-colors duration-[var(--transition-fast)]",
+                          ("active" in item && item.active)
+                            ? "bg-white/40 shadow-sm"
+                            : "hover:bg-white/20",
                         )}
                         href={item.href}
                       >
                         <Icon className="h-5 w-5 shrink-0" />
-                        <span>{item.label}</span>
+                        <span className="whitespace-nowrap">{item.label}</span>
                       </Link>
                     );
                   })}
@@ -505,46 +481,48 @@ export function StudentLiveClassSchedule() {
               </aside>
             </RevealSection>
 
-            <section className="px-0 xl:pr-10">
-              <div className="mx-auto max-w-[1160px] space-y-10">
+            <section className="min-w-0 px-0 xl:pr-10">
+              <div className="mx-auto max-w-[1160px] space-y-6 sm:space-y-10">
                 <RevealSection>
-                  <div className="relative overflow-hidden rounded-[24px] bg-[#38c1ff] px-6 py-8 text-white shadow-[0_4px_10px_rgba(0,0,0,0.2)] sm:px-10 sm:py-10">
-                    <div className="pointer-events-none absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.22),transparent_70%)]" />
-                    <div className="relative z-10 grid gap-8 xl:grid-cols-[minmax(0,1fr)_260px] xl:items-center">
-                      <div className="max-w-[42rem] space-y-6">
+                  <div className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(145deg,#38c1ff_0%,#00a7fa_100%)] px-5 py-8 text-white shadow-[0_12px_32px_rgba(56,193,255,0.25)] sm:rounded-[32px] sm:px-10 sm:py-10 sm:shadow-[0_18px_44px_rgba(56,193,255,0.24)]">
+                    <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[42%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.22),transparent_70%)] sm:block" />
+                    <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl sm:hidden" />
+                    <div className="relative z-10 grid gap-6 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] xl:items-center">
+                      <div className="max-w-[42rem] space-y-4 sm:space-y-6">
                         <div>
-                          <div className="mb-4 inline-flex rounded-full bg-white/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-white">
+                          <div className="mb-3 inline-flex rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md sm:px-4 sm:py-1.5 sm:text-[11px]">
                             Live Classes
                           </div>
-                          <h1 className="text-[clamp(1.95rem,4vw,2.55rem)] font-semibold tracking-[-0.03em]">
+                          <h1 className="text-[1.85rem] font-bold leading-[1.08] tracking-tight sm:max-w-none sm:text-[clamp(1.95rem,4vw,2.55rem)] sm:leading-[1.02] sm:tracking-[-0.05em]">
                             Jump into every live session from one polished workspace.
                           </h1>
-                          <p className="mt-3 text-[16px] leading-7 text-white/92">
+                          <p className="mt-3 text-[14px] leading-relaxed text-white/90 sm:max-w-[30rem] sm:text-[16px] sm:leading-7 sm:text-white/92">
                             Your live classes, next sessions, and quick routes now sit in the same
                             student-dashboard language as the rest of the learning flow.
                           </p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span className="rounded-full bg-black/10 px-4 py-1.5 text-[14px] font-medium text-white backdrop-blur">
+                        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                          <span className="rounded-full bg-black/10 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur sm:px-4 sm:text-[14px]">
                             {windowLabel}
                           </span>
                           {liveNowCount > 0 ? (
-                            <span className="flex items-center gap-2 rounded-full bg-[#ff3d00] px-4 py-1.5 text-[14px] font-medium text-white shadow-[0_2px_10px_rgba(255,61,0,0.4)]">
-                              <Radio className="h-4 w-4" />
+                            <span className="flex items-center gap-1.5 rounded-full bg-[#ff3d00] px-3 py-1.5 text-[12px] font-bold text-white shadow-[0_2px_10px_rgba(255,61,0,0.4)] sm:gap-2 sm:px-4 sm:text-[14px]">
+                              <Radio className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               {liveNowCount} live now
                             </span>
                           ) : null}
                         </div>
                       </div>
 
-                      <FloatPulse className="mx-auto xl:mx-0 xl:justify-self-end">
+                      <FloatPulse className="hidden sm:mx-auto sm:block xl:mx-0 xl:justify-self-end">
                         <Image
-                          alt="Live class illustration"
-                          className="h-auto w-[210px] object-contain sm:w-[250px]"
-                          height={240}
+                          alt=""
+                          aria-hidden
+                          className="h-auto w-[220px] object-contain opacity-95 drop-shadow-[0_18px_40px_rgba(0,0,0,0.12)] sm:w-[320px] xl:w-[360px]"
+                          height={852}
                           src={assets.heroIllustration}
-                          width={250}
+                          width={1561}
                         />
                       </FloatPulse>
                     </div>
@@ -552,7 +530,7 @@ export function StudentLiveClassSchedule() {
                 </RevealSection>
 
                 <RevealSection delay={0.04}>
-                  <div className="grid gap-5 md:grid-cols-3">
+                  <div className="scrollbar-none -mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-3 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0">
                     <LiveStatCard
                       image={assets.todayStat}
                       meta="Classes waiting for their start time."
@@ -642,7 +620,7 @@ export function StudentLiveClassSchedule() {
                       </RevealSection>
                     </div>
 
-                    <div className="space-y-6 xl:sticky xl:top-6">
+                    <div className="order-first space-y-4 sm:space-y-6 xl:order-none xl:sticky xl:top-6">
                       <RevealSection delay={0.08}>
                         <NextRoomCard item={nextRoom} />
                       </RevealSection>

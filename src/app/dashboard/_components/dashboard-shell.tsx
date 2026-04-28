@@ -11,7 +11,7 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const isTeacherRoute = pathname.startsWith("/dashboard/teacher/");
-  const isImmersiveStudentRoute = pathname === "/dashboard/live-classes" || pathname.startsWith("/dashboard/live-classes/");
+  const isImmersiveStudentRoute = false; // Always show header for consistency as requested
   const isAssessmentTakeRoute = /^\/dashboard\/courses\/[^/]+\/tests\/[^/]+$/.test(pathname);
   const isStandaloneStudentOverview = pathname === "/dashboard";
   const isStandaloneStudentCourses = pathname === "/dashboard/courses";
@@ -20,12 +20,7 @@ export function DashboardShell({
   const isStandaloneStudentProfile = pathname === "/dashboard/profile";
   const hideHeader =
     isTeacherRoute ||
-    isImmersiveStudentRoute ||
-    isStandaloneStudentOverview ||
-    isStandaloneStudentCourses ||
-    isStandaloneStudentCourseDetail ||
-    isStandaloneStudentAssignments ||
-    isStandaloneStudentProfile;
+    isImmersiveStudentRoute;
   const hideFooter = isAssessmentTakeRoute;
 
   return (

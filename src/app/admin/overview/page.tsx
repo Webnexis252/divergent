@@ -52,7 +52,7 @@ export default function AdminOverviewPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1280px] space-y-8 px-6 py-12 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
         <div className="h-40 animate-pulse rounded-[32px] bg-white/70" />
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -84,7 +84,7 @@ export default function AdminOverviewPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-8 px-6 py-12 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
           <section className="relative overflow-hidden rounded-[36px] border border-white/70 bg-[linear-gradient(135deg,#062f4f_0%,#0c4f78_38%,#38c1ff_100%)] px-8 py-8 text-white shadow-[0_30px_70px_rgba(7,89,133,0.28)] sm:px-10">
             <div className="absolute inset-y-0 right-0 w-[36%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.2),transparent_62%)]" />

@@ -157,7 +157,7 @@ export function ClassroomChat({
 
   if (!open) {
     return (
-      <section className="rounded-[24px] bg-white px-6 py-8 text-center shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
+      <section className="rounded-[28px] bg-white px-5 py-6 text-center shadow-[0_14px_34px_rgba(15,23,42,0.08)] sm:rounded-[24px] sm:px-6 sm:py-8 sm:shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#38c1ff]/10 text-[#38c1ff]">
           <MessageCircleMore className="h-6 w-6" />
         </div>
@@ -181,8 +181,8 @@ export function ClassroomChat({
   }
 
   return (
-    <section className="overflow-hidden rounded-[24px] bg-white shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
-      <div className="flex items-start justify-between gap-4 border-b border-black/6 px-6 py-5">
+    <section className="overflow-hidden rounded-[28px] bg-white shadow-[0_14px_34px_rgba(15,23,42,0.08)] sm:rounded-[24px] sm:shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
+      <div className="flex items-start justify-between gap-4 border-b border-black/6 px-4 py-4 sm:px-6 sm:py-5">
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-black/42">
             Class Thread
@@ -204,7 +204,7 @@ export function ClassroomChat({
       </div>
 
       <div
-        className="max-h-[520px] space-y-3 overflow-y-auto bg-[#f7f5f4] px-6 py-6"
+        className="max-h-[420px] space-y-3 overflow-y-auto bg-[#f7f5f4] px-4 py-4 sm:max-h-[520px] sm:px-6 sm:py-6"
         ref={messagesContainerRef}
       >
         {messagesLoading ? (
@@ -231,7 +231,7 @@ export function ClassroomChat({
         )}
       </div>
 
-      <div className="border-t border-black/6 bg-white px-6 py-5">
+      <div className="border-t border-black/6 bg-white px-4 py-4 sm:px-6 sm:py-5">
         {previewUrl ? (
           <div className="mb-4 rounded-[20px] border border-black/8 bg-[#f7f5f4] p-3">
             <div className="flex items-start gap-3">
@@ -297,6 +297,7 @@ export function ClassroomChat({
             />
 
             <Button
+              className="px-3 sm:px-4"
               disabled={!messageBody.trim() && !selectedImage}
               loading={sending}
               onClick={() => void handleSendMessage()}
@@ -304,7 +305,7 @@ export function ClassroomChat({
               type="button"
             >
               <SendHorizontal className="h-4 w-4" />
-              Send
+              <span className="hidden sm:inline">Send</span>
             </Button>
           </div>
         </div>

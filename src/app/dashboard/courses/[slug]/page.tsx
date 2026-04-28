@@ -33,29 +33,29 @@ type CourseDetailPageProps = {
 };
 
 const assets = {
-  heroIllustration: "https://www.figma.com/api/mcp/asset/db6c0edc-45d2-4a72-bc8c-fda1cf5c7daa",
-  premiumBadge: "https://www.figma.com/api/mcp/asset/d69210fb-fac4-4a3f-ae58-7426f89af020",
-  learnersIcon: "https://www.figma.com/api/mcp/asset/8bba02c3-8180-4d46-b5cd-f071d8a40f43",
-  ratings: "https://www.figma.com/api/mcp/asset/58f66a79-9fb4-4b1a-a7cb-df0e2291a488",
-  divider: "https://www.figma.com/api/mcp/asset/0c1d4445-8c2f-4539-95cc-a8cb555bb081",
-  fallbackThumbnail: "https://www.figma.com/api/mcp/asset/cf170519-6960-44d6-913f-b1df537a439e",
-  mentorAvatar: "https://www.figma.com/api/mcp/asset/1fdd695f-0eb2-4964-b9f7-d3b9472b043a",
-  buyNowIcon: "https://www.figma.com/api/mcp/asset/302f0b9c-5f11-4d9d-ab89-dfad0999d3f4",
-  emiIcon: "https://www.figma.com/api/mcp/asset/104750b5-4aac-439b-a0d7-04c01181c5da",
-  liveClassFeature: "https://www.figma.com/api/mcp/asset/51a28b6c-a3eb-49f6-9945-ee2c67715253",
-  doubtSolvingFeature: "https://www.figma.com/api/mcp/asset/12ce6314-ad2e-4ad8-a98a-16a52e99a04e",
-  mockTestsFeature: "https://www.figma.com/api/mcp/asset/a1c20d05-60d6-4863-b5ec-a6357bda9f84",
-  communityFeature: "https://www.figma.com/api/mcp/asset/47dbd472-4af1-4232-a9ab-eb697c5c0dd5",
-  certificateFeature: "https://www.figma.com/api/mcp/asset/6bec0872-3a9c-4711-92a9-c58333b7f917",
-  testsTile: "https://www.figma.com/api/mcp/asset/a1c20d05-60d6-4863-b5ec-a6357bda9f84",
-  modulesTile: "https://www.figma.com/api/mcp/asset/8856660f-0172-423a-b66c-479ea8028c71",
-  dashboardIcon: "https://www.figma.com/api/mcp/asset/cf63ebaf-2c2d-461d-b303-52e41d36c645",
-  coursesIcon: "https://www.figma.com/api/mcp/asset/f5a0a60c-baa8-428d-b6e0-24fe7150e184",
-  liveClassesIcon: "https://www.figma.com/api/mcp/asset/95f74062-c186-4036-9109-4876860c1840",
-  communityIcon: "https://www.figma.com/api/mcp/asset/2adf51c8-f658-4f1e-84e4-26a5345706d5",
-  assignmentsIcon: "https://www.figma.com/api/mcp/asset/ffea850b-8a37-4bd9-9bcf-92f2122bf9d0",
-  progressIcon: "https://www.figma.com/api/mcp/asset/4c09dd54-76f0-47cb-81bd-6df94c0bdcf9",
-  calendarIcon: "https://www.figma.com/api/mcp/asset/e233071f-ae5b-440b-b6a5-2a067b4e2248",
+  heroIllustration: "https://api.dicebear.com/9.x/shapes/svg?seed=db6c0edc-45d2-4a72-bc8c-fda1cf5c7daa",
+  premiumBadge: "https://api.dicebear.com/9.x/shapes/svg?seed=d69210fb-fac4-4a3f-ae58-7426f89af020",
+  learnersIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=8bba02c3-8180-4d46-b5cd-f071d8a40f43",
+  ratings: "https://api.dicebear.com/9.x/shapes/svg?seed=58f66a79-9fb4-4b1a-a7cb-df0e2291a488",
+  divider: "https://api.dicebear.com/9.x/shapes/svg?seed=0c1d4445-8c2f-4539-95cc-a8cb555bb081",
+  fallbackThumbnail: "https://api.dicebear.com/9.x/shapes/svg?seed=cf170519-6960-44d6-913f-b1df537a439e",
+  mentorAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=1fdd695f-0eb2-4964-b9f7-d3b9472b043a",
+  buyNowIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=302f0b9c-5f11-4d9d-ab89-dfad0999d3f4",
+  emiIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=104750b5-4aac-439b-a0d7-04c01181c5da",
+  liveClassFeature: "https://api.dicebear.com/9.x/shapes/svg?seed=51a28b6c-a3eb-49f6-9945-ee2c67715253",
+  doubtSolvingFeature: "https://api.dicebear.com/9.x/shapes/svg?seed=12ce6314-ad2e-4ad8-a98a-16a52e99a04e",
+  mockTestsFeature: "https://api.dicebear.com/9.x/shapes/svg?seed=a1c20d05-60d6-4863-b5ec-a6357bda9f84",
+  communityFeature: "https://api.dicebear.com/9.x/shapes/svg?seed=47dbd472-4af1-4232-a9ab-eb697c5c0dd5",
+  certificateFeature: "https://api.dicebear.com/9.x/shapes/svg?seed=6bec0872-3a9c-4711-92a9-c58333b7f917",
+  testsTile: "/assets/dashboard/explore-tests.png",
+  modulesTile: "/assets/dashboard/explore-modules.png",
+  dashboardIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=cf63ebaf-2c2d-461d-b303-52e41d36c645",
+  coursesIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=f5a0a60c-baa8-428d-b6e0-24fe7150e184",
+  liveClassesIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=95f74062-c186-4036-9109-4876860c1840",
+  communityIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=2adf51c8-f658-4f1e-84e4-26a5345706d5",
+  assignmentsIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=ffea850b-8a37-4bd9-9bcf-92f2122bf9d0",
+  progressIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=4c09dd54-76f0-47cb-81bd-6df94c0bdcf9",
+  calendarIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=e233071f-ae5b-440b-b6a5-2a067b4e2248",
 } as const;
 
 const sidebarItems = [
@@ -372,33 +372,22 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
   return (
     <PageTransition>
-      <main className="min-h-screen overflow-x-hidden bg-[#f7f5f4]">
-        <header className="border-b border-black/5 bg-white">
-          <div className="mx-auto flex max-w-[1920px] items-center px-5 py-[5px] sm:px-8 xl:px-[104px]">
-            <Link className="shrink-0" href="/dashboard">
-              <Image
-                alt={brand.fullName}
-                className="h-auto w-[145px] object-contain sm:w-[177px]"
-                height={74}
-                priority
-                src={brand.logoSrc}
-                width={177}
-              />
-            </Link>
-          </div>
-        </header>
+      <main className="min-h-screen overflow-x-hidden bg-[#f9fafb] pb-24 sm:bg-[#f7f5f4] sm:pb-0">
 
-        <div className="mx-auto max-w-[1920px] px-4 pb-16 pt-6 sm:px-6 xl:px-0 xl:pb-24">
+
+        <div className="mx-auto max-w-[1920px] px-3 pb-14 pt-4 sm:px-6 sm:pt-6 xl:px-0 xl:pb-24">
           <div className="grid gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
-            <RevealSection className="xl:pr-7">
-              <aside className="overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] px-4 py-4 shadow-[0_18px_48px_rgba(254,198,0,0.18)] xl:sticky xl:top-6 xl:min-h-[530px] xl:rounded-l-[0] xl:rounded-r-[40px] xl:px-7 xl:py-12">
-                <nav className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:gap-1 xl:overflow-visible">
+            <RevealSection className="hidden xl:block xl:pr-7">
+              <aside className="sticky top-3 z-20 -mx-1 overflow-hidden rounded-[28px] border border-[#ffe08a] bg-[linear-gradient(180deg,#ffcb2f_0%,#ffe58f_100%)] px-3 py-3 shadow-[0_16px_36px_rgba(254,198,0,0.22)] xl:static xl:mx-0 xl:rounded-l-[0] xl:rounded-r-[40px] xl:border-none xl:bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] xl:px-7 xl:py-12 xl:shadow-[0_18px_48px_rgba(254,198,0,0.18)]">
+                <nav className="scrollbar-none flex snap-x gap-2 overflow-x-auto pb-0.5 xl:flex-col xl:gap-1 xl:overflow-visible">
                   {sidebarItems.map((item) => (
                     <Link
                       key={item.href}
                       className={cx(
-                        "flex min-w-max items-center gap-4 rounded-[22px] px-4 py-3 text-[15px] font-medium text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:px-5 xl:text-[18px]",
-                        ("active" in item && item.active) && "bg-white/16",
+                        "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
+                        ("active" in item && item.active)
+                          ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/16 xl:shadow-none"
+                          : "hover:bg-white/46 xl:hover:bg-white/20",
                       )}
                       href={item.href}
                     >
@@ -410,7 +399,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
               </aside>
             </RevealSection>
 
-            <section className="relative px-0 xl:pr-10">
+            <section className="relative px-0 sm:px-4 xl:pr-10">
               <div className="mx-auto max-w-[1368px]">
                 <RevealSection>
                   <div className="relative overflow-hidden rounded-[24px] bg-[#38c1ff] px-6 pb-12 pt-10 sm:px-10 lg:px-14 xl:min-h-[436px] xl:px-[70px] xl:pb-20 xl:pt-[52px]">
@@ -593,10 +582,10 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                                   >
                                     <Image
                                       alt={feature.label}
-                                      className="h-auto w-[101px] object-contain"
-                                      height={108}
+                                      className="h-auto w-[140px] object-contain drop-shadow-2xl"
+                                      height={140}
                                       src={feature.image}
-                                      width={101}
+                                      width={140}
                                     />
                                     <span className="text-[24px] font-semibold leading-tight">
                                       {feature.label}
@@ -615,10 +604,10 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                                   >
                                     <Image
                                       alt={feature.label}
-                                      className="h-auto w-[101px] object-contain"
-                                      height={108}
+                                      className="h-auto w-[140px] object-contain drop-shadow-2xl"
+                                      height={140}
                                       src={feature.image}
-                                      width={101}
+                                      width={140}
                                     />
                                     <span className="text-[24px] font-semibold leading-tight">
                                       {feature.label}

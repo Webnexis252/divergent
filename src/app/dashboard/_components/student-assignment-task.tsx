@@ -17,7 +17,7 @@ import {
 import type { AssignmentTask } from "../assignments/assignments-data";
 
 const imgTaskIllustration =
-  "https://www.figma.com/api/mcp/asset/9c1c3836-f9b9-477b-bb06-01dfec5a7040";
+  "https://api.dicebear.com/9.x/shapes/svg?seed=9c1c3836-f9b9-477b-bb06-01dfec5a7040";
 
 function ClockIcon() {
   return (
@@ -244,7 +244,7 @@ export function StudentAssignmentTask({
         <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
           <DashboardSidebar />
 
-          <section className="px-6 py-6 lg:px-[38px] lg:py-[18px]">
+          <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <div className="mx-auto max-w-[1293px] space-y-8">
               <RevealSection>
                 <section className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(135deg,#38c1ff_0%,#54cdfd_50%,#fec600_100%)] px-6 py-7 shadow-[0_18px_42px_rgba(56,193,255,0.25)] sm:px-8 lg:px-10">

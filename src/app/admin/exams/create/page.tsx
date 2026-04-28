@@ -485,7 +485,7 @@ export default function CreateExamPage() {
   const arrangedQuestionSections = groupQuestionsBySection(arrangedQuestions);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 lg:p-10">
+    <div className="mx-auto max-w-4xl space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-10">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-[13px] font-medium text-[#667085]">
         <button onClick={() => router.push("/admin/exams")} className="hover:text-black">Exams</button>

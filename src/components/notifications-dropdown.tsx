@@ -138,7 +138,7 @@ export function NotificationsDropdown() {
         {open && (
           <motion.div
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="absolute right-0 top-[calc(100%+10px)] z-50 w-[380px] overflow-hidden rounded-[20px] border border-black/8 bg-white shadow-[0_16px_48px_rgba(0,0,0,0.16)]"
+            className="absolute left-1/2 top-[calc(100%+10px)] z-50 w-[min(calc(100vw-1.5rem),380px)] -translate-x-1/2 overflow-hidden rounded-[20px] border border-black/8 bg-white shadow-[0_16px_48px_rgba(0,0,0,0.16)] sm:left-auto sm:right-0 sm:w-[380px] sm:translate-x-0"
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             initial={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.18 }}

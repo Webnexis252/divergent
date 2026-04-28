@@ -233,7 +233,7 @@ export function TeacherDoubtDetail() {
       <PageTransition>
         <TeacherTopBar />
 
-        <div className="mx-auto grid max-w-[1920px] gap-6 px-4 pb-16 pt-6 sm:px-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
+        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
           <TeacherSidebar />
 
           <main className="space-y-8 lg:pr-[160px]">

@@ -33,7 +33,7 @@ export default function CertificatesPage() {
       <PageTransition>
         <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
           <DashboardSidebar />
-          <section className="px-6 py-6 lg:px-[38px] lg:py-[18px]">
+          <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <div className="mx-auto max-w-[1100px] space-y-8">
 
               {/* Hero */}

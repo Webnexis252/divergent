@@ -150,7 +150,7 @@ export default function AdminStudentsPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-8 px-6 py-12 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
           <Surface className="relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8">
             <div className="pointer-events-none absolute inset-y-0 right-0 w-[32%] bg-[radial-gradient(circle_at_center,rgba(56,193,255,0.14),transparent_72%)]" />

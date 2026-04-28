@@ -448,7 +448,7 @@ export function LiveClassroomPage({
           </div>
         </header>
 
-        <main className="px-6 py-6 lg:px-10 lg:py-8">
+        <main className="px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
           <div className="mx-auto max-w-[1440px] space-y-6">
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
               <RevealSection>

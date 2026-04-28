@@ -7,7 +7,7 @@ export default async function AdminCalendarPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] px-6 py-12 lg:px-10">
+      <div className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
         <CalendarWorkspaceClient
           description={
             auth.role === "SUPER_ADMIN"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bell, Camera } from "lucide-react";
+import { Camera } from "lucide-react";
 import { motion } from "motion/react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/context/auth-context";
@@ -186,38 +186,6 @@ export default function StudentProfilePage() {
         <DashboardSidebar />
 
         <main className="min-h-screen bg-[#f8fafc]">
-          {/* Top bar */}
-          <div className="flex items-center justify-end gap-4 border-b border-gray-100 bg-white px-6 py-3 lg:px-10">
-            <button
-              aria-label="Notifications"
-              className="grid h-10 w-10 place-items-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
-              type="button"
-            >
-              <Bell className="h-5 w-5" />
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="relative h-10 w-10 shrink-0">
-                <div className="absolute inset-0 rounded-full bg-[#925fe2] p-[2.5px]">
-                  <div className="h-full w-full overflow-hidden rounded-full bg-[#fec600]">
-                    {(avatarPreview ?? user?.image) ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        alt={displayName}
-                        src={avatarPreview ?? user!.image!}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#fec600] to-[#ff9800] text-white text-xs font-bold">
-                        {displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "S"}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <span className="text-[15px] font-semibold text-gray-900">{displayName.toLowerCase()}</span>
-            </div>
-          </div>
-
           <div className="px-6 py-8 lg:px-12">
           <div className="mx-auto max-w-[1200px] space-y-8">
             {authLoading || loading ? (

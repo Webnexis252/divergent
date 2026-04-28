@@ -43,7 +43,7 @@ export default function SuperAdminOverviewPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1280px] space-y-8 px-6 py-12 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
         <div className="h-40 animate-pulse rounded-[32px] bg-white/70" />
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -70,7 +70,7 @@ export default function SuperAdminOverviewPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-8 px-6 py-12 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
           <section className="rounded-[34px] border border-white/70 bg-[linear-gradient(135deg,#1f2937_0%,#0f172a_55%,#374151_100%)] px-8 py-8 text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

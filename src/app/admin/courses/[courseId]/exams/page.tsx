@@ -108,7 +108,7 @@ export default function AdminCourseExamsPage({ params }: { params: Promise<{ cou
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-8 px-6 py-12 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
           <div className="flex items-center justify-between">
             <div>

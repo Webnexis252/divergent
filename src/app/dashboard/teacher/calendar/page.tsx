@@ -12,7 +12,7 @@ export default async function TeacherCalendarPage() {
         <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
           <TeacherSidebar />
 
-          <section className="px-6 py-6 lg:px-[38px] lg:py-[18px]">
+          <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <CalendarWorkspaceClient
               description="See upcoming live classes, assignment deadlines, and exam activity for the courses you teach in one shared scheduling surface."
               endpoint="/api/teacher/calendar"

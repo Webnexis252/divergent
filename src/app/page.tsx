@@ -9,29 +9,29 @@ import { BrandLogo } from "@/components/ui/brand-logo";
 
 const assets = {
   hero: "/hero-illustration.png",
-  examAccent: "https://www.figma.com/api/mcp/asset/5921cf41-d4df-4bb2-b14c-36fa2a3e18f5",
-  featureStructured: "https://www.figma.com/api/mcp/asset/edb95ceb-2f9e-4cbc-b065-04b6cfdb1273",
-  featureLive: "https://www.figma.com/api/mcp/asset/970ac95d-dc3f-4e97-b822-47f7efbb130f",
-  featureCommunity: "https://www.figma.com/api/mcp/asset/f737be70-1421-46c3-8e7e-97e4e0cab9c6",
-  featureProgress: "https://www.figma.com/api/mcp/asset/e8c21301-fb25-40a6-985b-8a671feaf0e2",
-  flowPath: "https://www.figma.com/api/mcp/asset/10ccb168-7609-4b49-bb6a-19f9d4a4fb49",
-  stepEnroll: "https://www.figma.com/api/mcp/asset/3252f9bf-34d1-4165-8fc3-bc22db1f765f",
-  stepAttend: "https://www.figma.com/api/mcp/asset/72fded02-6507-4cb4-b8fc-07a5a182ade7",
-  stepTrack: "https://www.figma.com/api/mcp/asset/329a0ba6-baf2-48c7-a985-dab69e9c3d3e",
-  skillGraphic: "https://www.figma.com/api/mcp/asset/e295b04c-eaed-4b95-9311-6e47fae623e1",
-  skillUiux: "https://www.figma.com/api/mcp/asset/c1cf0120-4b9c-4cf2-bb70-7c07e77ca40e",
-  skillMotion: "https://www.figma.com/api/mcp/asset/faa702f0-5c93-4e8c-8a8f-eb48fb86fe21",
-  skillFashion: "https://www.figma.com/api/mcp/asset/18bf7c89-d7c7-477c-84b9-3504be4c05be",
-  skillInterior: "https://www.figma.com/api/mcp/asset/43a1f338-c9ea-455f-82d2-28e6555d22e3",
-  skillProduct: "https://www.figma.com/api/mcp/asset/18490e76-24e5-4053-84f5-2adb4eb01970",
-  skillIndustrial: "https://www.figma.com/api/mcp/asset/aa4fde26-72cb-44b3-a0ba-2076c03b09d8",
-  featureLiveClasses: "https://www.figma.com/api/mcp/asset/125ed25f-dc3d-4ee0-a9f4-2dae5b98ec90",
-  featureDoubts: "https://www.figma.com/api/mcp/asset/d71398bd-ac43-437c-b559-a501c9cf8d02",
-  featureCommunityLearning: "https://www.figma.com/api/mcp/asset/403d205f-106f-4172-80f9-35bd92eaaa37",
-  featureMockTests: "https://www.figma.com/api/mcp/asset/2f3632cf-583a-4e89-9cb2-0a58c84c8470",
-  growthDashboard: "https://www.figma.com/api/mcp/asset/73e91ff3-885b-44db-bc1c-127e1a76bad7",
-  testimonialAvatar: "https://www.figma.com/api/mcp/asset/7fb76c2f-8e54-49ba-878e-5e4ff306445a",
-  testimonialQuote: "https://www.figma.com/api/mcp/asset/b4f800d0-a21f-4f65-8198-fc0cd748d21b",
+  examAccent: "https://api.dicebear.com/9.x/shapes/svg?seed=5921cf41-d4df-4bb2-b14c-36fa2a3e18f5",
+  featureStructured: "https://api.dicebear.com/9.x/shapes/svg?seed=edb95ceb-2f9e-4cbc-b065-04b6cfdb1273",
+  featureLive: "https://api.dicebear.com/9.x/shapes/svg?seed=970ac95d-dc3f-4e97-b822-47f7efbb130f",
+  featureCommunity: "https://api.dicebear.com/9.x/shapes/svg?seed=f737be70-1421-46c3-8e7e-97e4e0cab9c6",
+  featureProgress: "https://api.dicebear.com/9.x/shapes/svg?seed=e8c21301-fb25-40a6-985b-8a671feaf0e2",
+  flowPath: "https://api.dicebear.com/9.x/shapes/svg?seed=10ccb168-7609-4b49-bb6a-19f9d4a4fb49",
+  stepEnroll: "https://api.dicebear.com/9.x/shapes/svg?seed=3252f9bf-34d1-4165-8fc3-bc22db1f765f",
+  stepAttend: "https://api.dicebear.com/9.x/shapes/svg?seed=72fded02-6507-4cb4-b8fc-07a5a182ade7",
+  stepTrack: "https://api.dicebear.com/9.x/shapes/svg?seed=329a0ba6-baf2-48c7-a985-dab69e9c3d3e",
+  skillGraphic: "https://api.dicebear.com/9.x/shapes/svg?seed=e295b04c-eaed-4b95-9311-6e47fae623e1",
+  skillUiux: "https://api.dicebear.com/9.x/shapes/svg?seed=c1cf0120-4b9c-4cf2-bb70-7c07e77ca40e",
+  skillMotion: "https://api.dicebear.com/9.x/shapes/svg?seed=faa702f0-5c93-4e8c-8a8f-eb48fb86fe21",
+  skillFashion: "https://api.dicebear.com/9.x/shapes/svg?seed=18bf7c89-d7c7-477c-84b9-3504be4c05be",
+  skillInterior: "https://api.dicebear.com/9.x/shapes/svg?seed=43a1f338-c9ea-455f-82d2-28e6555d22e3",
+  skillProduct: "https://api.dicebear.com/9.x/shapes/svg?seed=18490e76-24e5-4053-84f5-2adb4eb01970",
+  skillIndustrial: "https://api.dicebear.com/9.x/shapes/svg?seed=aa4fde26-72cb-44b3-a0ba-2076c03b09d8",
+  featureLiveClasses: "https://api.dicebear.com/9.x/shapes/svg?seed=125ed25f-dc3d-4ee0-a9f4-2dae5b98ec90",
+  featureDoubts: "https://api.dicebear.com/9.x/shapes/svg?seed=d71398bd-ac43-437c-b559-a501c9cf8d02",
+  featureCommunityLearning: "https://api.dicebear.com/9.x/shapes/svg?seed=403d205f-106f-4172-80f9-35bd92eaaa37",
+  featureMockTests: "https://api.dicebear.com/9.x/shapes/svg?seed=2f3632cf-583a-4e89-9cb2-0a58c84c8470",
+  growthDashboard: "https://api.dicebear.com/9.x/shapes/svg?seed=73e91ff3-885b-44db-bc1c-127e1a76bad7",
+  testimonialAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=7fb76c2f-8e54-49ba-878e-5e4ff306445a",
+  testimonialQuote: "https://api.dicebear.com/9.x/shapes/svg?seed=b4f800d0-a21f-4f65-8198-fc0cd748d21b",
 } as const;
 
 const navItems = [
@@ -180,7 +180,7 @@ function landingButtonStyles({
     size === "header"
       ? "h-[46px] px-6 text-[15px] sm:text-[24px]"
       : size === "explore"
-        ? "h-[46px] w-[130px] text-[15px] sm:text-[24px]"
+        ? "h-[46px] w-[130px] text-[15px] sm:text-[22px]"
         : "min-h-[48px] px-6 text-[16px] sm:h-[56px] sm:min-w-[180px] sm:px-8 sm:text-[18px]";
 
   return cx(
@@ -224,7 +224,7 @@ function ExamCard({
   description: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-[10px] bg-white px-7 pb-10 pt-14 shadow-[0_4px_12.4px_rgba(0,0,0,0.25)]">
+    <div className="relative overflow-hidden rounded-[18px] bg-white px-5 pb-7 pt-11 shadow-[0_4px_12.4px_rgba(0,0,0,0.18)] sm:rounded-[10px] sm:px-7 sm:pb-10 sm:pt-14 sm:shadow-[0_4px_12.4px_rgba(0,0,0,0.25)]">
       <div className="absolute right-5 top-5 h-12 w-12 rounded-full bg-[#ffe36f]" />
       <Image
         alt=""
@@ -259,7 +259,7 @@ function SkillCard({
   image: string;
 }) {
   return (
-    <div className="flex min-h-[250px] flex-col items-center justify-center gap-8 rounded-[10px] bg-white px-10 py-12 text-center shadow-[0_4px_10px_rgba(0,0,0,0.25)]">
+    <div className="flex min-h-[210px] flex-col items-center justify-center gap-6 rounded-[18px] bg-white px-6 py-8 text-center shadow-[0_4px_10px_rgba(0,0,0,0.16)] sm:min-h-[250px] sm:rounded-[10px] sm:px-10 sm:py-12 sm:shadow-[0_4px_10px_rgba(0,0,0,0.25)]">
       <Image
         alt={title}
         className="h-auto w-full max-w-[146px] object-contain"
@@ -293,7 +293,7 @@ function StepCard({
 }) {
   return (
     <Reveal className={className}>
-      <div className="relative flex max-w-[27rem] items-end gap-5">
+      <div className="relative flex max-w-[27rem] items-end gap-4 sm:gap-5">
         <Image
           alt={title}
           className="h-auto w-[4.75rem] object-contain sm:w-auto"
@@ -303,7 +303,7 @@ function StepCard({
         />
 
         <div className="relative pb-2">
-          <span className="pointer-events-none absolute right-0 top-[-5.75rem] text-[7rem] font-semibold leading-none text-black/10 sm:text-[12.5rem]">
+          <span className="pointer-events-none absolute right-0 top-[-3.9rem] text-[6rem] font-semibold leading-none text-black/10 sm:top-[-5.75rem] sm:text-[12.5rem]">
             {number}
           </span>
           <h3 className="relative z-10 text-[clamp(1.6rem,2.4vw,2rem)] font-semibold tracking-[-0.03em] text-black">
@@ -378,7 +378,7 @@ function FeatureSpotlight({
       <div
         className={cx(
           "grid items-center gap-10 lg:grid-cols-2",
-          isPanel && "rounded-[20px] px-8 py-10 shadow-[0_4px_11.3px_rgba(0,0,0,0.14)] lg:min-h-[37rem] lg:px-16",
+          isPanel && "rounded-[22px] px-5 py-8 shadow-[0_4px_11.3px_rgba(0,0,0,0.12)] sm:px-8 sm:py-10 lg:min-h-[37rem] lg:px-16",
           tone === "yellow" && "bg-[#ffc107]",
           tone === "blue" && "bg-[#38d6ff]",
           !isPanel && "py-4 lg:min-h-[36rem]",
@@ -401,7 +401,7 @@ function TestimonialCard({
   quote: string;
 }) {
   return (
-    <div className="relative rounded-[10px] bg-white px-9 pb-9 pt-8 shadow-[0_4px_10px_rgba(0,0,0,0.25)]">
+    <div className="relative rounded-[18px] bg-white px-5 pb-7 pt-6 shadow-[0_4px_10px_rgba(0,0,0,0.16)] sm:rounded-[10px] sm:px-9 sm:pb-9 sm:pt-8 sm:shadow-[0_4px_10px_rgba(0,0,0,0.25)]">
       <Image
         alt=""
         aria-hidden
@@ -440,7 +440,7 @@ export default function HomePage() {
   return (
     <main className="overflow-x-hidden bg-[#f7f6f6] text-black">
       <header className="bg-white">
-        <div className="mx-auto flex min-h-[84px] w-full max-w-[1920px] items-center justify-between gap-6 px-5 py-2 sm:px-8 lg:px-12 xl:px-[95px]">
+        <div className="mx-auto flex min-h-[76px] w-full max-w-[1920px] items-center justify-between gap-3 px-4 py-2 sm:min-h-[84px] sm:gap-6 sm:px-8 lg:px-12 xl:px-[95px]">
           <BrandLogo href="/" priority size="md" />
 
           <nav className="hidden items-center gap-14 lg:flex">
@@ -461,8 +461,8 @@ export default function HomePage() {
         </div>
       </header>
 
-      <section className="px-5 pb-12 pt-10 sm:px-8 lg:px-12 xl:px-[92px] xl:pb-20 xl:pt-[101px]">
-        <div className="mx-auto grid max-w-[1653px] items-center gap-12 xl:grid-cols-[minmax(0,776px)_minmax(0,701px)] xl:gap-[156px]">
+      <section className="px-4 pb-10 pt-8 sm:px-8 sm:pb-12 sm:pt-10 lg:px-12 xl:px-[92px] xl:pb-20 xl:pt-[101px]">
+        <div className="mx-auto grid max-w-[1653px] items-center gap-9 sm:gap-12 xl:grid-cols-[minmax(0,776px)_minmax(0,701px)] xl:gap-[156px]">
           <Reveal className="max-w-[48.5rem]" y={28}>
             <h1 className="text-[clamp(2.7rem,6vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.05em] text-black">
               Learn Smarter, Not Harder.
@@ -514,18 +514,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-5 py-8 sm:px-8 lg:px-12 xl:px-[218px]" id="about">
+      <section className="px-4 py-7 sm:px-8 sm:py-8 lg:px-12 xl:px-[218px]" id="about">
         <div className="mx-auto max-w-[1485px]">
           <Reveal>
             <p className="text-center text-[clamp(1rem,1.9vw,1.75rem)] font-semibold text-black">
               Everything you need to crack design exams — without switching platforms.
             </p>
 
-            <div className="mt-10 rounded-[10px] bg-white px-8 py-10 shadow-[0_4px_10.9px_rgba(0,0,0,0.25)] md:px-12 md:py-12 lg:px-[100px] lg:py-[48px]">
-              <div className="flex flex-col gap-7 md:flex-row md:items-center md:gap-0">
+            <div className="mt-8 rounded-[20px] bg-white px-4 py-5 shadow-[0_4px_10.9px_rgba(0,0,0,0.16)] sm:mt-10 sm:rounded-[10px] sm:px-8 sm:py-10 sm:shadow-[0_4px_10.9px_rgba(0,0,0,0.25)] md:px-12 md:py-12 lg:px-[100px] lg:py-[48px]">
+              <div className="grid grid-cols-2 gap-4 md:flex md:items-center md:gap-0">
                 {featureHighlights.map((feature, index) => (
                   <Fragment key={feature.title}>
-                    <div className="flex flex-1 flex-col items-center justify-center gap-7 px-6 text-center">
+                    <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-[16px] bg-[#f7f6f6] px-3 py-5 text-center md:gap-7 md:bg-transparent md:px-6 md:py-0">
                       <Image
                         alt={feature.title}
                         className="h-auto max-h-[9.5rem] w-auto object-contain"
@@ -547,7 +547,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-5 py-18 sm:px-8 lg:px-12 xl:px-[151px]" id="courses">
+      <section className="px-4 py-12 sm:px-8 sm:py-18 lg:px-12 xl:px-[151px]" id="courses">
         <div className="mx-auto max-w-[1618px]">
           <Reveal>
             <SectionTitle
@@ -567,7 +567,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-5 py-18 sm:px-8 lg:px-12 xl:px-[108px]" id="upskilling">
+      <section className="px-4 py-12 sm:px-8 sm:py-18 lg:px-12 xl:px-[108px]" id="upskilling">
         <div className="mx-auto max-w-[1704px]">
           <Reveal>
             <SectionTitle
@@ -577,7 +577,7 @@ export default function HomePage() {
             />
           </Reveal>
 
-          <div className="mt-14 space-y-[4.6875rem]">
+          <div className="mt-10 space-y-5 sm:mt-14 sm:space-y-[4.6875rem]">
             {skillRows.map((row, rowIndex) => (
               <div
                 key={`skill-row-${rowIndex}`}
@@ -598,7 +598,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden px-5 py-20 sm:px-8 lg:px-12 xl:px-[194px]">
+      <section className="relative overflow-hidden px-4 py-14 sm:px-8 sm:py-20 lg:px-12 xl:px-[194px]">
         <div className="absolute left-[-10rem] top-[14rem] h-[24rem] w-[24rem] rounded-full bg-[#ffc107] sm:h-[33rem] sm:w-[33rem]" />
         <div className="absolute right-[-7rem] top-[4rem] h-[20rem] w-[20rem] rounded-full bg-[#38c1ff] sm:h-[28rem] sm:w-[28rem]" />
 
@@ -651,7 +651,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-5 py-18 sm:px-8 lg:px-12 xl:px-[160px]">
+      <section className="px-4 py-12 sm:px-8 sm:py-18 lg:px-12 xl:px-[160px]">
         <div className="mx-auto max-w-[1549px]">
           <Reveal className="mx-auto max-w-[83.4375rem] text-center">
             <SectionTitle
@@ -661,7 +661,7 @@ export default function HomePage() {
             />
           </Reveal>
 
-          <div className="mt-16 space-y-10">
+          <div className="mt-10 space-y-6 sm:mt-16 sm:space-y-10">
             <FeatureSpotlight
               description="Attend live sessions or learn anytime with recorded lectures."
               image={assets.featureLiveClasses}
@@ -704,7 +704,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-5 py-18 sm:px-8 lg:px-12" id="pricing">
+      <section className="px-4 py-12 sm:px-8 sm:py-18 lg:px-12" id="pricing">
         <div className="mx-auto max-w-[1223px]">
           <Reveal className="text-center">
             <h2 className="text-[clamp(2rem,4vw,3rem)] font-semibold tracking-[-0.04em] text-black">
@@ -712,7 +712,7 @@ export default function HomePage() {
             </h2>
           </Reveal>
 
-          <Reveal className="relative mt-12 rounded-[20px] bg-white p-5 shadow-[0_4px_11.3px_5px_rgba(0,0,0,0.25)] sm:p-7">
+          <Reveal className="relative mt-8 rounded-[20px] bg-white p-3 shadow-[0_4px_11.3px_rgba(0,0,0,0.16)] sm:mt-12 sm:p-7 sm:shadow-[0_4px_11.3px_5px_rgba(0,0,0,0.25)]">
             <div className="absolute bottom-[6%] left-0 top-[6%] hidden w-[6rem] rounded-r-[20px] bg-[#ffc107] lg:block" />
             <Image
               alt="Divergent analytics dashboard"
@@ -725,7 +725,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-5 pb-24 pt-18 sm:px-8 lg:px-12 xl:px-[153px]" id="testimonials">
+      <section className="px-4 pb-20 pt-12 sm:px-8 sm:pb-24 sm:pt-18 lg:px-12 xl:px-[153px]" id="testimonials">
         <div className="mx-auto max-w-[1579px]">
           <Reveal className="mx-auto max-w-[45rem] text-center">
             <SectionTitle

@@ -17,7 +17,7 @@ export default async function AdminExamsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl p-8 lg:p-12">
+    <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-12">
       <div className="space-y-8">
         <section className="relative overflow-hidden rounded-[30px] bg-gradient-to-r from-[#2563eb] via-[#3b82f6] to-[#60a5fa] px-6 py-10 text-white shadow-[0_24px_48px_rgba(59,130,246,0.3)] sm:px-8 lg:px-12 lg:py-12">
           <div className="relative z-10 flex items-start justify-between gap-4">

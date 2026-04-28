@@ -42,21 +42,21 @@ import {
 
 const assets = {
   heroIllustration:
-    "https://www.figma.com/api/mcp/asset/75c44446-493a-4847-aea9-82ffdd5154ae",
+    "https://api.dicebear.com/9.x/shapes/svg?seed=75c44446-493a-4847-aea9-82ffdd5154ae",
   goalsMascot:
-    "https://www.figma.com/api/mcp/asset/52d69ee5-f3a1-45fc-9e50-0d2dd9a35209",
+    "https://api.dicebear.com/9.x/shapes/svg?seed=52d69ee5-f3a1-45fc-9e50-0d2dd9a35209",
   studyWeekly:
-    "https://www.figma.com/api/mcp/asset/fb5afafa-601e-463f-9876-2fecdb2a6f4b",
+    "https://api.dicebear.com/9.x/shapes/svg?seed=fb5afafa-601e-463f-9876-2fecdb2a6f4b",
   streak:
-    "https://www.figma.com/api/mcp/asset/bb63682e-9c1d-4902-a113-58530742394f",
+    "https://api.dicebear.com/9.x/shapes/svg?seed=bb63682e-9c1d-4902-a113-58530742394f",
   goalStudy:
-    "https://www.figma.com/api/mcp/asset/d305095b-367f-4355-9389-d8f4b9a4fd46",
+    "https://api.dicebear.com/9.x/shapes/svg?seed=d305095b-367f-4355-9389-d8f4b9a4fd46",
   goalAssignments:
-    "https://www.figma.com/api/mcp/asset/f3c5b0a8-0354-4814-aeb1-46902c7b215c",
+    "https://api.dicebear.com/9.x/shapes/svg?seed=f3c5b0a8-0354-4814-aeb1-46902c7b215c",
   goalLectures:
-    "https://www.figma.com/api/mcp/asset/5b102e2e-e50e-4cca-af6d-6ef4b2cae47f",
+    "https://api.dicebear.com/9.x/shapes/svg?seed=5b102e2e-e50e-4cca-af6d-6ef4b2cae47f",
   goalReview:
-    "https://www.figma.com/api/mcp/asset/906de174-dd1c-464f-a568-fbcd9adcfbd0",
+    "https://api.dicebear.com/9.x/shapes/svg?seed=906de174-dd1c-464f-a568-fbcd9adcfbd0",
 } as const;
 
 const goalImages = [
@@ -883,11 +883,12 @@ export default function DashboardProgressPage() {
       : defaultMastery;
 
   return (
-    <PageTransition>
-      <div className="mx-auto grid max-w-[1920px] gap-8 text-black lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-        <RevealSection className="lg:pr-7 py-6">
-          <aside className="overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] px-4 py-4 shadow-[0_18px_48px_rgba(254,198,0,0.18)] lg:sticky lg:top-6 lg:min-h-[530px] lg:rounded-l-[0] lg:rounded-r-[40px] lg:px-7 lg:py-12">
-            <nav className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-1 lg:overflow-visible">
+    <div className="text-black bg-[#f9fafb] min-h-screen pb-24 sm:bg-[#f7f5f4] sm:pb-0">
+      <PageTransition>
+        <div className="mx-auto grid max-w-[1920px] gap-8 text-black lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
+          <RevealSection className="hidden lg:block lg:pr-7 py-6">
+            <aside className="sticky top-3 z-20 -mx-1 overflow-hidden rounded-[28px] border border-[#ffe08a] bg-[linear-gradient(180deg,#ffcb2f_0%,#ffe58f_100%)] px-3 py-3 shadow-[0_16px_36px_rgba(254,198,0,0.22)] lg:static lg:mx-0 lg:rounded-l-[0] lg:rounded-r-[40px] lg:border-none lg:bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] lg:px-7 lg:py-12 lg:shadow-[0_18px_48px_rgba(254,198,0,0.18)]">
+            <nav className="scrollbar-none flex snap-x gap-2 overflow-x-auto pb-0.5 lg:flex-col lg:gap-1 lg:overflow-visible">
               {sidebarItems.map((item) => {
                 let href: string = item.href;
                 if (item.label === "Profile" && user?.role === "MENTOR") {
@@ -899,8 +900,10 @@ export default function DashboardProgressPage() {
                   <Link
                     key={item.href}
                     className={cx(
-                      "flex min-w-max items-center gap-4 rounded-[22px] px-4 py-3 text-[15px] font-medium text-black transition-colors duration-[var(--transition-fast)] lg:min-h-[56px] lg:px-5 lg:text-[18px]",
-                      active ? "bg-white/40 shadow-sm" : "hover:bg-white/20",
+                      "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] lg:min-h-[56px] lg:gap-4 lg:rounded-[22px] lg:bg-transparent lg:px-5 lg:py-3 lg:text-[18px] lg:font-medium",
+                      active
+                        ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] lg:bg-white/40 lg:shadow-sm"
+                        : "hover:bg-white/46 lg:hover:bg-white/20",
                     )}
                     href={href}
                   >
@@ -913,7 +916,7 @@ export default function DashboardProgressPage() {
           </aside>
         </RevealSection>
 
-        <main className="px-6 py-6 lg:px-10 lg:py-6">
+        <main className="px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-6">
           <div className="mx-auto max-w-[1280px] space-y-8">
             <HeroBanner
               courseCount={courses.length}
@@ -1156,5 +1159,6 @@ export default function DashboardProgressPage() {
         </main>
       </div>
     </PageTransition>
+    </div>
   );
 }

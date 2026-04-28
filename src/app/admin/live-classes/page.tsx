@@ -112,7 +112,7 @@ export default function AdminLiveClassesPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-8 px-6 py-12 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
         {/* Hero */}
         <RevealSection>
           <section className="relative overflow-hidden rounded-[34px] bg-gradient-to-r from-[#7c3aed] via-[#8b5cf6] to-[#a78bfa] px-8 py-10 text-white shadow-[0_24px_60px_rgba(124,58,237,0.28)]">

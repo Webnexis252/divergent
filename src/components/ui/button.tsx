@@ -42,7 +42,7 @@ export function buttonStyles({
   className?: string;
 }) {
   return cx(
-    "inline-flex items-center justify-center gap-2 rounded-[var(--radius-pill)] font-semibold tracking-[-0.01em] transition-[transform,background-color,border-color,box-shadow,color,opacity] duration-[var(--transition-fast)] ease-[var(--ease-standard)] focus-visible:outline-none disabled:pointer-events-none",
+    "inline-flex max-w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] text-center font-semibold tracking-[-0.01em] transition-[transform,background-color,border-color,box-shadow,color,opacity] duration-[var(--transition-fast)] ease-[var(--ease-standard)] focus-visible:outline-none disabled:pointer-events-none",
     variantClasses[variant],
     sizeClasses[size],
     block && "w-full",
@@ -94,7 +94,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading ? <Spinner className="h-4 w-4" /> : null}
-        <span>{children}</span>
+        <span className="min-w-0 truncate">{children}</span>
       </motion.button>
     );
   },

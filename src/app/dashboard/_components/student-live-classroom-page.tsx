@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
@@ -58,6 +58,28 @@ import { VideoConference } from "./video-conference";
 import useSWR from "swr";
 import { apiClient } from "@/lib/api-client";
 
+const MOBILE_MEDIA_QUERY = "(max-width: 767px)";
+
+function subscribeToMobileViewport(callback: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const media = window.matchMedia(MOBILE_MEDIA_QUERY);
+  media.addEventListener("change", callback);
+
+  return () => {
+    media.removeEventListener("change", callback);
+  };
+}
+
+function getMobileViewportSnapshot() {
+  return typeof window !== "undefined" && window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+}
+
+function getMobileViewportServerSnapshot() {
+  return false;
+}
 
 
 
@@ -128,7 +150,13 @@ export function StudentLiveClassroomPage({
   dataEndpoint: string;
 }) {
   const { user } = useAuth();
-  const [messagesOpen, setMessagesOpen] = useState(true);
+  const isMobileViewport = useSyncExternalStore(
+    subscribeToMobileViewport,
+    getMobileViewportSnapshot,
+    getMobileViewportServerSnapshot,
+  );
+  const [desktopMessagesOpen, setDesktopMessagesOpen] = useState(true);
+  const [mobileMessagesOpen, setMobileMessagesOpen] = useState(false);
   const [meetStarted, setMeetStarted] = useState(false);
   const [attendanceMarked, setAttendanceMarked] = useState(false);
 
@@ -142,6 +170,17 @@ export function StudentLiveClassroomPage({
   }, [data]);
   const meta = toneMeta[tone];
   const displayName = user?.name?.trim() || "Student";
+  const messagesOpen = isMobileViewport ? mobileMessagesOpen : desktopMessagesOpen;
+  const handleMessagesOpenChange = useCallback(
+    (open: boolean) => {
+      if (isMobileViewport) {
+        setMobileMessagesOpen(open);
+        return;
+      }
+      setDesktopMessagesOpen(open);
+    },
+    [isMobileViewport],
+  );
 
 
 
@@ -228,62 +267,28 @@ export function StudentLiveClassroomPage({
   return (
     <PageTransition>
       <main className="min-h-screen overflow-x-hidden bg-[#f7f5f4]">
-        <header className="border-b border-black/5 bg-white/88 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-[1920px] items-center gap-4 px-5 py-4 sm:px-6 lg:px-8 xl:px-14">
-            <Link className="shrink-0" href="/dashboard">
-              <Image
-                alt={brand.fullName}
-                className="h-auto w-[150px] object-contain sm:w-[177px]"
-                height={74}
-                priority
-                src={brand.logoSrc}
-                width={177}
-              />
-            </Link>
 
-            <div className="hidden min-w-0 flex-1 lg:block">
-              <GlobalSearch />
-            </div>
 
-            <div className="ml-auto flex items-center gap-3">
-              <NotificationsDropdown />
-
-              <div className="flex items-center gap-2.5">
-                <div className="overflow-hidden rounded-full border-4 border-[#925fe2] bg-white shadow-[8px_8px_48px_8px_rgba(0,0,0,0.24)]">
-                  <Image
-                    alt={displayName}
-                    className="h-10 w-10 object-cover"
-                    height={48}
-                    src={user?.image || assets.headerAvatar}
-                    width={48}
-                  />
-                </div>
-                <p className="hidden text-[15px] font-semibold text-black sm:block">
-                  {displayName}
-                </p>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="mx-auto max-w-[1920px] px-4 py-6 sm:px-6 lg:px-8 xl:px-0 xl:py-8">
-          <div className="grid gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
+        <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-0 xl:py-8">
+          <div className="grid gap-4 sm:gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
             <RevealSection className="xl:pr-7">
-              <aside className="overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] px-4 py-4 shadow-[0_18px_48px_rgba(254,198,0,0.18)] xl:sticky xl:top-6 xl:min-h-[530px] xl:rounded-l-[0] xl:rounded-r-[40px] xl:px-7 xl:py-12">
-                <nav className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:gap-1 xl:overflow-visible">
+              <aside className="sticky top-3 z-20 -mx-1 overflow-hidden rounded-[28px] border border-[#ffe08a] bg-[linear-gradient(180deg,#ffcb2f_0%,#ffe58f_100%)] px-3 py-3 shadow-[0_16px_36px_rgba(254,198,0,0.22)] xl:static xl:mx-0 xl:rounded-l-[0] xl:rounded-r-[40px] xl:border-none xl:bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] xl:px-4 xl:py-12 xl:shadow-[0_18px_48px_rgba(254,198,0,0.18)]">
+                <nav className="scrollbar-none flex snap-x gap-2 overflow-x-auto pb-0.5 xl:flex-col xl:gap-1 xl:overflow-visible">
                   {sidebarItems.map((item) => {
                     const Icon = item.icon;
                     return (
                       <Link
                         key={item.href}
                         className={cx(
-                          "flex min-w-max items-center gap-4 rounded-[22px] px-4 py-3 text-[15px] font-medium text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:px-5 xl:text-[18px]",
-                          ("active" in item && item.active) && "bg-white/16",
+                          "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
+                          ("active" in item && item.active)
+                            ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/16 xl:shadow-none"
+                            : "hover:bg-white/46 xl:hover:bg-white/20",
                         )}
                         href={item.href}
                       >
-                        <Icon className="h-[22px] w-[22px] stroke-[2]" aria-hidden />
-                        <span>{item.label}</span>
+                        <Icon className="h-4.5 w-4.5 stroke-[2] xl:h-[22px] xl:w-[22px]" aria-hidden />
+                        <span className="whitespace-nowrap">{item.label}</span>
                       </Link>
                     );
                   })}
@@ -291,20 +296,20 @@ export function StudentLiveClassroomPage({
               </aside>
             </RevealSection>
 
-            <section className="px-0 xl:pr-10">
-              <div className="mx-auto max-w-[1160px] space-y-10">
+            <section className="min-w-0 px-0 xl:pr-10">
+              <div className="mx-auto max-w-[1160px] space-y-6 sm:space-y-10">
                 <RevealSection>
                   <div
                     className={cx(
-                      "relative overflow-hidden rounded-[24px] px-6 py-8 shadow-[0_4px_10px_rgba(0,0,0,0.16)] sm:px-8 sm:py-10",
+                      "relative overflow-hidden rounded-[30px] px-5 py-6 shadow-[0_18px_44px_rgba(15,23,42,0.16)] sm:rounded-[24px] sm:px-8 sm:py-10 sm:shadow-[0_4px_10px_rgba(0,0,0,0.16)]",
                       meta.accentClass,
                     )}
                   >
-                    <div className="pointer-events-none absolute inset-y-0 right-0 w-[45%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.28),transparent_68%)]" />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[45%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.28),transparent_68%)] sm:block" />
                     <div className="relative z-10 grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-center">
-                      <div className="max-w-[42rem] space-y-6">
+                      <div className="max-w-[42rem] space-y-5 sm:space-y-6">
                         <div>
-                          <div className="mb-4 inline-flex rounded-full bg-black/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em]">
+                          <div className="mb-3 inline-flex rounded-full bg-black/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em]">
                             {meta.heroEyebrow}
                           </div>
                           <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -322,15 +327,15 @@ export function StudentLiveClassroomPage({
                               </span>
                             ) : null}
                           </div>
-                          <h1 className="max-w-[18ch] text-[clamp(2rem,4vw,2.85rem)] font-semibold leading-[1.06] tracking-[-0.04em]">
+                          <h1 className="max-w-[12ch] text-[2.25rem] font-semibold leading-[1.02] tracking-[-0.05em] sm:max-w-[18ch] sm:text-[clamp(2rem,4vw,2.85rem)] sm:leading-[1.06] sm:tracking-[-0.04em]">
                             {focusClass?.title ?? meta.heroTitle}
                           </h1>
-                          <p className="mt-3 max-w-[45rem] text-[16px] leading-7 text-current/88">
+                          <p className="mt-3 max-w-[32rem] text-[14px] leading-6 text-current/86 sm:max-w-[45rem] sm:text-[16px] sm:leading-7 sm:text-current/88">
                             {focusClass?.description?.trim() || meta.heroDescription}
                           </p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
                           {focusClass ? (
                             <span className="rounded-full bg-black/10 px-4 py-1.5 text-[14px] font-medium backdrop-blur">
                               {formatLongSessionDate(focusClass.startTime)}
@@ -343,10 +348,10 @@ export function StudentLiveClassroomPage({
                           ) : null}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3">
+                        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                           {tone === "completed" ? (
                             <Link
-                              className={actionButtonStyles(meta.actionClass)}
+                              className={actionButtonStyles(`col-span-2 w-full sm:w-auto ${meta.actionClass}`)}
                               href={primaryHref}
                               target={focusClass?.recordingUrl ? "_blank" : undefined}
                             >
@@ -355,7 +360,7 @@ export function StudentLiveClassroomPage({
                             </Link>
                           ) : (
                             <button
-                              className={actionButtonStyles(meta.actionClass)}
+                              className={actionButtonStyles(`col-span-2 w-full sm:w-auto ${meta.actionClass}`)}
                               onClick={meetStarted ? endMeeting : startMeeting}
                               type="button"
                             >
@@ -369,7 +374,7 @@ export function StudentLiveClassroomPage({
                           )}
 
                           <button
-                            className={actionButtonStyles(attendanceMarked ? "bg-[#f0fdf4] text-[#15803d]" : meta.secondaryActionClass)}
+                            className={actionButtonStyles(`w-full sm:w-auto ${attendanceMarked ? "bg-[#f0fdf4] text-[#15803d]" : meta.secondaryActionClass}`)}
                             onClick={() => markAttendance("JOIN")}
                             disabled={attendanceMarked || tone !== "live"}
                             type="button"
@@ -379,7 +384,7 @@ export function StudentLiveClassroomPage({
                           </button>
 
                           <Link
-                            className={actionButtonStyles(meta.secondaryActionClass)}
+                            className={actionButtonStyles(`w-full sm:w-auto ${meta.secondaryActionClass}`)}
                             href={courseHref}
                           >
                             <BookOpen className="h-4 w-4" />
@@ -387,8 +392,8 @@ export function StudentLiveClassroomPage({
                           </Link>
 
                           <button
-                            className={actionButtonStyles(meta.secondaryActionClass)}
-                            onClick={() => setMessagesOpen((current) => !current)}
+                            className={actionButtonStyles(`w-full sm:w-auto ${meta.secondaryActionClass}`)}
+                            onClick={() => handleMessagesOpenChange(!messagesOpen)}
                             type="button"
                           >
                             <MessageCircleMore className="h-4 w-4" />
@@ -397,16 +402,16 @@ export function StudentLiveClassroomPage({
                         </div>
                       </div>
 
-                      <FloatPulse className="mx-auto w-full max-w-[300px] xl:mx-0 xl:justify-self-end">
-                        <div className="rounded-[28px] bg-white/16 p-5 backdrop-blur-md">
+                      <FloatPulse className="mx-auto w-full xl:mx-0 xl:max-w-[300px] xl:justify-self-end">
+                        <div className="rounded-[24px] bg-white/16 p-4 backdrop-blur-md sm:rounded-[28px] sm:p-5">
                           <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-current/72">
                             {meta.railLabel}
                           </p>
-                          <p className="mt-4 text-[2rem] font-semibold tracking-[-0.04em]">
+                          <p className="mt-3 text-[1.5rem] font-semibold tracking-[-0.04em] sm:mt-4 sm:text-[2rem]">
                             {focusClass ? meta.railValue : "Unavailable"}
                           </p>
-                          <div className="mt-5 space-y-3">
-                            <div className="rounded-[18px] bg-black/10 px-4 py-4">
+                          <div className="mt-4 grid gap-2 sm:mt-5 sm:space-y-3">
+                            <div className="rounded-[18px] bg-black/10 px-4 py-3.5 sm:py-4">
                               <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-current/62">
                                 Session Date
                               </p>
@@ -416,7 +421,7 @@ export function StudentLiveClassroomPage({
                                   : "Pending"}
                               </p>
                             </div>
-                            <div className="rounded-[18px] bg-black/10 px-4 py-4">
+                            <div className="rounded-[18px] bg-black/10 px-4 py-3.5 sm:py-4">
                               <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-current/62">
                                 Relative Time
                               </p>
@@ -428,7 +433,7 @@ export function StudentLiveClassroomPage({
                                   : "Unknown"}
                               </p>
                             </div>
-                            <div className="rounded-[18px] bg-black/10 px-4 py-4">
+                            <div className="rounded-[18px] bg-black/10 px-4 py-3.5 sm:py-4">
                               <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-current/62">
                                 Learners
                               </p>
@@ -463,7 +468,7 @@ export function StudentLiveClassroomPage({
                 ) : (
                   <>
                     <RevealSection delay={0.04}>
-                      <StaggerGrid className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                      <StaggerGrid className="grid gap-3 sm:gap-5 md:grid-cols-2 xl:grid-cols-4">
                         <MetricCard
                           hint="Exact calendar date for this class."
                           icon={CalendarClock}
@@ -494,7 +499,7 @@ export function StudentLiveClassroomPage({
                     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
                       <div className="space-y-6">
                         <RevealSection delay={0.08}>
-                          <section className="rounded-[24px] bg-white p-6 shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
+                          <section className="rounded-[28px] bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.08)] sm:rounded-[24px] sm:p-6 sm:shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
                             <div className="flex flex-col gap-3 border-b border-black/6 pb-5 sm:flex-row sm:items-center sm:justify-between">
                               <div>
                                 <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-black/42">
@@ -526,7 +531,7 @@ export function StudentLiveClassroomPage({
                                     initial={{ opacity: 0, y: 12 }}
                                     transition={{ duration: 0.28 }}
                                   >
-                                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
+                                    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
                                       <div className="space-y-5">
                                         <div className="inline-flex rounded-full bg-black/12 px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.16em]">
                                           {meta.heroEyebrow}
@@ -565,8 +570,8 @@ export function StudentLiveClassroomPage({
                                         </div>
                                       </div>
 
-                                      <FloatPulse className="mx-auto w-full max-w-[260px]">
-                                        <div className="rounded-[24px] bg-white/14 p-5 backdrop-blur">
+                                      <FloatPulse className="mx-auto w-full lg:max-w-[260px]">
+                                        <div className="rounded-[24px] bg-white/14 p-4 backdrop-blur sm:p-5">
                                           <div className="grid h-16 w-16 place-items-center rounded-[20px] bg-white/20 text-current">
                                             {tone === "completed" ? (
                                               <PlayCircle className="h-8 w-8" />
@@ -604,7 +609,7 @@ export function StudentLiveClassroomPage({
                         </RevealSection>
 
                         <RevealSection delay={0.1}>
-                          <section className="rounded-[24px] bg-white p-6 shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
+                          <section className="rounded-[28px] bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.08)] sm:rounded-[24px] sm:p-6 sm:shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
                             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
                               <div>
                                 <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-black/42">
@@ -666,15 +671,15 @@ export function StudentLiveClassroomPage({
                               courseTitle={focusClass.courseTitle}
                               currentUserId={user?.id}
                               open={messagesOpen}
-                              onToggleOpen={setMessagesOpen}
+                              onToggleOpen={handleMessagesOpenChange}
                             />
                           )}
                         </RevealSection>
                       </div>
 
-                      <div className="space-y-6 xl:sticky xl:top-6">
+                      <div className="order-first space-y-4 sm:space-y-6 xl:order-none xl:sticky xl:top-6">
                         <RevealSection delay={0.08}>
-                          <aside className="rounded-[24px] bg-white px-5 py-6 shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
+                          <aside className="rounded-[28px] bg-white px-5 py-6 shadow-[0_14px_34px_rgba(15,23,42,0.08)] sm:rounded-[24px] sm:shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
                             <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-black/42">
                               Live Class Summary
                             </p>

@@ -2,7 +2,7 @@
 import { DashboardSidebar } from "./sidebar-nav";
 
 const imgLogo =
-  "https://www.figma.com/api/mcp/asset/04cf30cc-4d94-4821-9048-97d9158381d2";
+  "https://api.dicebear.com/9.x/shapes/svg?seed=04cf30cc-4d94-4821-9048-97d9158381d2";
 
 export function DashboardPlaceholderPage({
   title,

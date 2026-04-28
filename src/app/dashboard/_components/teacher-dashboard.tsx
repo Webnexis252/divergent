@@ -141,7 +141,7 @@ export function TeacherDashboard() {
         <div className="mx-auto grid max-w-[1920px] gap-0 lg:grid-cols-[280px_minmax(0,1fr)]">
           <TeacherSidebar />
 
-          <main className="space-y-8 px-4 pb-16 pt-6 sm:px-6 lg:px-10 xl:px-14">
+          <main className="space-y-8 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:px-10 xl:px-14">
             <ParallaxHero className="rounded-[28px]">
               <RevealSection>
                 <section

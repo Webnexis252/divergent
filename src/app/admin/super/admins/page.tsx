@@ -70,7 +70,7 @@ export default function SuperAdminAdminsPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-8 px-6 py-12 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
         {/* Hero */}
         <RevealSection>
           <section className="relative overflow-hidden rounded-[34px] bg-gradient-to-r from-[#1e293b] via-[#334155] to-[#475569] px-8 py-10 text-white shadow-[0_24px_60px_rgba(15,23,42,0.30)]">

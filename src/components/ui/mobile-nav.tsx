@@ -106,7 +106,7 @@ export function MobileNav() {
 
   let items: typeof studentItems = [];
   let mainItems: typeof studentItems = [];
-  let bottomBarColor = "bg-white/85 backdrop-blur-2xl";
+  let bottomBarColor = "bg-white/88 backdrop-blur-2xl";
   let activeColor = "text-[#38c1ff]";
 
   if (section === "admin") {
@@ -119,7 +119,7 @@ export function MobileNav() {
   } else if (section === "teacher") {
     items = teacherItems;
     mainItems = items.slice(0, 3);
-    bottomBarColor = "bg-white/95 backdrop-blur-xl border-t border-[#f0f0f0]";
+    bottomBarColor = "bg-white/94 backdrop-blur-2xl";
     activeColor = "text-[#1b77ff]";
   } else {
     items = studentItems;
@@ -129,8 +129,8 @@ export function MobileNav() {
       studentItems[2], // Calendar
       studentItems[3], // Live Classes
     ];
-    bottomBarColor = "bg-white/90 backdrop-blur-2xl border-t border-black/5";
-    activeColor = "text-[#f97316]"; // Match student vibe
+    bottomBarColor = "bg-white/92 backdrop-blur-2xl";
+    activeColor = "text-[var(--brand-primary-strong)]";
   }
 
   // The bottom bar has 4 items + "Menu"
@@ -157,37 +157,66 @@ export function MobileNav() {
       <div className="h-20 lg:hidden" />
 
       {/* Bottom Navigation Bar */}
-      <div className={cx("fixed bottom-0 left-0 right-0 z-[100] flex items-center justify-around pb-safe pt-2 lg:hidden shadow-[0_-4px_24px_rgba(0,0,0,0.06)]", bottomBarColor)}>
-        {mainItems.map((item) => {
-          const active = isNavActive(pathname, item.href);
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-col items-center justify-center w-16 h-14 group"
-              onClick={() => setMenuOpen(false)}
-            >
-              <motion.div
-                animate={{ y: active ? -2 : 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <Icon className={cx("w-6 h-6 mb-1 transition-colors", active ? activeColor : "text-gray-400 group-hover:text-gray-600")} strokeWidth={active ? 2.5 : 2} />
-              </motion.div>
-              <span className={cx("text-[10px] font-semibold tracking-wide transition-colors", active ? activeColor : "text-gray-500")}>
-                {item.label}
-              </span>
-              {active && (
-                <motion.div layoutId="bottomNavIndicator" className={cx("absolute bottom-0 w-8 h-1 rounded-t-full", section === "student" ? "bg-[#f97316]" : section === "teacher" ? "bg-[#1b77ff]" : "bg-[var(--brand-primary-strong)]")} />
-              )}
-            </Link>
-          );
-        })}
+      <div className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden">
+        {/* Subtle shadow gradient transitioning up into the page */}
+        <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-[linear-gradient(to_top,rgba(0,0,0,0.04),transparent)]" />
+        
+        <div
+          className={cx(
+            "relative flex items-center justify-around px-2 pb-[max(env(safe-area-inset-bottom),0.8rem)] pt-2.5",
+            "bg-white/85 backdrop-blur-[24px] shadow-[0_-1px_0_rgba(0,0,0,0.06)]",
+            section === "teacher" ? "bg-white/95" : "",
+            section === "admin" ? "bg-white/90" : ""
+          )}
+        >
+          {mainItems.map((item) => {
+            const active = isNavActive(pathname, item.href);
+            const Icon = item.icon;
+            
+            const pillColor = section === "student" ? "bg-[#38c1ff]/15" : section === "teacher" ? "bg-[#1b77ff]/15" : "bg-[var(--brand-primary-soft)]";
+            const shadowColor = section === "student" ? "rgba(56,193,255,0.4)" : section === "teacher" ? "rgba(27,119,255,0.4)" : "rgba(0,0,0,0.1)";
 
-        <button onClick={() => setMenuOpen(true)} className="flex flex-col items-center justify-center w-16 h-14 group">
-          <Menu className="w-6 h-6 mb-1 text-gray-400 group-hover:text-gray-600" strokeWidth={2} />
-          <span className="text-[10px] font-semibold tracking-wide text-gray-500">Menu</span>
-        </button>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group relative flex flex-1 flex-col items-center justify-center px-1"
+                onClick={() => setMenuOpen(false)}
+              >
+                <div className="relative">
+                  <motion.div
+                    animate={{ scale: active ? 1.05 : 1 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    className={cx(
+                      "relative flex h-[32px] w-[56px] items-center justify-center rounded-full transition-colors duration-300",
+                      active ? pillColor : "bg-transparent"
+                    )}
+                  >
+                    <Icon 
+                      className={cx("h-[20px] w-[20px] transition-colors duration-300", active ? activeColor : "text-[#7a7c85] group-hover:text-[#4b4c52]")} 
+                      strokeWidth={active ? 2.5 : 2} 
+                      style={active ? { filter: `drop-shadow(0 2px 4px ${shadowColor})` } : undefined}
+                    />
+                  </motion.div>
+                </div>
+                <span className={cx("mt-1.5 w-full text-center text-[10px] font-semibold tracking-wide transition-all duration-300", active ? cx(activeColor, "opacity-100") : "text-[#7a7c85] opacity-80 group-hover:opacity-100")}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+
+          <button onClick={() => setMenuOpen(true)} className="group relative flex flex-1 flex-col items-center justify-center px-1" type="button">
+            <div className="relative">
+              <div className="relative flex h-[32px] w-[56px] items-center justify-center rounded-full transition-colors duration-300 bg-transparent">
+                <Menu className="h-[20px] w-[20px] text-[#7a7c85] transition-colors duration-300 group-hover:text-[#4b4c52]" strokeWidth={2} />
+              </div>
+            </div>
+            <span className="mt-1.5 w-full text-center text-[10px] font-semibold tracking-wide text-[#7a7c85] opacity-80 transition-all duration-300 group-hover:opacity-100">
+              Menu
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Full Screen Menu Drawer */}
@@ -197,50 +226,62 @@ export function MobileNav() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm lg:hidden"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm lg:hidden"
             onClick={() => setMenuOpen(false)}
           >
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-[32px] bg-white px-6 pb-24 pt-8 shadow-2xl"
+              transition={{ type: "spring", damping: 28, stiffness: 220 }}
+              className="absolute bottom-0 left-0 right-0 flex max-h-[90vh] flex-col rounded-t-[32px] border-t border-white/50 bg-[#f9fafb] px-4 pb-[max(env(safe-area-inset-bottom),2rem)] pt-6 shadow-[0_-8px_40px_rgba(0,0,0,0.12)] sm:px-6"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-1.5 rounded-full bg-gray-200" />
-              <button 
-                onClick={() => setMenuOpen(false)}
-                className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 text-gray-600 active:scale-95 transition-transform"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <h2 className="text-xl font-bold mb-6 text-gray-900 tracking-tight">Navigation</h2>
+              <div className="absolute left-1/2 top-3 h-1.5 w-12 -translate-x-1/2 rounded-full bg-black/10" />
+              <div className="flex items-center justify-between pb-4 pt-2">
+                <h2 className="text-[22px] font-bold tracking-tight text-[#111827]">Menu</h2>
+                <button 
+                  onClick={() => setMenuOpen(false)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-black/5 text-black/60 transition-colors active:bg-black/10"
+                  type="button"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
               
-              <div className="grid grid-cols-2 gap-3">
-                {items.map((item) => {
-                  const active = isNavActive(pathname, item.href);
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMenuOpen(false)}
-                      className={cx(
-                        "flex flex-col items-start p-4 rounded-[20px] transition-all",
-                        active 
-                          ? section === "student" ? "bg-orange-50 border border-orange-100 text-orange-600" 
-                            : section === "teacher" ? "bg-blue-50 border border-blue-100 text-blue-600"
-                            : "bg-[var(--brand-primary-muted)] border border-[var(--brand-primary-light)] text-[var(--brand-primary-dark)]"
-                          : "bg-gray-50 border border-gray-100 text-gray-600 active:bg-gray-100"
-                      )}
-                    >
-                      <Icon className="w-6 h-6 mb-3" strokeWidth={active ? 2.5 : 2} />
-                      <span className="text-[13px] font-semibold">{item.label}</span>
-                    </Link>
-                  );
-                })}
+              <div className="flex-1 overflow-y-auto pb-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  {items.map((item) => {
+                    const active = isNavActive(pathname, item.href);
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMenuOpen(false)}
+                        className={cx(
+                          "group relative flex min-h-[110px] flex-col items-start justify-between rounded-[24px] p-5 transition-all active:scale-[0.97]",
+                          active 
+                            ? section === "student" ? "border border-[#ffe08a] bg-[#fffaf0] text-[#b45309] shadow-sm" 
+                              : section === "teacher" ? "bg-blue-50 border border-blue-100 text-blue-600 shadow-sm"
+                              : "bg-[var(--brand-primary-soft)] border border-[var(--line-strong)] text-[var(--brand-primary-dark)] shadow-sm"
+                            : "bg-white border border-[#e5e7eb] text-[#4b5563] shadow-sm active:bg-gray-50"
+                        )}
+                      >
+                        <div className={cx(
+                          "flex h-10 w-10 items-center justify-center rounded-[14px]",
+                          active
+                            ? section === "student" ? "bg-[#ffe08a]/30" : section === "teacher" ? "bg-blue-100" : "bg-white/50"
+                            : "bg-[#f3f4f6]"
+                        )}>
+                          <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.5 : 2} />
+                        </div>
+                        <span className="mt-4 text-[14px] font-semibold leading-tight">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             </motion.div>
           </motion.div>
