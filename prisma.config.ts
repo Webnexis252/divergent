@@ -12,6 +12,18 @@ function isSupabasePoolerUrl(value: string) {
   }
 }
 
+function isSupabaseTransactionPoolerUrl(value: string) {
+  try {
+    const candidate = new URL(value);
+    return (
+      candidate.hostname.endsWith(".pooler.supabase.com") &&
+      candidate.port === "6543"
+    );
+  } catch {
+    return false;
+  }
+}
+
 function getSupabaseProjectRef(candidate: URL) {
   const supabaseProjectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -65,16 +77,28 @@ function resolveDirectUrl() {
   const explicitDirectUrl = process.env.DIRECT_URL?.trim();
   const databaseUrl = process.env.DATABASE_URL?.trim();
 
-  if (explicitDirectUrl && !isSupabasePoolerUrl(explicitDirectUrl)) {
+  if (explicitDirectUrl) {
     return explicitDirectUrl;
   }
 
+  if (!databaseUrl) {
+    return "";
+  }
+
+  if (!isSupabasePoolerUrl(databaseUrl)) {
+    return databaseUrl;
+  }
+
+  // Only auto-derive a direct database host from Supabase's transaction pooler.
+  // Session pooler URLs on port 5432 may be the only reachable option in some
+  // deployment environments, so rewriting them unconditionally can break builds.
+  if (!isSupabaseTransactionPoolerUrl(databaseUrl)) {
+    return databaseUrl;
+  }
+
   return (
-    deriveSupabaseDirectUrl(explicitDirectUrl) ??
     deriveSupabaseDirectUrl(databaseUrl) ??
-    explicitDirectUrl ??
-    databaseUrl ??
-    ""
+    databaseUrl
   );
 }
 
