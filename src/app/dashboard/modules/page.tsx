@@ -51,7 +51,7 @@ export default async function ModulesPage() {
             <DashboardSidebar />
           </div>
 
-          <section className="px-0 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
+          <section className="min-w-0 px-0 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <div className="mx-auto max-w-[1160px] space-y-6 sm:space-y-10">
               <RevealSection>
                 <div className="space-y-1.5 sm:space-y-2">
@@ -80,8 +80,8 @@ export default async function ModulesPage() {
 
                     return (
                       <RevealSection key={enrollment.courseId} className="space-y-5 sm:space-y-6">
-                        <div className="overflow-hidden rounded-[28px] border border-[#e8ddd1]/60 bg-white p-4 shadow-[0_8px_30px_rgba(88,61,24,0.04)] sm:rounded-[30px] sm:bg-white/80 sm:p-6 sm:shadow-[0_24px_60px_rgba(88,61,24,0.08)] sm:backdrop-blur-sm">
-                          <div className="rounded-[24px] bg-[linear-gradient(135deg,rgba(255,246,225,0.95)_0%,rgba(237,248,255,0.95)_58%,rgba(239,255,248,0.96)_100%)] p-5 ring-1 ring-[#f1e8dc] sm:p-6">
+                        <div className="overflow-hidden rounded-[28px] border border-[#e8ddd1]/60 bg-white p-2.5 shadow-[0_8px_30px_rgba(88,61,24,0.04)] sm:rounded-[30px] sm:bg-white/80 sm:p-6 sm:shadow-[0_24px_60px_rgba(88,61,24,0.08)] sm:backdrop-blur-sm">
+                          <div className="rounded-[24px] bg-[linear-gradient(135deg,rgba(255,246,225,0.95)_0%,rgba(237,248,255,0.95)_58%,rgba(239,255,248,0.96)_100%)] p-4 ring-1 ring-[#f1e8dc] sm:p-6">
                             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
                               <div className="space-y-3">
                                 <div className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#8f6b2d] shadow-sm sm:gap-2 sm:text-[11px] sm:tracking-[0.24em]">
@@ -98,7 +98,7 @@ export default async function ModulesPage() {
                                 </div>
                               </div>
 
-                              <div className="scrollbar-none -mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0 sm:pb-0">
+                              <div className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0 sm:pb-0">
                                 <div className="min-w-[120px] shrink-0 snap-start rounded-[20px] bg-white/85 px-4 py-3.5 shadow-sm ring-1 ring-[#eee5d9] sm:min-w-0 sm:rounded-[18px]">
                                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9a7940] sm:text-[11px] sm:tracking-[0.22em]">
                                     Modules
@@ -141,7 +141,7 @@ export default async function ModulesPage() {
                                 </div>
                               </div>
 
-                              <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
+                              <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
                                 {enrollment.course.chapters.map((chapter, chapterIndex) => (
                                   <AnimCard key={chapter.id}>
                                     <div className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-[#d8ebf8] bg-[linear-gradient(180deg,#ffffff_0%,#f7fcff_100%)] p-4 sm:p-5 shadow-[0_8px_30px_rgba(56,120,170,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(56,120,170,0.1)] sm:rounded-[26px]">
@@ -223,7 +223,7 @@ export default async function ModulesPage() {
                                 </div>
                               </div>
 
-                              <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]">
+                              <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
                                 {enrollment.course.teacherResources.map((resource) => (
                                   <AnimCard key={resource.id}>
                                     <div className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-[#cfe7d9] bg-[radial-gradient(circle_at_top_left,rgba(5,150,105,0.14),transparent_34%),linear-gradient(180deg,#ffffff_0%,#eefaf4_100%)] p-4 sm:p-5 shadow-[0_8px_30px_rgba(5,111,75,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(5,111,75,0.1)] sm:rounded-[26px]">

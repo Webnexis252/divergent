@@ -5,16 +5,15 @@ import { NextRequest } from 'next/server';
 
 /**
  * GET /api/admin/moderation
- * Lists all flagged posts with pagination.
+ * Lists community posts for admin/super-admin moderation.
  */
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req, ['ADMIN', 'SUPER_ADMIN']);
     if (!auth) return apiForbidden('Admin access required');
 
-    const [flaggedPosts, totalPosts, totalFlagged] = await Promise.all([
+    const [posts, totalPosts, totalFlagged] = await Promise.all([
       prisma.post.findMany({
-        where: { isFlagged: true },
         include: {
           author: { select: { id: true, name: true, email: true, image: true } },
           channel: { select: { id: true, name: true } },
@@ -26,7 +25,7 @@ export async function GET(req: NextRequest) {
       prisma.post.count({ where: { isFlagged: true } }),
     ]);
 
-    return apiSuccess({ flaggedPosts, totalPosts, totalFlagged });
+    return apiSuccess({ posts, totalPosts, totalFlagged });
   } catch (err) {
     console.error('[MODERATION_GET_ERROR]', err);
     return apiServerError();

@@ -231,11 +231,11 @@ export default async function DashboardCoursesPage() {
 
                     {activeCourse ? (
                       <AnimCard>
-                        <article className="overflow-hidden rounded-[20px] bg-white p-[12px] shadow-[0_4px_10px_rgba(0,0,0,0.25)]">
+                        <article className="max-w-[420px] overflow-hidden rounded-[20px] bg-white p-[12px] shadow-[0_4px_10px_rgba(0,0,0,0.25)]">
                           <div className="relative overflow-hidden rounded-[18px] bg-[#dcdcdc]">
                             <div
                               aria-hidden="true"
-                              className="h-[173px] w-full bg-cover bg-center"
+                              className="h-[160px] w-full bg-cover bg-center"
                               style={{
                                 backgroundImage: activeCourse.thumbnail
                                   ? `linear-gradient(180deg, rgba(8, 16, 24, 0.05), rgba(8, 16, 24, 0.2)), url("${activeCourse.thumbnail}")`
@@ -288,7 +288,7 @@ export default async function DashboardCoursesPage() {
                       </AnimCard>
                     ) : (
                       <AnimCard>
-                        <article className="rounded-[20px] bg-white px-6 py-7 shadow-[0_4px_10px_rgba(0,0,0,0.18)]">
+                        <article className="max-w-[420px] rounded-[20px] bg-white px-6 py-7 shadow-[0_4px_10px_rgba(0,0,0,0.18)]">
                           <p className="text-[1.15rem] font-semibold text-black">No active course yet</p>
                           <p className="mt-3 text-[14px] leading-7 text-black/58">
                             As soon as you enroll in a program, it will appear here with your progress
