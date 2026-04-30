@@ -84,14 +84,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
 
-    const { teacherIds, ...restData } = parsed.data;
+    const { teacherIds, learningOutcomes, features, testimonials, faqs, publishDate, ...restData } = parsed.data;
+
+    const dataToUpdate: any = { ...restData };
+    
+    if (learningOutcomes !== undefined) dataToUpdate.learningOutcomes = learningOutcomes ? JSON.parse(JSON.stringify(learningOutcomes)) : null;
+    if (features !== undefined) dataToUpdate.features = features ? JSON.parse(JSON.stringify(features)) : null;
+    if (testimonials !== undefined) dataToUpdate.testimonials = testimonials ? JSON.parse(JSON.stringify(testimonials)) : null;
+    if (faqs !== undefined) dataToUpdate.faqs = faqs ? JSON.parse(JSON.stringify(faqs)) : null;
+    if (publishDate !== undefined) dataToUpdate.publishDate = publishDate ? new Date(publishDate) : null;
+    if (teacherIds) dataToUpdate.teachers = { set: teacherIds.map((id) => ({ id })) };
 
     const course = await prisma.course.update({
       where: { id: courseId },
-      data: {
-        ...restData,
-        teachers: teacherIds ? { set: teacherIds.map((id) => ({ id })) } : undefined,
-      },
+      data: dataToUpdate,
       include: {
         _count: { select: { chapters: true, enrollments: true } },
         teachers: { select: courseTeacherSelect },
@@ -99,9 +105,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     });
 
     return apiSuccess(course, 'Course updated successfully');
-  } catch (err) {
+  } catch (err: any) {
     console.error('[UPDATE_COURSE_ERROR]', err);
-    return apiServerError();
+    return apiError(err.message || 'Unknown server error', 500);
   }
 }
 

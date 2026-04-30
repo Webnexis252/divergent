@@ -27,7 +27,25 @@ export async function POST(req: NextRequest) {
     const auth = await requireAuth(req, ['SUPER_ADMIN']);
     if (!auth) return apiForbidden('Super Admin access required');
 
-    const { name, email, password } = await req.json();
+    const body = await req.json();
+    
+    // Case 1: Bulk promotion of existing users
+    if (body.userIds && Array.isArray(body.userIds)) {
+      const updated = await prisma.user.updateMany({
+        where: { id: { in: body.userIds } },
+        data: { role: 'ADMIN' },
+      });
+      
+      const promotedUsers = await prisma.user.findMany({
+        where: { id: { in: body.userIds } },
+        select: { id: true, name: true, email: true, role: true, createdAt: true, image: true }
+      });
+
+      return apiSuccess(promotedUsers, `${updated.count} users promoted to Admin`);
+    }
+
+    // Case 2: Create new admin account
+    const { name, email, password } = body;
     if (!name || !email || !password) return apiError('Name, email and password are required', 400);
 
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -40,7 +58,7 @@ export async function POST(req: NextRequest) {
         passwordHash: hashSync(password, 10),
         role: 'ADMIN',
       },
-      select: { id: true, name: true, email: true, role: true },
+      select: { id: true, name: true, email: true, role: true, createdAt: true, image: true },
     });
 
     return apiCreated(admin, 'Admin account created');

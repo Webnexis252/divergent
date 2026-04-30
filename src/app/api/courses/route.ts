@@ -57,7 +57,31 @@ export async function POST(req: NextRequest) {
       return apiError('Validation failed', 400, parsed.error.flatten());
     }
 
-    const { title, description, thumbnail, price, teacherIds } = parsed.data;
+    const { 
+      title, 
+      subtitle,
+      description, 
+      overviewContent,
+      thumbnail, 
+      price, 
+      teacherIds,
+      totalHours,
+      lessonCount,
+      courseRating,
+      autoCalculateRating,
+      enrolledStudents,
+      autoUpdateEnrolled,
+      learningOutcomes,
+      features,
+      testimonials,
+      faqs,
+      category,
+      courseLevel,
+      language,
+      visibility,
+      pricingType,
+      publishDate
+    } = parsed.data;
 
     // Generate a URL-friendly slug from the title
     const slug = title
@@ -87,10 +111,28 @@ export async function POST(req: NextRequest) {
     const course = await prisma.course.create({
       data: { 
         title, 
+        subtitle,
         slug, 
         description, 
-        thumbnail, 
+        overviewContent,
+        thumbnail: thumbnail || null, 
         price, 
+        totalHours,
+        lessonCount,
+        courseRating,
+        autoCalculateRating,
+        enrolledStudents,
+        autoUpdateEnrolled,
+        learningOutcomes: learningOutcomes ? JSON.parse(JSON.stringify(learningOutcomes)) : undefined,
+        features: features ? JSON.parse(JSON.stringify(features)) : undefined,
+        testimonials: testimonials ? JSON.parse(JSON.stringify(testimonials)) : undefined,
+        faqs: faqs ? JSON.parse(JSON.stringify(faqs)) : undefined,
+        category,
+        courseLevel,
+        language,
+        visibility,
+        pricingType,
+        publishDate: publishDate ? new Date(publishDate) : undefined,
         teachers: teacherIds && teacherIds.length > 0 ? { connect: teacherIds.map(id => ({ id })) } : undefined
       },
       include: {

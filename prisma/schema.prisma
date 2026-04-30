@@ -73,6 +73,25 @@ model Course {
   payments     Payment[]
   teachers     User[]            @relation("CourseTeachers")
   teacherResources TeacherResource[]
+
+  subtitle           String?
+  overviewContent    String?
+  totalHours         Float?
+  lessonCount        Int?
+  courseRating       Float?
+  autoCalculateRating Boolean @default(true)
+  enrolledStudents   Int?
+  autoUpdateEnrolled Boolean @default(true)
+  learningOutcomes   Json?
+  features           Json?
+  testimonials       Json?
+  faqs               Json?
+  category           String?
+  courseLevel        String?
+  language           String?
+  visibility         String    @default("PUBLIC")
+  pricingType        String    @default("PAID")
+  publishDate        DateTime?
 }
 
 model Chapter {

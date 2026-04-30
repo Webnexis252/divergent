@@ -192,10 +192,22 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       id: true,
       title: true,
       slug: true,
+      subtitle: true,
       description: true,
+      overviewContent: true,
       thumbnail: true,
       price: true,
       isPublished: true,
+      totalHours: true,
+      lessonCount: true,
+      courseRating: true,
+      learningOutcomes: true,
+      features: true,
+      testimonials: true,
+      faqs: true,
+      category: true,
+      courseLevel: true,
+      language: true,
       teachers: {
         select: {
           name: true,
@@ -286,19 +298,23 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       : 0;
   const emiAmount = course.price > 0 ? Math.max(1, Math.round(course.price / 12)) : 0;
   const courseHours = totalDuration > 0 ? Math.max(1, Math.round(totalDuration / 60)) : 0;
-  const learningItems = buildLearningItems({
-    title: course.title,
-    chapterCount: course.chapters.length,
-    lessonCount: totalLessons,
-    liveClassCount: course.liveClasses.length,
-    assignmentCount: course.assignments.length,
-    testCount: course.tests.length,
-    previewCount,
-  });
+  const learningItems = Array.isArray(course.learningOutcomes) && course.learningOutcomes.length > 0
+    ? (course.learningOutcomes as string[])
+    : buildLearningItems({
+        title: course.title,
+        chapterCount: course.chapters.length,
+        lessonCount: totalLessons,
+        liveClassCount: course.liveClasses.length,
+        assignmentCount: course.assignments.length,
+        testCount: course.tests.length,
+        previewCount,
+      });
+
+  const durationStr = course.totalHours ? `${course.totalHours} hours` : (courseHours > 0 ? pluralize(courseHours, "hour") : pluralize(course.chapters.length, "module"));
   const overviewItems = [
-    courseHours > 0 ? `Duration: ${pluralize(courseHours, "hour")}` : `Duration: ${pluralize(course.chapters.length, "module")}`,
-    "Level: Beginner to Advanced",
-    "Language: English",
+    `Duration: ${durationStr}`,
+    `Level: ${course.courseLevel || "Beginner to Advanced"}`,
+    `Language: ${course.language || "English"}`,
     course.liveClasses.length > 0 ? "Format: Live + Recorded" : "Format: Recorded + Self-paced",
   ];
   const mentorCards = [
@@ -319,7 +335,9 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       image: assets.mentorAvatar,
     },
   ];
-  const featureTiles = [
+  const featureTiles = Array.isArray(course.features) && course.features.length > 0
+    ? (course.features as any[]).map(f => ({ label: f.title, image: f.icon || assets.liveClassFeature, href: "#" }))
+    : [
     {
       label: "Live Class",
       image: assets.liveClassFeature,
@@ -346,17 +364,23 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       href: "/dashboard/progress",
     },
   ];
-  const testimonialCards = [
+  const testimonialCards = Array.isArray(course.testimonials) && course.testimonials.length > 0
+    ? (course.testimonials as any[]).map(t => ({ quote: t.text, author: t.name, rating: t.rating }))
+    : [
     {
       quote: "This course helped me understand exactly what UCEED expects.",
       author: "Aarav Singh",
+      rating: 5,
     },
     {
       quote: "The mix of live support and structured practice made revision much easier.",
       author: "Aarav Singh",
+      rating: 5,
     },
   ];
-  const faqItems = [
+  const faqItems = Array.isArray(course.faqs) && course.faqs.length > 0
+    ? (course.faqs as any[])
+    : [
     {
       question: "Is this course beginner-friendly?",
       answer:
@@ -432,10 +456,15 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                         <h1 className="max-w-[18ch] text-[clamp(2.2rem,4vw,2.5rem)] font-semibold leading-[1.12]">
                           {course.title}
                         </h1>
-                        <p className="max-w-[42rem] text-[clamp(1rem,2vw,1.5rem)] font-medium leading-[1.45] text-white/94">
-                          {course.description?.trim() ||
+                        <p className="max-w-[42rem] text-[clamp(1.2rem,2vw,1.5rem)] font-medium leading-[1.45] text-white/94">
+                          {course.subtitle?.trim() || course.description?.trim() ||
                             "Build design aptitude, logical reasoning, and visual skills through a focused preparation path."}
                         </p>
+                        {course.subtitle && course.description && (
+                          <p className="mt-2 max-w-[42rem] text-[clamp(0.9rem,1.5vw,1.1rem)] leading-[1.5] text-white/80">
+                            {course.description.trim()}
+                          </p>
+                        )}
                       </div>
 
                       <FloatPulse className="mx-auto xl:mx-0 xl:justify-self-end">
@@ -482,10 +511,10 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                             </div>
 
                             <div className="flex flex-col items-center gap-1.5 text-center text-black">
-                              <p className="text-[32px] font-bold leading-none">4.7</p>
+                              <p className="text-[32px] font-bold leading-none">{course.courseRating || "4.7"}</p>
                               <div className="flex items-center gap-1">
                                 {[1, 2, 3, 4, 5].map((i) => (
-                                  <Star key={i} className={cx("h-3.5 w-3.5", i <= 4 ? "fill-[#ffc107] text-[#ffc107]" : "fill-transparent text-[#ffc107]")} />
+                                  <Star key={i} className={cx("h-3.5 w-3.5", i <= Math.round(course.courseRating || 4.7) ? "fill-[#ffc107] text-[#ffc107]" : "fill-transparent text-[#ffc107]")} />
                                 ))}
                               </div>
                               <p className="text-[12px]">{Math.max(course._count.enrollments, 1259).toLocaleString("en-IN")} ratings</p>
@@ -646,7 +675,9 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                       {testimonialCards.map((testimonial) => (
                         <AnimCard key={testimonial.author + testimonial.quote}>
                           <section className="rounded-[20px] bg-white px-8 py-7 text-right shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
-                            <p className="text-[20px]">⭐⭐⭐⭐⭐</p>
+                            <p className="text-[20px]">
+                              {Array.from({ length: testimonial.rating || 5 }).map(() => "⭐").join("")}
+                            </p>
                             <p className="mt-3 text-left text-[15px] leading-7 text-black">
                               {testimonial.quote}
                             </p>

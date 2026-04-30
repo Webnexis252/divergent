@@ -26,11 +26,19 @@ import { uploadCourseThumbnail } from "./upload-thumbnail";
 
 type EditForm = {
   title: string;
+  subtitle: string;
   description: string;
+  overviewContent: string;
   thumbnail: string;
   price: string;
   teacherIds: string[];
   isPublished: boolean;
+  totalHours: string;
+  lessonCount: string;
+  courseRating: string;
+  category: string;
+  courseLevel: string;
+  language: string;
 };
 
 export default function EditCourseModal({
@@ -48,11 +56,19 @@ export default function EditCourseModal({
 }) {
   const [form, setForm] = useState<EditForm>({
     title: course.title,
+    subtitle: course.subtitle ?? "",
     description: course.description ?? "",
+    overviewContent: course.overviewContent ?? "",
     thumbnail: course.thumbnail ?? "",
     price: String(course.price),
     teacherIds: course.teachers?.map((t) => t.id) ?? [],
     isPublished: course.isPublished,
+    totalHours: course.totalHours !== null ? String(course.totalHours) : "",
+    lessonCount: course.lessonCount !== null ? String(course.lessonCount) : "",
+    courseRating: course.courseRating !== null ? String(course.courseRating) : "",
+    category: course.category ?? "",
+    courseLevel: course.courseLevel ?? "",
+    language: course.language ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -89,11 +105,19 @@ export default function EditCourseModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: form.title,
+          subtitle: form.subtitle || undefined,
           description: form.description || undefined,
+          overviewContent: form.overviewContent || undefined,
           thumbnail: form.thumbnail || undefined,
-          price: 0, // Forced free for testing period
+          price: 0,
           teacherIds: form.teacherIds,
           isPublished: form.isPublished,
+          totalHours: form.totalHours ? Number(form.totalHours) : undefined,
+          lessonCount: form.lessonCount ? Number(form.lessonCount) : undefined,
+          courseRating: form.courseRating ? Number(form.courseRating) : undefined,
+          category: form.category || undefined,
+          courseLevel: form.courseLevel || undefined,
+          language: form.language || undefined,
         }),
       });
 
@@ -199,18 +223,39 @@ export default function EditCourseModal({
             />
           </div>
 
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Subtitle/Tagline" onChange={e => setForm(p => ({...p, subtitle: e.target.value}))} value={form.subtitle} placeholder="e.g. Master the fundamentals" />
+            <Field label="Total Hours" onChange={e => setForm(p => ({...p, totalHours: e.target.value}))} value={form.totalHours} placeholder="e.g. 12" type="number" />
+            <Field label="Number of Lessons" onChange={e => setForm(p => ({...p, lessonCount: e.target.value}))} value={form.lessonCount} placeholder="e.g. 24" type="number" />
+            <Field label="Course Rating" onChange={e => setForm(p => ({...p, courseRating: e.target.value}))} value={form.courseRating} placeholder="e.g. 4.8" type="number" step="0.1" />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Field label="Category" onChange={e => setForm(p => ({...p, category: e.target.value}))} value={form.category} placeholder="e.g. Design" />
+            <Field label="Course Level" onChange={e => setForm(p => ({...p, courseLevel: e.target.value}))} value={form.courseLevel} placeholder="e.g. Beginner" />
+            <Field label="Language" onChange={e => setForm(p => ({...p, language: e.target.value}))} value={form.language} placeholder="e.g. English" />
+          </div>
+
           {/* Description & Thumbnail */}
           <div className="grid gap-4 sm:grid-cols-[1fr_0.7fr]">
-            <TextAreaField
-              label="Short description"
-              hint="Concise summary for the course card."
-              value={form.description}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, description: e.target.value }))
-              }
-              placeholder="Summarize the promise, pace, and outcome."
-              rows={4}
-            />
+            <div className="flex flex-col gap-4">
+              <TextAreaField
+                label="Short description"
+                hint="Concise summary for the course card."
+                value={form.description}
+                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                placeholder="Summarize the promise, pace, and outcome."
+                rows={3}
+              />
+              <TextAreaField
+                label="Overview Content"
+                hint="Detailed description."
+                value={form.overviewContent}
+                onChange={(e) => setForm((p) => ({ ...p, overviewContent: e.target.value }))}
+                placeholder="Detailed paragraphs..."
+                rows={5}
+              />
+            </div>
+
             <div className="space-y-3">
               <label className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                 Course Thumbnail

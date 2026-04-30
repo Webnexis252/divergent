@@ -25,6 +25,12 @@ export default function SuperAdminAdminsPage() {
   const [success, setSuccess] = useState("");
   const [revoking, setRevoking] = useState<string | null>(null);
 
+  const [mode, setMode] = useState<"create" | "promote">("create");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [searching, setSearching] = useState(false);
+
   useEffect(() => {
     fetch("/api/super-admin/admins")
       .then((r) => r.json())
@@ -32,6 +38,23 @@ export default function SuperAdminAdminsPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (mode !== "promote" || searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/super-admin/users?search=${searchQuery}`);
+        const p = await res.json();
+        if (p.success) setSearchResults(p.data);
+      } catch { /* silent */ }
+      finally { setSearching(false); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery, mode]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -48,6 +71,32 @@ export default function SuperAdminAdminsPage() {
       setForm({ name: "", email: "", password: "" });
       setShowCreate(false);
       setSuccess("Admin account created successfully.");
+    } catch { setError("Network error"); }
+    finally { setSaving(false); }
+  }
+
+  async function handlePromote() {
+    if (selectedUserIds.length === 0) return;
+    setSaving(true); setError(""); setSuccess("");
+    try {
+      const res = await fetch("/api/super-admin/admins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds: selectedUserIds }),
+      });
+      const p = await res.json();
+      if (!res.ok || !p.success) { setError(p.error ?? "Failed to promote users"); return; }
+      
+      // Update local state: add the newly promoted users
+      // The API returns an array of promoted users in p.data
+      const promoted = Array.isArray(p.data) ? p.data : [p.data];
+      setAdmins((prev) => [...prev, ...promoted]);
+      
+      setSelectedUserIds([]);
+      setSearchQuery("");
+      setSearchResults([]);
+      setShowCreate(false);
+      setSuccess(`${promoted.length} user(s) promoted to Admin.`);
     } catch { setError("Network error"); }
     finally { setSaving(false); }
   }
@@ -93,7 +142,7 @@ export default function SuperAdminAdminsPage() {
                 onClick={() => { setShowCreate(!showCreate); setError(""); setSuccess(""); }}
                 className="shrink-0 rounded-2xl bg-[#fbbf24] px-6 py-3 text-[14px] font-semibold text-[#1e293b] transition hover:bg-[#f59e0b]"
               >
-                + Add Admin
+                {showCreate ? "Close Panel" : "+ Manage Admins"}
               </button>
             </div>
           </section>
@@ -118,41 +167,143 @@ export default function SuperAdminAdminsPage() {
           <AdminStatCard index={2} title="Total Staff" value={loading ? "…" : admins.length} caption="All admin-level accounts." tone="slate" />
         </StaggerGrid>
 
-        {/* Create form */}
+        {/* Manage panel */}
         <AnimatePresence>
           {showCreate && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
               <RevealSection>
                 <section className="rounded-[28px] border border-[#fde68a]/50 bg-[#fffbeb] p-6">
-                  <h2 className="text-[18px] font-semibold text-[#92400e]">Create Admin Account</h2>
-                  <form onSubmit={handleCreate} className="mt-5 grid gap-4 sm:grid-cols-3">
-                    {[
-                      { label: "Full Name *", key: "name", type: "text", placeholder: "Jane Doe" },
-                      { label: "Email *", key: "email", type: "email", placeholder: "jane@example.com" },
-                      { label: "Password *", key: "password", type: "password", placeholder: "min. 8 characters" },
-                    ].map((f) => (
-                      <div key={f.key}>
-                        <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">{f.label}</label>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-[18px] font-semibold text-[#92400e]">Manage Admin Accounts</h2>
+                    <div className="flex gap-1 rounded-xl bg-white/50 p-1">
+                      <button 
+                        onClick={() => setMode("create")}
+                        className={`rounded-lg px-4 py-1.5 text-[12px] font-semibold transition ${mode === "create" ? "bg-[#fbbf24] text-[#1e293b]" : "text-[#92400e] hover:bg-white/80"}`}
+                      >
+                        Create New
+                      </button>
+                      <button 
+                        onClick={() => setMode("promote")}
+                        className={`rounded-lg px-4 py-1.5 text-[12px] font-semibold transition ${mode === "promote" ? "bg-[#fbbf24] text-[#1e293b]" : "text-[#92400e] hover:bg-white/80"}`}
+                      >
+                        Promote Existing
+                      </button>
+                    </div>
+                  </div>
+
+                  {mode === "create" ? (
+                    <form onSubmit={handleCreate} className="mt-5 grid gap-4 sm:grid-cols-3">
+                      {[
+                        { label: "Full Name *", key: "name", type: "text", placeholder: "Jane Doe" },
+                        { label: "Email *", key: "email", type: "email", placeholder: "jane@example.com" },
+                        { label: "Password *", key: "password", type: "password", placeholder: "min. 8 characters" },
+                      ].map((f) => (
+                        <div key={f.key}>
+                          <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">{f.label}</label>
+                          <input
+                            required
+                            type={f.type}
+                            placeholder={f.placeholder}
+                            value={form[f.key as keyof typeof form]}
+                            onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))}
+                            className="h-12 w-full rounded-[14px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                          />
+                        </div>
+                      ))}
+                      {error && (
+                        <div className="sm:col-span-3">
+                          <p className="text-[13px] font-medium text-[#dc2626]">{error}</p>
+                          {error.includes("already exists") && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMode("promote");
+                                setSearchQuery(form.email);
+                                setError("");
+                              }}
+                              className="mt-2 text-[12px] font-bold text-[#92400e] underline decoration-[#fbbf24] underline-offset-4 hover:text-[#b45309]"
+                            >
+                              Promote this existing user to Admin instead?
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex gap-3 sm:col-span-3">
+                        <button type="submit" disabled={saving} className="rounded-[14px] bg-[#0f172a] px-6 py-3 text-[14px] font-semibold text-white disabled:opacity-50 transition hover:bg-[#1e293b]">
+                          {saving ? "Creating…" : "Create Admin"}
+                        </button>
+                        <button type="button" onClick={() => setShowCreate(false)} className="rounded-[14px] bg-white px-6 py-3 text-[14px] font-semibold text-[#64748b] transition hover:bg-[#f1f5f9]">
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="mt-5 space-y-4">
+                      <div>
+                        <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Search Users (Students/Mentors)</label>
                         <input
-                          required
-                          type={f.type}
-                          placeholder={f.placeholder}
-                          value={form[f.key as keyof typeof form]}
-                          onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))}
+                          type="text"
+                          placeholder="Search by name or email..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
                           className="h-12 w-full rounded-[14px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
                         />
                       </div>
-                    ))}
-                    {error && <p className="sm:col-span-3 text-[13px] text-[#dc2626]">{error}</p>}
-                    <div className="flex gap-3 sm:col-span-3">
-                      <button type="submit" disabled={saving} className="rounded-[14px] bg-[#0f172a] px-6 py-3 text-[14px] font-semibold text-white disabled:opacity-50 transition hover:bg-[#1e293b]">
-                        {saving ? "Creating…" : "Create Admin"}
-                      </button>
-                      <button type="button" onClick={() => setShowCreate(false)} className="rounded-[14px] bg-white px-6 py-3 text-[14px] font-semibold text-[#64748b] transition hover:bg-[#f1f5f9]">
-                        Cancel
-                      </button>
+
+                      <div className="max-h-[240px] space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+                        {searching ? (
+                          <p className="py-4 text-center text-[13px] text-[#92400e]">Searching...</p>
+                        ) : searchResults.length > 0 ? (
+                          searchResults.map((user) => (
+                            <button
+                              key={user.id}
+                              onClick={() => {
+                                setSelectedUserIds(prev => 
+                                  prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id]
+                                );
+                              }}
+                              className={`flex w-full items-center justify-between gap-4 rounded-[14px] border p-3 transition ${selectedUserIds.includes(user.id) ? "border-[#f59e0b] bg-[#fef3c7]" : "border-transparent bg-white hover:bg-white/80"}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="grid h-8 w-8 place-items-center rounded-lg bg-slate-200 text-xs font-bold text-slate-600">
+                                  {(user.name ?? "U")[0].toUpperCase()}
+                                </div>
+                                <div className="text-left">
+                                  <p className="text-[13px] font-semibold text-[#0f172a]">{user.name ?? "Unnamed"}</p>
+                                  <p className="text-[11px] text-[#64748b]">{user.email}</p>
+                                </div>
+                              </div>
+                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{user.role}</span>
+                            </button>
+                          ))
+                        ) : searchQuery.length >= 2 ? (
+                          <p className="py-4 text-center text-[13px] text-[#92400e]">No non-admin users found.</p>
+                        ) : (
+                          <p className="py-4 text-center text-[13px] text-[#94a3b8]">Type at least 2 characters to search.</p>
+                        )}
+                      </div>
+
+                      {error && <p className="text-[13px] text-[#dc2626]">{error}</p>}
+                      
+                      <div className="flex items-center justify-between pt-2">
+                        <p className="text-[12px] font-medium text-[#92400e]">
+                          {selectedUserIds.length} user(s) selected
+                        </p>
+                        <div className="flex gap-3">
+                          <button 
+                            onClick={handlePromote}
+                            disabled={saving || selectedUserIds.length === 0} 
+                            className="rounded-[14px] bg-[#0f172a] px-6 py-3 text-[14px] font-semibold text-white disabled:opacity-50 transition hover:bg-[#1e293b]"
+                          >
+                            {saving ? "Promoting…" : "Make Admin(s)"}
+                          </button>
+                          <button type="button" onClick={() => setShowCreate(false)} className="rounded-[14px] bg-white px-6 py-3 text-[14px] font-semibold text-[#64748b] transition hover:bg-[#f1f5f9]">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </form>
+                  )}
                 </section>
               </RevealSection>
             </motion.div>

@@ -39,10 +39,24 @@ export default function AdminCoursesPage() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [form, setForm] = useState({
     title: "",
+    subtitle: "",
     description: "",
+    overviewContent: "",
     thumbnail: "",
     price: "",
     teacherIds: [] as string[],
+    totalHours: "",
+    lessonCount: "",
+    courseRating: "",
+    autoCalculateRating: true,
+    enrolledStudents: "",
+    autoUpdateEnrolled: true,
+    learningOutcomes: [] as string[],
+    category: "",
+    courseLevel: "",
+    language: "",
+    visibility: "Public",
+    pricingType: "Paid",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -120,16 +134,30 @@ export default function AdminCoursesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: form.title,
+          subtitle: form.subtitle,
           description: form.description,
+          overviewContent: form.overviewContent,
           thumbnail: form.thumbnail || undefined,
-          price: 0, // Forced free for testing period
+          price: 0,
           teacherIds: form.teacherIds,
+          totalHours: form.totalHours ? Number(form.totalHours) : undefined,
+          lessonCount: form.lessonCount ? Number(form.lessonCount) : undefined,
+          courseRating: form.courseRating ? Number(form.courseRating) : undefined,
+          autoCalculateRating: form.autoCalculateRating,
+          enrolledStudents: form.enrolledStudents ? Number(form.enrolledStudents) : undefined,
+          autoUpdateEnrolled: form.autoUpdateEnrolled,
+          learningOutcomes: form.learningOutcomes,
+          category: form.category,
+          courseLevel: form.courseLevel,
+          language: form.language,
+          visibility: form.visibility,
+          pricingType: form.pricingType,
         }),
       });
       const p = await res.json();
       if (!res.ok || !p.success) { setError(p.error ?? "Failed to create course"); return; }
       setCourses((prev) => [p.data, ...prev]);
-      setForm({ title: "", description: "", thumbnail: "", price: "", teacherIds: [] });
+      setForm({ title: "", subtitle: "", description: "", overviewContent: "", thumbnail: "", price: "", teacherIds: [], totalHours: "", lessonCount: "", courseRating: "", autoCalculateRating: true, enrolledStudents: "", autoUpdateEnrolled: true, learningOutcomes: [], category: "", courseLevel: "", language: "", visibility: "Public", pricingType: "Paid" });
       setThumbnailUploadError("");
       setShowCreate(false);
     } catch { setError("Network error"); }
@@ -291,17 +319,39 @@ export default function AdminCoursesPage() {
                     />
                   </div>
 
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <Field label="Subtitle/Tagline" onChange={e => setForm(p => ({...p, subtitle: e.target.value}))} value={form.subtitle} placeholder="e.g. Master the fundamentals" />
+                    <Field label="Total Hours" onChange={e => setForm(p => ({...p, totalHours: e.target.value}))} value={form.totalHours} placeholder="e.g. 12" type="number" />
+                    <Field label="Number of Lessons" onChange={e => setForm(p => ({...p, lessonCount: e.target.value}))} value={form.lessonCount} placeholder="e.g. 24" type="number" />
+                    <Field label="Course Rating" onChange={e => setForm(p => ({...p, courseRating: e.target.value}))} value={form.courseRating} placeholder="e.g. 4.8" type="number" step="0.1" />
+                  </div>
+                  <div className="grid gap-4 lg:grid-cols-3">
+                    <Field label="Category" onChange={e => setForm(p => ({...p, category: e.target.value}))} value={form.category} placeholder="e.g. Design" />
+                    <Field label="Course Level" onChange={e => setForm(p => ({...p, courseLevel: e.target.value}))} value={form.courseLevel} placeholder="e.g. Beginner" />
+                    <Field label="Language" onChange={e => setForm(p => ({...p, language: e.target.value}))} value={form.language} placeholder="e.g. English" />
+                  </div>
                   <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.7fr)]">
-                    <TextAreaField
-                      hint="Keep it concise. This is the summary learners see before they commit."
-                      label="Short description"
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, description: e.target.value }))
-                      }
-                      placeholder="Summarize the promise, pace, and outcome of the course."
-                      rows={5}
-                      value={form.description}
-                    />
+                    <div className="flex flex-col gap-4">
+                      <TextAreaField
+                        hint="Keep it concise. This is the summary learners see before they commit."
+                        label="Short description"
+                        onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                        placeholder="Summarize the promise, pace, and outcome of the course."
+                        rows={3}
+                        value={form.description}
+                      />
+                      <TextAreaField
+                        hint="Detailed description for the course overview."
+                        label="Overview Content"
+                        onChange={(e) => setForm((prev) => ({ ...prev, overviewContent: e.target.value }))}
+                        placeholder="Detailed paragraphs..."
+                        rows={6}
+                        value={form.overviewContent}
+                      />
+                    </div>
+
+
                     <div className="space-y-3">
                       <label className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                         Course Thumbnail
