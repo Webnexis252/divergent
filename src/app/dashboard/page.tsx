@@ -47,23 +47,7 @@ const assets = {
   quickAssignment: "/assets/dashboard/quick-assignment.png",
 } as const;
 
-const overviewNavItems: Array<{
-  label: string;
-  href: string;
-  icon: LucideIcon;
-  active?: boolean;
-}> = [
-  { label: "Dashboard", href: "/dashboard", icon: House, active: true },
-  { label: "Courses", href: "/dashboard/courses", icon: BookOpen },
-  { label: "Calendar", href: "/dashboard/calendar", icon: CalendarDays },
-  { label: "Live Classes", href: "/dashboard/live-classes", icon: Video },
-  { label: "Community", href: "/dashboard/community", icon: MessageSquareText },
-  { label: "Doubts", href: "/dashboard/doubts", icon: CircleHelp },
-  { label: "Assignments", href: "/dashboard/assignments", icon: NotebookPen },
-  { label: "Progress", href: "/dashboard/progress", icon: ChartNoAxesColumn },
-  { label: "Certificates", href: "/dashboard/certificates", icon: Award },
-  { label: "Profile", href: "/dashboard/profile", icon: UserCircle },
-] as const;
+import { studentNavItems as overviewNavItems } from "./_components/sidebar-nav";
 
 function overviewButtonStyles({
   tone = "primary",

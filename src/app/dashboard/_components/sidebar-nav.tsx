@@ -19,7 +19,7 @@ import { motion } from "motion/react";
 import { useAuth } from "@/context/auth-context";
 import { cx } from "@/lib/cx";
 
-const studentNavItems = [
+export const studentNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: House },
   { label: "Courses", href: "/dashboard/courses", icon: BookOpen },
   { label: "Calendar", href: "/dashboard/calendar", icon: CalendarDays },

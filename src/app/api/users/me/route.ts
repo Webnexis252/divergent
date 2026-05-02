@@ -66,23 +66,44 @@ export async function PATCH(req: NextRequest) {
     if (!user) return apiUnauthorized();
 
     const body = await req.json();
-    const { image } = body as { image?: string };
+    const { image, name, phone } = body as { image?: string; name?: string; phone?: string };
 
-    if (!image || typeof image !== 'string') {
-      return apiBadRequest('image is required and must be a string');
+    const updateData: any = {};
+
+    if (image !== undefined) {
+      if (typeof image !== 'string') {
+        return apiBadRequest('image must be a string');
+      }
+      const isDataUrl = image.startsWith('data:image/');
+      const isHttpsUrl = image.startsWith('https://');
+      if (!isDataUrl && !isHttpsUrl) {
+        return apiBadRequest('image must be a valid data URL or HTTPS URL');
+      }
+      updateData.image = image;
     }
 
-    // Basic safety: only allow data URLs (base64 images) or https URLs
-    const isDataUrl = image.startsWith('data:image/');
-    const isHttpsUrl = image.startsWith('https://');
-    if (!isDataUrl && !isHttpsUrl) {
-      return apiBadRequest('image must be a valid data URL or HTTPS URL');
+    if (name !== undefined) {
+      if (typeof name !== 'string' || name.trim().length === 0) {
+        return apiBadRequest('name must be a non-empty string');
+      }
+      updateData.name = name.trim();
+    }
+
+    if (phone !== undefined) {
+      if (typeof phone !== 'string') {
+        return apiBadRequest('phone must be a string');
+      }
+      updateData.phone = phone.trim();
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return apiBadRequest('No valid fields provided for update');
     }
 
     const updated = await prisma.user.update({
       where: { id: user.userId },
-      data: { image },
-      select: { id: true, image: true },
+      data: updateData,
+      select: { id: true, name: true, phone: true, image: true },
     });
 
     return apiSuccess(updated);

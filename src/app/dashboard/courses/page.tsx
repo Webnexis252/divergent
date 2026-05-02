@@ -42,15 +42,12 @@ const assets = {
   calendarIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=4853766a-1632-4bc4-912e-5e43efdf5ec1",
 } as const;
 
-const sidebarItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Courses", href: "/dashboard/courses", icon: BookOpen, active: true },
-  { label: "Live Classes", href: "/dashboard/live-classes", icon: Video },
-  { label: "Community", href: "/dashboard/community", icon: Users },
-  { label: "Assignments", href: "/dashboard/assignments", icon: ClipboardList },
-  { label: "Progress", href: "/dashboard/progress", icon: TrendingUp },
-  { label: "Calendar", href: "/dashboard/upcoming", icon: Calendar },
-] as const;
+import { studentNavItems } from "../_components/sidebar-nav";
+
+const sidebarItems = studentNavItems.map(item => ({
+  ...item,
+  active: item.href === "/dashboard/courses"
+}));
 
 const exploreItems = [
   { label: "Modules", image: assets.exploreModules, target: "current-course" as const },

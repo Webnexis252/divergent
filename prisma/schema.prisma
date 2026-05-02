@@ -49,6 +49,7 @@ model User {
   quizAttempts          QuizAttempt[]
   teacherResources      TeacherResource[]
   testAttempts          TestAttempt[]
+  pushTokens            PushToken[]
   achievements          UserAchievement[]
   teachingCourses       Course[]               @relation("CourseTeachers")
 }
@@ -713,4 +714,18 @@ enum TestStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  platform  String   @default("unknown") // "ios" | "android"
+  appType   String   @default("student") // "student" | "staff"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

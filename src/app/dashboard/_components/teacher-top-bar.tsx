@@ -7,6 +7,8 @@ import { useAuth } from "@/context/auth-context";
 import { brand } from "@/lib/brand";
 import { GlobalSearch } from "./global-search";
 
+import { LogOut, Settings } from "lucide-react";
+
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
 export function TeacherTopBar() {
@@ -44,6 +46,14 @@ export function TeacherTopBar() {
 
         {user && (
           <div className="flex items-center gap-4">
+            {/* Settings Link */}
+            <Link 
+              href="/dashboard/teacher/settings"
+              className="group flex h-10 w-10 items-center justify-center rounded-full border border-gray-100 bg-white text-gray-500 shadow-sm transition-colors hover:bg-gray-50 hover:text-[#925fe2]"
+            >
+              <Settings className="h-5 w-5" />
+            </Link>
+
             {/* Name & email */}
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-[14px] font-semibold text-black">{user.name}</span>

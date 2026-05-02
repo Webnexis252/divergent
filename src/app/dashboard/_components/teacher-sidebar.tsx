@@ -18,6 +18,7 @@ export const teacherNavItems = [
   { label: "Sketch Review", href: "/dashboard/teacher/exam-review", icon: "sketch" as const },
   { label: "Resources", href: "/dashboard/teacher/resources", icon: "resources" as const },
   { label: "Profile", href: "/dashboard/teacher/profile", icon: "profile" as const },
+  { label: "Settings", href: "/dashboard/teacher/settings", icon: "settings" as const },
 ];
 
 export function TeacherSidebar() {
@@ -65,6 +66,10 @@ export function TeacherSidebar() {
     
     if (href === "/dashboard/teacher/profile") {
       return pathname === "/dashboard/teacher/profile";
+    }
+
+    if (href === "/dashboard/teacher/settings") {
+      return pathname === "/dashboard/teacher/settings";
     }
 
     return false;

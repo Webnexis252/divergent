@@ -50,7 +50,7 @@ export function DashboardHeader() {
 
           <Link
             className="inline-flex h-10 items-center gap-2 rounded-full border border-gray-100 bg-white px-4 text-[14px] font-semibold text-[#0f172a] shadow-sm transition-colors hover:bg-gray-50"
-            href="/dashboard/profile"
+            href="/dashboard/settings"
           >
             <Settings className="h-4.5 w-4.5" />
             <span className="sm:inline">Settings</span>
