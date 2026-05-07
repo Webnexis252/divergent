@@ -47,7 +47,7 @@ const assets = {
   quickAssignment: "/assets/dashboard/quick-assignment.png",
 } as const;
 
-import { studentNavItems as overviewNavItems } from "./_components/sidebar-nav";
+import { studentNavItems as overviewNavItems } from "./_components/nav-items";
 
 function overviewButtonStyles({
   tone = "primary",

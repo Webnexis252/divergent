@@ -52,6 +52,7 @@ model User {
   pushTokens            PushToken[]
   achievements          UserAchievement[]
   teachingCourses       Course[]               @relation("CourseTeachers")
+  studentApprovalRequests StudentApprovalRequest[] @relation("AdminStudentRequests")
 }
 
 model Course {
@@ -728,4 +729,26 @@ model PushToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model StudentApprovalRequest {
+  id             String         @id @default(cuid())
+  name           String
+  email          String
+  phone          String?
+  passwordHash   String?
+  requestedBy    String
+  status         ApprovalStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  admin User @relation("AdminStudentRequests", fields: [requestedBy], references: [id], onDelete: Cascade)
+
+  @@index([requestedBy])
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

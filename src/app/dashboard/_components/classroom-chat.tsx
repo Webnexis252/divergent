@@ -168,7 +168,7 @@ export function ClassroomChat({
           Reopen the message panel whenever you want the classroom discussion back in view.
         </p>
         <Button
-          className="mt-5"
+          className="mt-5 w-full sm:w-auto"
           onClick={() => onToggleOpen(true)}
           size="lg"
           type="button"

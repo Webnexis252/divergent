@@ -138,7 +138,7 @@ const testimonialCards = Array.from({ length: 3 }, () => ({
     "The structured courses and mentorship helped me stay consistent. The dashboard kept me on track every day.",
 }));
 
-const revealViewport = { once: true, margin: "-80px" } as const;
+const revealViewport = { once: true, amount: 0 } as const;
 
 function Reveal({
   children,

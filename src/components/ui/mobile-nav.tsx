@@ -30,7 +30,8 @@ import {
   ScrollText,
   Settings,
   BookCheck,
-  Library
+  Library,
+  LogOut
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { cx } from "@/lib/cx";
@@ -95,7 +96,7 @@ function isNavActive(pathname: string, href: string): boolean {
 
 export function MobileNav() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Determine section
@@ -281,6 +282,20 @@ export function MobileNav() {
                       </Link>
                     );
                   })}
+                </div>
+                
+                <div className="mt-6">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      logout();
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-[16px] bg-[#fff1f2] py-4 text-[15px] font-semibold text-[#e11d48] transition-colors active:bg-[#ffe4e6] border border-[#ffe4e6]"
+                    type="button"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span>Logout</span>
+                  </button>
                 </div>
               </div>
             </motion.div>

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         role: true,
         passwordHash: true,
         mentorStatus: true,
-        profileImage: true,
+        image: true,
       },
     });
 
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       name: user.name,
       email: user.email,
       role: user.role,
-      profileImage: user.profileImage,
+      profileImage: user.image,
     };
 
     // Return token in body — mobile client stores in SecureStore

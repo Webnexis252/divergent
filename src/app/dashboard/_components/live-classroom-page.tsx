@@ -58,18 +58,28 @@ const toneMeta = {
   },
 } as const;
 
+const EMBEDDABLE_HOSTS = new Set(["meet.jit.si", "daily.co"]);
+const EMBEDDABLE_SUFFIXES = [".jit.si", ".daily.co"] as const;
+
+function isEmbeddableUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (EMBEDDABLE_HOSTS.has(host)) return true;
+    return EMBEDDABLE_SUFFIXES.some((s) => host.endsWith(s));
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Build the meeting URL for a class.
- * Priority:
- * 1. Daily.co URL (set by admin/auto-created) — best quality, embeds perfectly
- * 2. Any custom URL set by admin
- * 3. Jitsi fallback (auto-generated, free, no setup) — if nothing else is available
+ * Build the meeting URL for the classroom.
+ * Only embeddable URLs (Jitsi / Daily.co) are used.
+ * If the admin stored a non-embeddable URL (Zoho, Zoom, Google Meet, etc.)
+ * we fall through to the Jitsi auto-generated room so the session always
+ * stays in-page without any external redirect.
  */
 function buildMeetingUrl(classId: string, meetingUrl?: string | null, displayName?: string) {
-  // If admin set a URL (Daily.co or any other), use it directly
-  if (meetingUrl) {
-    return meetingUrl;
-  }
+  if (meetingUrl && isEmbeddableUrl(meetingUrl)) return meetingUrl;
 
   // Fallback: auto-generate a Jitsi room (free, no setup needed)
   const roomName = `DivergentClass-${classId}`;
@@ -465,10 +475,10 @@ export function LiveClassroomPage({
                                 {meta.headline}
                               </Badge>
                               <div className="space-y-2">
-                                <h1 className="max-w-[18ch] text-[clamp(2rem,5vw,4rem)] font-semibold tracking-[-0.08em] text-white text-balance">
+                                <h1 className="max-w-[18ch] text-[1.85rem] font-semibold tracking-[-0.06em] text-white text-balance sm:text-[clamp(2rem,5vw,4rem)] sm:tracking-[-0.08em]">
                                   {focusClass?.title ?? "Live classroom"}
                                 </h1>
-                                <p className="max-w-[64ch] text-[15px] leading-7 text-white/68">
+                                <p className="max-w-[64ch] text-[14px] leading-6 text-white/68 sm:text-[15px] sm:leading-7">
                                   {focusClass?.courseTitle ??
                                     "As soon as a live or recorded session is available, it will appear here with classroom controls and the discussion thread beside it."}
                                 </p>
@@ -505,28 +515,28 @@ export function LiveClassroomPage({
                             ) : null}
                           </div>
 
-                          <div className="grid gap-3 sm:grid-cols-3">
-                            <div className="rounded-[var(--radius-md)] bg-white/8 px-4 py-4">
-                              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/45">
+                          <div className="scrollbar-none flex snap-x gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
+                            <div className="min-w-[120px] shrink-0 snap-start rounded-[var(--radius-md)] bg-white/8 px-4 py-3.5 sm:min-w-0 sm:py-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:text-[12px]">
                                 Starts
                               </p>
-                              <p className="mt-3 text-[17px] font-semibold text-white">
+                              <p className="mt-2 text-[15px] font-semibold text-white sm:mt-3 sm:text-[17px]">
                                 {focusClass ? formatSessionTime(focusClass.startTime) : "TBD"}
                               </p>
                             </div>
-                            <div className="rounded-[var(--radius-md)] bg-white/8 px-4 py-4">
-                              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/45">
+                            <div className="min-w-[120px] shrink-0 snap-start rounded-[var(--radius-md)] bg-white/8 px-4 py-3.5 sm:min-w-0 sm:py-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:text-[12px]">
                                 Duration
                               </p>
-                              <p className="mt-3 text-[17px] font-semibold text-white">
+                              <p className="mt-2 text-[15px] font-semibold text-white sm:mt-3 sm:text-[17px]">
                                 {focusClass ? `${focusClass.duration} min` : "Pending"}
                               </p>
                             </div>
-                            <div className="rounded-[var(--radius-md)] bg-white/8 px-4 py-4">
-                              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/45">
+                            <div className="min-w-[120px] shrink-0 snap-start rounded-[var(--radius-md)] bg-white/8 px-4 py-3.5 sm:min-w-0 sm:py-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:text-[12px]">
                                 Attendees
                               </p>
-                              <p className="mt-3 text-[17px] font-semibold text-white">
+                              <p className="mt-2 text-[15px] font-semibold text-white sm:mt-3 sm:text-[17px]">
                                 {focusClass ? focusClass.attendeeCount : 0}
                               </p>
                             </div>
@@ -650,7 +660,7 @@ export function LiveClassroomPage({
                               </div>
 
                               {/* Controls bar */}
-                              <div className="flex flex-wrap items-center justify-center gap-3">
+                              <div className="scrollbar-none flex snap-x gap-2.5 overflow-x-auto pb-2 sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 sm:overflow-visible sm:pb-0">
                                 {canStartMeeting && tone !== "completed" && (
                                   <>
                                     {!meetStarted ? (
@@ -658,6 +668,7 @@ export function LiveClassroomPage({
                                         size="lg"
                                         type="button"
                                         onClick={startMeeting}
+                                        className="shrink-0 snap-start whitespace-nowrap"
                                       >
                                         <LogIn className="h-4 w-4" />
                                         Start Class
@@ -665,7 +676,7 @@ export function LiveClassroomPage({
                                     ) : (
                                       <button
                                         onClick={endClassGlobally}
-                                        className="inline-flex h-14 items-center gap-2 rounded-full bg-[#dc2626] px-6 text-[15px] font-semibold text-white shadow-[0_18px_40px_rgba(220,38,38,0.24)] transition hover:-translate-y-[1px] hover:bg-[#b91c1c] focus-visible:outline-none"
+                                        className="inline-flex h-14 shrink-0 snap-start items-center gap-2 whitespace-nowrap rounded-full bg-[#dc2626] px-6 text-[15px] font-semibold text-white shadow-[0_18px_40px_rgba(220,38,38,0.24)] transition hover:-translate-y-[1px] hover:bg-[#b91c1c] focus-visible:outline-none"
                                       >
                                         <PhoneOff className="h-4 w-4" />
                                         End Session
@@ -676,7 +687,7 @@ export function LiveClassroomPage({
 
                                 {tone === "completed" && focusClass.recordingUrl && (
                                   <Link
-                                    className="inline-flex h-14 items-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-[var(--text-strong)] shadow-[0_18px_40px_rgba(255,255,255,0.12)] transition hover:-translate-y-[1px] focus-visible:outline-none"
+                                    className="inline-flex h-14 shrink-0 snap-start items-center gap-2 whitespace-nowrap rounded-full bg-white px-6 text-[15px] font-semibold text-[var(--text-strong)] shadow-[0_18px_40px_rgba(255,255,255,0.12)] transition hover:-translate-y-[1px] focus-visible:outline-none"
                                     href={focusClass.recordingUrl}
                                     target="_blank"
                                   >
@@ -691,7 +702,7 @@ export function LiveClassroomPage({
                                   variant="secondary"
                                   onClick={() => markAttendance("JOIN")}
                                   disabled={attendanceMarked || tone !== "live"}
-                                  className={attendanceMarked ? "bg-[#f0fdf4] text-[#15803d] hover:bg-[#dcfce7] hover:text-[#166534]" : ""}
+                                  className={`shrink-0 snap-start whitespace-nowrap ${attendanceMarked ? "bg-[#f0fdf4] text-[#15803d] hover:bg-[#dcfce7] hover:text-[#166534]" : ""}`}
                                 >
                                   <CheckCircle2 className="h-4 w-4" />
                                   {attendanceMarked ? "Attendance Marked" : "Attendance"}
@@ -702,6 +713,7 @@ export function LiveClassroomPage({
                                   type="button"
                                   variant="secondary"
                                   onClick={() => setMessagesOpen((v) => !v)}
+                                  className="shrink-0 snap-start whitespace-nowrap"
                                 >
                                   <MessageCircleMore className="h-4 w-4" />
                                   {messagesOpen ? "Hide Messages" : "Show Messages"}
@@ -734,11 +746,11 @@ export function LiveClassroomPage({
                         <Badge tone="brand">{sessionRail.length} visible</Badge>
                       </div>
 
-                      <div className="grid gap-3 lg:grid-cols-3">
+                      <div className="scrollbar-none flex snap-x gap-3 overflow-x-auto pb-4 lg:grid lg:grid-cols-3 lg:overflow-visible lg:pb-0">
                         {sessionRail.map(({ item, tone: itemTone }) => (
                           <div
                             key={item.id}
-                            className="rounded-[var(--radius-lg)] border border-[var(--line-soft)] bg-white/72 px-4 py-4"
+                            className="min-w-[280px] shrink-0 snap-start rounded-[var(--radius-lg)] border border-[var(--line-soft)] bg-white/72 px-4 py-4 lg:min-w-0"
                           >
                             <div className="flex flex-wrap items-center gap-2">
                               <Badge tone={toneMeta[itemTone].badgeTone}>

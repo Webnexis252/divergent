@@ -278,16 +278,21 @@ export const UpdateLessonProgressSchema = z.object({
 
 // ─── Live Classes ────────────────────────────────────────────────────────────
 export const CreateLiveClassSchema = z.object({
-  courseId: z.string().cuid(),
-  title: z.string().min(3, 'Title is required'),
+  courseId: z.string().min(1, 'Course ID is required'),
+  title: z.string().min(3, 'Title must be at least 3 characters'),
   description: z.string().optional(),
   startTime: z
     .string()
     .refine((val) => !isNaN(Date.parse(val)), {
-      message: 'Invalid ISO date string',
+      message: 'Invalid start time — please provide a valid ISO date string',
     }),
-  duration: z.number().int().min(5, 'Duration in minutes'),
-  meetingUrl: z.string().url().optional(),
+  duration: z.number().int().min(5, 'Duration must be at least 5 minutes'),
+  // Accept empty string as "no URL provided" to avoid spurious url() failures
+  meetingUrl: z
+    .string()
+    .url('Meeting URL must be a valid URL')
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
 });
 
 export const MarkAttendanceSchema = z.object({

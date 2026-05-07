@@ -50,6 +50,7 @@ export default function ScheduleClassModal({
   const [form, setForm] = useState<ScheduleForm>(defaultForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [successMsg, setSuccessMsg] = useState("");
 
   // Set a default start time to the next full hour
@@ -67,13 +68,34 @@ export default function ScheduleClassModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
+    setFieldErrors({});
+    setSuccessMsg("");
+
+    // Client-side guards before hitting the server
     if (!form.courseId) {
-      setError("Please select a course");
+      setError("Please select a course.");
       return;
     }
+    if (!form.title || form.title.trim().length < 3) {
+      setFieldErrors({ title: ["Title must be at least 3 characters."] });
+      return;
+    }
+    if (!form.startTime) {
+      setFieldErrors({ startTime: ["Please pick a start date and time."] });
+      return;
+    }
+    const parsedDate = new Date(form.startTime);
+    if (isNaN(parsedDate.getTime())) {
+      setFieldErrors({ startTime: ["Invalid date — please pick a valid start time."] });
+      return;
+    }
+    if (!durationNum || isNaN(durationNum) || durationNum < 5) {
+      setFieldErrors({ duration: ["Duration must be at least 5 minutes."] });
+      return;
+    }
+
     setSaving(true);
-    setError("");
-    setSuccessMsg("");
 
     try {
       const res = await fetch(`/api/courses/${form.courseId}/live-classes`, {
@@ -81,9 +103,9 @@ export default function ScheduleClassModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           courseId: form.courseId,
-          title: form.title,
-          description: form.description || undefined,
-          startTime: new Date(form.startTime).toISOString(),
+          title: form.title.trim(),
+          description: form.description?.trim() || undefined,
+          startTime: parsedDate.toISOString(),
           duration: durationNum,
           meetingUrl: form.meetingUrl || undefined,
         }),
@@ -92,6 +114,10 @@ export default function ScheduleClassModal({
       const payload = await res.json();
 
       if (!res.ok || !payload.success) {
+        // Show field-level Zod errors if available
+        if (payload.details?.fieldErrors) {
+          setFieldErrors(payload.details.fieldErrors as Record<string, string[]>);
+        }
         setError(payload.error ?? "Failed to schedule class");
         return;
       }
@@ -191,48 +217,66 @@ export default function ScheduleClassModal({
 
           {/* Title & Duration */}
           <div className="grid gap-4 sm:grid-cols-[1.2fr_0.8fr]">
-            <Field
-              required
-              label="Class title"
-              hint="A clear name like 'React Hooks Deep Dive — Session 3'."
-              value={form.title}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, title: e.target.value }))
-              }
-              placeholder="e.g. React Hooks Deep Dive"
-            />
-            <Field
-              required
-              label="Duration (minutes)"
-              type="number"
-              min={5}
-              value={form.duration}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, duration: e.target.value }))
-              }
-              placeholder="60"
-            />
+            <div>
+              <Field
+                required
+                label="Class title"
+                hint="A clear name like 'React Hooks Deep Dive — Session 3'."
+                value={form.title}
+                onChange={(e) => {
+                  setForm((p) => ({ ...p, title: e.target.value }));
+                  setFieldErrors((prev) => ({ ...prev, title: [] }));
+                }}
+                placeholder="e.g. React Hooks Deep Dive"
+              />
+              {fieldErrors.title?.[0] && (
+                <p className="mt-1 text-[12px] text-[#dc2626]">{fieldErrors.title[0]}</p>
+              )}
+            </div>
+            <div>
+              <Field
+                required
+                label="Duration (minutes)"
+                type="number"
+                min={5}
+                value={form.duration}
+                onChange={(e) => {
+                  setForm((p) => ({ ...p, duration: e.target.value }));
+                  setFieldErrors((prev) => ({ ...prev, duration: [] }));
+                }}
+                placeholder="60"
+              />
+              {fieldErrors.duration?.[0] && (
+                <p className="mt-1 text-[12px] text-[#dc2626]">{fieldErrors.duration[0]}</p>
+              )}
+            </div>
           </div>
 
           {/* Date/Time & Meeting URL */}
           <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Field
+                required
+                label="Start date & time"
+                type="datetime-local"
+                value={form.startTime}
+                onChange={(e) => {
+                  setForm((p) => ({ ...p, startTime: e.target.value }));
+                  setFieldErrors((prev) => ({ ...prev, startTime: [] }));
+                }}
+              />
+              {fieldErrors.startTime?.[0] && (
+                <p className="mt-1 text-[12px] text-[#dc2626]">{fieldErrors.startTime[0]}</p>
+              )}
+            </div>
             <Field
-              required
-              label="Start date & time"
-              type="datetime-local"
-              value={form.startTime}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, startTime: e.target.value }))
-              }
-            />
-            <Field
-              label="Meeting URL"
-              hint="Zoom, Google Meet, or any live streaming link."
+              label="Meeting URL (optional)"
+              hint="Leave blank to use the built-in video room."
               value={form.meetingUrl}
               onChange={(e) =>
                 setForm((p) => ({ ...p, meetingUrl: e.target.value }))
               }
-              placeholder="https://meet.google.com/..."
+              placeholder="https://meet.jit.si/... (optional)"
             />
           </div>
 

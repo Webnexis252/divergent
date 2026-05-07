@@ -177,11 +177,9 @@ export function FloatPulse({
   children: ReactNode;
   className?: string;
 }) {
-  const reduceMotion = useReducedMotion();
-
   return (
     <motion.div
-      animate={reduceMotion ? undefined : { y: [0, -8, 0] }}
+      animate={{ y: [0, -8, 0] }}
       className={className}
       transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
     >

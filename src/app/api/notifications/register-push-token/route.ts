@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
-import { verifyToken } from '@/lib/auth';
+import { verifyTokenValue } from '@/lib/auth';
 import { apiSuccess, apiError, apiUnauthorized, apiServerError } from '@/lib/api-response';
 
 /**
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
     if (!token) return apiUnauthorized('No auth token provided');
 
-    const payload = await verifyToken(token);
+    const payload = await verifyTokenValue(token);
     if (!payload) return apiUnauthorized('Invalid token');
 
     const body = await req.json();
@@ -66,7 +66,7 @@ export async function DELETE(req: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
     if (!token) return apiUnauthorized();
 
-    const payload = await verifyToken(token);
+    const payload = await verifyTokenValue(token);
     if (!payload) return apiUnauthorized();
 
     const body = await req.json();
@@ -79,7 +79,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     return apiSuccess({ removed: true }, 'Push token removed');
-  } catch (err) {
+  } catch {
     return apiServerError();
   }
 }

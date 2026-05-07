@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { GraduationCap, Search, Sparkles, Users, Download } from "lucide-react";
+import { GraduationCap, Search, Sparkles, Users, Download, UserPlus, UserCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import Link from "next/link";
 import { MetricCard } from "@/components/ui/metric-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Surface } from "@/components/ui/surface";
@@ -10,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
 import { useAuth } from "@/context/auth-context";
+import { AddStudentModal } from "./_components/AddStudentModal";
 import type { StudentRecord } from "./_types";
 import dynamic from "next/dynamic";
 
@@ -23,6 +25,7 @@ export default function AdminStudentsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   async function fetchStudents(query = "") {
     setLoading(true);
@@ -172,10 +175,24 @@ export default function AdminStudentsPage() {
                     value={search}
                   />
                 </form>
-                <Button onClick={handleExportToExcel} variant="secondary" size="lg" className="shrink-0" type="button">
-                  <Download className="h-[18px] w-[18px]" />
-                  Export to Excel
-                </Button>
+                <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                  {user?.role === "SUPER_ADMIN" && (
+                    <Link href="/admin/super/approvals">
+                      <Button variant="secondary" size="lg" className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-none">
+                        <UserCheck className="h-[18px] w-[18px]" />
+                        Approvals
+                      </Button>
+                    </Link>
+                  )}
+                  <Button onClick={() => setIsAddModalOpen(true)} size="lg" className="bg-[var(--brand-primary-strong)] text-white hover:bg-[var(--brand-primary-strong)]/90">
+                    <UserPlus className="h-[18px] w-[18px]" />
+                    Add Student
+                  </Button>
+                  <Button onClick={handleExportToExcel} variant="secondary" size="lg" type="button">
+                    <Download className="h-[18px] w-[18px]" />
+                    Export
+                  </Button>
+                </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-3">
@@ -242,6 +259,16 @@ export default function AdminStudentsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AddStudentModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        isSuperAdmin={user?.role === "SUPER_ADMIN"}
+        onSuccess={(msg) => {
+          setToast({ msg, ok: true });
+          void fetchStudents(search);
+        }}
+      />
     </PageTransition>
   );
 }

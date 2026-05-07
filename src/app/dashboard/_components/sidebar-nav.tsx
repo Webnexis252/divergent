@@ -19,20 +19,7 @@ import { motion } from "motion/react";
 import { useAuth } from "@/context/auth-context";
 import { cx } from "@/lib/cx";
 
-export const studentNavItems = [
-  { label: "Dashboard", href: "/dashboard", icon: House },
-  { label: "Courses", href: "/dashboard/courses", icon: BookOpen },
-  { label: "Calendar", href: "/dashboard/calendar", icon: CalendarDays },
-  { label: "Live Classes", href: "/dashboard/live-classes", icon: Video },
-  { label: "Community", href: "/dashboard/community", icon: MessageSquareText },
-  { label: "Doubts", href: "/dashboard/doubts", icon: CircleHelp },
-  { label: "Assignments", href: "/dashboard/assignments", icon: NotebookPen },
-  { label: "Progress", href: "/dashboard/progress", icon: ChartNoAxesColumn },
-  { label: "Certificates", href: "/dashboard/certificates", icon: Award },
-  { label: "Profile", href: "/dashboard/profile", icon: UserCircle },
-] as const;
-
-
+import { studentNavItems } from "./nav-items";
 
 // Determines if a nav item's href is active given the current pathname
 function isNavActive(pathname: string, href: string): boolean {

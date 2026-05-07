@@ -113,12 +113,42 @@ export const toneMeta = {
   },
 } as const;
 
+const EMBEDDABLE_MEETING_HOSTS = new Set([
+  "meet.jit.si",
+  "daily.co",
+]);
+
+const EMBEDDABLE_MEETING_SUFFIXES = [
+  ".jit.si",
+  ".daily.co",
+] as const;
+
+function isEmbeddableUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (EMBEDDABLE_MEETING_HOSTS.has(host)) return true;
+    return EMBEDDABLE_MEETING_SUFFIXES.some((suffix) => host.endsWith(suffix));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Returns an embeddable meeting URL for the student classroom.
+ * If the stored meetingUrl is a non-embeddable external provider
+ * (e.g. Zoho, Zoom, Google Meet), it is intentionally ignored and
+ * a Jitsi room is generated instead — keeping the student fully
+ * in-page with no redirects.
+ */
 export function buildMeetingUrl(
   classId: string,
   meetingUrl?: string | null,
   displayName?: string,
 ) {
-  if (meetingUrl) return meetingUrl;
+  // Only honour the admin-set URL if it can actually be embedded.
+  // Non-embeddable URLs (Zoho, Zoom, Google Meet, etc.) fall through
+  // to the Jitsi fallback so students are never redirected externally.
+  if (meetingUrl && isEmbeddableUrl(meetingUrl)) return meetingUrl;
 
   const roomName = `DivergentClass-${classId}`;
   const params = new URLSearchParams();
@@ -131,6 +161,11 @@ export function buildMeetingUrl(
   params.set("config.hideConferenceSubject", "true");
 
   return `https://meet.jit.si/${roomName}#${params.toString()}`;
+}
+
+export function canEmbedMeetingUrl(meetingUrl?: string | null) {
+  if (!meetingUrl) return false;
+  return isEmbeddableUrl(meetingUrl);
 }
 
 export function getSessionTone(data: LiveClassData | null): SessionTone {
@@ -243,4 +278,3 @@ export function getStateSteps(
     "Keep the discussion thread handy for pre-class questions and reminders.",
   ];
 }
-

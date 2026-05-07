@@ -58,7 +58,7 @@ const assets = {
   calendarIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=e233071f-ae5b-440b-b6a5-2a067b4e2248",
 } as const;
 
-import { studentNavItems } from "../../_components/sidebar-nav";
+import { studentNavItems } from "../../_components/nav-items";
 
 const sidebarItems = studentNavItems.map(item => ({
   ...item,

@@ -9,6 +9,7 @@ import {
   CalendarDays,
   DollarSign,
   LayoutDashboard,
+  LogOut,
   MessageSquare,
   Settings,
   Shield,
@@ -113,7 +114,7 @@ function NavSection({
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
   return (
@@ -158,13 +159,24 @@ export function AdminSidebar() {
         ) : null}
       </div>
 
-      <div className="mt-auto rounded-[var(--radius-lg)] border border-[var(--line-soft)] bg-white/72 px-4 py-4">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--text-subtle)]">
-          Focus
-        </p>
-        <p className="mt-3 text-[14px] leading-7 text-[var(--text-muted)]">
-          Keep the admin surfaces clear, fast to scan, and useful under load. The shell should feel like a product control layer, not a placeholder dashboard.
-        </p>
+      <div className="mt-auto space-y-4">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--line-soft)] bg-white/72 px-4 py-4">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--text-subtle)]">
+            Focus
+          </p>
+          <p className="mt-3 text-[14px] leading-7 text-[var(--text-muted)]">
+            Keep the admin surfaces clear, fast to scan, and useful under load. The shell should feel like a product control layer, not a placeholder dashboard.
+          </p>
+        </div>
+
+        <button
+          className="flex w-full items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 text-[15px] font-semibold tracking-[-0.01em] text-[var(--text-muted)] transition-[background-color,border-color,box-shadow,color,transform] duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-white/72 hover:text-[var(--text-strong)] border border-transparent focus-visible:outline-none"
+          onClick={() => logout()}
+          type="button"
+        >
+          <LogOut className="h-4.5 w-4.5" />
+          <span>Logout</span>
+        </button>
       </div>
     </motion.aside>
   );
