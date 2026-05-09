@@ -75,7 +75,7 @@ export function AdminStatCard({
           {caption ?? "Live data from the latest platform snapshot."}
         </p>
         {trend ? (
-          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${styles.trend}`}>
+          <span className={`inline-flex shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${styles.trend}`}>
             {trend}
           </span>
         ) : null}
