@@ -85,7 +85,9 @@ export default function StudentApprovalsPage() {
 
         <RevealSection delay={0.06}>
           {loading ? (
-            <Surface className="h-64 animate-pulse" />
+            <Surface className="h-64 animate-pulse">
+              <span className="sr-only">Loading approval requests</span>
+            </Surface>
           ) : requests.length === 0 ? (
             <EmptyState
               icon={<UserCheck className="h-6 w-6" />}

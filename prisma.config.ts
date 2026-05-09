@@ -12,6 +12,17 @@ function isSupabasePoolerUrl(value: string) {
   }
 }
 
+function isSupabaseTransactionPoolerUrl(value: string) {
+  try {
+    const candidate = new URL(value);
+    return (
+      candidate.hostname.endsWith(".pooler.supabase.com") &&
+      candidate.port === "6543"
+    );
+  } catch {
+    return false;
+  }
+}
 
 function getSupabaseProjectRef(candidate: URL) {
   const supabaseProjectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -66,26 +77,28 @@ function resolveDirectUrl() {
   const explicitDirectUrl = process.env.DIRECT_URL?.trim();
   const databaseUrl = process.env.DATABASE_URL?.trim();
 
-  // An explicit DIRECT_URL always wins — it is the recommended Supabase setup.
-  if (explicitDirectUrl) {
-    return explicitDirectUrl;
-  }
-
   if (!databaseUrl) {
-    return "";
+    return explicitDirectUrl ?? "";
   }
 
-  // If DATABASE_URL is not a Supabase pooler URL at all, use it directly.
+  // Non-Supabase databases can continue using an explicit direct URL override.
   if (!isSupabasePoolerUrl(databaseUrl)) {
+    return explicitDirectUrl || databaseUrl;
+  }
+
+  // Supabase session pooler URLs on :5432 are the supported migration target
+  // for server-based deploy environments like Vercel builds. Rewriting them to
+  // db.*.supabase.co can fail when that direct host is IPv6-only or otherwise
+  // unavailable in the build network.
+  if (!isSupabaseTransactionPoolerUrl(databaseUrl)) {
     return databaseUrl;
   }
 
-  // DATABASE_URL points to a Supabase pooler (either session :5432 or
-  // transaction :6543). Prisma's schema engine opens many connections for
-  // migrations and will immediately exceed the pooler's connection cap
-  // (EMAXCONNSESSION). Derive the direct db.*.supabase.co host instead so
-  // that `prisma migrate deploy` bypasses the pooler entirely.
+  // When the app runtime uses Supabase's transaction pooler on :6543, Prisma
+  // migrations need a non-pooled target. Prefer an explicit DIRECT_URL and
+  // otherwise derive the direct host from the pooler connection string.
   return (
+    explicitDirectUrl ??
     deriveSupabaseDirectUrl(databaseUrl) ??
     databaseUrl
   );
