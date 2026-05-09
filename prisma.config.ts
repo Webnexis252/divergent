@@ -12,17 +12,6 @@ function isSupabasePoolerUrl(value: string) {
   }
 }
 
-function isSupabaseTransactionPoolerUrl(value: string) {
-  try {
-    const candidate = new URL(value);
-    return (
-      candidate.hostname.endsWith(".pooler.supabase.com") &&
-      candidate.port === "6543"
-    );
-  } catch {
-    return false;
-  }
-}
 
 function getSupabaseProjectRef(candidate: URL) {
   const supabaseProjectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -77,6 +66,7 @@ function resolveDirectUrl() {
   const explicitDirectUrl = process.env.DIRECT_URL?.trim();
   const databaseUrl = process.env.DATABASE_URL?.trim();
 
+  // An explicit DIRECT_URL always wins — it is the recommended Supabase setup.
   if (explicitDirectUrl) {
     return explicitDirectUrl;
   }
@@ -85,17 +75,16 @@ function resolveDirectUrl() {
     return "";
   }
 
+  // If DATABASE_URL is not a Supabase pooler URL at all, use it directly.
   if (!isSupabasePoolerUrl(databaseUrl)) {
     return databaseUrl;
   }
 
-  // Only auto-derive a direct database host from Supabase's transaction pooler.
-  // Session pooler URLs on port 5432 may be the only reachable option in some
-  // deployment environments, so rewriting them unconditionally can break builds.
-  if (!isSupabaseTransactionPoolerUrl(databaseUrl)) {
-    return databaseUrl;
-  }
-
+  // DATABASE_URL points to a Supabase pooler (either session :5432 or
+  // transaction :6543). Prisma's schema engine opens many connections for
+  // migrations and will immediately exceed the pooler's connection cap
+  // (EMAXCONNSESSION). Derive the direct db.*.supabase.co host instead so
+  // that `prisma migrate deploy` bypasses the pooler entirely.
   return (
     deriveSupabaseDirectUrl(databaseUrl) ??
     databaseUrl
