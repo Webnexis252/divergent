@@ -53,6 +53,7 @@ model User {
   achievements          UserAchievement[]
   teachingCourses       Course[]               @relation("CourseTeachers")
   studentApprovalRequests StudentApprovalRequest[] @relation("AdminStudentRequests")
+  announcementRecipients AnnouncementRecipient[]
 }
 
 model Course {
@@ -438,8 +439,20 @@ model Announcement {
   authorId       String
   createdAt      DateTime @default(now())
   author         User     @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  recipients     AnnouncementRecipient[]
 
   @@index([authorId])
+}
+
+model AnnouncementRecipient {
+  announcementId String
+  userId         String
+  createdAt      DateTime     @default(now())
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([announcementId, userId])
+  @@index([userId])
 }
 
 model Notification {

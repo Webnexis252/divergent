@@ -6,6 +6,20 @@ import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_com
 import { AdminStatCard } from "../../_components/AdminStatCard";
 import { formatShortDate } from "@/lib/date-format";
 
+type AudienceOption =
+  | "EVERYONE"
+  | "STUDENT"
+  | "MENTOR"
+  | "ADMIN"
+  | "SUPER_ADMIN"
+  | "SELECTED_STUDENTS";
+
+type StudentOption = {
+  id: string;
+  name: string | null;
+  email: string | null;
+};
+
 type Announcement = {
   id: string;
   title: string;
@@ -15,20 +29,67 @@ type Announcement = {
   isPinned: boolean;
   createdAt: string;
   author: { name: string | null; image: string | null };
+  recipients: Array<{
+    user: StudentOption;
+  }>;
+  _count: {
+    recipients: number;
+  };
 };
 
-const targetLabel = (role: string | null) => {
-  if (!role) return "Everyone";
-  return role.charAt(0) + role.slice(1).toLowerCase();
+const audienceLabels: Record<AudienceOption, string> = {
+  EVERYONE: "Everyone",
+  STUDENT: "Students only",
+  MENTOR: "Mentors only",
+  ADMIN: "Admins only",
+  SUPER_ADMIN: "Super admins only",
+  SELECTED_STUDENTS: "Selected students only",
 };
+
+function roleLabel(role: string) {
+  return audienceLabels[role as AudienceOption] ?? role.replaceAll("_", " ").toLowerCase();
+}
+
+function targetLabel(announcement: Announcement) {
+  if (announcement._count.recipients > 0) {
+    return announcement._count.recipients === 1
+      ? "1 selected student"
+      : `${announcement._count.recipients} selected students`;
+  }
+
+  if (!announcement.targetRole) return "Everyone";
+  return roleLabel(announcement.targetRole);
+}
+
+function recipientPreview(announcement: Announcement) {
+  const names = announcement.recipients
+    .map(({ user }) => user.name ?? user.email ?? "Student")
+    .filter(Boolean);
+
+  if (names.length === 0) return "";
+
+  const extraCount = announcement._count.recipients - names.length;
+  return extraCount > 0
+    ? `${names.join(", ")} +${extraCount} more`
+    : names.join(", ");
+}
 
 export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ title: "", body: "", targetRole: "", isPinned: false });
+  const [form, setForm] = useState({
+    title: "",
+    body: "",
+    audience: "EVERYONE" as AudienceOption,
+    isPinned: false,
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [studentQuery, setStudentQuery] = useState("");
+  const [studentOptions, setStudentOptions] = useState<StudentOption[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<StudentOption[]>([]);
+  const [searchingStudents, setSearchingStudents] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/announcements")
@@ -38,15 +99,75 @@ export default function AdminAnnouncementsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!showCreate || form.audience !== "SELECTED_STUDENTS") {
+      setStudentOptions([]);
+      setSearchingStudents(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      setSearchingStudents(true);
+
+      try {
+        const params = new URLSearchParams();
+        if (studentQuery.trim()) {
+          params.set("search", studentQuery.trim());
+        }
+
+        const res = await fetch(`/api/admin/students?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        const payload = await res.json();
+
+        if (!res.ok || !payload.success) {
+          setStudentOptions([]);
+          return;
+        }
+
+        const selectedIds = new Set(selectedStudents.map((student) => student.id));
+        const options = (payload.data.students as StudentOption[]).filter(
+          (student) => !selectedIds.has(student.id)
+        );
+        setStudentOptions(options);
+      } catch {
+        if (!controller.signal.aborted) {
+          setStudentOptions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setSearchingStudents(false);
+        }
+      }
+    }, 220);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [form.audience, selectedStudents, showCreate, studentQuery]);
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true); setError("");
+
+    if (form.audience === "SELECTED_STUDENTS" && selectedStudents.length === 0) {
+      setSaving(false);
+      setError("Select at least one student for a direct announcement.");
+      return;
+    }
+
     try {
       const body = {
         title: form.title,
         body: form.body,
         isPinned: form.isPinned,
-        ...(form.targetRole && { targetRole: form.targetRole }),
+        ...(form.audience !== "EVERYONE" &&
+        form.audience !== "SELECTED_STUDENTS" && { targetRole: form.audience }),
+        ...(form.audience === "SELECTED_STUDENTS" && {
+          selectedStudentIds: selectedStudents.map((student) => student.id),
+        }),
       };
       const res = await fetch("/api/admin/announcements", {
         method: "POST",
@@ -56,13 +177,17 @@ export default function AdminAnnouncementsPage() {
       const p = await res.json();
       if (!res.ok || !p.success) { setError(p.error ?? "Failed to create"); return; }
       setAnnouncements((prev) => [p.data, ...prev]);
-      setForm({ title: "", body: "", targetRole: "", isPinned: false });
+      setForm({ title: "", body: "", audience: "EVERYONE", isPinned: false });
+      setStudentQuery("");
+      setStudentOptions([]);
+      setSelectedStudents([]);
       setShowCreate(false);
     } catch { setError("Network error"); }
     finally { setSaving(false); }
   }
 
   const pinned = announcements.filter((a) => a.isPinned).length;
+  const direct = announcements.filter((a) => a._count.recipients > 0).length;
 
   return (
     <PageTransition>
@@ -82,7 +207,7 @@ export default function AdminAnnouncementsPage() {
                 </div>
                 <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em]">Announcements</h1>
                 <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/85">
-                  Broadcast messages to students, mentors or the whole platform.
+                  Broadcast messages to everyone, a role-based audience, or a hand-picked list of students.
                 </p>
               </div>
               <button
@@ -99,7 +224,7 @@ export default function AdminAnnouncementsPage() {
         <StaggerGrid className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <AdminStatCard index={0} title="Total" value={loading ? "…" : announcements.length} caption="All announcements ever sent." tone="sky" />
           <AdminStatCard index={1} title="Pinned" value={loading ? "…" : pinned} caption="Highlighted at the top." tone="emerald" />
-          <AdminStatCard index={2} title="Global" value={loading ? "…" : announcements.filter((a) => !a.targetRole).length} caption="Visible to all users." tone="amber" />
+          <AdminStatCard index={2} title="Direct" value={loading ? "…" : direct} caption="Sent to selected students only." tone="amber" />
         </StaggerGrid>
 
         {/* Create Form */}
@@ -121,12 +246,14 @@ export default function AdminAnnouncementsPage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Target Audience</label>
-                    <select value={form.targetRole} onChange={(e) => setForm((p) => ({ ...p, targetRole: e.target.value }))}
+                    <select value={form.audience} onChange={(e) => setForm((p) => ({ ...p, audience: e.target.value as AudienceOption }))}
                       className="h-12 w-full rounded-[14px] border border-[#99f6e4] bg-white px-4 text-[14px] outline-none focus:border-[#0d9488]">
-                      <option value="">Everyone</option>
+                      <option value="EVERYONE">Everyone</option>
                       <option value="STUDENT">Students only</option>
                       <option value="MENTOR">Mentors only</option>
                       <option value="ADMIN">Admins only</option>
+                      <option value="SUPER_ADMIN">Super admins only</option>
+                      <option value="SELECTED_STUDENTS">Selected students only</option>
                     </select>
                   </div>
                   <div className="flex items-end pb-1">
@@ -136,6 +263,78 @@ export default function AdminAnnouncementsPage() {
                       Pin at the top
                     </label>
                   </div>
+                  {form.audience === "SELECTED_STUDENTS" && (
+                    <div className="sm:col-span-2 rounded-[22px] border border-[#99f6e4] bg-white p-4">
+                      <div className="flex flex-col gap-3">
+                        <div>
+                          <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">
+                            Select students
+                          </label>
+                          <input
+                            value={studentQuery}
+                            onChange={(e) => setStudentQuery(e.target.value)}
+                            placeholder="Search by name or email…"
+                            className="h-12 w-full rounded-[14px] border border-[#ccfbf1] bg-[#f8fffd] px-4 text-[14px] outline-none focus:border-[#0d9488] focus:ring-2 focus:ring-[#0d9488]/15"
+                          />
+                        </div>
+
+                        {selectedStudents.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {selectedStudents.map((student) => (
+                              <button
+                                key={student.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedStudents((prev) =>
+                                    prev.filter((entry) => entry.id !== student.id)
+                                  );
+                                }}
+                                className="rounded-full bg-[#ccfbf1] px-3 py-1.5 text-[12px] font-semibold text-[#115e59] transition hover:bg-[#99f6e4]"
+                              >
+                                {student.name ?? student.email ?? "Student"} ×
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="max-h-60 overflow-y-auto rounded-[16px] border border-[#e6fffa] bg-[#fcfffe]">
+                          {searchingStudents ? (
+                            <p className="px-4 py-3 text-[13px] text-[#64748b]">Searching students…</p>
+                          ) : studentOptions.length === 0 ? (
+                            <p className="px-4 py-3 text-[13px] text-[#64748b]">
+                              {studentQuery.trim()
+                                ? "No matching students found."
+                                : "Start typing or pick from the latest students."}
+                            </p>
+                          ) : (
+                            studentOptions.map((student) => (
+                              <button
+                                key={student.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedStudents((prev) => [...prev, student]);
+                                  setStudentQuery("");
+                                }}
+                                className="flex w-full items-center justify-between gap-3 border-b border-[#f0fdfa] px-4 py-3 text-left transition last:border-b-0 hover:bg-[#f0fdfa]"
+                              >
+                                <div>
+                                  <p className="text-[13px] font-semibold text-[#0f172a]">
+                                    {student.name ?? "Unnamed student"}
+                                  </p>
+                                  <p className="text-[12px] text-[#64748b]">
+                                    {student.email ?? "No email"}
+                                  </p>
+                                </div>
+                                <span className="rounded-full bg-[#ccfbf1] px-2.5 py-1 text-[11px] font-semibold text-[#0f766e]">
+                                  Add
+                                </span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {error && <p className="sm:col-span-2 text-[13px] text-[#dc2626]">{error}</p>}
                   <div className="flex gap-3 sm:col-span-2">
                     <button type="submit" disabled={saving} className="rounded-[14px] bg-[#0d9488] px-6 py-3 text-[14px] font-semibold text-white disabled:opacity-50 transition hover:bg-[#0f766e]">
@@ -179,9 +378,14 @@ export default function AdminAnnouncementsPage() {
                           <p className="font-semibold text-[#101828]">{a.title}</p>
                         </div>
                         <p className="mt-1 line-clamp-2 text-[13px] leading-6 text-[#667085]">{a.body}</p>
+                        {a._count.recipients > 0 && (
+                          <p className="mt-2 text-[12px] font-medium text-[#0f766e]">
+                            Direct to {recipientPreview(a)}
+                          </p>
+                        )}
                       </div>
                       <span className="shrink-0 rounded-full bg-[#f0fdfa] px-3 py-1 text-[11px] font-semibold text-[#0f766e]">
-                        {targetLabel(a.targetRole)}
+                        {targetLabel(a)}
                       </span>
                     </div>
                     <div className="mt-3 flex items-center gap-4 text-[12px] text-[#94a3b8]">
