@@ -43,7 +43,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https: http:",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://*.daily.co https://*.upstash.io",
-              "frame-src 'self' https://*.daily.co https://checkout.razorpay.com https://*.zoho.in https://*.zoho.com",
+              "frame-src 'self' https://meet.jit.si https://*.jit.si https://*.daily.co https://checkout.razorpay.com https://zoho.in https://*.zoho.in https://zoho.com https://*.zoho.com",
               "media-src 'self' https://*.supabase.co blob: data:",
               "object-src 'none'",
               "base-uri 'self'",

@@ -116,11 +116,15 @@ export const toneMeta = {
 const EMBEDDABLE_MEETING_HOSTS = new Set([
   "meet.jit.si",
   "daily.co",
+  "zoho.in",
+  "zoho.com",
 ]);
 
 const EMBEDDABLE_MEETING_SUFFIXES = [
   ".jit.si",
   ".daily.co",
+  ".zoho.in",
+  ".zoho.com",
 ] as const;
 
 function isEmbeddableUrl(url: string): boolean {
@@ -136,7 +140,7 @@ function isEmbeddableUrl(url: string): boolean {
 /**
  * Returns an embeddable meeting URL for the student classroom.
  * If the stored meetingUrl is a non-embeddable external provider
- * (e.g. Zoho, Zoom, Google Meet), it is intentionally ignored and
+ * (e.g. Zoom or Google Meet), it is intentionally ignored and
  * a Jitsi room is generated instead — keeping the student fully
  * in-page with no redirects.
  */
@@ -146,7 +150,7 @@ export function buildMeetingUrl(
   displayName?: string,
 ) {
   // Only honour the admin-set URL if it can actually be embedded.
-  // Non-embeddable URLs (Zoho, Zoom, Google Meet, etc.) fall through
+  // Non-embeddable URLs (Zoom, Google Meet, etc.) fall through
   // to the Jitsi fallback so students are never redirected externally.
   if (meetingUrl && isEmbeddableUrl(meetingUrl)) return meetingUrl;
 

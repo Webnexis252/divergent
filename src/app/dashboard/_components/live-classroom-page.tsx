@@ -58,8 +58,8 @@ const toneMeta = {
   },
 } as const;
 
-const EMBEDDABLE_HOSTS = new Set(["meet.jit.si", "daily.co"]);
-const EMBEDDABLE_SUFFIXES = [".jit.si", ".daily.co"] as const;
+const EMBEDDABLE_HOSTS = new Set(["meet.jit.si", "daily.co", "zoho.in", "zoho.com"]);
+const EMBEDDABLE_SUFFIXES = [".jit.si", ".daily.co", ".zoho.in", ".zoho.com"] as const;
 
 function isEmbeddableUrl(url: string): boolean {
   try {
@@ -73,8 +73,8 @@ function isEmbeddableUrl(url: string): boolean {
 
 /**
  * Build the meeting URL for the classroom.
- * Only embeddable URLs (Jitsi / Daily.co) are used.
- * If the admin stored a non-embeddable URL (Zoho, Zoom, Google Meet, etc.)
+ * Only embeddable URLs (Jitsi / Daily.co / Zoho) are used.
+ * If the admin stored a non-embeddable URL (Zoom, Google Meet, etc.)
  * we fall through to the Jitsi auto-generated room so the session always
  * stays in-page without any external redirect.
  */
