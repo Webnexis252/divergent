@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { ExternalLink, PhoneOff } from "lucide-react";
+import { PhoneOff } from "lucide-react";
 
 interface VideoConferenceProps {
   meetingIframeUrl: string;
@@ -10,8 +10,8 @@ interface VideoConferenceProps {
 
 /**
  * Embeds a live video conference (Jitsi) inside the classroom layout.
- * Shows a "Live session in progress" header with pop-out and end controls,
- * plus the meeting iframe itself.
+ * Shows a "Live session in progress" header with an end control and the
+ * meeting iframe itself.
  */
 export function VideoConference({
   meetingIframeUrl,
@@ -35,25 +35,14 @@ export function VideoConference({
           />
           Live session in progress
         </div>
-        <div className="flex items-center gap-2">
-          <a
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-white/28"
-            href={meetingIframeUrl}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            Pop out
-          </a>
-          <button
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#dc2626] px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-[#b91c1c]"
-            onClick={onEndMeeting}
-            type="button"
-          >
-            <PhoneOff className="h-3.5 w-3.5" />
-            End
-          </button>
-        </div>
+        <button
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#dc2626] px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-[#b91c1c]"
+          onClick={onEndMeeting}
+          type="button"
+        >
+          <PhoneOff className="h-3.5 w-3.5" />
+          End
+        </button>
       </div>
 
       <div className="bg-[#040404]">

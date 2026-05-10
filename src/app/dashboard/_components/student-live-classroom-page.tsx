@@ -825,19 +825,6 @@ export function StudentLiveClassroomPage({
                                 Open course
                               </Link>
 
-                              {meetingLaunchUrl && tone !== "completed" ? (
-                                <a
-                                  className={actionButtonStyles(
-                                    "w-full border border-black/10 bg-white text-black hover:-translate-y-0.5",
-                                  )}
-                                  href={meetingLaunchUrl}
-                                  rel="noopener noreferrer"
-                                  target="_blank"
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                  Open in new tab
-                                </a>
-                              ) : null}
                             </div>
                           </aside>
                         </RevealSection>

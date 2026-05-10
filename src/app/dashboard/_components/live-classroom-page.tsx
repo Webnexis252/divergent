@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   CalendarClock,
   CheckCircle2,
-  ExternalLink,
   ImagePlus,
   LogIn,
   MessageCircleMore,
@@ -233,6 +232,41 @@ export function LiveClassroomPage({
   const [meetStarted, setMeetStarted] = useState(false);
   const [attendanceMarked, setAttendanceMarked] = useState(false);
 
+  const loadMessages = useCallback(
+    async (
+      classId: string,
+      options: { background?: boolean; signal?: AbortSignal } = {},
+    ) => {
+      const { background = false, signal } = options;
+
+      if (!background) {
+        setMessagesLoading(true);
+      }
+
+      try {
+        const response = await fetch(`/api/live-classes/${classId}/messages`, {
+          cache: "no-store",
+          signal,
+        });
+        const json = await response.json();
+
+        if (signal?.aborted) return;
+        if (response.ok && json.success) {
+          setMessages(json.data);
+        }
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          console.error("Failed to load live messages", error);
+        }
+      } finally {
+        if (!background && !signal?.aborted) {
+          setMessagesLoading(false);
+        }
+      }
+    },
+    [],
+  );
+
 
   useEffect(() => {
     let active = true;
@@ -283,35 +317,30 @@ export function LiveClassroomPage({
   }, [focusClass?.id]);
 
   useEffect(() => {
-    let active = true;
-
     if (!focusClass?.id) {
       setMessages([]);
+      setMessagesLoading(false);
       return;
     }
 
-    setMessagesLoading(true);
+    const controller = new AbortController();
+    void loadMessages(focusClass.id, { signal: controller.signal });
 
-    fetch(`/api/live-classes/${focusClass.id}/messages`)
-      .then((response) => response.json())
-      .then((json) => {
-        if (active && json.success) {
-          setMessages(json.data);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to load live messages", error);
-      })
-      .finally(() => {
-        if (active) {
-          setMessagesLoading(false);
-        }
-      });
+    if (!messagesOpen) {
+      return () => {
+        controller.abort();
+      };
+    }
+
+    const intervalId = window.setInterval(() => {
+      void loadMessages(focusClass.id, { background: true });
+    }, 2000);
 
     return () => {
-      active = false;
+      controller.abort();
+      window.clearInterval(intervalId);
     };
-  }, [focusClass?.id]);
+  }, [focusClass?.id, loadMessages, messagesOpen]);
 
   useEffect(() => {
     if (!messagesContainerRef.current) return;
@@ -580,15 +609,6 @@ export function LiveClassroomPage({
                                           <span className="text-[13px] font-semibold text-white">Live Session — {focusClass.title}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <a
-                                            href={meetingIframeUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold text-white transition hover:bg-white/30"
-                                          >
-                                            <ExternalLink className="h-3 w-3" />
-                                            Pop out
-                                          </a>
                                           <button
                                             onClick={endClassGlobally}
                                             className="inline-flex items-center gap-1.5 rounded-full bg-[#dc2626] px-3 py-1 text-[11px] font-semibold text-white transition hover:bg-[#b91c1c]"

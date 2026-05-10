@@ -74,7 +74,8 @@ function MessageBubble({
   );
 }
 
-const fetcher = (url: string) => apiClient.get<LiveClassMessage[]>(url);
+const fetcher = (url: string) =>
+  apiClient.get<LiveClassMessage[]>(url, { cache: "no-store" });
 
 export function ClassroomChat({
   classId,
@@ -96,11 +97,16 @@ export function ClassroomChat({
   const [sendError, setSendError] = useState("");
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  // Poll for messages every 2 seconds when open
+  // Poll for fresh messages while the panel is open so everyone in the room
+  // sees new posts without a manual refresh.
   const { data: messages = [], isLoading: messagesLoading, mutate } = useSWR(
     open && classId ? `/api/live-classes/${classId}/messages` : null,
     fetcher,
-    { refreshInterval: 2000 }
+    {
+      refreshInterval: 2000,
+      dedupingInterval: 0,
+      revalidateOnFocus: true,
+    },
   );
 
   useEffect(() => {
