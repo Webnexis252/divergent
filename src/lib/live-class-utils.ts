@@ -232,7 +232,12 @@ export function getToneHighlights(
     return [
       { label: "Room Status", value: "Open and ready to join" },
       { label: "Course", value: item.courseTitle },
-      { label: "Attendance", value: attendanceMarked ? "Marked Present" : "Please mark attendance" },
+      {
+        label: "Attendance",
+        value: attendanceMarked
+          ? "Marked Present"
+          : "Watch at least 30 minutes to count this class",
+      },
     ];
   }
   if (tone === "upcoming") {
@@ -261,7 +266,7 @@ export function getStateSteps(
       "Join directly from this page without breaking the route.",
       attendanceMarked
         ? "Your attendance has already been marked for this session."
-        : "Attendance will be marked the moment you open the live room.",
+        : "Attendance counts after you complete at least 30 minutes in the live room.",
       "Use the class thread below for quick questions and image updates.",
     ];
   }
@@ -271,6 +276,9 @@ export function getStateSteps(
       item.recordingUrl
         ? "Replay the session recording whenever you need a refresher."
         : "The recording has not been uploaded yet, so the course page is the best next stop.",
+      attendanceMarked
+        ? "Your attendance was counted for this session."
+        : "Attendance only counts after 30 minutes of watch time in the live room.",
       "Review any notes or follow-up questions in the class thread.",
       "Jump back to the course page to keep moving through the module.",
     ];

@@ -231,6 +231,7 @@ export function LiveClassroomPage({
   // Meet embed state
   const [meetStarted, setMeetStarted] = useState(false);
   const [attendanceMarked, setAttendanceMarked] = useState(false);
+  const [attendanceTrackingStarted, setAttendanceTrackingStarted] = useState(false);
 
   const loadMessages = useCallback(
     async (
@@ -314,6 +315,8 @@ export function LiveClassroomPage({
   // Reset iframe error when class changes
   useEffect(() => {
     setMeetStarted(false);
+    setAttendanceMarked(false);
+    setAttendanceTrackingStarted(false);
   }, [focusClass?.id]);
 
   useEffect(() => {
@@ -352,12 +355,25 @@ export function LiveClassroomPage({
     async (status: "JOIN" | "LEAVE") => {
       if (!focusClass?.id) return;
       try {
-        await fetch(`/api/live-classes/${focusClass.id}/attendance`, {
+        const response = await fetch(`/api/live-classes/${focusClass.id}/attendance`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status }),
         });
-        if (status === "JOIN") setAttendanceMarked(true);
+        const payload = await response.json();
+
+        if (!response.ok || !payload.success) {
+          return;
+        }
+
+        if (status === "JOIN") {
+          setAttendanceTrackingStarted(true);
+          setAttendanceMarked(Boolean(payload.data?.isCounted));
+          return;
+        }
+
+        setAttendanceTrackingStarted(false);
+        setAttendanceMarked(Boolean(payload.data?.isCounted));
       } catch (error) {
         console.error("Failed to mark attendance", error);
       }
@@ -376,10 +392,10 @@ export function LiveClassroomPage({
     if (!focusClass?.id) return;
     setMeetStarted(true);
     // Mark attendance on first join
-    if (!attendanceMarked) {
+    if (!attendanceMarked && !attendanceTrackingStarted) {
       void markAttendance("JOIN");
     }
-  }, [focusClass?.id, attendanceMarked, markAttendance]);
+  }, [focusClass?.id, attendanceMarked, attendanceTrackingStarted, markAttendance]);
 
 
 
@@ -480,7 +496,13 @@ export function LiveClassroomPage({
               {attendanceMarked && (
                 <Badge className="bg-[#f0fdf4] text-[#16a34a]" tone="neutral">
                   <CheckCircle2 className="mr-1 inline h-3 w-3" />
-                  Attending
+                  Attendance Counted
+                </Badge>
+              )}
+              {!attendanceMarked && attendanceTrackingStarted && (
+                <Badge className="bg-[rgba(56,193,255,0.12)] text-[#0f766e]" tone="neutral">
+                  <CheckCircle2 className="mr-1 inline h-3 w-3" />
+                  Tracking Attendance
                 </Badge>
               )}
             </div>
@@ -721,11 +743,15 @@ export function LiveClassroomPage({
                                   type="button"
                                   variant="secondary"
                                   onClick={() => markAttendance("JOIN")}
-                                  disabled={attendanceMarked || tone !== "live"}
-                                  className={`shrink-0 snap-start whitespace-nowrap ${attendanceMarked ? "bg-[#f0fdf4] text-[#15803d] hover:bg-[#dcfce7] hover:text-[#166534]" : ""}`}
+                                  disabled={attendanceMarked || attendanceTrackingStarted || tone !== "live"}
+                                  className={`shrink-0 snap-start whitespace-nowrap ${attendanceMarked ? "bg-[#f0fdf4] text-[#15803d] hover:bg-[#dcfce7] hover:text-[#166534]" : attendanceTrackingStarted ? "bg-[rgba(56,193,255,0.12)] text-[#0f766e] hover:bg-[rgba(56,193,255,0.18)] hover:text-[#0f766e]" : ""}`}
                                 >
                                   <CheckCircle2 className="h-4 w-4" />
-                                  {attendanceMarked ? "Attendance Marked" : "Attendance"}
+                                  {attendanceMarked
+                                    ? "Attendance Counted"
+                                    : attendanceTrackingStarted
+                                      ? "Tracking Attendance"
+                                      : "Start Attendance"}
                                 </Button>
 
                                 <Button

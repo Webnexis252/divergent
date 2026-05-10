@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth";
 import { apiSuccess, apiUnauthorized, apiServerError } from "@/lib/api-response";
 import { averageCategoryPerformanceBreakdown } from "@/lib/test-category-performance";
 import { gradeQuestionAnswer } from "@/lib/test-grading";
+import { formatWatchTimeStat } from "@/lib/live-class-attendance";
 
 /**
  * GET /api/users/me/profile-stats
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
 
     const userDb = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, xpPoints: true },
+      select: { id: true, xpPoints: true, totalStudyTime: true },
     });
 
     if (!userDb) {
@@ -123,9 +124,8 @@ export async function GET(req: NextRequest) {
             })
           : 0;
 
-      const totalWatchTimeHours = Math.round(
-        progressRecords.reduce((acc, curr) => acc + curr.watchTime, 0) / 3600,
-      );
+      const totalWatchTimeSecs = userDb.totalStudyTime;
+      const totalWatchTimeHours = totalWatchTimeSecs / 3600;
       const coursesEnrolled = enrollments.length;
       const attendedClasses = attendanceRecords.length;
       const attendanceTotal = Math.max(totalPastClasses, attendedClasses, 1);
@@ -234,6 +234,8 @@ export async function GET(req: NextRequest) {
         role: "STUDENT",
         stats: {
           totalWatchTime: totalWatchTimeHours,
+          totalWatchTimeDisplay: formatWatchTimeStat(totalWatchTimeSecs),
+          totalWatchTimeSecs,
           totalXp: userDb.xpPoints,
           coursesEnrolled,
           attendance: {

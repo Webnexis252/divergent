@@ -187,6 +187,7 @@ export function StudentLiveClassroomPage({
   const [mobileMessagesOpen, setMobileMessagesOpen] = useState(false);
   const [meetStarted, setMeetStarted] = useState(false);
   const [attendanceMarked, setAttendanceMarked] = useState(false);
+  const [attendanceTrackingStarted, setAttendanceTrackingStarted] = useState(false);
 
   const fetcher = (url: string) => apiClient.get<LiveClassData>(url);
   const { data, isLoading: loading } = useSWR(dataEndpoint, fetcher);
@@ -209,27 +210,41 @@ export function StudentLiveClassroomPage({
     [isMobileViewport],
   );
 
-
+  useEffect(() => {
+    setMeetStarted(false);
+    setAttendanceMarked(false);
+    setAttendanceTrackingStarted(false);
+  }, [focusClass?.id]);
 
   const markAttendance = useCallback(
     async (status: "JOIN" | "LEAVE") => {
       if (!focusClass?.id) return;
 
       try {
-        await fetch(`/api/live-classes/${focusClass.id}/attendance`, {
+        const response = await fetch(`/api/live-classes/${focusClass.id}/attendance`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status }),
         });
+        const payload = await response.json();
+
+        if (!response.ok || !payload.success) {
+          return;
+        }
 
         if (status === "JOIN") {
-          setAttendanceMarked(true);
+          setAttendanceTrackingStarted(true);
+          setAttendanceMarked(Boolean(payload.data?.isCounted));
+          return;
         }
+
+        setAttendanceTrackingStarted(false);
+        setAttendanceMarked(Boolean(payload.data?.isCounted));
       } catch (error) {
         console.error("Failed to mark attendance", error);
       }
     },
-    [focusClass],
+    [focusClass?.id],
   );
 
   const meetingLaunchUrl = useMemo(() => {
@@ -250,10 +265,10 @@ export function StudentLiveClassroomPage({
       window.location.assign(meetingLaunchUrl);
     }
 
-    if (!attendanceMarked) {
+    if (!attendanceMarked && !attendanceTrackingStarted) {
       void markAttendance("JOIN");
     }
-  }, [attendanceMarked, markAttendance, meetingLaunchUrl]);
+  }, [attendanceMarked, attendanceTrackingStarted, markAttendance, meetingLaunchUrl]);
 
   const startMeeting = useCallback(() => {
     if (!focusClass?.id || !meetingLaunchUrl) return;
@@ -264,11 +279,12 @@ export function StudentLiveClassroomPage({
     }
 
     setMeetStarted(true);
-    if (!attendanceMarked) {
+    if (!attendanceMarked && !attendanceTrackingStarted) {
       void markAttendance("JOIN");
     }
   }, [
     attendanceMarked,
+    attendanceTrackingStarted,
     focusClass?.id,
     markAttendance,
     meetingLaunchUrl,
@@ -384,7 +400,12 @@ export function StudentLiveClassroomPage({
                             {attendanceMarked ? (
                               <span className="flex items-center gap-2 rounded-full bg-[#f0fdf4] px-4 py-1.5 text-[13px] font-semibold text-[#15803d]">
                                 <CheckCircle2 className="h-4 w-4" />
-                                Attending
+                                Attendance counted
+                              </span>
+                            ) : attendanceTrackingStarted ? (
+                              <span className="flex items-center gap-2 rounded-full bg-white/18 px-4 py-1.5 text-[13px] font-semibold text-white shadow-[0_2px_10px_rgba(255,255,255,0.08)]">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Tracking attendance
                               </span>
                             ) : null}
                           </div>
@@ -435,14 +456,26 @@ export function StudentLiveClassroomPage({
                           )}
 
                           <button
-                            className={actionButtonStyles(`w-full justify-center px-4 py-3.5 sm:w-auto sm:px-4 sm:py-2.5 ${attendanceMarked ? "bg-[#f0fdf4] text-[#15803d]" : meta.secondaryActionClass}`)}
+                            className={actionButtonStyles(`w-full justify-center px-4 py-3.5 sm:w-auto sm:px-4 sm:py-2.5 ${attendanceMarked ? "bg-[#f0fdf4] text-[#15803d]" : attendanceTrackingStarted ? "bg-white/18 text-white" : meta.secondaryActionClass}`)}
                             onClick={() => markAttendance("JOIN")}
-                            disabled={attendanceMarked || tone !== "live"}
+                            disabled={attendanceMarked || attendanceTrackingStarted || tone !== "live"}
                             type="button"
                           >
                             <CheckCircle2 className="h-5 w-5 sm:h-4 sm:w-4" />
-                            <span className="sm:hidden">{attendanceMarked ? "Marked" : "Attendance"}</span>
-                            <span className="hidden sm:inline">{attendanceMarked ? "Attendance Marked" : "Attendance"}</span>
+                            <span className="sm:hidden">
+                              {attendanceMarked
+                                ? "Marked"
+                                : attendanceTrackingStarted
+                                  ? "Tracking"
+                                  : "Attendance"}
+                            </span>
+                            <span className="hidden sm:inline">
+                              {attendanceMarked
+                                ? "Attendance Counted"
+                                : attendanceTrackingStarted
+                                  ? "Tracking Attendance"
+                                  : "Start Attendance"}
+                            </span>
                           </button>
 
                           <Link

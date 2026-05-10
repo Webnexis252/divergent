@@ -2,6 +2,10 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { syncPerfectAttendanceXp, PERFECT_ATTENDANCE_STREAK_XP } from '@/lib/xp';
+import {
+  getLiveClassWatchTimeDeltaSeconds,
+  qualifiesForLiveClassAttendance,
+} from '@/lib/live-class-attendance';
 
 import { apiSuccess, apiCreated, apiError, apiUnauthorized, apiServerError } from '@/lib/api-response';
 
@@ -14,55 +18,144 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     const { classId } = await params;
     const body = await req.json();
-    
-    // allow status to be JOIN, LEAVE, or LEAVE_EARLY
+
     const status = body.status as string;
-    
+
     if (status === 'JOIN') {
-      await prisma.liveClass.findUnique({ where: { id: classId } });
-      const attendance = await prisma.attendance.upsert({
-        where: { userId_liveClassId: { userId: user.userId, liveClassId: classId } },
-        create: {
-          userId: user.userId,
-          liveClassId: classId,
-          joinedAt: new Date(),
-          isCounted: false, // Will be marked true when teacher ends class
-        },
-        update: {
-          // If they rejoin, clear leaveAt
-          leaveAt: null,
+      const liveClass = await prisma.liveClass.findUnique({
+        where: { id: classId },
+        select: { id: true, isEnded: true },
+      });
+
+      if (!liveClass) {
+        return apiError('Live class not found', 404);
+      }
+
+      if (liveClass.isEnded) {
+        return apiError('This live class has already ended', 400);
+      }
+
+      const now = new Date();
+      const existingAttendance = await prisma.attendance.findUnique({
+        where: {
+          userId_liveClassId: { userId: user.userId, liveClassId: classId },
         },
       });
-      return apiCreated(attendance, 'Attendance marked');
-    } else if (status === 'LEAVE') {
-      const result = await prisma.$transaction(async (tx) => {
-        const liveClass = await tx.liveClass.findUnique({ where: { id: classId } });
-        const attendance = await tx.attendance.update({
-          where: { userId_liveClassId: { userId: user.userId, liveClassId: classId } },
+
+      if (existingAttendance?.leaveAt === null) {
+        return apiSuccess(existingAttendance, 'Attendance tracking is already active');
+      }
+
+      if (existingAttendance) {
+        const attendance = await prisma.attendance.update({
+          where: {
+            userId_liveClassId: { userId: user.userId, liveClassId: classId },
+          },
           data: {
-            leaveAt: new Date(),
-            isCounted: liveClass?.isEnded ? true : false,
+            joinedAt: now,
+            leaveAt: null,
           },
         });
 
-        const xpReward = attendance.isCounted
-          ? await syncPerfectAttendanceXp(user.userId, tx)
-          : { awarded: false, xpAwarded: 0 };
+        return apiSuccess(attendance, 'Attendance tracking resumed');
+      }
 
-        return { attendance, xpReward };
+      const attendance = await prisma.attendance.create({
+        data: {
+          userId: user.userId,
+          liveClassId: classId,
+          joinedAt: now,
+          leaveAt: null,
+          watchTimeSecs: 0,
+          isCounted: false,
+        },
       });
+
+      return apiCreated(attendance, 'Attendance tracking started');
+    }
+
+    if (status === 'LEAVE') {
+      const result = await prisma.$transaction(async (tx) => {
+        const attendance = await tx.attendance.findUnique({
+          where: {
+            userId_liveClassId: { userId: user.userId, liveClassId: classId },
+          },
+        });
+
+        if (!attendance) {
+          return {
+            attendance: null,
+            watchTimeAddedSecs: 0,
+            xpReward: { awarded: false, xpAwarded: 0 },
+          };
+        }
+
+        if (attendance.leaveAt) {
+          return {
+            attendance,
+            watchTimeAddedSecs: 0,
+            xpReward: { awarded: false, xpAwarded: 0 },
+          };
+        }
+
+        const leaveAt = new Date();
+        const watchTimeAddedSecs = getLiveClassWatchTimeDeltaSeconds(
+          attendance.joinedAt,
+          leaveAt,
+        );
+        const totalWatchTimeSecs = attendance.watchTimeSecs + watchTimeAddedSecs;
+        const nextIsCounted = qualifiesForLiveClassAttendance(totalWatchTimeSecs);
+
+        const updatedAttendance = await tx.attendance.update({
+          where: {
+            userId_liveClassId: { userId: user.userId, liveClassId: classId },
+          },
+          data: {
+            leaveAt,
+            watchTimeSecs: totalWatchTimeSecs,
+            isCounted: nextIsCounted,
+          },
+        });
+
+        if (watchTimeAddedSecs > 0) {
+          await tx.user.update({
+            where: { id: user.userId },
+            data: {
+              totalStudyTime: { increment: watchTimeAddedSecs },
+            },
+          });
+        }
+
+        const xpReward =
+          !attendance.isCounted && nextIsCounted
+            ? await syncPerfectAttendanceXp(user.userId, tx)
+            : { awarded: false, xpAwarded: 0 };
+
+        return {
+          attendance: updatedAttendance,
+          watchTimeAddedSecs,
+          xpReward,
+        };
+      });
+
+      if (!result.attendance) {
+        return apiError('Attendance record not found', 404);
+      }
 
       return apiSuccess(
         {
           ...result.attendance,
+          watchTimeAddedSecs: result.watchTimeAddedSecs,
           xpAwarded: result.xpReward.xpAwarded,
         },
         result.xpReward.xpAwarded > 0
-          ? `Left class marked. ${PERFECT_ATTENDANCE_STREAK_XP} XP awarded for your 7-day perfect attendance streak.`
-          : 'Left class marked',
+          ? `Attendance counted. ${PERFECT_ATTENDANCE_STREAK_XP} XP awarded for your 7-day perfect attendance streak.`
+          : result.attendance.isCounted
+            ? 'Attendance counted'
+            : 'Watch time saved. Attendance requires at least 30 minutes in the live class.',
       );
     }
-    
+
     return apiError('Invalid status', 400);
   } catch (err) {
     console.error('[MARK_ATTENDANCE_ERROR]', err);

@@ -3,6 +3,10 @@ import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { apiSuccess, apiUnauthorized, apiServerError } from '@/lib/api-response';
 import { syncPerfectAttendanceXp } from '@/lib/xp';
+import {
+  getLiveClassWatchTimeDeltaSeconds,
+  qualifiesForLiveClassAttendance,
+} from '@/lib/live-class-attendance';
 
 type Params = { params: Promise<{ classId: string }> };
 
@@ -16,39 +20,63 @@ export async function POST(req: NextRequest, { params }: Params) {
     const { classId } = await params;
 
     const liveClass = await prisma.$transaction(async (tx) => {
+      const endedAt = new Date();
       const updatedLiveClass = await tx.liveClass.update({
         where: { id: classId },
         data: {
           isEnded: true,
-          endedAt: new Date(),
+          endedAt,
         },
       });
 
-      const countedAttendances = await tx.attendance.findMany({
+      const activeAttendances = await tx.attendance.findMany({
         where: {
           liveClassId: classId,
           leaveAt: null,
         },
         select: {
+          id: true,
           userId: true,
-        },
-      });
-
-      await tx.attendance.updateMany({
-        where: {
-          liveClassId: classId,
-          leaveAt: null,
-        },
-        data: {
+          joinedAt: true,
+          watchTimeSecs: true,
           isCounted: true,
         },
       });
 
-      const affectedStudentIds = Array.from(
-        new Set(countedAttendances.map((attendance) => attendance.userId)),
-      );
+      const newlyCountedStudentIds = new Set<string>();
 
-      for (const studentId of affectedStudentIds) {
+      for (const attendance of activeAttendances) {
+        const watchTimeAddedSecs = getLiveClassWatchTimeDeltaSeconds(
+          attendance.joinedAt,
+          endedAt,
+        );
+        const totalWatchTimeSecs = attendance.watchTimeSecs + watchTimeAddedSecs;
+        const nextIsCounted = qualifiesForLiveClassAttendance(totalWatchTimeSecs);
+
+        await tx.attendance.update({
+          where: { id: attendance.id },
+          data: {
+            leaveAt: endedAt,
+            watchTimeSecs: totalWatchTimeSecs,
+            isCounted: nextIsCounted,
+          },
+        });
+
+        if (watchTimeAddedSecs > 0) {
+          await tx.user.update({
+            where: { id: attendance.userId },
+            data: {
+              totalStudyTime: { increment: watchTimeAddedSecs },
+            },
+          });
+        }
+
+        if (!attendance.isCounted && nextIsCounted) {
+          newlyCountedStudentIds.add(attendance.userId);
+        }
+      }
+
+      for (const studentId of newlyCountedStudentIds) {
         await syncPerfectAttendanceXp(studentId, tx);
       }
 

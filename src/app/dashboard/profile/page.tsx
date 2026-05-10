@@ -43,6 +43,8 @@ interface TopicMastery {
 
 interface ProfileStats {
   totalWatchTime: number;
+  totalWatchTimeDisplay: string;
+  totalWatchTimeSecs: number;
   totalXp: number;
   coursesEnrolled: number;
   skills: CategoryPerformanceItem[];
@@ -238,8 +240,10 @@ export default function StudentProfilePage() {
                       <ClockIcon />
                     </div>
                     <div className="relative z-10 flex flex-col items-start">
-                      <span className="text-[48px] font-bold leading-none">{stats?.totalWatchTime ?? 0}</span>
-                      <span className="mt-1 text-[16px] font-semibold opacity-90">Total Watch Time (hrs)</span>
+                      <span className="text-[40px] font-bold leading-none sm:text-[48px]">
+                        {stats?.totalWatchTimeDisplay ?? "0 mins"}
+                      </span>
+                      <span className="mt-1 text-[16px] font-semibold opacity-90">Total Watch Time</span>
                     </div>
                   </motion.div>
 

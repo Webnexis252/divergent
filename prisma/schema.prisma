@@ -366,6 +366,7 @@ model Attendance {
   userId      String
   joinedAt    DateTime
   leaveAt     DateTime?
+  watchTimeSecs Int     @default(0)
   isCounted   Boolean   @default(false)
   liveClass   LiveClass @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
