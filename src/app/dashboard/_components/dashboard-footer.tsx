@@ -93,7 +93,7 @@ export function DashboardFooter() {
     <footer className="hidden border-t border-white/70 px-4 py-8 sm:block sm:px-6 lg:px-8">
       <motion.div
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto flex max-w-[1920px] flex-col gap-8 rounded-[var(--radius-xl)] border border-white/80 bg-[rgba(13,13,20,0.96)] px-6 py-8 text-white shadow-[0_28px_60px_rgba(13,13,20,0.2)]"
+        className="mx-auto flex max-w-[1920px] flex-col gap-8 rounded-(--radius-xl) border border-white/80 bg-[rgba(13,13,20,0.96)] px-6 py-8 text-white shadow-[0_28px_60px_rgba(13,13,20,0.2)]"
         initial={{ opacity: 0, y: 12 }}
         transition={{ duration: 0.32 }}
       >
@@ -109,7 +109,7 @@ export function DashboardFooter() {
             {variant.links.map((link) => (
               <Link
                 key={link.href}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-[13px] font-semibold text-white/74 transition-colors duration-[var(--transition-fast)] hover:border-white/20 hover:bg-white/8 hover:text-white"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-[13px] font-semibold text-white/74 transition-colors duration-150 hover:border-white/20 hover:bg-white/8 hover:text-white"
                 href={link.href}
               >
                 {link.label}

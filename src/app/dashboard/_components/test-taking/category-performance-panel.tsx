@@ -42,8 +42,8 @@ export function CategoryPerformancePanel({
     <section className="flex flex-col gap-5 text-left">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="m-0 text-base font-bold text-[var(--text-strong,#111827)]">{title}</h3>
-          <p className="mt-1.5 text-sm leading-6 text-[var(--text-muted,#6b7280)]">
+          <h3 className="m-0 text-base font-bold text-(--text-strong)">{title}</h3>
+          <p className="mt-1.5 text-sm leading-6 text-(--text-muted)">
             {description}
           </p>
         </div>
@@ -116,7 +116,7 @@ export function CategoryPerformancePanel({
             </svg>
           </div>
 
-          <div className="text-xs text-[var(--text-muted,#6b7280)]">
+          <div className="text-xs text-(--text-muted)">
             {totalQuestions} tagged question{totalQuestions === 1 ? "" : "s"}
           </div>
 
@@ -141,18 +141,18 @@ export function CategoryPerformancePanel({
                 />
 
                 <div className="flex min-w-0 flex-col gap-1">
-                  <span className="text-sm font-semibold text-[var(--text-strong,#111827)]">
+                  <span className="text-sm font-semibold text-(--text-strong)">
                     {item.label}
                   </span>
                   {item.pendingCount > 0 && (
-                    <span className="text-xs text-[var(--text-muted,#6b7280)]">
+                    <span className="text-xs text-(--text-muted)">
                       {item.pendingCount} pending review
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="shrink-0 text-sm font-semibold tabular-nums text-[var(--text-strong,#111827)]">
+              <div className="shrink-0 text-sm font-semibold tabular-nums text-(--text-strong)">
                 {item.score}%
               </div>
             </div>

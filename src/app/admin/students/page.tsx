@@ -166,9 +166,9 @@ export default function AdminStudentsPage() {
 
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <form className="relative w-full max-w-xl" onSubmit={handleSearch}>
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--text-subtle)]" />
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-(--text-subtle)" />
                   <input
-                    className="h-14 w-full rounded-[var(--radius-pill)] border border-[var(--line-soft)] bg-white/88 pl-12 pr-5 text-[15px] text-[var(--text-strong)] shadow-[var(--shadow-soft)] transition-[border-color,box-shadow] duration-[var(--transition-fast)] ease-[var(--ease-standard)] focus-visible:border-[var(--brand-primary-strong)] focus-visible:outline-none"
+                    className="h-14 w-full rounded-(--radius-pill) border border-(--line-soft) bg-white/88 pl-12 pr-5 text-[15px] text-(--text-strong) shadow-(--shadow-soft) transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-(--brand-primary-strong) focus-visible:outline-none"
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search students by name or email"
                     type="text"
@@ -184,7 +184,7 @@ export default function AdminStudentsPage() {
                       </Button>
                     </Link>
                   )}
-                  <Button onClick={() => setIsAddModalOpen(true)} size="lg" className="bg-[var(--brand-primary-strong)] text-white hover:bg-[var(--brand-primary-strong)]/90">
+                  <Button onClick={() => setIsAddModalOpen(true)} size="lg" className="bg-(--brand-primary-strong) text-white hover:bg-(--brand-primary-strong)/90">
                     <UserPlus className="h-[18px] w-[18px]" />
                     Add Student
                   </Button>

@@ -24,7 +24,7 @@ export function DashboardShell({
   const hideFooter = isAssessmentTakeRoute;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--background-alt)]">
+    <div className="flex min-h-screen flex-col bg-(--background-alt)">
       {hideHeader ? null : <DashboardHeader />}
       <div className="flex-1">{children}</div>
       {hideFooter ? null : <DashboardFooter />}

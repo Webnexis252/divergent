@@ -11,7 +11,7 @@ export default function NotFound() {
     <div className="flex min-h-[100svh] flex-col items-center justify-center bg-black px-4 text-white">
       <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#111] p-8 shadow-2xl">
         {/* Decorative blob */}
-        <div className="pointer-events-none absolute -top-24 left-0 h-48 w-48 rounded-full bg-[var(--primary-blue)] opacity-20 blur-3xl" />
+        <div className="pointer-events-none absolute -top-24 left-0 h-48 w-48 rounded-full bg-(--primary-blue) opacity-20 blur-3xl" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
           {/* Large 404 */}
@@ -22,7 +22,7 @@ export default function NotFound() {
           <h1 className="mb-3 text-2xl font-bold tracking-tight">
             Page not found
           </h1>
-          <p className="mb-8 text-sm text-[var(--text-muted)]">
+          <p className="mb-8 text-sm text-(--text-muted)">
             The page you&apos;re looking for doesn&apos;t exist or has been
             moved. Let&apos;s get you back on track.
           </p>

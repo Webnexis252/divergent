@@ -201,7 +201,7 @@ export function ClassroomChat({
           </p>
         </div>
         <button
-          className="rounded-full p-2 text-black/46 transition-colors duration-[var(--transition-fast)] hover:bg-black/5 hover:text-black focus-visible:outline-none"
+          className="rounded-full p-2 text-black/46 transition-colors duration-150 hover:bg-black/5 hover:text-black focus-visible:outline-none"
           onClick={() => onToggleOpen(false)}
           type="button"
         >
@@ -275,7 +275,7 @@ export function ClassroomChat({
 
         <div className="rounded-[20px] border border-black/8 bg-[#f7f5f4] p-3">
           <div className="flex items-center gap-2">
-            <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full bg-white text-black/56 shadow-[0_4px_10px_rgba(0,0,0,0.04)] transition-colors duration-[var(--transition-fast)] hover:text-black">
+            <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full bg-white text-black/56 shadow-[0_4px_10px_rgba(0,0,0,0.04)] transition-colors duration-150 hover:text-black">
               <ImagePlus className="h-4.5 w-4.5" />
               <input
                 accept="image/*"

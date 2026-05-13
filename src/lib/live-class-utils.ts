@@ -218,7 +218,7 @@ export function formatSessionWindow(startTime: string, duration: number) {
 
 export function actionButtonStyles(className?: string) {
   return cx(
-    "inline-flex items-center justify-center gap-2 rounded-[12px] px-4 py-3 text-[14px] font-semibold transition-transform duration-[var(--transition-fast)] ease-[var(--ease-standard)]",
+    "inline-flex items-center justify-center gap-2 rounded-[12px] px-4 py-3 text-[14px] font-semibold transition-transform duration-150 ease-out",
     className,
   );
 }

@@ -26,7 +26,7 @@ export function MetricCard({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--text-subtle)]">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-(--text-subtle)">
             {label}
           </p>
           <div
@@ -38,7 +38,7 @@ export function MetricCard({
         </div>
         {icon ? (
           <div
-            className="grid h-12 w-12 place-items-center rounded-[var(--radius-md)] bg-white/90 text-[var(--text-strong)] shadow-[var(--shadow-soft)]"
+            className="grid h-12 w-12 place-items-center rounded-(--radius-md) bg-white/90 text-(--text-strong) shadow-(--shadow-soft)"
             style={{ color: accent }}
           >
             {icon}
@@ -46,7 +46,7 @@ export function MetricCard({
         ) : null}
       </div>
       {meta ? (
-        <p className="max-w-[26ch] text-[13px] leading-6 text-[var(--text-muted)]">
+        <p className="max-w-[26ch] text-[13px] leading-6 text-(--text-muted)">
           {meta}
         </p>
       ) : null}

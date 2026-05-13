@@ -92,7 +92,7 @@ function timeAgo(dateStr: string) {
 function ReplyThread({ replies }: { replies?: DoubtReply[] }) {
   if (!replies || replies.length === 0) {
     return (
-      <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--line-soft)] px-4 py-6 text-[14px] text-[var(--text-muted)]">
+      <div className="rounded-(--radius-md) border border-dashed border-(--line-soft) px-4 py-6 text-[14px] text-(--text-muted)">
         No reply yet. Your mentors will respond here when they pick this up.
       </div>
     );
@@ -109,18 +109,18 @@ function ReplyThread({ replies }: { replies?: DoubtReply[] }) {
         return (
           <div
             key={reply.id}
-            className="rounded-[var(--radius-md)] border border-[var(--line-soft)] bg-white px-4 py-4 shadow-[var(--shadow-soft)]"
+            className="rounded-(--radius-md) border border-(--line-soft) bg-white px-4 py-4 shadow-(--shadow-soft)"
           >
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[14px] font-semibold text-[var(--text-strong)]">
+              <p className="text-[14px] font-semibold text-(--text-strong)">
                 {reply.author?.name ?? "Unknown"}
               </p>
               {isMentorReply ? <Badge tone="brandStrong">Mentor</Badge> : null}
-              <span className="text-[12px] text-[var(--text-subtle)]">
+              <span className="text-[12px] text-(--text-subtle)">
                 {timeAgo(reply.createdAt)}
               </span>
             </div>
-            <p className="mt-3 text-[14px] leading-7 text-[var(--text-muted)]">
+            <p className="mt-3 text-[14px] leading-7 text-(--text-muted)">
               {reply.body}
             </p>
           </div>
@@ -141,12 +141,12 @@ function DoubtCard({
 }) {
   return (
     <motion.article
-      className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line-soft)] bg-white/84 shadow-[var(--shadow-soft)]"
+      className="overflow-hidden rounded-(--radius-xl) border border-(--line-soft) bg-white/84 shadow-(--shadow-soft)"
       layout
       transition={{ duration: 0.26 }}
     >
       <button
-        className="flex w-full flex-col gap-4 px-5 py-5 text-left transition-colors duration-[var(--transition-fast)] hover:bg-white focus-visible:outline-none sm:px-6"
+        className="flex w-full flex-col gap-4 px-5 py-5 text-left transition-colors duration-150 hover:bg-white focus-visible:outline-none sm:px-6"
         onClick={onToggle}
         type="button"
       >
@@ -157,42 +157,42 @@ function DoubtCard({
               <Badge tone={priorityMeta[doubt.priority].tone}>
                 {priorityMeta[doubt.priority].label}
               </Badge>
-              <span className="inline-flex items-center gap-1 text-[12px] text-[var(--text-subtle)]">
+              <span className="inline-flex items-center gap-1 text-[12px] text-(--text-subtle)">
                 <Clock3 className="h-3.5 w-3.5" />
                 {timeAgo(doubt.createdAt)}
               </span>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-[22px] font-semibold tracking-[-0.04em] text-[var(--text-strong)]">
+              <h3 className="text-[22px] font-semibold tracking-[-0.04em] text-(--text-strong)">
                 {doubt.subject}
               </h3>
-              <p className="max-w-[70ch] text-[14px] leading-7 text-[var(--text-muted)]">
+              <p className="max-w-[70ch] text-[14px] leading-7 text-(--text-muted)">
                 {doubt.body}
               </p>
             </div>
           </div>
 
           <div className="flex shrink-0 flex-col items-end gap-3">
-            <div className="rounded-[var(--radius-md)] bg-[var(--brand-primary-soft)] px-3 py-2 text-right">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-subtle)]">
+            <div className="rounded-(--radius-md) bg-(--brand-primary-soft) px-3 py-2 text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-(--text-subtle)">
                 Replies
               </p>
-              <p className="mt-1 text-[18px] font-semibold tracking-[-0.04em] text-[var(--brand-primary-dark)]">
+              <p className="mt-1 text-[18px] font-semibold tracking-[-0.04em] text-(--brand-primary-dark)">
                 {doubt._count.replies}
               </p>
             </div>
             <ChevronDown
-              className={`h-5 w-5 text-[var(--text-subtle)] transition-transform duration-[var(--transition-fast)] ${
+              className={`h-5 w-5 text-(--text-subtle) transition-transform duration-150 ${
                 isExpanded ? "rotate-180" : ""
               }`}
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 border-t border-[var(--line-soft)] pt-4 text-[13px] text-[var(--text-subtle)]">
+        <div className="flex flex-wrap items-center gap-3 border-t border-(--line-soft) pt-4 text-[13px] text-(--text-subtle)">
           <span>Updated {timeAgo(doubt.updatedAt)}</span>
-          <span className="h-1 w-1 rounded-full bg-[var(--text-subtle)]/40" />
+          <span className="h-1 w-1 rounded-full bg-(--text-subtle)/40" />
           <span>{doubt.mentor?.name ? `Assigned to ${doubt.mentor.name}` : "Waiting for mentor pickup"}</span>
         </div>
       </button>
@@ -201,7 +201,7 @@ function DoubtCard({
         {isExpanded ? (
           <motion.div
             animate={{ height: "auto", opacity: 1 }}
-            className="overflow-hidden border-t border-[var(--line-soft)] bg-[rgba(255,255,255,0.52)] px-5 py-5 sm:px-6"
+            className="overflow-hidden border-t border-(--line-soft) bg-[rgba(255,255,255,0.52)] px-5 py-5 sm:px-6"
             exit={{ height: 0, opacity: 0 }}
             initial={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.22 }}
@@ -381,7 +381,7 @@ export default function DoubtsPage() {
                   <Link
                     key={item.href}
                     className={cx(
-                      "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] lg:min-h-[56px] lg:gap-4 lg:rounded-[22px] lg:bg-transparent lg:px-5 lg:py-3 lg:text-[18px] lg:font-medium",
+                      "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-150 lg:min-h-[56px] lg:gap-4 lg:rounded-[22px] lg:bg-transparent lg:px-5 lg:py-3 lg:text-[18px] lg:font-medium",
                       active
                         ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] lg:bg-white/40 lg:shadow-sm"
                         : "hover:bg-white/46 lg:hover:bg-white/20",
@@ -455,16 +455,16 @@ export default function DoubtsPage() {
                   >
                     <Surface className="px-6 py-6 sm:px-8">
                       <div className="mb-6 space-y-2">
-                        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-(--text-subtle)">
                           New Doubt
                         </p>
-                        <h2 className="text-[28px] font-semibold tracking-[-0.05em] text-[var(--text-strong)]">
+                        <h2 className="text-[28px] font-semibold tracking-[-0.05em] text-(--text-strong)">
                           Write it once, clearly.
                         </h2>
-                        <p className="text-[14px] leading-7 text-[var(--text-muted)]">
+                        <p className="text-[14px] leading-7 text-(--text-muted)">
                           Add the exact problem, what you already tried, and how urgent it is so mentors can respond with context instead of guesswork.
                         </p>
-                        <p className="text-[13px] font-medium text-[var(--text-subtle)]">
+                        <p className="text-[13px] font-medium text-(--text-subtle)">
                           Submitting a doubt uses 25 XP from your account.
                         </p>
                       </div>
@@ -485,7 +485,7 @@ export default function DoubtsPage() {
                         />
 
                         <div className="space-y-3">
-                          <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                          <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-(--text-muted)">
                             Priority
                           </p>
                           <div className="flex flex-wrap gap-3">
@@ -495,10 +495,10 @@ export default function DoubtsPage() {
                               return (
                                 <button
                                   key={item}
-                                  className={`rounded-[var(--radius-pill)] border px-4 py-2 text-[14px] font-semibold transition-[border-color,background-color,color,transform] duration-[var(--transition-fast)] ease-[var(--ease-standard)] focus-visible:outline-none ${
+                                  className={`rounded-(--radius-pill) border px-4 py-2 text-[14px] font-semibold transition-[border-color,background-color,color,transform] duration-150 ease-out focus-visible:outline-none ${
                                     active
-                                      ? "border-transparent bg-[var(--brand-primary-strong)] text-white shadow-[var(--shadow-accent)]"
-                                      : "border-[var(--line-soft)] bg-white text-[var(--text-muted)] hover:border-[var(--line-strong)] hover:text-[var(--text-strong)]"
+                                      ? "border-transparent bg-(--brand-primary-strong) text-white shadow-(--shadow-accent)"
+                                      : "border-(--line-soft) bg-white text-(--text-muted) hover:border-(--line-strong) hover:text-(--text-strong)"
                                   }`}
                                   onClick={() => setPriority(item)}
                                   type="button"
@@ -511,7 +511,7 @@ export default function DoubtsPage() {
                         </div>
 
                         {errorMsg ? (
-                          <div className="rounded-[var(--radius-md)] border border-[rgba(255,61,0,0.16)] bg-[rgba(255,61,0,0.08)] px-4 py-3 text-[14px] text-[var(--danger)]">
+                          <div className="rounded-(--radius-md) border border-[rgba(255,61,0,0.16)] bg-[rgba(255,61,0,0.08)] px-4 py-3 text-[14px] text-(--danger)">
                             {errorMsg}
                           </div>
                         ) : null}
@@ -543,10 +543,10 @@ export default function DoubtsPage() {
 
             <RevealSection delay={0.08}>
               {loading ? (
-                <Surface className="flex items-center justify-center gap-3 px-6 py-16 text-[var(--text-muted)]">
+                <Surface className="flex items-center justify-center gap-3 px-6 py-16 text-(--text-muted)">
                   <motion.div
                     animate={{ rotate: 360 }}
-                    className="h-5 w-5 rounded-full border-2 border-[var(--brand-primary-strong)] border-t-transparent"
+                    className="h-5 w-5 rounded-full border-2 border-(--brand-primary-strong) border-t-transparent"
                     transition={{ duration: 0.9, ease: "linear", repeat: Number.POSITIVE_INFINITY }}
                   />
                   Loading your doubt threads...

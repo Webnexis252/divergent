@@ -84,15 +84,15 @@ export function GlobalSearch() {
     <div className="relative w-full max-w-[26rem]" ref={containerRef}>
       <div 
         className={cx(
-          "flex h-11 w-full items-center gap-3 rounded-[var(--radius-pill)] border border-[var(--line-soft)] bg-white/84 px-4 text-[14px] shadow-[var(--shadow-soft)] transition-colors focus-within:border-[var(--brand-primary)]",
+          "flex h-11 w-full items-center gap-3 rounded-(--radius-pill) border border-(--line-soft) bg-white/84 px-4 text-[14px] shadow-(--shadow-soft) transition-colors focus-within:border-(--brand-primary)",
           isDropdownVisible && "rounded-b-none border-b-transparent shadow-none"
         )}
       >
-        <Search className="h-4 w-4 shrink-0 text-[var(--text-subtle)]" />
+        <Search className="h-4 w-4 shrink-0 text-(--text-subtle)" />
         <input
           type="text"
           placeholder="Search classes, assignments, or notes"
-          className="h-full w-full bg-transparent text-[var(--text-strong)] outline-none placeholder:text-[var(--text-subtle)]"
+          className="h-full w-full bg-transparent text-(--text-strong) outline-none placeholder:text-(--text-subtle)"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -106,7 +106,7 @@ export function GlobalSearch() {
               setQuery("");
               setIsOpen(false);
             }}
-            className="grid h-5 w-5 place-items-center rounded-full bg-[var(--line-soft)] text-[var(--text-muted)] hover:bg-[var(--line-strong)] hover:text-black"
+            className="grid h-5 w-5 place-items-center rounded-full bg-(--line-soft) text-(--text-muted) hover:bg-(--line-strong) hover:text-black"
           >
             <X className="h-3 w-3" />
           </button>
@@ -120,25 +120,25 @@ export function GlobalSearch() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 top-11 z-50 overflow-hidden rounded-b-[16px] border border-t-0 border-[var(--line-soft)] bg-white shadow-[0_8px_20px_rgba(0,0,0,0.08)]"
+            className="absolute left-0 right-0 top-11 z-50 overflow-hidden rounded-b-[16px] border border-t-0 border-(--line-soft) bg-white shadow-[0_8px_20px_rgba(0,0,0,0.08)]"
           >
             <div className="max-h-[60vh] overflow-y-auto p-2">
               {isLoading && !hasResults && (
-                <div className="flex items-center justify-center py-8 text-[var(--text-subtle)]">
+                <div className="flex items-center justify-center py-8 text-(--text-subtle)">
                   <Loader2 className="h-5 w-5 animate-spin" />
                   <span className="ml-2 text-[14px]">Searching...</span>
                 </div>
               )}
 
               {!isLoading && !hasResults && (
-                <div className="py-8 text-center text-[14px] text-[var(--text-subtle)]">
+                <div className="py-8 text-center text-[14px] text-(--text-subtle)">
                   No results found for &quot;{query}&quot;
                 </div>
               )}
 
               {results.courses.length > 0 && (
                 <div className="mb-4">
-                  <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--text-subtle)]">
+                  <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-(--text-subtle)">
                     Courses
                   </div>
                   {results.courses.map((course) => (
@@ -151,7 +151,7 @@ export function GlobalSearch() {
                         <BookOpen className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-medium text-[var(--text-strong)]">
+                        <p className="truncate text-[14px] font-medium text-(--text-strong)">
                           {course.title}
                         </p>
                       </div>
@@ -162,7 +162,7 @@ export function GlobalSearch() {
 
               {results.lessons.length > 0 && (
                 <div className="mb-4">
-                  <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--text-subtle)]">
+                  <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-(--text-subtle)">
                     Lessons
                   </div>
                   {results.lessons.map((lesson) => (
@@ -175,10 +175,10 @@ export function GlobalSearch() {
                         <FileText className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-medium text-[var(--text-strong)]">
+                        <p className="truncate text-[14px] font-medium text-(--text-strong)">
                           {lesson.title}
                         </p>
-                        <p className="truncate text-[12px] text-[var(--text-subtle)]">
+                        <p className="truncate text-[12px] text-(--text-subtle)">
                           in {lesson.chapter.course.title}
                         </p>
                       </div>
@@ -189,7 +189,7 @@ export function GlobalSearch() {
 
               {results.assignments.length > 0 && (
                 <div className="mb-1">
-                  <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--text-subtle)]">
+                  <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-(--text-subtle)">
                     Assignments
                   </div>
                   {results.assignments.map((assignment) => (
@@ -202,7 +202,7 @@ export function GlobalSearch() {
                         <CheckSquare className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-medium text-[var(--text-strong)]">
+                        <p className="truncate text-[14px] font-medium text-(--text-strong)">
                           {assignment.title}
                         </p>
                       </div>

@@ -1,6 +1,6 @@
 export default function RootLoading() {
   return (
-    <div className="flex min-h-[100svh] items-center justify-center bg-[var(--background)]">
+    <div className="flex min-h-[100svh] items-center justify-center bg-(--background)">
       <div className="flex flex-col items-center gap-4">
         {/* Branded spinner */}
         <div className="relative h-10 w-10">

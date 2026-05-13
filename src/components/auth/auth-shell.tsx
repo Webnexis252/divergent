@@ -15,7 +15,7 @@ export function AuthShell({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen overflow-hidden px-5 py-5 text-[var(--text-strong)] sm:px-6 lg:px-8">
+    <main className="min-h-screen overflow-hidden px-5 py-5 text-(--text-strong) sm:px-6 lg:px-8">
       <section className="relative min-h-[calc(100svh-2.5rem)] overflow-hidden rounded-[calc(var(--radius-xl)+0.5rem)] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.88),rgba(255,255,255,0.68))]">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute right-[-8%] top-[10%] h-[22rem] w-[22rem] rounded-full bg-[rgba(254,198,0,0.36)] blur-[140px]" />
@@ -34,7 +34,7 @@ export function AuthShell({
               <h1 className="mt-6 text-[clamp(2.6rem,6vw,5.2rem)] font-semibold leading-[0.92] tracking-[-0.08em] text-balance">
                 {title}
               </h1>
-              <p className="mt-6 max-w-[36rem] text-[17px] leading-8 text-[var(--foreground-soft)] text-pretty">
+              <p className="mt-6 max-w-[36rem] text-[17px] leading-8 text-(--foreground-soft) text-pretty">
                 {description}
               </p>
 
@@ -45,10 +45,10 @@ export function AuthShell({
                     className="px-5 py-5"
                     tone="muted"
                   >
-                    <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--brand-primary-dark)]">
+                    <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-(--brand-primary-dark)">
                       {item.title}
                     </p>
-                    <p className="mt-3 text-[14px] leading-7 text-[var(--text-muted)]">
+                    <p className="mt-3 text-[14px] leading-7 text-(--text-muted)">
                       {item.description}
                     </p>
                   </Surface>

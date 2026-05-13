@@ -82,7 +82,7 @@ export default function CustomCursor() {
   return (
     <>
       <motion.div
-        className="pointer-events-none fixed left-0 top-0 z-[9999] h-3.5 w-3.5 rounded-full bg-[var(--brand-primary-strong)] mix-blend-difference"
+        className="pointer-events-none fixed left-0 top-0 z-[9999] h-3.5 w-3.5 rounded-full bg-(--brand-primary-strong) mix-blend-difference"
         style={{
           translateX: cursorXSpring,
           translateY: cursorYSpring,
@@ -91,7 +91,7 @@ export default function CustomCursor() {
         }}
       />
       <motion.div
-        className="pointer-events-none fixed left-0 top-0 z-[9998] h-8 w-8 rounded-full border border-[var(--brand-primary-strong)] opacity-40"
+        className="pointer-events-none fixed left-0 top-0 z-[9998] h-8 w-8 rounded-full border border-(--brand-primary-strong) opacity-40"
         style={{
           translateX: cursorXSpring,
           translateY: cursorYSpring,

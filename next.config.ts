@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
+  // Increase in-memory cache to reduce disk writes during dev
+  cacheMaxMemorySize: 0,
   images: {
     remotePatterns: [
       {
@@ -26,7 +28,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(__dirname),
   },
-
   // ─── Security Headers ────────────────────────────────────────────────
   async headers() {
     return [
@@ -43,7 +44,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https: http:",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://*.daily.co https://*.upstash.io",
-              "frame-src 'self' https://meet.jit.si https://*.jit.si https://*.daily.co https://checkout.razorpay.com https://zoho.in https://*.zoho.in https://zoho.com https://*.zoho.com",
+              "frame-src 'self' https://meet.jit.si https://*.jit.si https://*.daily.co https://checkout.razorpay.com https://zoho.in https://*.zoho.in https://zoho.com https://*.zoho.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://vimeo.com https://drive.google.com",
               "media-src 'self' https://*.supabase.co blob: data:",
               "object-src 'none'",
               "base-uri 'self'",

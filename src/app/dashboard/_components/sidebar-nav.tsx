@@ -2,21 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BookOpen,
-  Video,
-  ChartNoAxesColumn,
-  CircleHelp,
-  House,
-  LogOut,
-  MessageSquareText,
-  NotebookPen,
-  UserCircle,
-  Award,
-  CalendarDays,
-} from "lucide-react";
 import { motion } from "motion/react";
-import { useAuth } from "@/context/auth-context";
 import { cx } from "@/lib/cx";
 
 import { studentNavItems } from "./nav-items";
@@ -30,7 +16,6 @@ function isNavActive(pathname: string, href: string): boolean {
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const { logout } = useAuth();
 
   const navItems = studentNavItems;
   const workspaceLabel = "Student Workspace";
@@ -57,7 +42,7 @@ export function DashboardSidebar() {
               >
                 <Link
                   className={cx(
-                    "group relative flex items-center gap-4 rounded-[22px] px-5 py-3.5 text-[16px] xl:text-[18px] font-medium tracking-wide transition-[background-color,color] duration-[var(--transition-fast)] ease-[var(--ease-standard)]",
+                    "group relative flex items-center gap-4 rounded-[22px] px-5 py-3.5 text-[16px] xl:text-[18px] font-medium tracking-wide transition-[background-color,color] duration-150 ease-out",
                     active
                       ? "bg-white/30 text-black shadow-[0_4px_10px_rgba(0,0,0,0.03)]"
                       : "bg-transparent text-black/80 hover:bg-white/10 hover:text-black",
@@ -76,16 +61,7 @@ export function DashboardSidebar() {
           })}
         </nav>
 
-        <div className="mt-auto pt-6">
-          <button
-            className="flex w-full items-center gap-4 rounded-[22px] px-5 py-3.5 text-left text-[16px] xl:text-[18px] font-medium text-black/80 transition-[background-color,color] duration-[var(--transition-fast)] hover:bg-white/10 hover:text-black"
-            onClick={() => logout()}
-            type="button"
-          >
-            <LogOut className="h-[22px] w-[22px] stroke-[1.75]" />
-            Logout
-          </button>
-        </div>
+
       </div>
     </aside>
   );

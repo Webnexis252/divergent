@@ -42,14 +42,14 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-[var(--danger)] bg-[rgba(255,61,0,0.05)] p-8 text-center backdrop-blur-md">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(255,61,0,0.1)] text-[var(--danger)]">
+        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-(--danger) bg-[rgba(255,61,0,0.05)] p-8 text-center backdrop-blur-md">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(255,61,0,0.1)] text-(--danger)">
             <AlertTriangle className="h-7 w-7" />
           </div>
-          <h2 className="mb-2 text-xl font-bold tracking-tight text-[var(--text-strong)]">
+          <h2 className="mb-2 text-xl font-bold tracking-tight text-(--text-strong)">
             Something went wrong
           </h2>
-          <p className="mb-6 max-w-md text-sm text-[var(--text-muted)]">
+          <p className="mb-6 max-w-md text-sm text-(--text-muted)">
             {this.state.error?.message || "An unexpected error occurred while rendering this component."}
           </p>
           <Button onClick={this.handleReset} variant="secondary" className="gap-2">

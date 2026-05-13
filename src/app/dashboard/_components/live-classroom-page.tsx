@@ -148,9 +148,9 @@ function MessageBubble({
   return (
     <div className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[86%] rounded-[var(--radius-lg)] px-4 py-4 ${
+        className={`max-w-[86%] rounded-(--radius-lg) px-4 py-4 ${
           isCurrentUser
-            ? "bg-[var(--brand-primary-strong)] text-white shadow-[var(--shadow-accent)]"
+            ? "bg-(--brand-primary-strong) text-white shadow-(--shadow-accent)"
             : isMentorReply
               ? "bg-white/12 text-white"
               : "bg-white/8 text-white"
@@ -173,7 +173,7 @@ function MessageBubble({
         {message.imageUrl ? (
           <div
             aria-label={`Attachment from ${message.senderName}`}
-            className="mt-3 h-44 w-full rounded-[var(--radius-md)] bg-black/10"
+            className="mt-3 h-44 w-full rounded-(--radius-md) bg-black/10"
             role="img"
             style={{
               backgroundImage: `url(${message.imageUrl})`,
@@ -476,14 +476,14 @@ export function LiveClassroomPage({
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-[var(--bg-subtle)] text-[var(--text-strong)]">
-        <header className="border-b border-[var(--line-soft)] bg-white/84 px-6 py-4 backdrop-blur-xl lg:px-10">
+      <div className="min-h-screen bg-(--bg-subtle) text-(--text-strong)">
+        <header className="border-b border-(--line-soft) bg-white/84 px-6 py-4 backdrop-blur-xl lg:px-10">
           <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
             <BrandLogo href={brandHref} priority size="md" />
             <div className="flex items-center gap-3">
               <Badge tone={meta.badgeTone}>{meta.headline}</Badge>
               {focusClass ? (
-                <span className="hidden text-[13px] text-[var(--text-muted)] md:inline">
+                <span className="hidden text-[13px] text-(--text-muted) md:inline">
                   {formatSessionDate(focusClass.startTime)} at {formatSessionTime(focusClass.startTime)}
                 </span>
               ) : null}
@@ -549,7 +549,7 @@ export function LiveClassroomPage({
                               ) : (
                                 <button
                                   onClick={startMeeting}
-                                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-5 text-[14px] font-semibold text-[var(--text-strong)] transition hover:-translate-y-[1px] hover:bg-white/92 focus-visible:outline-none"
+                                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-5 text-[14px] font-semibold text-(--text-strong) transition hover:-translate-y-[1px] hover:bg-white/92 focus-visible:outline-none"
                                 >
                                   <Video className="h-4 w-4" />
                                   {meta.ctaLabel}
@@ -557,7 +557,7 @@ export function LiveClassroomPage({
                               )
                             ) : tone === "completed" ? (
                               <Link
-                                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-5 text-[14px] font-semibold text-[var(--text-strong)] transition hover:-translate-y-[1px] hover:bg-white/92 focus-visible:outline-none"
+                                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-5 text-[14px] font-semibold text-(--text-strong) transition hover:-translate-y-[1px] hover:bg-white/92 focus-visible:outline-none"
                                 href={stageHref}
                               >
                                 {meta.ctaLabel}
@@ -567,7 +567,7 @@ export function LiveClassroomPage({
                           </div>
 
                           <div className="scrollbar-none flex snap-x gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
-                            <div className="min-w-[120px] shrink-0 snap-start rounded-[var(--radius-md)] bg-white/8 px-4 py-3.5 sm:min-w-0 sm:py-4">
+                            <div className="min-w-[120px] shrink-0 snap-start rounded-(--radius-md) bg-white/8 px-4 py-3.5 sm:min-w-0 sm:py-4">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:text-[12px]">
                                 Starts
                               </p>
@@ -575,7 +575,7 @@ export function LiveClassroomPage({
                                 {focusClass ? formatSessionTime(focusClass.startTime) : "TBD"}
                               </p>
                             </div>
-                            <div className="min-w-[120px] shrink-0 snap-start rounded-[var(--radius-md)] bg-white/8 px-4 py-3.5 sm:min-w-0 sm:py-4">
+                            <div className="min-w-[120px] shrink-0 snap-start rounded-(--radius-md) bg-white/8 px-4 py-3.5 sm:min-w-0 sm:py-4">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:text-[12px]">
                                 Duration
                               </p>
@@ -583,7 +583,7 @@ export function LiveClassroomPage({
                                 {focusClass ? `${focusClass.duration} min` : "Pending"}
                               </p>
                             </div>
-                            <div className="min-w-[120px] shrink-0 snap-start rounded-[var(--radius-md)] bg-white/8 px-4 py-3.5 sm:min-w-0 sm:py-4">
+                            <div className="min-w-[120px] shrink-0 snap-start rounded-(--radius-md) bg-white/8 px-4 py-3.5 sm:min-w-0 sm:py-4">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:text-[12px]">
                                 Attendees
                               </p>
@@ -729,7 +729,7 @@ export function LiveClassroomPage({
 
                                 {tone === "completed" && focusClass.recordingUrl && (
                                   <Link
-                                    className="inline-flex h-14 shrink-0 snap-start items-center gap-2 whitespace-nowrap rounded-full bg-white px-6 text-[15px] font-semibold text-[var(--text-strong)] shadow-[0_18px_40px_rgba(255,255,255,0.12)] transition hover:-translate-y-[1px] focus-visible:outline-none"
+                                    className="inline-flex h-14 shrink-0 snap-start items-center gap-2 whitespace-nowrap rounded-full bg-white px-6 text-[15px] font-semibold text-(--text-strong) shadow-[0_18px_40px_rgba(255,255,255,0.12)] transition hover:-translate-y-[1px] focus-visible:outline-none"
                                     href={focusClass.recordingUrl}
                                     target="_blank"
                                   >
@@ -782,10 +782,10 @@ export function LiveClassroomPage({
                     <Surface className="px-5 py-5 sm:px-6 sm:py-6">
                       <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                          <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-(--text-subtle)">
                             Session Queue
                           </p>
-                          <h2 className="mt-2 text-[24px] font-semibold tracking-[-0.05em] text-[var(--text-strong)]">
+                          <h2 className="mt-2 text-[24px] font-semibold tracking-[-0.05em] text-(--text-strong)">
                             Everything around the current classroom.
                           </h2>
                         </div>
@@ -796,24 +796,24 @@ export function LiveClassroomPage({
                         {sessionRail.map(({ item, tone: itemTone }) => (
                           <div
                             key={item.id}
-                            className="min-w-[280px] shrink-0 snap-start rounded-[var(--radius-lg)] border border-[var(--line-soft)] bg-white/72 px-4 py-4 lg:min-w-0"
+                            className="min-w-[280px] shrink-0 snap-start rounded-(--radius-lg) border border-(--line-soft) bg-white/72 px-4 py-4 lg:min-w-0"
                           >
                             <div className="flex flex-wrap items-center gap-2">
                               <Badge tone={toneMeta[itemTone].badgeTone}>
                                 {toneMeta[itemTone].headline}
                               </Badge>
-                              <span className="text-[12px] text-[var(--text-subtle)]">
+                              <span className="text-[12px] text-(--text-subtle)">
                                 {formatSessionDate(item.startTime)}
                               </span>
                             </div>
-                            <p className="mt-3 text-[16px] font-semibold tracking-[-0.03em] text-[var(--text-strong)]">
+                            <p className="mt-3 text-[16px] font-semibold tracking-[-0.03em] text-(--text-strong)">
                               {item.title}
                             </p>
-                            <div className="mt-3 flex items-center gap-3 text-[13px] text-[var(--text-muted)]">
+                            <div className="mt-3 flex items-center gap-3 text-[13px] text-(--text-muted)">
                               <span>{formatSessionTime(item.startTime)}</span>
-                              <span className="h-1 w-1 rounded-full bg-[var(--text-subtle)]/40" />
+                              <span className="h-1 w-1 rounded-full bg-(--text-subtle)/40" />
                               <span>{item.duration} min</span>
-                              <span className="h-1 w-1 rounded-full bg-[var(--text-subtle)]/40" />
+                              <span className="h-1 w-1 rounded-full bg-(--text-subtle)/40" />
                               <span>{item.attendeeCount} learners</span>
                             </div>
                           </div>
@@ -842,7 +842,7 @@ export function LiveClassroomPage({
                         </p>
                       </div>
                       <button
-                        className="rounded-full p-2 text-white/52 transition-colors duration-[var(--transition-fast)] hover:bg-white/8 hover:text-white focus-visible:outline-none"
+                        className="rounded-full p-2 text-white/52 transition-colors duration-150 hover:bg-white/8 hover:text-white focus-visible:outline-none"
                         onClick={() => setMessagesOpen(false)}
                         type="button"
                       >
@@ -884,11 +884,11 @@ export function LiveClassroomPage({
 
                     <div className="border-t border-white/8 px-5 py-5 sm:px-6">
                       {previewUrl ? (
-                        <div className="mb-4 rounded-[var(--radius-lg)] border border-white/10 bg-white/6 p-3">
+                        <div className="mb-4 rounded-(--radius-lg) border border-white/10 bg-white/6 p-3">
                           <div className="flex items-start gap-3">
                             <div
                               aria-label="Selected attachment preview"
-                              className="h-16 w-16 rounded-[var(--radius-md)] bg-black/10"
+                              className="h-16 w-16 rounded-(--radius-md) bg-black/10"
                               role="img"
                               style={{
                                 backgroundImage: `url(${previewUrl})`,
@@ -913,14 +913,14 @@ export function LiveClassroomPage({
                       ) : null}
 
                       {sendError ? (
-                        <p className="mb-3 rounded-[var(--radius-md)] border border-[rgba(255,61,0,0.18)] bg-[rgba(255,61,0,0.08)] px-4 py-3 text-[13px] text-[#ffb09a]">
+                        <p className="mb-3 rounded-(--radius-md) border border-[rgba(255,61,0,0.18)] bg-[rgba(255,61,0,0.08)] px-4 py-3 text-[13px] text-[#ffb09a]">
                           {sendError}
                         </p>
                       ) : null}
 
-                      <div className="rounded-[var(--radius-lg)] border border-white/12 bg-white/6 p-3">
+                      <div className="rounded-(--radius-lg) border border-white/12 bg-white/6 p-3">
                         <div className="flex items-center gap-2">
-                          <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full bg-white/8 text-white/64 transition-colors duration-[var(--transition-fast)] hover:bg-white/12 hover:text-white">
+                          <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full bg-white/8 text-white/64 transition-colors duration-150 hover:bg-white/12 hover:text-white">
                             <ImagePlus className="h-4.5 w-4.5" />
                             <input
                               accept="image/*"

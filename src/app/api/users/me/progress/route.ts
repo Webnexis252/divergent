@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    // --- Course Progress ---
+    // --- Course Progress (with real completed lesson counts) ---
     const enrollments = await prisma.enrollment.findMany({
       where: { userId: auth.userId, status: 'ACTIVE' },
       select: {
@@ -32,9 +32,10 @@ export async function GET(req: NextRequest) {
             slug: true,
             thumbnail: true,
             chapters: {
+              where: { isPublished: true },
               select: {
-                _count: { select: { lessons: true } },
                 lessons: {
+                  where: { isPublished: true },
                   select: { id: true, durationMins: true },
                 },
               },
@@ -45,28 +46,41 @@ export async function GET(req: NextRequest) {
       orderBy: { updatedAt: 'desc' },
     });
 
+    // Gather all lesson IDs across all enrolled courses to batch-fetch completions
+    const allLessonIds = enrollments.flatMap((e) =>
+      e.course.chapters.flatMap((ch) => ch.lessons.map((l) => l.id)),
+    );
+
+    const completedProgressRows = await prisma.lessonProgress.findMany({
+      where: {
+        userId: auth.userId,
+        isCompleted: true,
+        lessonId: { in: allLessonIds },
+      },
+      select: { lessonId: true },
+    });
+    const completedSet = new Set(completedProgressRows.map((r) => r.lessonId));
+
     const courseProgress = enrollments.map((e) => {
-      const lessonCount = e.course.chapters.reduce(
-        (sum, ch) => sum + ch._count.lessons,
-        0
-      );
-      const totalDuration = e.course.chapters.reduce(
-        (sum, ch) => sum + ch.lessons.reduce((s, l) => s + l.durationMins, 0),
-        0
-      );
-      const completedLessons = Math.round(
-        (e.progressPercent / 100) * lessonCount
-      );
+      const lessons = e.course.chapters.flatMap((ch) => ch.lessons);
+      const totalLessons = lessons.length;
+      const completedLessons = lessons.filter((l) => completedSet.has(l.id)).length;
+      const totalDuration = lessons.reduce((s, l) => s + l.durationMins, 0);
+      const percent =
+        totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : Math.round(e.progressPercent);
       return {
         id: e.course.id,
         title: e.course.title,
         slug: e.course.slug,
         thumbnail: e.course.thumbnail,
-        percent: Math.round(e.progressPercent),
-        lessons: `${completedLessons} / ${lessonCount} lessons completed`,
+        percent,
+        completedLessons,
+        totalLessons,
+        lessons: `${completedLessons} / ${totalLessons} lessons completed`,
         totalHours: Math.round(totalDuration / 60),
       };
     });
+
 
     // --- Lesson completions per day (7-day chart) ---
     const recentProgress = await prisma.lessonProgress.findMany({
@@ -194,15 +208,13 @@ export async function GET(req: NextRequest) {
       },
     ];
 
-    // --- Topic Mastery (derived from course chapter completion) ---
+    // --- Topic Mastery (derived from real LessonProgress per chapter) ---
     const topicMastery = enrollments.flatMap((e) =>
       e.course.chapters.map((ch) => {
-        const lessonCount = ch._count.lessons;
+        const lessonCount = ch.lessons.length;
         if (lessonCount === 0) return null;
-        const completedLessons = Math.round(
-          (e.progressPercent / 100) * lessonCount,
-        );
-        const percent = Math.round((completedLessons / lessonCount) * 100);
+        const completedInChapter = ch.lessons.filter((l) => completedSet.has(l.id)).length;
+        const percent = Math.round((completedInChapter / lessonCount) * 100);
         let tone: 'strong' | 'moderate' | 'weak';
         if (percent >= 70) tone = 'strong';
         else if (percent >= 40) tone = 'moderate';

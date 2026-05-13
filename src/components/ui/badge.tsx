@@ -3,12 +3,12 @@ import { cx } from "@/lib/cx";
 type BadgeTone = "brand" | "brandStrong" | "success" | "warning" | "danger" | "neutral";
 
 const toneClasses: Record<BadgeTone, string> = {
-  brand: "bg-[var(--brand-primary-soft)] text-[var(--brand-primary-dark)]",
-  brandStrong: "bg-[var(--brand-primary-strong)] text-white",
-  success: "bg-[rgba(76,175,80,0.14)] text-[var(--success)]",
-  warning: "bg-[rgba(245,158,11,0.14)] text-[var(--warning)]",
-  danger: "bg-[rgba(255,61,0,0.12)] text-[var(--danger)]",
-  neutral: "bg-black/[0.05] text-[var(--text-muted)]",
+  brand: "bg-(--brand-primary-soft) text-(--brand-primary-dark)",
+  brandStrong: "bg-(--brand-primary-strong) text-white",
+  success: "bg-[rgba(76,175,80,0.14)] text-(--success)",
+  warning: "bg-[rgba(245,158,11,0.14)] text-(--warning)",
+  danger: "bg-[rgba(255,61,0,0.12)] text-(--danger)",
+  neutral: "bg-black/[0.05] text-(--text-muted)",
 };
 
 export function Badge({

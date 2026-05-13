@@ -353,7 +353,7 @@ export default function AdminCoursesPage() {
 
 
                     <div className="space-y-3">
-                      <label className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      <label className="text-[13px] font-semibold uppercase tracking-[0.08em] text-(--text-muted)">
                         Course Thumbnail
                       </label>
 

@@ -96,7 +96,7 @@ export function EnrollButton({
         className={
           variant === "detailCard"
             ? "inline-flex h-[37px] w-full items-center justify-center rounded-[10px] border border-[#d9d9d9] bg-[#38c1ff] px-4 text-[12px] font-semibold text-white shadow-[0_4px_10px_rgba(56,193,255,0.24)] transition-[transform,background-color,box-shadow] duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#29b6f6] hover:shadow-[0_8px_18px_rgba(56,193,255,0.28)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60"
-            : "inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-[var(--brand-primary-strong)] px-6 text-[16px] font-semibold text-white shadow-[0_14px_34px_rgba(56,193,255,0.22)] transition-[transform,background-color,box-shadow] duration-200 ease-out hover:-translate-y-[1px] hover:bg-[var(--brand-primary)] hover:shadow-[0_18px_44px_rgba(56,193,255,0.32)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60"
+            : "inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-(--brand-primary-strong) px-6 text-[16px] font-semibold text-white shadow-[0_14px_34px_rgba(56,193,255,0.22)] transition-[transform,background-color,box-shadow] duration-200 ease-out hover:-translate-y-[1px] hover:bg-(--brand-primary) hover:shadow-[0_18px_44px_rgba(56,193,255,0.32)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60"
         }
       >
         <AnimatePresence mode="wait">

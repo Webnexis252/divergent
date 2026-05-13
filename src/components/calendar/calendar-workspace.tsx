@@ -275,12 +275,12 @@ function CalendarGrid({
 
   return (
     <Surface className="overflow-hidden px-0 py-0">
-      <div className="flex flex-col gap-4 border-b border-[var(--line-soft)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="flex flex-col gap-4 border-b border-(--line-soft) px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
-          <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-(--text-subtle)">
             Calendar Grid
           </p>
-          <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.05em] text-[var(--text-strong)]">
+          <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.05em] text-(--text-strong)">
             {formatMonthYear(viewDate)}
           </h2>
         </div>
@@ -298,11 +298,11 @@ function CalendarGrid({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-[var(--line-soft)] bg-white/54">
+      <div className="grid grid-cols-7 border-b border-(--line-soft) bg-white/54">
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="px-2 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]"
+            className="px-2 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-(--text-subtle)"
           >
             {day}
           </div>
@@ -320,9 +320,9 @@ function CalendarGrid({
             <button
               key={cell.date.toISOString()}
               className={cx(
-                "group min-h-[108px] border-b border-r border-[var(--line-soft)] px-2 py-3 text-left transition-[background-color,border-color] duration-[var(--transition-fast)] ease-[var(--ease-standard)] focus-visible:outline-none",
+                "group min-h-[108px] border-b border-r border-(--line-soft) px-2 py-3 text-left transition-[background-color,border-color] duration-150 ease-out focus-visible:outline-none",
                 selected ? "bg-white" : "bg-transparent",
-                cell.isCurrentMonth ? "text-[var(--text-strong)]" : "bg-black/[0.02] text-[var(--text-subtle)]",
+                cell.isCurrentMonth ? "text-(--text-strong)" : "bg-black/[0.02] text-(--text-subtle)",
                 cellEvents.length > 0 && "hover:bg-white",
               )}
               onClick={() => {
@@ -336,7 +336,7 @@ function CalendarGrid({
                     className={cx(
                       "grid h-8 w-8 place-items-center rounded-full text-[13px] font-semibold",
                       todayCell
-                        ? "bg-[var(--brand-primary-strong)] text-white shadow-[var(--shadow-accent)]"
+                        ? "bg-(--brand-primary-strong) text-white shadow-(--shadow-accent)"
                         : "text-inherit",
                     )}
                   >
@@ -344,7 +344,7 @@ function CalendarGrid({
                   </span>
 
                   {cellEvents.length > 1 ? (
-                    <span className="rounded-full bg-black/[0.04] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-subtle)]">
+                    <span className="rounded-full bg-black/[0.04] px-2 py-0.5 text-[10px] font-semibold text-(--text-subtle)">
                       {cellEvents.length}
                     </span>
                   ) : null}
@@ -357,13 +357,13 @@ function CalendarGrid({
                       return (
                         <div
                           key={event.id}
-                          className="flex items-center gap-2 rounded-full bg-white/88 px-2 py-1 shadow-[var(--shadow-soft)]"
+                          className="flex items-center gap-2 rounded-full bg-white/88 px-2 py-1 shadow-(--shadow-soft)"
                         >
                           <span
                             className="h-2.5 w-2.5 rounded-full"
                             style={{ backgroundColor: meta.accent }}
                           />
-                          <span className="truncate text-[10px] font-semibold text-[var(--text-strong)]">
+                          <span className="truncate text-[10px] font-semibold text-(--text-strong)">
                             {event.title}
                           </span>
                         </div>
@@ -422,10 +422,10 @@ function EventSpotlight({ event }: { event: CalendarFeedEvent | null }) {
         {details.map((detail) => (
           <div
             key={`${event.id}-${detail.label}`}
-            className="flex items-center justify-between gap-4 rounded-[18px] border border-[var(--line-soft)] bg-white/76 px-4 py-3"
+            className="flex items-center justify-between gap-4 rounded-[18px] border border-(--line-soft) bg-white/76 px-4 py-3"
           >
-            <span className="text-[13px] text-[var(--text-muted)]">{detail.label}</span>
-            <span className="text-right text-[13px] font-semibold text-[var(--text-strong)]">
+            <span className="text-[13px] text-(--text-muted)">{detail.label}</span>
+            <span className="text-right text-[13px] font-semibold text-(--text-strong)">
               {detail.value}
             </span>
           </div>
@@ -433,7 +433,7 @@ function EventSpotlight({ event }: { event: CalendarFeedEvent | null }) {
       </div>
 
       <Link
-        className="mt-auto inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--brand-primary-strong)] px-5 text-[15px] font-semibold text-white shadow-[var(--shadow-accent)] transition-[transform,background-color] duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--brand-primary)] focus-visible:outline-none"
+        className="mt-auto inline-flex h-12 w-full items-center justify-center gap-2 rounded-(--radius-pill) bg-(--brand-primary-strong) px-5 text-[15px] font-semibold text-white shadow-(--shadow-accent) transition-[transform,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:bg-(--brand-primary) focus-visible:outline-none"
         href={event.actionUrl}
         rel={external ? "noreferrer" : undefined}
         target={external ? "_blank" : undefined}
@@ -452,7 +452,7 @@ function AgendaCard({ event, index }: { event: CalendarFeedEvent; index: number 
 
   return (
     <motion.article
-      className="rounded-[26px] border border-[var(--line-soft)] bg-white/88 px-5 py-5 shadow-[var(--shadow-soft)]"
+      className="rounded-[26px] border border-(--line-soft) bg-white/88 px-5 py-5 shadow-(--shadow-soft)"
       initial={{ opacity: 0, y: 14 }}
       transition={{ delay: index * 0.04, duration: 0.28 }}
       viewport={{ margin: "-30px", once: true }}
@@ -468,19 +468,19 @@ function AgendaCard({ event, index }: { event: CalendarFeedEvent; index: number 
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={meta.badgeTone}>{meta.label}</Badge>
-              <span className="text-[12px] text-[var(--text-subtle)]">{event.course}</span>
+              <span className="text-[12px] text-(--text-subtle)">{event.course}</span>
             </div>
-            <h3 className="mt-3 text-[20px] font-semibold tracking-[-0.04em] text-[var(--text-strong)]">
+            <h3 className="mt-3 text-[20px] font-semibold tracking-[-0.04em] text-(--text-strong)">
               {event.title}
             </h3>
             <div className="mt-3 flex flex-wrap gap-2">
-              <span className="rounded-full bg-white px-3 py-1.5 text-[12px] text-[var(--text-muted)] shadow-[var(--shadow-soft)]">
+              <span className="rounded-full bg-white px-3 py-1.5 text-[12px] text-(--text-muted) shadow-(--shadow-soft)">
                 {formatLongDate(event.date)}
               </span>
-              <span className="rounded-full bg-white px-3 py-1.5 text-[12px] text-[var(--text-muted)] shadow-[var(--shadow-soft)]">
+              <span className="rounded-full bg-white px-3 py-1.5 text-[12px] text-(--text-muted) shadow-(--shadow-soft)">
                 {formatTime(event.date)}
               </span>
-              <span className="rounded-full bg-white px-3 py-1.5 text-[12px] text-[var(--text-muted)] shadow-[var(--shadow-soft)]">
+              <span className="rounded-full bg-white px-3 py-1.5 text-[12px] text-(--text-muted) shadow-(--shadow-soft)">
                 {getRelativeLabel(event.date)}
               </span>
             </div>
@@ -488,7 +488,7 @@ function AgendaCard({ event, index }: { event: CalendarFeedEvent; index: number 
         </div>
 
         <Link
-          className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--line-soft)] bg-white px-4 text-[14px] font-semibold text-[var(--text-strong)] transition-[transform,border-color,box-shadow] duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--line-strong)] hover:shadow-[var(--shadow-soft)] focus-visible:outline-none"
+          className="inline-flex h-11 items-center gap-2 rounded-(--radius-pill) border border-(--line-soft) bg-white px-4 text-[14px] font-semibold text-(--text-strong) transition-[transform,border-color,box-shadow] duration-150 ease-out hover:-translate-y-[1px] hover:border-(--line-strong) hover:shadow-(--shadow-soft) focus-visible:outline-none"
           href={event.actionUrl}
           rel={external ? "noreferrer" : undefined}
           target={external ? "_blank" : undefined}
@@ -692,18 +692,18 @@ export function CalendarWorkspace(props: CalendarWorkspaceProps) {
 
       {loading ? (
         <div className="space-y-6">
-          <div className="surface-panel h-24 animate-pulse rounded-[var(--radius-xl)]" />
+          <div className="surface-panel h-24 animate-pulse rounded-(--radius-xl)" />
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
-            <div className="surface-panel h-[580px] animate-pulse rounded-[var(--radius-xl)]" />
-            <div className="surface-panel h-[580px] animate-pulse rounded-[var(--radius-xl)]" />
+            <div className="surface-panel h-[580px] animate-pulse rounded-(--radius-xl)" />
+            <div className="surface-panel h-[580px] animate-pulse rounded-(--radius-xl)" />
           </div>
-          <div className="surface-panel h-72 animate-pulse rounded-[var(--radius-xl)]" />
+          <div className="surface-panel h-72 animate-pulse rounded-(--radius-xl)" />
         </div>
       ) : error ? (
         <EmptyState
           action={
             <button
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--line-soft)] bg-white px-4 py-2 text-[14px] font-semibold text-[var(--text-strong)] transition hover:border-[var(--line-strong)] hover:shadow-[var(--shadow-soft)]"
+              className="inline-flex items-center gap-2 rounded-full border border-(--line-soft) bg-white px-4 py-2 text-[14px] font-semibold text-(--text-strong) transition hover:border-(--line-strong) hover:shadow-(--shadow-soft)"
               onClick={() => window.location.reload()}
               type="button"
             >
@@ -736,10 +736,10 @@ export function CalendarWorkspace(props: CalendarWorkspaceProps) {
                   <button
                     key={option}
                     className={cx(
-                      "inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-[background-color,color,box-shadow] duration-[var(--transition-fast)] ease-[var(--ease-standard)]",
+                      "inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-[background-color,color,box-shadow] duration-150 ease-out",
                       filter === option
-                        ? "bg-[var(--brand-primary-strong)] text-white shadow-[var(--shadow-accent)]"
-                        : "bg-white text-[var(--text-muted)] shadow-[var(--shadow-soft)] hover:text-[var(--text-strong)]",
+                        ? "bg-(--brand-primary-strong) text-white shadow-(--shadow-accent)"
+                        : "bg-white text-(--text-muted) shadow-(--shadow-soft) hover:text-(--text-strong)",
                     )}
                     onClick={() => setFilter(option)}
                     type="button"
@@ -753,8 +753,8 @@ export function CalendarWorkspace(props: CalendarWorkspaceProps) {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3 text-[13px] text-[var(--text-muted)]">
-              <span className="rounded-full bg-[var(--brand-primary-soft)] px-3 py-1.5 font-semibold text-[var(--brand-primary-dark)]">
+            <div className="mt-6 flex flex-wrap items-center gap-3 text-[13px] text-(--text-muted)">
+              <span className="rounded-full bg-(--brand-primary-soft) px-3 py-1.5 font-semibold text-(--brand-primary-dark)">
                 {monthEventCount} event{monthEventCount === 1 ? "" : "s"} in {formatMonthYear(viewDate)}
               </span>
               {data ? (

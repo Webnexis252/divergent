@@ -28,10 +28,10 @@ function BadgeCard({ badge, index }: { badge: BadgeItem; index: number }) {
 
   return (
     <motion.div
-      className={`relative flex flex-col items-center gap-3 rounded-[var(--radius-xl)] border px-5 py-6 text-center transition-colors ${
+      className={`relative flex flex-col items-center gap-3 rounded-(--radius-xl) border px-5 py-6 text-center transition-colors ${
         badge.earned
-          ? "border-[rgba(56,193,255,0.25)] bg-white shadow-[var(--shadow-soft)]"
-          : "border-dashed border-[var(--line-soft)] bg-[var(--bg-secondary)] opacity-60"
+          ? "border-[rgba(56,193,255,0.25)] bg-white shadow-(--shadow-soft)"
+          : "border-dashed border-(--line-soft) bg-(--bg-secondary) opacity-60"
       }`}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: badge.earned ? 1 : 0.6, scale: 1 }}
@@ -43,7 +43,7 @@ function BadgeCard({ badge, index }: { badge: BadgeItem; index: number }) {
       }
     >
       {!badge.earned ? (
-        <div className="absolute right-3 top-3 text-[var(--text-subtle)]">
+        <div className="absolute right-3 top-3 text-(--text-subtle)">
           <Lock className="h-3.5 w-3.5" />
         </div>
       ) : null}
@@ -51,8 +51,8 @@ function BadgeCard({ badge, index }: { badge: BadgeItem; index: number }) {
       <div
         className={`grid h-14 w-14 place-items-center rounded-full ${
           badge.earned
-            ? "bg-[var(--brand-primary-soft)] text-[var(--brand-primary-strong)]"
-            : "bg-[var(--line-soft)] text-[var(--text-subtle)]"
+            ? "bg-(--brand-primary-soft) text-(--brand-primary-strong)"
+            : "bg-(--line-soft) text-(--text-subtle)"
         }`}
       >
         {badge.imageUrl ? (
@@ -68,20 +68,20 @@ function BadgeCard({ badge, index }: { badge: BadgeItem; index: number }) {
       </div>
 
       <div className="space-y-1">
-        <p className="text-[14px] font-semibold text-[var(--text-strong)]">
+        <p className="text-[14px] font-semibold text-(--text-strong)">
           {badge.name}
         </p>
-        <p className="text-[12px] leading-5 text-[var(--text-muted)]">
+        <p className="text-[12px] leading-5 text-(--text-muted)">
           {badge.description}
         </p>
       </div>
 
-      <div className="text-[11px] font-semibold text-[var(--brand-primary-strong)]">
+      <div className="text-[11px] font-semibold text-(--brand-primary-strong)">
         +{badge.xpReward} XP
       </div>
 
       {badge.earned && badge.earnedAt ? (
-        <p className="text-[10px] text-[var(--text-subtle)]">
+        <p className="text-[10px] text-(--text-subtle)">
           Earned{" "}
           {new Date(badge.earnedAt).toLocaleDateString("en-IN", {
             day: "numeric",
@@ -109,10 +109,10 @@ export function BadgesShowcase() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-6 text-[14px] text-[var(--text-muted)]">
+      <div className="flex items-center gap-2 py-6 text-[14px] text-(--text-muted)">
         <motion.div
           animate={{ rotate: 360 }}
-          className="h-4 w-4 rounded-full border-2 border-[var(--brand-primary-strong)] border-t-transparent"
+          className="h-4 w-4 rounded-full border-2 border-(--brand-primary-strong) border-t-transparent"
           transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
         />
         Loading badges…
@@ -127,15 +127,15 @@ export function BadgesShowcase() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-[#fbbf24]" />
-          <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-[var(--text-strong)]">
+          <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-(--text-strong)">
             Achievements
           </h2>
         </div>
         <div className="flex items-center gap-3">
-          <span className="rounded-[var(--radius-pill)] bg-[#fffbeb] px-3 py-1 text-[12px] font-semibold text-[#d97706]">
+          <span className="rounded-(--radius-pill) bg-[#fffbeb] px-3 py-1 text-[12px] font-semibold text-[#d97706]">
             {data.totalXP} XP
           </span>
-          <span className="text-[13px] text-[var(--text-subtle)]">
+          <span className="text-[13px] text-(--text-subtle)">
             {data.earnedCount}/{data.totalCount} unlocked
           </span>
         </div>

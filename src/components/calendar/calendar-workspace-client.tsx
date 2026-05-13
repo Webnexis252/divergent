@@ -13,17 +13,17 @@ const CalendarWorkspace = dynamic(
           {Array.from({ length: 4 }).map((_, index) => (
             <div
               key={index}
-              className="surface-panel h-[176px] animate-pulse rounded-[var(--radius-xl)]"
+              className="surface-panel h-[176px] animate-pulse rounded-(--radius-xl)"
             />
           ))}
         </div>
         <div className="space-y-6">
-          <div className="surface-panel h-24 animate-pulse rounded-[var(--radius-xl)]" />
+          <div className="surface-panel h-24 animate-pulse rounded-(--radius-xl)" />
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
-            <div className="surface-panel h-[580px] animate-pulse rounded-[var(--radius-xl)]" />
-            <div className="surface-panel h-[580px] animate-pulse rounded-[var(--radius-xl)]" />
+            <div className="surface-panel h-[580px] animate-pulse rounded-(--radius-xl)" />
+            <div className="surface-panel h-[580px] animate-pulse rounded-(--radius-xl)" />
           </div>
-          <div className="surface-panel h-72 animate-pulse rounded-[var(--radius-xl)]" />
+          <div className="surface-panel h-72 animate-pulse rounded-(--radius-xl)" />
         </div>
       </div>
     ),

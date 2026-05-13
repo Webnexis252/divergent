@@ -317,7 +317,7 @@ export function StudentLiveClassroomPage({
     : "/dashboard/courses";
   const primaryHref =
     tone === "completed" && focusClass
-      ? focusClass.recordingUrl ?? courseHref
+      ? `/dashboard/live-classes/${focusClass.id}/recording`
       : courseHref;
   const stateSteps = getStateSteps(tone, focusClass, attendanceMarked);
   const highlights =
@@ -357,7 +357,7 @@ export function StudentLiveClassroomPage({
                       <Link
                         key={item.href}
                         className={cx(
-                          "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
+                          "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-150 xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
                           ("active" in item && item.active)
                             ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/16 xl:shadow-none"
                             : "hover:bg-white/46 xl:hover:bg-white/20",
@@ -826,7 +826,6 @@ export function StudentLiveClassroomPage({
                                     "w-full bg-[#38c1ff] text-white shadow-[0_10px_22px_rgba(56,193,255,0.22)] hover:-translate-y-0.5",
                                   )}
                                   href={primaryHref}
-                                  target={focusClass.recordingUrl ? "_blank" : undefined}
                                 >
                                   <PlayCircle className="h-4 w-4" />
                                   {primaryLabel}

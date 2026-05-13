@@ -240,7 +240,7 @@ function AssignmentFilterBar({
                 <button
                   key={filter.id}
                   className={cx(
-                    "rounded-[8px] px-4 py-1.5 text-[12px] font-medium transition-colors duration-[var(--transition-fast)]",
+                    "rounded-[8px] px-4 py-1.5 text-[12px] font-medium transition-colors duration-150",
                     isActive
                       ? "bg-[#38c1ff] text-white shadow-[0_6px_16px_rgba(56,193,255,0.24)]"
                       : "bg-[#f5f5f5] text-[#7c7a7a] hover:bg-[#ebebeb]",
@@ -312,7 +312,7 @@ function AssignmentCard({
           </div>
 
           <button
-            className="inline-flex h-[40px] items-center justify-center rounded-[10px] bg-[#38c1ff] px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(56,193,255,0.24)] transition-transform duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5"
+            className="inline-flex h-[40px] items-center justify-center rounded-[10px] bg-[#38c1ff] px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(56,193,255,0.24)] transition-transform duration-150 ease-out hover:-translate-y-0.5"
             onClick={() =>
               assignment.state === "submitted"
                 ? onOpenDetails(assignment)
@@ -657,7 +657,7 @@ function DetailsModal({
         <div className="mt-6 flex flex-wrap items-center gap-3">
           {assignment.courseSlug ? (
             <Link
-              className="inline-flex h-12 items-center justify-center rounded-[14px] bg-[#38c1ff] px-5 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(56,193,255,0.24)] transition-transform duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5"
+              className="inline-flex h-12 items-center justify-center rounded-[14px] bg-[#38c1ff] px-5 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(56,193,255,0.24)] transition-transform duration-150 ease-out hover:-translate-y-0.5"
               href={`/dashboard/courses/${assignment.courseSlug}`}
             >
               Open Course
@@ -851,7 +851,7 @@ export default function DashboardAssignmentsPage() {
                         <Link
                           key={item.href}
                           className={cx(
-                            "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
+                            "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-150 xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
                             ("active" in item && item.active)
                               ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/40 xl:shadow-sm"
                               : "hover:bg-white/46 xl:hover:bg-white/20",

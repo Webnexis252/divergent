@@ -63,7 +63,7 @@ function workspaceButtonStyles({
   className?: string;
 }) {
   return cx(
-    "inline-flex items-center justify-center rounded-[10px] font-semibold transition-transform duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5",
+    "inline-flex items-center justify-center rounded-[10px] font-semibold transition-transform duration-150 ease-out hover:-translate-y-0.5",
     variant === "primary"
       ? "bg-[#38c1ff] text-white shadow-[0_4px_12px_rgba(56,193,255,0.28)]"
       : "bg-white text-[#38c1ff] shadow-[0_2px_8px_rgba(0,0,0,0.08)]",
@@ -83,8 +83,8 @@ function formatStudentCount(value: number) {
   return `${value} student${value === 1 ? "" : "s"}`;
 }
 
-function countLessons(chapters: Array<{ _count: { lessons: number } }>) {
-  return chapters.reduce((sum, chapter) => sum + chapter._count.lessons, 0);
+function countLessons(chapters: Array<{ lessons: Array<{ id: string }> }>) {
+  return chapters.reduce((sum, chapter) => sum + chapter.lessons.length, 0);
 }
 
 async function getRecentStudentEnrollments(userId: string) {
@@ -112,8 +112,12 @@ async function getRecentStudentEnrollments(userId: string) {
             },
           },
           chapters: {
+            where: { isPublished: true },
             select: {
-              _count: { select: { lessons: true } },
+              lessons: {
+                where: { isPublished: true },
+                select: { id: true },
+              },
             },
           },
         },
@@ -177,9 +181,26 @@ export default async function DashboardCoursesPage() {
   const displayName = viewer?.name?.trim() || "Student";
   const activeCourse = currentEnrollment?.course ?? null;
   const activeCourseLessonCount = activeCourse ? countLessons(activeCourse.chapters) : 0;
-  const activeCourseProgress = activeCourse
-    ? Math.max(0, Math.min(100, Math.round(currentEnrollment?.progressPercent ?? 0)))
-    : 0;
+
+  // Fetch real completed lesson count for the active course
+  const activeCourseAllLessonIds = activeCourse
+    ? activeCourse.chapters.flatMap((ch) => ch.lessons.map((l) => l.id))
+    : [];
+  let activeCourseCompletedCount = 0;
+  if (auth?.userId && activeCourseAllLessonIds.length > 0) {
+    activeCourseCompletedCount = await prisma.lessonProgress.count({
+      where: {
+        userId: auth.userId,
+        isCompleted: true,
+        lessonId: { in: activeCourseAllLessonIds },
+      },
+    });
+  }
+
+  const activeCourseProgress =
+    activeCourseLessonCount > 0
+      ? Math.round((activeCourseCompletedCount / activeCourseLessonCount) * 100)
+      : Math.max(0, Math.min(100, Math.round(currentEnrollment?.progressPercent ?? 0)));
 
   const exploreLinks = {
     currentCourse: "/dashboard/modules",
@@ -201,7 +222,7 @@ export default async function DashboardCoursesPage() {
                     <Link
                       key={item.href}
                       className={cx(
-                        "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
+                        "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-150 xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
                         ("active" in item && item.active)
                           ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/16 xl:shadow-none"
                           : "hover:bg-white/46 xl:hover:bg-white/20",
@@ -256,17 +277,15 @@ export default async function DashboardCoursesPage() {
                             <p className="mt-1 text-[11px] text-[#8b8888]">
                               by {activeCourse.teachers?.[0]?.name ?? "Expert Mentors"}
                             </p>
-                            <p className="mt-1 text-[11px] text-black">
-                              {activeCourseLessonCount} lessons
-                              {activeCourse._count.tests > 0
-                                ? ` • ${activeCourse._count.tests} tests`
-                                : ""}
+                            <p className="mt-1 text-[11px] font-medium text-[#4caf50]">
+                              {activeCourseCompletedCount} / {activeCourseLessonCount} lessons completed
+                              {activeCourse._count.tests > 0 ? ` • ${activeCourse._count.tests} tests` : ""}
                             </p>
 
                             <div className="mt-4 flex items-center justify-between gap-3">
                               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/8">
                                 <div
-                                  className="h-full rounded-full bg-[linear-gradient(90deg,#ff6b3d,#38c1ff)]"
+                                  className="h-full rounded-full bg-[linear-gradient(90deg,#4caf50,#38c1ff)]"
                                   style={{ width: `${activeCourseProgress}%` }}
                                 />
                               </div>
@@ -275,7 +294,7 @@ export default async function DashboardCoursesPage() {
                                 className={workspaceButtonStyles({
                                   className: "h-[34px] px-4 text-[13px]",
                                 })}
-                                href={`/dashboard/courses/${activeCourse.slug}`}
+                                href="/dashboard/live-classes"
                               >
                                 Continue Learning
                               </Link>

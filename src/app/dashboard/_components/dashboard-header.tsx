@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronDown, Search, Settings } from "lucide-react";
+import { ChevronDown, Search, Settings } from "lucide-react";
 import { motion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/ui/brand-logo";
@@ -10,6 +10,7 @@ import { buttonStyles } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
 import { cx } from "@/lib/cx";
 import { GlobalSearch } from "./global-search";
+import { NotificationsDropdown } from "@/components/notifications-dropdown";
 
 export function DashboardHeader() {
   const pathname = usePathname();
@@ -40,13 +41,7 @@ export function DashboardHeader() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            aria-label="Notifications"
-            className="grid h-10 w-10 place-items-center rounded-full border border-gray-100 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-50"
-            type="button"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
+          <NotificationsDropdown />
 
           <Link
             className="inline-flex h-10 items-center gap-2 rounded-full border border-gray-100 bg-white px-4 text-[14px] font-semibold text-[#0f172a] shadow-sm transition-colors hover:bg-gray-50"
@@ -66,10 +61,10 @@ export function DashboardHeader() {
           </Link>
 
           <div className="hidden min-w-0 pr-1 lg:block">
-            <p className="truncate text-[13px] font-semibold text-[var(--text-strong)]">
+            <p className="truncate text-[13px] font-semibold text-(--text-strong)">
               {user?.name ?? "Student"}
             </p>
-            <p className="truncate text-[12px] text-[var(--text-subtle)]">
+            <p className="truncate text-[12px] text-(--text-subtle)">
               {user?.email ?? "student@divergent.in"}
             </p>
           </div>

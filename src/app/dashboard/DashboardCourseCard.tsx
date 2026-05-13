@@ -32,7 +32,7 @@ export function DashboardCourseCard({ course }: { course: EnrolledCourse }) {
             />
           ) : (
             <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,rgba(56,193,255,0.2),rgba(254,198,0,0.16))]">
-              <BookOpen className="h-8 w-8 text-[var(--brand-primary-dark)]" />
+              <BookOpen className="h-8 w-8 text-(--brand-primary-dark)" />
             </div>
           )}
         </div>
@@ -41,15 +41,15 @@ export function DashboardCourseCard({ course }: { course: EnrolledCourse }) {
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <Badge tone="brand">{progress}% complete</Badge>
-              <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--text-subtle)]">
+              <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-(--text-subtle)">
                 Enrolled
               </span>
             </div>
             <div>
-              <h3 className="text-[22px] font-semibold tracking-[-0.05em] text-[var(--text-strong)] text-balance">
+              <h3 className="text-[22px] font-semibold tracking-[-0.05em] text-(--text-strong) text-balance">
                 {course.title}
               </h3>
-              <p className="mt-2 text-[14px] leading-7 text-[var(--text-muted)]">
+              <p className="mt-2 text-[14px] leading-7 text-(--text-muted)">
                 {course.meta}
               </p>
             </div>

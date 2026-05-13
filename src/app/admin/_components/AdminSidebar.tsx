@@ -68,7 +68,7 @@ function NavSection({
 }) {
   return (
     <div className="space-y-2">
-      <p className="px-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-subtle)]">
+      <p className="px-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-(--text-subtle)">
         {title}
       </p>
 
@@ -88,10 +88,10 @@ function NavSection({
             >
               <Link
                 className={cx(
-                  "group relative flex items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 text-[15px] font-semibold tracking-[-0.01em] transition-[background-color,border-color,box-shadow,color,transform] duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-[1px] focus-visible:outline-none",
+                  "group relative flex items-center gap-3 rounded-(--radius-lg) px-4 py-3 text-[15px] font-semibold tracking-[-0.01em] transition-[background-color,border-color,box-shadow,color,transform] duration-150 ease-out hover:-translate-y-[1px] focus-visible:outline-none",
                   active
-                    ? "border border-[var(--line-strong)] bg-white text-[var(--brand-primary-dark)] shadow-[var(--shadow-soft)]"
-                    : "border border-transparent text-[var(--text-muted)] hover:bg-white/72 hover:text-[var(--text-strong)]",
+                    ? "border border-(--line-strong) bg-white text-(--brand-primary-dark) shadow-(--shadow-soft)"
+                    : "border border-transparent text-(--text-muted) hover:bg-white/72 hover:text-(--text-strong)",
                 )}
                 href={item.href}
               >
@@ -125,14 +125,14 @@ export function AdminSidebar() {
       transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="space-y-8">
-        <div className="rounded-[var(--radius-xl)] border border-white/80 bg-white/76 px-4 py-4 shadow-[var(--shadow-soft)]">
+        <div className="rounded-(--radius-xl) border border-white/80 bg-white/76 px-4 py-4 shadow-(--shadow-soft)">
           <BrandLogo href="/admin/overview" size="md" />
           <div className="mt-4 flex items-center justify-between gap-3">
             <div>
-              <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-(--text-subtle)">
                 Control Room
               </p>
-              <p className="mt-1 text-[15px] font-semibold text-[var(--text-strong)]">
+              <p className="mt-1 text-[15px] font-semibold text-(--text-strong)">
                 {user?.name ?? "Admin workspace"}
               </p>
             </div>
@@ -160,17 +160,17 @@ export function AdminSidebar() {
       </div>
 
       <div className="mt-auto space-y-4">
-        <div className="rounded-[var(--radius-lg)] border border-[var(--line-soft)] bg-white/72 px-4 py-4">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--text-subtle)]">
+        <div className="rounded-(--radius-lg) border border-(--line-soft) bg-white/72 px-4 py-4">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-(--text-subtle)">
             Focus
           </p>
-          <p className="mt-3 text-[14px] leading-7 text-[var(--text-muted)]">
+          <p className="mt-3 text-[14px] leading-7 text-(--text-muted)">
             Keep the admin surfaces clear, fast to scan, and useful under load. The shell should feel like a product control layer, not a placeholder dashboard.
           </p>
         </div>
 
         <button
-          className="flex w-full items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 text-[15px] font-semibold tracking-[-0.01em] text-[var(--text-muted)] transition-[background-color,border-color,box-shadow,color,transform] duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-white/72 hover:text-[var(--text-strong)] border border-transparent focus-visible:outline-none"
+          className="flex w-full items-center gap-3 rounded-(--radius-lg) px-4 py-3 text-[15px] font-semibold tracking-[-0.01em] text-(--text-muted) transition-[background-color,border-color,box-shadow,color,transform] duration-150 ease-out hover:-translate-y-[1px] hover:bg-white/72 hover:text-(--text-strong) border border-transparent focus-visible:outline-none"
           onClick={() => logout()}
           type="button"
         >

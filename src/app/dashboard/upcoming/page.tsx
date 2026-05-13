@@ -36,7 +36,7 @@ const EVENT_META = {
     Icon: Video,
     accent: "var(--brand-primary-strong)",
     badgeTone: "brand" as const,
-    background: "bg-[var(--brand-primary-soft)]",
+    background: "bg-(--brand-primary-soft)",
     label: "Live Class",
   },
   exam: {
@@ -256,12 +256,12 @@ function CalendarWidget({
 
   return (
     <Surface className="overflow-hidden px-0 py-0">
-      <div className="flex flex-col gap-4 border-b border-[var(--line-soft)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="flex flex-col gap-4 border-b border-(--line-soft) px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
-          <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-(--text-subtle)">
             Calendar
           </p>
-          <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.05em] text-[var(--text-strong)]">
+          <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.05em] text-(--text-strong)">
             {formatMonthYear(viewDate)}
           </h2>
         </div>
@@ -279,11 +279,11 @@ function CalendarWidget({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-[var(--line-soft)] bg-white/54">
+      <div className="grid grid-cols-7 border-b border-(--line-soft) bg-white/54">
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="px-2 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]"
+            className="px-2 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-(--text-subtle)"
           >
             {day}
           </div>
@@ -300,9 +300,9 @@ function CalendarWidget({
           return (
             <button
               key={cell.date.toISOString()}
-              className={`group min-h-[88px] border-b border-r border-[var(--line-soft)] px-2 py-3 text-left transition-[background-color,border-color] duration-[var(--transition-fast)] ease-[var(--ease-standard)] focus-visible:outline-none ${
+              className={`group min-h-[88px] border-b border-r border-(--line-soft) px-2 py-3 text-left transition-[background-color,border-color] duration-150 ease-out focus-visible:outline-none ${
                 cellEvents.length > 0 ? "hover:bg-white" : ""
-              } ${cell.isCurrentMonth ? "" : "bg-black/[0.02] text-[var(--text-subtle)]"} ${
+              } ${cell.isCurrentMonth ? "" : "bg-black/[0.02] text-(--text-subtle)"} ${
                 isActive ? "bg-white" : ""
               }`}
               onClick={() => {
@@ -316,8 +316,8 @@ function CalendarWidget({
                 <span
                   className={`grid h-8 w-8 place-items-center rounded-full text-[13px] font-semibold ${
                     isToday
-                      ? "bg-[var(--brand-primary-strong)] text-white shadow-[var(--shadow-accent)]"
-                      : "text-[var(--text-strong)]"
+                      ? "bg-(--brand-primary-strong) text-white shadow-(--shadow-accent)"
+                      : "text-(--text-strong)"
                   }`}
                 >
                   {cell.day}
@@ -347,7 +347,7 @@ function CalendarWidget({
               className="h-2.5 w-2.5 rounded-full"
               style={{ backgroundColor: EVENT_META[kind].accent }}
             />
-            <span className="text-[12px] font-medium text-[var(--text-muted)]">
+            <span className="text-[12px] font-medium text-(--text-muted)">
               {EVENT_META[kind].label}
             </span>
           </div>
@@ -373,9 +373,9 @@ function EventPanel({ event }: { event: CalendarEvent | null }) {
 
   return (
     <Surface className="flex h-full flex-col gap-5 px-5 py-5 sm:px-6 sm:py-6">
-      <div className="rounded-[var(--radius-lg)] bg-[linear-gradient(135deg,#062f4f_0%,#0c4f78_34%,#38c1ff_100%)] px-5 py-5 text-white">
+      <div className="rounded-(--radius-lg) bg-[linear-gradient(135deg,#062f4f_0%,#0c4f78_34%,#38c1ff_100%)] px-5 py-5 text-white">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-[var(--radius-md)] bg-white/16">
+          <div className="grid h-10 w-10 place-items-center rounded-(--radius-md) bg-white/16">
             <Icon className="h-5 w-5" />
           </div>
           <Badge className="bg-white/14 text-white" tone="neutral">
@@ -388,7 +388,7 @@ function EventPanel({ event }: { event: CalendarEvent | null }) {
         <p className="mt-2 text-[14px] leading-7 text-white/78">{event.subtitle}</p>
       </div>
 
-      <p className="text-[14px] leading-7 text-[var(--text-muted)]">
+      <p className="text-[14px] leading-7 text-(--text-muted)">
         {event.description}
       </p>
 
@@ -396,10 +396,10 @@ function EventPanel({ event }: { event: CalendarEvent | null }) {
         {event.details.map((detail) => (
           <div
             key={detail.label}
-            className="flex items-center justify-between gap-4 rounded-[var(--radius-md)] bg-white/72 px-4 py-3"
+            className="flex items-center justify-between gap-4 rounded-(--radius-md) bg-white/72 px-4 py-3"
           >
-            <span className="text-[13px] text-[var(--text-muted)]">{detail.label}</span>
-            <span className="text-[13px] font-semibold text-[var(--text-strong)]">
+            <span className="text-[13px] text-(--text-muted)">{detail.label}</span>
+            <span className="text-[13px] font-semibold text-(--text-strong)">
               {detail.value}
             </span>
           </div>
@@ -408,7 +408,7 @@ function EventPanel({ event }: { event: CalendarEvent | null }) {
 
       <div className="mt-auto pt-2">
         <Link
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--brand-primary-strong)] px-5 text-[15px] font-semibold text-white shadow-[var(--shadow-accent)] transition-[transform,background-color] duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--brand-primary)] focus-visible:outline-none"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-(--radius-pill) bg-(--brand-primary-strong) px-5 text-[15px] font-semibold text-white shadow-(--shadow-accent) transition-[transform,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:bg-(--brand-primary) focus-visible:outline-none"
           href={event.ctaHref}
         >
           {event.ctaLabel}
@@ -425,31 +425,31 @@ function TimelineItem({ event }: { event: CalendarEvent }) {
 
   return (
     <motion.div
-      className="rounded-[var(--radius-xl)] border border-[var(--line-soft)] bg-white/84 px-5 py-5 shadow-[var(--shadow-soft)]"
+      className="rounded-(--radius-xl) border border-(--line-soft) bg-white/84 px-5 py-5 shadow-(--shadow-soft)"
       transition={{ duration: 0.2 }}
       whileHover={{ y: -2 }}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
-          <div className={`grid h-12 w-12 place-items-center rounded-[var(--radius-md)] ${meta.background}`}>
+          <div className={`grid h-12 w-12 place-items-center rounded-(--radius-md) ${meta.background}`}>
             <Icon className="h-5 w-5" style={{ color: meta.accent }} />
           </div>
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={meta.badgeTone}>{meta.label}</Badge>
-              <span className="text-[12px] text-[var(--text-subtle)]">
+              <span className="text-[12px] text-(--text-subtle)">
                 {formatShortDate(event.date)}
               </span>
             </div>
-            <h3 className="text-[20px] font-semibold tracking-[-0.04em] text-[var(--text-strong)]">
+            <h3 className="text-[20px] font-semibold tracking-[-0.04em] text-(--text-strong)">
               {event.title}
             </h3>
-            <p className="text-[14px] text-[var(--text-muted)]">{event.subtitle}</p>
+            <p className="text-[14px] text-(--text-muted)">{event.subtitle}</p>
           </div>
         </div>
 
         <Link
-          className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--line-soft)] bg-white px-4 text-[14px] font-semibold text-[var(--text-strong)] transition-[transform,border-color,box-shadow] duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:border-[var(--line-strong)] hover:shadow-[var(--shadow-soft)] focus-visible:outline-none"
+          className="inline-flex h-11 items-center gap-2 rounded-(--radius-pill) border border-(--line-soft) bg-white px-4 text-[14px] font-semibold text-(--text-strong) transition-[transform,border-color,box-shadow] duration-150 ease-out hover:-translate-y-[1px] hover:border-(--line-strong) hover:shadow-(--shadow-soft) focus-visible:outline-none"
           href={event.ctaHref}
         >
           {event.ctaLabel}
@@ -461,9 +461,9 @@ function TimelineItem({ event }: { event: CalendarEvent }) {
         {event.details.map((detail) => (
           <span
             key={detail.label}
-            className="rounded-full bg-white px-3 py-1.5 text-[12px] text-[var(--text-muted)] shadow-[var(--shadow-soft)]"
+            className="rounded-full bg-white px-3 py-1.5 text-[12px] text-(--text-muted) shadow-(--shadow-soft)"
           >
-            <span className="font-semibold text-[var(--text-strong)]">{detail.label}:</span>{" "}
+            <span className="font-semibold text-(--text-strong)">{detail.label}:</span>{" "}
             {detail.value}
           </span>
         ))}
@@ -568,10 +568,10 @@ export default function UpcomingPage() {
 
             {loading ? (
               <RevealSection delay={0.06}>
-                <Surface className="flex items-center justify-center gap-3 px-6 py-16 text-[var(--text-muted)]">
+                <Surface className="flex items-center justify-center gap-3 px-6 py-16 text-(--text-muted)">
                   <motion.div
                     animate={{ rotate: 360 }}
-                    className="h-5 w-5 rounded-full border-2 border-[var(--brand-primary-strong)] border-t-transparent"
+                    className="h-5 w-5 rounded-full border-2 border-(--brand-primary-strong) border-t-transparent"
                     transition={{ duration: 0.9, ease: "linear", repeat: Number.POSITIVE_INFINITY }}
                   />
                   Loading your upcoming schedule...
@@ -582,7 +582,7 @@ export default function UpcomingPage() {
                 <EmptyState
                   action={
                     <Link
-                      className="inline-flex h-12 items-center gap-2 rounded-[var(--radius-pill)] bg-[var(--brand-primary-strong)] px-5 text-[15px] font-semibold text-white shadow-[var(--shadow-accent)] transition-[transform,background-color] duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-[1px] hover:bg-[var(--brand-primary)] focus-visible:outline-none"
+                      className="inline-flex h-12 items-center gap-2 rounded-(--radius-pill) bg-(--brand-primary-strong) px-5 text-[15px] font-semibold text-white shadow-(--shadow-accent) transition-[transform,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:bg-(--brand-primary) focus-visible:outline-none"
                       href="/dashboard/courses"
                     >
                       Browse courses

@@ -4,9 +4,14 @@ import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   AlertTriangle,
+  Check,
   Clock,
+  Film,
+  Link2,
+  Loader2,
   Radio,
   Trash2,
+  UploadCloud,
   Video,
   X,
 } from "lucide-react";
@@ -34,6 +39,15 @@ export default function AdminLiveClassesPage() {
   const [cancelTarget, setCancelTarget] = useState<AdminLiveClass | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
+
+  // Recording upload state
+  const [recordingTarget, setRecordingTarget] = useState<AdminLiveClass | null>(null);
+  const [recordingTab, setRecordingTab] = useState<"link" | "upload">("link");
+  const [recordingUrl, setRecordingUrl] = useState("");
+  const [recordingFile, setRecordingFile] = useState<File | null>(null);
+  const [recordingSaving, setRecordingSaving] = useState(false);
+  const [recordingError, setRecordingError] = useState("");
+  const [recordingSuccess, setRecordingSuccess] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -105,6 +119,117 @@ export default function AdminLiveClassesPage() {
       setCancelling(false);
     }
   }, [cancelTarget]);
+
+  const handleSaveRecordingUrl = async (url: string) => {
+    const res = await fetch(
+      `/api/admin/live-classes/${recordingTarget!.id}/recording`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recordingUrl: url }),
+      }
+    );
+    const payload = await res.json();
+    if (!res.ok || !payload.success) {
+      throw new Error(payload.error ?? "Failed to save recording URL");
+    }
+    return url;
+  };
+
+  const handleSaveRecording = useCallback(async () => {
+    if (!recordingTarget) return;
+
+    if (recordingTab === "link" && !recordingUrl.trim()) {
+      setRecordingError("Please enter a URL.");
+      return;
+    }
+    if (recordingTab === "upload" && !recordingFile) {
+      setRecordingError("Please select a video file.");
+      return;
+    }
+
+    setRecordingSaving(true);
+    setRecordingError("");
+    setRecordingSuccess("");
+
+    try {
+      let finalUrl = recordingUrl.trim();
+
+      if (recordingTab === "upload" && recordingFile) {
+        const formData = new FormData();
+        formData.append("file", recordingFile);
+
+        const uploadRes = await fetch("/api/upload/video", {
+          method: "POST",
+          body: formData,
+        });
+        const uploadPayload = await uploadRes.json();
+        
+        if (!uploadRes.ok || !uploadPayload.success) {
+          throw new Error(uploadPayload.error ?? "Failed to upload video file");
+        }
+        
+        finalUrl = uploadPayload.data.url;
+      }
+
+      await handleSaveRecordingUrl(finalUrl);
+
+      // Update local state
+      setClasses((prev) =>
+        prev.map((c) =>
+          c.id === recordingTarget.id
+            ? { ...c, recordingUrl: finalUrl }
+            : c
+        )
+      );
+      setRecordingSuccess(recordingTab === "upload" ? "Video uploaded and saved!" : "Recording URL saved!");
+      setTimeout(() => {
+        setRecordingTarget(null);
+        setRecordingUrl("");
+        setRecordingFile(null);
+        setRecordingSuccess("");
+      }, 1500);
+    } catch (err: any) {
+      setRecordingError(err.message || "Network error — please try again.");
+    } finally {
+      setRecordingSaving(false);
+    }
+  }, [recordingTarget, recordingTab, recordingUrl, recordingFile]);
+
+  const handleDeleteRecording = useCallback(async () => {
+    if (!recordingTarget) return;
+    setRecordingSaving(true);
+    setRecordingError("");
+    setRecordingSuccess("");
+
+    try {
+      const res = await fetch(
+        `/api/admin/live-classes/${recordingTarget.id}/recording`,
+        { method: "DELETE" }
+      );
+      const payload = await res.json();
+      if (!res.ok || !payload.success) {
+        throw new Error(payload.error ?? "Failed to delete recording URL");
+      }
+
+      setClasses((prev) =>
+        prev.map((c) =>
+          c.id === recordingTarget.id ? { ...c, recordingUrl: null } : c
+        )
+      );
+      setRecordingSuccess("Recording deleted!");
+      setTimeout(() => {
+        setRecordingTarget(null);
+        setRecordingUrl("");
+        setRecordingFile(null);
+        setRecordingSuccess("");
+      }, 1500);
+    } catch (err: any) {
+      setRecordingError(err.message || "Network error — please try again.");
+    } finally {
+      setRecordingSaving(false);
+    }
+  }, [recordingTarget]);
 
   const liveCount = classes.filter((c) => getLiveClassStatus(c.startTime, c.duration) === "live").length;
   const upcomingCount = classes.filter((c) => getLiveClassStatus(c.startTime, c.duration) === "upcoming").length;
@@ -317,16 +442,39 @@ export default function AdminLiveClassesPage() {
                             )}
                           </td>
                           <td className="px-6 py-4">
-                            <button
-                              onClick={() => {
-                                setCancelTarget(cls);
-                                setCancelError("");
-                              }}
-                              className="inline-flex items-center gap-1.5 rounded-[12px] border border-[#fee2e2] bg-[#fef2f2] px-3 py-1.5 text-[12px] font-semibold text-[#dc2626] transition hover:bg-[#fee2e2]"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              Cancel
-                            </button>
+                            <div className="flex items-center gap-2">
+                              {status === "completed" && (
+                                <button
+                                  onClick={() => {
+                                    setRecordingTarget(cls);
+                                    setRecordingTab("link");
+                                    setRecordingUrl(cls.recordingUrl ?? "");
+                                    setRecordingFile(null);
+                                    setRecordingError("");
+                                    setRecordingSuccess("");
+                                  }}
+                                  className={cx(
+                                    "inline-flex items-center gap-1.5 rounded-[12px] border px-3 py-1.5 text-[12px] font-semibold transition",
+                                    cls.recordingUrl
+                                      ? "border-[#bbf7d0] bg-[#f0fdf4] text-[#15803d] hover:bg-[#dcfce7]"
+                                      : "border-[#dbeafe] bg-[#eff6ff] text-[#2563eb] hover:bg-[#dbeafe]"
+                                  )}
+                                >
+                                  <Film className="h-3 w-3" />
+                                  {cls.recordingUrl ? "Edit Recording" : "Upload Recording"}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setCancelTarget(cls);
+                                  setCancelError("");
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-[12px] border border-[#fee2e2] bg-[#fef2f2] px-3 py-1.5 text-[12px] font-semibold text-[#dc2626] transition hover:bg-[#fee2e2]"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Cancel
+                              </button>
+                            </div>
                           </td>
                         </motion.tr>
                       );
@@ -451,6 +599,215 @@ export default function AdminLiveClassesPage() {
                   <Trash2 className="h-3.5 w-3.5" />
                   {cancelling ? "Cancelling…" : "Yes, Cancel Class"}
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Recording Upload Modal */}
+      <AnimatePresence>
+        {recordingTarget && (
+          <motion.div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0f172a]/52 px-4 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !recordingSaving) {
+                setRecordingTarget(null);
+              }
+            }}
+          >
+            <motion.div
+              className="w-full max-w-[520px] overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_40px_80px_rgba(15,23,42,0.18)]"
+              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.97 }}
+              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between gap-4 border-b border-[#dbeafe] bg-[#eff6ff] px-6 py-5">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#2563eb]/10 text-[#2563eb]">
+                    <Film className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-[18px] font-semibold text-[#0f172a]">
+                      {recordingTarget.recordingUrl ? "Edit" : "Upload"} Recording
+                    </h3>
+                    <p className="mt-1 text-[13px] text-[#64748b]">
+                      Paste the video recording URL for this class.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => !recordingSaving && setRecordingTarget(null)}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[#e7eef6] bg-white text-[#94a3b8] transition-colors hover:text-[#0f172a]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-5 space-y-4">
+                <div className="rounded-[16px] border border-[#f1f5f9] bg-[#f8fafc] px-4 py-3">
+                  <p className="text-[15px] font-semibold text-[#0f172a]">
+                    {recordingTarget.title}
+                  </p>
+                  <p className="mt-1 text-[13px] text-[#64748b]">
+                    {recordingTarget.course.title}
+                    {" · "}
+                    {new Date(recordingTarget.startTime).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+
+                  <div className="flex rounded-lg bg-[#f1f5f9] p-1 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setRecordingTab("link")}
+                      className={cx(
+                        "flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+                        recordingTab === "link"
+                          ? "bg-white text-[#0f172a] shadow-sm"
+                          : "text-[#64748b] hover:text-[#0f172a]"
+                      )}
+                    >
+                      Paste Link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecordingTab("upload")}
+                      className={cx(
+                        "flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+                        recordingTab === "upload"
+                          ? "bg-white text-[#0f172a] shadow-sm"
+                          : "text-[#64748b] hover:text-[#0f172a]"
+                      )}
+                    >
+                      Upload File
+                    </button>
+                  </div>
+
+                  {recordingTab === "link" ? (
+                    <div>
+                      <label
+                        htmlFor="recording-url"
+                        className="block text-[13px] font-semibold text-[#475569] mb-2"
+                      >
+                        Recording URL
+                      </label>
+                      <div className="relative">
+                        <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94a3b8]" />
+                        <input
+                          id="recording-url"
+                          type="url"
+                          placeholder="https://drive.google.com/... or https://youtube.com/..."
+                          value={recordingUrl}
+                          onChange={(e) => {
+                            setRecordingUrl(e.target.value);
+                            setRecordingError("");
+                          }}
+                          className="block w-full rounded-[14px] border border-[#e2e8f0] bg-white py-3 pl-10 pr-4 text-[14px] text-[#0f172a] placeholder-[#94a3b8] focus:border-[#2563eb] focus:outline-none focus:ring-1 focus:ring-[#2563eb] transition-colors"
+                        />
+                      </div>
+                      <p className="mt-2 text-[12px] text-[#94a3b8]">
+                        Paste any video URL — YouTube, Google Drive, Vimeo, etc. Students will open this link to watch the recording.
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label
+                        htmlFor="recording-file"
+                        className="block text-[13px] font-semibold text-[#475569] mb-2"
+                      >
+                        Upload Video File
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="recording-file"
+                          type="file"
+                          accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            if (file && file.size > 500 * 1024 * 1024) {
+                              setRecordingError("File is too large. Max size is 500 MB.");
+                              setRecordingFile(null);
+                              e.target.value = ''; // clear input
+                            } else {
+                              setRecordingFile(file);
+                              setRecordingError("");
+                            }
+                          }}
+                          className="block w-full text-sm text-[#64748b] file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#eff6ff] file:text-[#2563eb] hover:file:bg-[#dbeafe]"
+                        />
+                      </div>
+                      <p className="mt-2 text-[12px] text-[#94a3b8]">
+                        Upload a local video file (MP4, WEBM, OGG, MOV). Max size: 500 MB.
+                      </p>
+                    </div>
+                  )}
+
+                {recordingError && (
+                  <p className="rounded-[12px] border border-[#fee2e2] bg-[#fef2f2] px-4 py-3 text-[13px] text-[#dc2626]">
+                    {recordingError}
+                  </p>
+                )}
+
+                {recordingSuccess && (
+                  <motion.p
+                    className="flex items-center gap-1.5 rounded-[12px] border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-[13px] font-medium text-[#15803d]"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    {recordingSuccess}
+                  </motion.p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between border-t border-[#f1f5f9] px-6 py-4">
+                <div>
+                  {recordingTarget.recordingUrl && (
+                    <button
+                      onClick={() => void handleDeleteRecording()}
+                      disabled={recordingSaving}
+                      className="inline-flex h-9 items-center justify-center rounded-lg border border-[#fee2e2] bg-[#fef2f2] px-4 text-sm font-medium text-[#dc2626] transition-colors hover:bg-[#fee2e2] disabled:opacity-50"
+                    >
+                      Delete Recording
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => !recordingSaving && setRecordingTarget(null)}
+                    disabled={recordingSaving}
+                    className={cx(
+                      buttonStyles({ variant: "secondary", size: "sm" }),
+                    )}
+                  >
+                    Cancel
+                  </button>
+                <button
+                  onClick={() => void handleSaveRecording()}
+                  disabled={recordingSaving || (recordingTab === "link" ? !recordingUrl.trim() : !recordingFile)}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-[#2563eb] px-5 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(37,99,235,0.24)] transition hover:bg-[#1d4ed8] disabled:opacity-60"
+                >
+                  {recordingSaving ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : recordingTab === "upload" ? (
+                    <UploadCloud className="h-3.5 w-3.5" />
+                  ) : (
+                    <Film className="h-3.5 w-3.5" />
+                  )}
+                  {recordingSaving ? "Saving…" : "Save Recording"}
+                </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

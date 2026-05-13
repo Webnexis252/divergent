@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -35,6 +36,13 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { cx } from "@/lib/cx";
+
+// Defined as constants so the Tailwind oxide scanner does not extract
+// "env(safe-area-inset-bottom)" from inline string literals as a class candidate.
+// (The oxide scanner reads all strings in TSX files looking for class names)
+const SAFE_AREA_VAR = "env(safe-area-inset-bottom)";
+const SAFE_AREA_STYLE_SM: React.CSSProperties = { paddingBottom: `max(${SAFE_AREA_VAR}, 0.8rem)` };
+const SAFE_AREA_STYLE_LG: React.CSSProperties = { paddingBottom: `max(${SAFE_AREA_VAR}, 2rem)` };
 
 // --- Configuration ---
 
@@ -116,7 +124,7 @@ export function MobileNav() {
       items = [...items, ...superAdminItems];
     }
     mainItems = items.slice(0, 3);
-    activeColor = "text-[var(--brand-primary-strong)]";
+    activeColor = "text-(--brand-primary-strong)";
   } else if (section === "teacher") {
     items = teacherItems;
     mainItems = items.slice(0, 3);
@@ -131,7 +139,7 @@ export function MobileNav() {
       studentItems[3], // Live Classes
     ];
     bottomBarColor = "bg-white/92 backdrop-blur-2xl";
-    activeColor = "text-[var(--brand-primary-strong)]";
+    activeColor = "text-(--brand-primary-strong)";
   }
 
   // The bottom bar has 4 items + "Menu"
@@ -164,17 +172,19 @@ export function MobileNav() {
         
         <div
           className={cx(
-            "relative flex items-center justify-around px-2 pb-[max(env(safe-area-inset-bottom),0.8rem)] pt-2.5",
+            "relative flex items-center justify-around px-2 pt-2.5",
             "bg-white/85 backdrop-blur-[24px] shadow-[0_-1px_0_rgba(0,0,0,0.06)]",
             section === "teacher" ? "bg-white/95" : "",
             section === "admin" ? "bg-white/90" : ""
           )}
+          // Using object style to prevent Tailwind oxide from scanning env() as a class
+          style={SAFE_AREA_STYLE_SM}
         >
           {mainItems.map((item) => {
             const active = isNavActive(pathname, item.href);
             const Icon = item.icon;
             
-            const pillColor = section === "student" ? "bg-[#38c1ff]/15" : section === "teacher" ? "bg-[#1b77ff]/15" : "bg-[var(--brand-primary-soft)]";
+            const pillColor = section === "student" ? "bg-[#38c1ff]/15" : section === "teacher" ? "bg-[#1b77ff]/15" : "bg-(--brand-primary-soft)";
             const shadowColor = section === "student" ? "rgba(56,193,255,0.4)" : section === "teacher" ? "rgba(27,119,255,0.4)" : "rgba(0,0,0,0.1)";
 
             return (
@@ -236,7 +246,8 @@ export function MobileNav() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 220 }}
-              className="absolute bottom-0 left-0 right-0 flex max-h-[90vh] flex-col rounded-t-[32px] border-t border-white/50 bg-[#f9fafb] px-4 pb-[max(env(safe-area-inset-bottom),2rem)] pt-6 shadow-[0_-8px_40px_rgba(0,0,0,0.12)] sm:px-6"
+              className="absolute bottom-0 left-0 right-0 flex max-h-[90vh] flex-col rounded-t-[32px] border-t border-white/50 bg-[#f9fafb] px-4 pt-6 shadow-[0_-8px_40px_rgba(0,0,0,0.12)] sm:px-6"
+              style={SAFE_AREA_STYLE_LG}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="absolute left-1/2 top-3 h-1.5 w-12 -translate-x-1/2 rounded-full bg-black/10" />
@@ -266,7 +277,7 @@ export function MobileNav() {
                           active 
                             ? section === "student" ? "border border-[#ffe08a] bg-[#fffaf0] text-[#b45309] shadow-sm" 
                               : section === "teacher" ? "bg-blue-50 border border-blue-100 text-blue-600 shadow-sm"
-                              : "bg-[var(--brand-primary-soft)] border border-[var(--line-strong)] text-[var(--brand-primary-dark)] shadow-sm"
+                              : "bg-(--brand-primary-soft) border border-(--line-strong) text-(--brand-primary-dark) shadow-sm"
                             : "bg-white border border-[#e5e7eb] text-[#4b5563] shadow-sm active:bg-gray-50"
                         )}
                       >

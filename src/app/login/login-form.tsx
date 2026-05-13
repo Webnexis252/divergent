@@ -92,7 +92,7 @@ export function LoginForm() {
         <h2 className="text-[clamp(2rem,4vw,3rem)] font-semibold leading-[0.98] tracking-[-0.06em] text-balance">
           Log in to your {loginMode === "TEACHER" ? "mentor" : "student"} workspace.
         </h2>
-        <p className="text-[15px] leading-7 text-[var(--text-muted)]">
+        <p className="text-[15px] leading-7 text-(--text-muted)">
           Use your existing account. The workspace adapts automatically after sign-in.
         </p>
       </div>
@@ -107,10 +107,10 @@ export function LoginForm() {
                 key={option.value}
                 aria-pressed={active}
                 className={cx(
-                  "group rounded-[var(--radius-lg)] border px-4 py-4 text-left transition-[transform,border-color,background-color,box-shadow] duration-[var(--transition-fast)] ease-[var(--ease-standard)] focus-visible:outline-none",
+                  "group rounded-(--radius-lg) border px-4 py-4 text-left transition-[transform,border-color,background-color,box-shadow] duration-150 ease-out focus-visible:outline-none",
                   active
-                    ? "border-[var(--brand-primary)] bg-[var(--brand-primary-soft)] shadow-[0_0_0_4px_rgba(56,193,255,0.12)]"
-                    : "border-[var(--line-soft)] bg-white/74 hover:border-[var(--line-strong)] hover:bg-white",
+                    ? "border-(--brand-primary) bg-(--brand-primary-soft) shadow-[0_0_0_4px_rgba(56,193,255,0.12)]"
+                    : "border-(--line-soft) bg-white/74 hover:border-(--line-strong) hover:bg-white",
                 )}
                 onClick={() => setLoginMode(option.value)}
                 type="button"
@@ -119,11 +119,11 @@ export function LoginForm() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="flex items-center gap-2 text-[14px] font-semibold text-[var(--text-strong)]">
+                    <div className="flex items-center gap-2 text-[14px] font-semibold text-(--text-strong)">
                       {option.icon}
                       {option.label}
                     </div>
-                    <p className="mt-3 text-[13px] leading-6 text-[var(--text-muted)]">
+                    <p className="mt-3 text-[13px] leading-6 text-(--text-muted)">
                       {option.description}
                     </p>
                   </div>
@@ -132,7 +132,7 @@ export function LoginForm() {
                     className={cx(
                       "mt-1 h-4 w-4 rounded-full border transition-colors",
                       active
-                        ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]"
+                        ? "border-(--brand-primary) bg-(--brand-primary)"
                         : "border-black/15 bg-transparent",
                     )}
                   />
@@ -163,7 +163,7 @@ export function LoginForm() {
         />
 
         {error ? (
-          <p className="rounded-[var(--radius-md)] border border-[rgba(255,61,0,0.18)] bg-[rgba(255,61,0,0.08)] px-4 py-3 text-[14px] text-[var(--danger)]">
+          <p className="rounded-(--radius-md) border border-[rgba(255,61,0,0.18)] bg-[rgba(255,61,0,0.08)] px-4 py-3 text-[14px] text-(--danger)">
             {error}
           </p>
         ) : null}
@@ -177,7 +177,7 @@ export function LoginForm() {
         </Button>
       </form>
 
-      <div className="mt-6 flex items-center gap-3 text-[13px] text-[var(--text-subtle)]">
+      <div className="mt-6 flex items-center gap-3 text-[13px] text-(--text-subtle)">
         <div className="h-px flex-1 bg-black/[0.08]" />
         <span>Or continue with</span>
         <div className="h-px flex-1 bg-black/[0.08]" />
@@ -214,17 +214,17 @@ export function LoginForm() {
         <ArrowRight className="h-4 w-4" />
       </a>
 
-      <div className="mt-7 flex flex-wrap items-center justify-between gap-3 text-[14px] text-[var(--text-muted)]">
+      <div className="mt-7 flex flex-wrap items-center justify-between gap-3 text-[14px] text-(--text-muted)">
         <span>No account yet?</span>
         <div className="flex flex-wrap items-center gap-4">
           <Link
-            className="font-semibold text-[var(--brand-primary-dark)] transition-colors hover:text-[var(--brand-primary)]"
+            className="font-semibold text-(--brand-primary-dark) transition-colors hover:text-(--brand-primary)"
             href="/signup"
           >
             Create account
           </Link>
           <Link
-            className="font-semibold text-[var(--brand-primary-dark)] transition-colors hover:text-[var(--brand-primary)]"
+            className="font-semibold text-(--brand-primary-dark) transition-colors hover:text-(--brand-primary)"
             href="/"
           >
             Back to homepage

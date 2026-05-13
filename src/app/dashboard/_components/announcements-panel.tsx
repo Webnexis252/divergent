@@ -39,10 +39,10 @@ export function AnnouncementsPanel() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-6 text-[14px] text-[var(--text-muted)]">
+      <div className="flex items-center gap-2 py-6 text-[14px] text-(--text-muted)">
         <motion.div
           animate={{ rotate: 360 }}
-          className="h-4 w-4 rounded-full border-2 border-[var(--brand-primary-strong)] border-t-transparent"
+          className="h-4 w-4 rounded-full border-2 border-(--brand-primary-strong) border-t-transparent"
           transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
         />
         Loading announcements…
@@ -55,8 +55,8 @@ export function AnnouncementsPanel() {
   return (
     <section className="space-y-4">
       <div className="flex items-center gap-2">
-        <Megaphone className="h-5 w-5 text-[var(--brand-primary-strong)]" />
-        <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-[var(--text-strong)]">
+        <Megaphone className="h-5 w-5 text-(--brand-primary-strong)" />
+        <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-(--text-strong)">
           Announcements
         </h2>
         <Badge tone="brand">{announcements.length}</Badge>
@@ -66,7 +66,7 @@ export function AnnouncementsPanel() {
         {announcements.map((a, i) => (
           <motion.article
             key={a.id}
-            className="relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line-soft)] bg-white px-5 py-4 shadow-[var(--shadow-soft)]"
+            className="relative overflow-hidden rounded-(--radius-xl) border border-(--line-soft) bg-white px-5 py-4 shadow-(--shadow-soft)"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -80,21 +80,21 @@ export function AnnouncementsPanel() {
             }}
           >
             {a.isPinned ? (
-              <div className="absolute right-3 top-3 text-[var(--warning)]">
+              <div className="absolute right-3 top-3 text-(--warning)">
                 <Pin className="h-4 w-4" />
               </div>
             ) : null}
 
             <div className="space-y-2">
-              <h3 className="pr-6 text-[15px] font-semibold text-[var(--text-strong)]">
+              <h3 className="pr-6 text-[15px] font-semibold text-(--text-strong)">
                 {a.title}
               </h3>
-              <p className="line-clamp-3 text-[13px] leading-6 text-[var(--text-muted)]">
+              <p className="line-clamp-3 text-[13px] leading-6 text-(--text-muted)">
                 {a.body}
               </p>
             </div>
 
-            <div className="mt-4 flex items-center gap-2 border-t border-[var(--line-soft)] pt-3 text-[12px] text-[var(--text-subtle)]">
+            <div className="mt-4 flex items-center gap-2 border-t border-(--line-soft) pt-3 text-[12px] text-(--text-subtle)">
               <span className="font-medium">{a.author.name ?? "Admin"}</span>
               <span>·</span>
               <span>{timeAgo(a.createdAt)}</span>

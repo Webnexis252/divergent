@@ -33,7 +33,7 @@ type CourseDetailPageProps = {
 };
 
 const assets = {
-  heroIllustration: "https://api.dicebear.com/9.x/shapes/svg?seed=db6c0edc-45d2-4a72-bc8c-fda1cf5c7daa",
+  heroIllustration: "/assets/789e932c2f45a3aedd7967edba282c943ce97d1d.png",
   premiumBadge: "https://api.dicebear.com/9.x/shapes/svg?seed=d69210fb-fac4-4a3f-ae58-7426f89af020",
   learnersIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=8bba02c3-8180-4d46-b5cd-f071d8a40f43",
   ratings: "https://api.dicebear.com/9.x/shapes/svg?seed=58f66a79-9fb4-4b1a-a7cb-df0e2291a488",
@@ -42,11 +42,11 @@ const assets = {
   mentorAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=1fdd695f-0eb2-4964-b9f7-d3b9472b043a",
   buyNowIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=302f0b9c-5f11-4d9d-ab89-dfad0999d3f4",
   emiIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=104750b5-4aac-439b-a0d7-04c01181c5da",
-  liveClassFeature: "https://api.dicebear.com/9.x/shapes/svg?seed=51a28b6c-a3eb-49f6-9945-ee2c67715253",
-  doubtSolvingFeature: "https://api.dicebear.com/9.x/shapes/svg?seed=12ce6314-ad2e-4ad8-a98a-16a52e99a04e",
-  mockTestsFeature: "https://api.dicebear.com/9.x/shapes/svg?seed=a1c20d05-60d6-4863-b5ec-a6357bda9f84",
-  communityFeature: "https://api.dicebear.com/9.x/shapes/svg?seed=47dbd472-4af1-4232-a9ab-eb697c5c0dd5",
-  certificateFeature: "https://api.dicebear.com/9.x/shapes/svg?seed=6bec0872-3a9c-4711-92a9-c58333b7f917",
+  liveClassFeature: "/assets/7ac54c6ed7ca5712e26b75ff032783a11d45b059.png",
+  doubtSolvingFeature: "/assets/18a626f90edd50604a508b3ec1fe4225d0168d5c.png",
+  mockTestsFeature: "/assets/9e1f32ff326eef587374d218ae9b0ed57b8fa746.png",
+  communityFeature: "/assets/5ac4864e3e17823f677212d8c1268bdffcbfe02d.png",
+  certificateFeature: "/assets/0eb8388fb7d03e1be4aacdf8c01dfcc329307443.png",
   testsTile: "/assets/dashboard/explore-tests.png",
   modulesTile: "/assets/dashboard/explore-modules.png",
   dashboardIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=cf63ebaf-2c2d-461d-b303-52e41d36c645",
@@ -278,6 +278,33 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         enrollment.status === EnrollmentStatus.PAUSED
       : Boolean(enrollment?.id);
 
+  // Fetch real completed lesson count from LessonProgress
+  const allCourseLessonIds = course.chapters.flatMap((ch) => ch.lessons.map((l) => l.id));
+  let completedLessonCount = 0;
+  if (isEnrolled && auth?.userId && allCourseLessonIds.length > 0) {
+    completedLessonCount = await prisma.lessonProgress.count({
+      where: {
+        userId: auth.userId,
+        isCompleted: true,
+        lessonId: { in: allCourseLessonIds },
+      },
+    });
+  }
+
+  // Build a set of completed lesson IDs for per-lesson indicators in the curriculum
+  const completedLessonIds: Set<string> = new Set();
+  if (isEnrolled && auth?.userId && allCourseLessonIds.length > 0) {
+    const rows = await prisma.lessonProgress.findMany({
+      where: {
+        userId: auth.userId,
+        isCompleted: true,
+        lessonId: { in: allCourseLessonIds },
+      },
+      select: { lessonId: true },
+    });
+    rows.forEach((r) => completedLessonIds.add(r.lessonId));
+  }
+
   const teacherName = course.teachers?.[0]?.name ?? "Expert Mentors";
   const totalLessons = countLessons(course.chapters);
   const totalDuration = countDuration(course.chapters);
@@ -343,7 +370,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     {
       label: "Doubt solving",
       image: assets.doubtSolvingFeature,
-      href: "/dashboard/community",
+      href: "/dashboard/doubts",
     },
     {
       label: "Mock tests",
@@ -358,7 +385,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     {
       label: "Certificate",
       image: assets.certificateFeature,
-      href: "/dashboard/progress",
+      href: "/dashboard/certificates",
     },
   ];
   const testimonialCards = Array.isArray(course.testimonials) && course.testimonials.length > 0
@@ -407,10 +434,18 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
           : "After enrollment, the course becomes part of your student dashboard so you can continue from the curriculum section whenever lessons are published.",
     },
   ];
-  const progressPercent = Math.max(0, Math.min(100, Math.round(enrollment?.progressPercent ?? 0)));
+  // Real progress from LessonProgress table (not the stale progressPercent estimate)
+  const progressPercent =
+    isEnrolled && totalLessons > 0
+      ? Math.round((completedLessonCount / totalLessons) * 100)
+      : Math.max(0, Math.min(100, Math.round(enrollment?.progressPercent ?? 0)));
   const primaryActionHref = firstLesson
     ? `/dashboard/courses/${course.slug}/lessons/${firstLesson.id}`
-    : "#curriculum";
+    : nextLiveClass
+      ? `/dashboard/live-classes/${nextLiveClass.id}`
+      : course.liveClasses.length > 0
+        ? "/dashboard/live-classes"
+        : "#curriculum";
 
   return (
     <PageTransition>
@@ -426,7 +461,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     <Link
                       key={item.href}
                       className={cx(
-                        "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
+                        "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-150 xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
                         ("active" in item && item.active)
                           ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/16 xl:shadow-none"
                           : "hover:bg-white/46 xl:hover:bg-white/20",
@@ -448,7 +483,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     <div className="pointer-events-none absolute right-[170px] top-0 h-[34px] w-[220px] rounded-b-[25px] bg-white/20" />
                     <div className="pointer-events-none absolute right-[116px] top-0 h-[93px] w-[117px] rounded-bl-[20px] rounded-tr-[40px] bg-white/22" />
                     <div className="pointer-events-none absolute bottom-[112px] right-[116px] h-[43px] w-[220px] rounded-b-[25px] bg-white/14" />
-                    <div className="relative z-10 grid gap-8 xl:grid-cols-[minmax(0,865px)_260px] xl:items-start">
+                    <div className="relative z-10 grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] xl:items-center">
                       <div className="space-y-4 pt-2 text-white">
                         <h1 className="max-w-[18ch] text-[clamp(2.2rem,4vw,2.5rem)] font-semibold leading-[1.12]">
                           {course.title}
@@ -465,14 +500,14 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                       </div>
 
                       <FloatPulse className="mx-auto xl:mx-0 xl:justify-self-end">
-                        <div className="relative h-[160px] w-[176px] sm:h-[190px] sm:w-[210px] xl:h-[178px] xl:w-[195px]">
+                        <div className="relative flex items-center justify-center">
                           <Image
                             alt=""
                             aria-hidden
-                            className="object-contain"
-                            fill
-                            sizes="195px"
+                            className="h-auto w-[200px] object-contain opacity-95 drop-shadow-[0_20px_45px_rgba(0,0,0,0.18)] sm:w-[320px] xl:w-[420px]"
+                            height={852}
                             src={assets.heroIllustration}
+                            width={1561}
                           />
                         </div>
                       </FloatPulse>
@@ -579,31 +614,103 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     <RevealSection delay={0.1}>
                       <section className="rounded-[10px] bg-white px-6 py-8 shadow-[0_8px_24px_rgba(0,0,0,0.06)] sm:px-10 xl:px-[38px] xl:py-10">
                         <div id="curriculum" className="space-y-6">
-                          <h2 className="text-[24px] font-semibold text-black">Course Curriculum</h2>
+                          {/* Curriculum header with total progress (enrolled only) */}
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <h2 className="text-[24px] font-semibold text-black">Course Curriculum</h2>
+                            {isEnrolled && totalLessons > 0 && (
+                              <span className="text-[13px] font-medium text-[#4caf50]">
+                                {completedLessonCount} / {totalLessons} lessons completed ({progressPercent}%)
+                              </span>
+                            )}
+                          </div>
 
                           {course.chapters.length > 0 ? (
                             <div className="space-y-5">
-                              {course.chapters.map((chapter, index) => (
-                                <div key={chapter.id} className="space-y-3">
-                                  <p className="text-[20px] font-medium text-black">
-                                    Module {index + 1}:
-                                  </p>
-                                  {chapter.lessons.length > 0 ? (
-                                    chapter.lessons.map((lesson) => (
-                                      <div
-                                        key={lesson.id}
-                                        className="flex min-h-[44px] items-center rounded-[10px] border border-[#e9e9e9] px-[13px] py-[11px] text-[15px] text-black"
-                                      >
-                                        {lesson.title}
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="flex min-h-[44px] items-center rounded-[10px] border border-[#e9e9e9] px-[13px] py-[11px] text-[15px] text-[#8b8888]">
-                                      Lessons will appear here soon.
+                              {course.chapters.map((chapter, index) => {
+                                const chapterCompletedCount = isEnrolled
+                                  ? chapter.lessons.filter((l) => completedLessonIds.has(l.id)).length
+                                  : 0;
+                                const chapterTotal = chapter.lessons.length;
+                                const chapterPercent =
+                                  isEnrolled && chapterTotal > 0
+                                    ? Math.round((chapterCompletedCount / chapterTotal) * 100)
+                                    : 0;
+
+                                return (
+                                  <div key={chapter.id} className="space-y-2">
+                                    {/* Chapter header */}
+                                    <div className="flex items-center justify-between gap-3">
+                                      <p className="text-[18px] font-semibold text-black">
+                                        Module {index + 1}: {chapter.title}
+                                      </p>
+                                      {isEnrolled && chapterTotal > 0 && (
+                                        <span className="shrink-0 text-[12px] font-medium text-[#959595]">
+                                          {chapterCompletedCount}/{chapterTotal}
+                                        </span>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
-                              ))}
+
+                                    {/* Chapter progress bar (enrolled only) */}
+                                    {isEnrolled && chapterTotal > 0 && (
+                                      <div className="h-1 w-full overflow-hidden rounded-full bg-black/6">
+                                        <div
+                                          className="h-full rounded-full bg-[linear-gradient(90deg,#4caf50,#38c1ff)] transition-all duration-500"
+                                          style={{ width: `${chapterPercent}%` }}
+                                        />
+                                      </div>
+                                    )}
+
+                                    {/* Lesson rows */}
+                                    {chapterTotal > 0 ? (
+                                      <div className="space-y-1.5 pt-1">
+                                        {chapter.lessons.map((lesson, li) => {
+                                          const done = isEnrolled && completedLessonIds.has(lesson.id);
+                                          return (
+                                            <div
+                                              key={lesson.id}
+                                              className={`flex min-h-[44px] items-center justify-between gap-3 rounded-[10px] border px-[13px] py-[11px] text-[14px] transition-colors ${
+                                                done
+                                                  ? "border-green-200 bg-green-50/60 text-green-800"
+                                                  : "border-[#e9e9e9] bg-white text-black"
+                                              }`}
+                                            >
+                                              <div className="flex items-center gap-2.5 min-w-0">
+                                                {/* Lesson number */}
+                                                <span className={`shrink-0 text-[11px] font-semibold w-5 text-right ${done ? "text-green-500" : "text-[#bbb]"}`}>
+                                                  {li + 1}
+                                                </span>
+                                                <span className="truncate">{lesson.title}</span>
+                                              </div>
+                                              <div className="flex shrink-0 items-center gap-2">
+                                                {lesson.durationMins > 0 && (
+                                                  <span className="text-[11px] text-[#bbb]">
+                                                    {lesson.durationMins}m
+                                                  </span>
+                                                )}
+                                                {lesson.isFreePreview && (
+                                                  <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600">
+                                                    Preview
+                                                  </span>
+                                                )}
+                                                {/* Completion tick */}
+                                                {done ? (
+                                                  <span className="text-green-500 text-[16px]" aria-label="Completed">✓</span>
+                                                ) : (
+                                                  <span className="h-4 w-4 rounded-full border-2 border-[#ddd]" aria-hidden />
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    ) : (
+                                      <div className="flex min-h-[44px] items-center rounded-[10px] border border-[#e9e9e9] px-[13px] py-[11px] text-[15px] text-[#8b8888]">
+                                        Lessons will appear here soon.
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           ) : (
                             <div className="rounded-[10px] border border-dashed border-[#e9e9e9] px-5 py-10 text-[15px] text-[#8b8888]">
@@ -622,19 +729,21 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                           <div className="space-y-5">
                             <StaggerGrid className="grid gap-5 md:grid-cols-3">
                               {featureTiles.slice(0, 3).map((feature) => (
-                                <AnimCard key={feature.label}>
+                                <AnimCard key={feature.label} className="h-full">
                                   <Link
-                                    className="flex min-h-[179px] flex-col items-center justify-center gap-[7px] rounded-[20px] bg-[#71d3ff] px-6 py-[15px] text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
+                                    className="flex h-full w-full flex-col items-center justify-center gap-[10px] rounded-[20px] bg-[#71d3ff] px-4 py-5 text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
                                     href={feature.href}
                                   >
-                                    <Image
-                                      alt={feature.label}
-                                      className="h-auto w-[140px] object-contain drop-shadow-2xl"
-                                      height={140}
-                                      src={feature.image}
-                                      width={140}
-                                    />
-                                    <span className="text-[24px] font-semibold leading-tight">
+                                    <div className="flex h-[100px] items-center justify-center">
+                                      <Image
+                                        alt={feature.label}
+                                        className="max-h-full w-auto object-contain drop-shadow-2xl"
+                                        height={140}
+                                        src={feature.image}
+                                        width={140}
+                                      />
+                                    </div>
+                                    <span className="text-[20px] font-semibold leading-tight sm:text-[24px]">
                                       {feature.label}
                                     </span>
                                   </Link>
@@ -644,19 +753,21 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
                             <StaggerGrid className="mx-auto grid max-w-[440px] gap-5 md:grid-cols-2">
                               {featureTiles.slice(3).map((feature) => (
-                                <AnimCard key={feature.label}>
+                                <AnimCard key={feature.label} className="h-full">
                                   <Link
-                                    className="flex min-h-[179px] flex-col items-center justify-center gap-[7px] rounded-[20px] bg-[#71d3ff] px-6 py-[15px] text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
+                                    className="flex h-full w-full flex-col items-center justify-center gap-[10px] rounded-[20px] bg-[#71d3ff] px-4 py-5 text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
                                     href={feature.href}
                                   >
-                                    <Image
-                                      alt={feature.label}
-                                      className="h-auto w-[140px] object-contain drop-shadow-2xl"
-                                      height={140}
-                                      src={feature.image}
-                                      width={140}
-                                    />
-                                    <span className="text-[24px] font-semibold leading-tight">
+                                    <div className="flex h-[100px] items-center justify-center">
+                                      <Image
+                                        alt={feature.label}
+                                        className="max-h-full w-auto object-contain drop-shadow-2xl"
+                                        height={140}
+                                        src={feature.image}
+                                        width={140}
+                                      />
+                                    </div>
+                                    <span className="text-[20px] font-semibold leading-tight sm:text-[24px]">
                                       {feature.label}
                                     </span>
                                   </Link>
@@ -732,10 +843,24 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                             <p className="text-[12px] font-medium text-black">
                               ⭐ 4.7 ({formatAudienceLabel(course._count.enrollments)})
                             </p>
-                            {isEnrolled ? (
-                              <p className="text-[11px] text-[#4caf50]">{progressPercent}% completed so far</p>
+                            {isEnrolled && totalLessons > 0 ? (
+                              <div className="pt-1 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-[11px] font-medium text-[#4caf50]">
+                                    {completedLessonCount} / {totalLessons} lessons completed
+                                  </p>
+                                  <p className="text-[11px] text-[#959595]">{progressPercent}%</p>
+                                </div>
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/8">
+                                  <div
+                                    className="h-full rounded-full bg-[linear-gradient(90deg,#4caf50,#38c1ff)]"
+                                    style={{ width: `${progressPercent}%` }}
+                                  />
+                                </div>
+                              </div>
                             ) : null}
                           </div>
+
 
                           <div className="rounded-[10px] border border-[#d9d9d9] px-[17px] py-[12px]">
                             <div className="flex items-center gap-2">
@@ -804,7 +929,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
                           {isEnrolled ? (
                             <Link
-                              className="inline-flex h-[37px] w-full items-center justify-center rounded-[10px] border border-[#d9d9d9] bg-[#38c1ff] px-4 text-[12px] font-semibold text-white shadow-[0_4px_10px_rgba(56,193,255,0.24)] transition-transform duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5"
+                              className="inline-flex h-[37px] w-full items-center justify-center rounded-[10px] border border-[#d9d9d9] bg-[#38c1ff] px-4 text-[12px] font-semibold text-white shadow-[0_4px_10px_rgba(56,193,255,0.24)] transition-transform duration-150 ease-out hover:-translate-y-0.5"
                               href={primaryActionHref}
                             >
                               Continue Course

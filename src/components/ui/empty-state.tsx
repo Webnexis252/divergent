@@ -23,15 +23,15 @@ export function EmptyState({
       tone="muted"
     >
       {icon ? (
-        <div className="grid h-14 w-14 place-items-center rounded-full bg-white text-[var(--brand-primary-strong)] shadow-[var(--shadow-soft)]">
+        <div className="grid h-14 w-14 place-items-center rounded-full bg-white text-(--brand-primary-strong) shadow-(--shadow-soft)">
           {icon}
         </div>
       ) : null}
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold tracking-[-0.04em] text-[var(--text-strong)]">
+        <h3 className="text-xl font-semibold tracking-[-0.04em] text-(--text-strong)">
           {title}
         </h3>
-        <p className="max-w-[48ch] text-[14px] leading-6 text-[var(--text-muted)]">
+        <p className="max-w-[48ch] text-[14px] leading-6 text-(--text-muted)">
           {description}
         </p>
       </div>

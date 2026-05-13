@@ -257,7 +257,7 @@ export default function EditCourseModal({
             </div>
 
             <div className="space-y-3">
-              <label className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+              <label className="text-[13px] font-semibold uppercase tracking-[0.08em] text-(--text-muted)">
                 Course Thumbnail
               </label>
 
@@ -408,7 +408,7 @@ export default function EditCourseModal({
                   setForm((p) => ({ ...p, isPublished: !p.isPublished }))
                 }
                 className={cx(
-                  "flex h-12 items-center gap-2.5 rounded-[var(--radius-md)] border px-5 text-[15px] font-semibold transition-all",
+                  "flex h-12 items-center gap-2.5 rounded-(--radius-md) border px-5 text-[15px] font-semibold transition-all",
                   form.isPublished
                     ? "border-[#bbf7d0] bg-[#ecfdf5] text-[#15803d] hover:bg-[#dcfce7]"
                     : "border-[#fde68a] bg-[#fffbeb] text-[#b45309] hover:bg-[#fef3c7]",
@@ -512,7 +512,7 @@ export default function EditCourseModal({
           <div className="flex justify-end">
              <a
                 href={`/admin/courses/${course.id}/exams`}
-                className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[#cbd5e1] bg-white px-4 py-2 text-sm font-semibold text-[#0f172a] shadow-sm transition-colors hover:bg-[#f1f5f9]"
+                className="inline-flex items-center gap-2 rounded-(--radius-md) border border-[#cbd5e1] bg-white px-4 py-2 text-sm font-semibold text-[#0f172a] shadow-sm transition-colors hover:bg-[#f1f5f9]"
              >
                 <ClipboardList className="h-4 w-4" />
                 Manage Exams

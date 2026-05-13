@@ -10,26 +10,26 @@ import { BrandLogo } from "@/components/ui/brand-logo";
 const assets = {
   hero: "/hero-illustration.png",
   examAccent: "https://api.dicebear.com/9.x/shapes/svg?seed=5921cf41-d4df-4bb2-b14c-36fa2a3e18f5",
-  featureStructured: "https://api.dicebear.com/9.x/shapes/svg?seed=edb95ceb-2f9e-4cbc-b065-04b6cfdb1273",
-  featureLive: "https://api.dicebear.com/9.x/shapes/svg?seed=970ac95d-dc3f-4e97-b822-47f7efbb130f",
-  featureCommunity: "https://api.dicebear.com/9.x/shapes/svg?seed=f737be70-1421-46c3-8e7e-97e4e0cab9c6",
-  featureProgress: "https://api.dicebear.com/9.x/shapes/svg?seed=e8c21301-fb25-40a6-985b-8a671feaf0e2",
-  flowPath: "https://api.dicebear.com/9.x/shapes/svg?seed=10ccb168-7609-4b49-bb6a-19f9d4a4fb49",
-  stepEnroll: "https://api.dicebear.com/9.x/shapes/svg?seed=3252f9bf-34d1-4165-8fc3-bc22db1f765f",
-  stepAttend: "https://api.dicebear.com/9.x/shapes/svg?seed=72fded02-6507-4cb4-b8fc-07a5a182ade7",
-  stepTrack: "https://api.dicebear.com/9.x/shapes/svg?seed=329a0ba6-baf2-48c7-a985-dab69e9c3d3e",
-  skillGraphic: "https://api.dicebear.com/9.x/shapes/svg?seed=e295b04c-eaed-4b95-9311-6e47fae623e1",
-  skillUiux: "https://api.dicebear.com/9.x/shapes/svg?seed=c1cf0120-4b9c-4cf2-bb70-7c07e77ca40e",
-  skillMotion: "https://api.dicebear.com/9.x/shapes/svg?seed=faa702f0-5c93-4e8c-8a8f-eb48fb86fe21",
-  skillFashion: "https://api.dicebear.com/9.x/shapes/svg?seed=18bf7c89-d7c7-477c-84b9-3504be4c05be",
-  skillInterior: "https://api.dicebear.com/9.x/shapes/svg?seed=43a1f338-c9ea-455f-82d2-28e6555d22e3",
-  skillProduct: "https://api.dicebear.com/9.x/shapes/svg?seed=18490e76-24e5-4053-84f5-2adb4eb01970",
-  skillIndustrial: "https://api.dicebear.com/9.x/shapes/svg?seed=aa4fde26-72cb-44b3-a0ba-2076c03b09d8",
-  featureLiveClasses: "https://api.dicebear.com/9.x/shapes/svg?seed=125ed25f-dc3d-4ee0-a9f4-2dae5b98ec90",
-  featureDoubts: "https://api.dicebear.com/9.x/shapes/svg?seed=d71398bd-ac43-437c-b559-a501c9cf8d02",
-  featureCommunityLearning: "https://api.dicebear.com/9.x/shapes/svg?seed=403d205f-106f-4172-80f9-35bd92eaaa37",
-  featureMockTests: "https://api.dicebear.com/9.x/shapes/svg?seed=2f3632cf-583a-4e89-9cb2-0a58c84c8470",
-  growthDashboard: "https://api.dicebear.com/9.x/shapes/svg?seed=73e91ff3-885b-44db-bc1c-127e1a76bad7",
+  featureStructured: "/images/features/structured-courses.png",
+  featureLive: "/images/features/live-classes.png",
+  featureCommunity: "/images/features/community-support.png",
+  featureProgress: "/images/features/progress-tracking.png",
+  flowPath: "/images/flow-path.svg",
+  stepEnroll: "/images/steps/enroll.png",
+  stepAttend: "/images/steps/attend.png",
+  stepTrack: "/images/steps/track.png",
+  skillGraphic: "/images/skills/graphic-design.png",
+  skillUiux: "/images/skills/uiux-design.png",
+  skillMotion: "/images/skills/motion-design.png",
+  skillFashion: "/images/skills/fashion-design.png",
+  skillInterior: "/images/skills/interior-design.png",
+  skillProduct: "/images/skills/product-design.png",
+  skillIndustrial: "/images/skills/industrial-design.png",
+  featureLiveClasses: "/assets/dab288baf23d157ffd4e1348d70ddff6ee5ed42d.png",
+  featureDoubts: "/assets/90a4a168ef344e2d081ba47aa7d528fa4a61035b.png",
+  featureCommunityLearning: "/assets/ff1bb5daa3b132ba208db6ac1de6dc5103f5b7ac.png",
+  featureMockTests: "/assets/059e254a057a7f64b6ef41d88a87d5cad99b61dd.png",
+  growthDashboard: "/assets/2801d8b2af769c2cf34bbc5fa8ae83cbd4cea9a2.png",
   testimonialAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=7fb76c2f-8e54-49ba-878e-5e4ff306445a",
   testimonialQuote: "https://api.dicebear.com/9.x/shapes/svg?seed=b4f800d0-a21f-4f65-8198-fc0cd748d21b",
 } as const;
@@ -46,26 +46,26 @@ const featureHighlights = [
   {
     title: "Structured Courses",
     image: assets.featureStructured,
-    imageWidth: 141,
-    imageHeight: 149,
+    imageWidth: 2048,
+    imageHeight: 1118,
   },
   {
     title: "Live Classes",
     image: assets.featureLive,
-    imageWidth: 270,
-    imageHeight: 146,
+    imageWidth: 2048,
+    imageHeight: 1118,
   },
   {
     title: "Community Support",
     image: assets.featureCommunity,
-    imageWidth: 195,
-    imageHeight: 148,
+    imageWidth: 2048,
+    imageHeight: 1118,
   },
   {
     title: "Progress Tracking",
     image: assets.featureProgress,
-    imageWidth: 148,
-    imageHeight: 149,
+    imageWidth: 2048,
+    imageHeight: 1118,
   },
 ] as const;
 
@@ -107,27 +107,27 @@ const steps = [
     title: "Enroll in a course",
     description: "Choose your path and get started instantly.",
     image: assets.stepEnroll,
-    imageWidth: 143,
-    imageHeight: 146,
-    className: "left-[4%] top-[58%]",
+    imageWidth: 1024,
+    imageHeight: 559,
+    className: "bottom-[10%] left-[22%]",
   },
   {
     number: "2",
     title: "Attend classes & learn",
     description: "Join live sessions or watch anytime.",
     image: assets.stepAttend,
-    imageWidth: 111,
-    imageHeight: 91,
-    className: "left-[49%] top-[40%] -translate-x-1/2",
+    imageWidth: 1024,
+    imageHeight: 559,
+    className: "left-[43%] top-[48%]",
   },
   {
     number: "3",
     title: "Track progress & improve",
     description: "Monitor growth and stay consistent.",
     image: assets.stepTrack,
-    imageWidth: 108,
-    imageHeight: 86,
-    className: "right-[0%] top-[5%]",
+    imageWidth: 1024,
+    imageHeight: 559,
+    className: "left-[58%] top-[10%]",
   },
 ] as const;
 
@@ -184,7 +184,7 @@ function landingButtonStyles({
         : "min-h-[48px] px-6 text-[16px] sm:h-[56px] sm:min-w-[180px] sm:px-8 sm:text-[18px]";
 
   return cx(
-    "inline-flex items-center justify-center rounded-[10px] font-medium transition-transform duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5",
+    "inline-flex items-center justify-center rounded-[10px] font-medium transition-transform duration-150 ease-out hover:-translate-y-0.5",
     sizeClasses,
     variant === "primary"
       ? "bg-[#209bd2] text-white shadow-[0_4px_12.4px_rgba(0,0,0,0.16)]"
@@ -224,18 +224,25 @@ function ExamCard({
   description: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-[18px] bg-white px-5 pb-7 pt-11 shadow-[0_4px_12.4px_rgba(0,0,0,0.18)] sm:rounded-[10px] sm:px-7 sm:pb-10 sm:pt-14 sm:shadow-[0_4px_12.4px_rgba(0,0,0,0.25)]">
-      <div className="absolute right-5 top-5 h-12 w-12 rounded-full bg-[#ffe36f]" />
-      <Image
-        alt=""
+    <div className="relative flex h-full flex-col overflow-hidden rounded-[18px] bg-white px-5 pb-7 pt-11 shadow-[0_4px_12.4px_rgba(0,0,0,0.18)] sm:rounded-[10px] sm:px-7 sm:pb-10 sm:pt-14 sm:shadow-[0_4px_12.4px_rgba(0,0,0,0.25)]">
+      <svg
         aria-hidden
-        className="absolute right-6 top-7 h-auto w-[5.25rem] object-contain sm:w-[7.25rem]"
-        height={91}
-        src={assets.examAccent}
+        className="absolute right-4 top-4 h-auto w-[5.5rem] sm:right-5 sm:top-5 sm:w-[7.25rem]"
+        fill="none"
+        height={92}
+        viewBox="0 0 117 92"
         width={117}
-      />
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g opacity="0.22">
+          <circle cx="78.1722" cy="38.8275" r="38.8275" fill="#FEC600" />
+          <circle cx="37.2747" cy="77.655" r="13.4602" fill="#209BD2" />
+          <circle cx="28.9917" cy="24.8496" r="6.2124" fill="#38C1FF" />
+          <circle cx="14.4956" cy="49.6992" r="14.4956" fill="#E6B400" />
+        </g>
+      </svg>
 
-      <div className="max-w-[28.5rem]">
+      <div className="flex-1 max-w-[28.5rem]">
         <h3 className="text-[clamp(1.75rem,3vw,2.25rem)] font-semibold tracking-[-0.04em] text-black">
           {title}
         </h3>
@@ -259,15 +266,15 @@ function SkillCard({
   image: string;
 }) {
   return (
-    <div className="flex min-h-[210px] flex-col items-center justify-center gap-6 rounded-[18px] bg-white px-6 py-8 text-center shadow-[0_4px_10px_rgba(0,0,0,0.16)] sm:min-h-[250px] sm:rounded-[10px] sm:px-10 sm:py-12 sm:shadow-[0_4px_10px_rgba(0,0,0,0.25)]">
+    <div className="flex flex-col items-center justify-center gap-4 rounded-[10px] bg-white px-4 py-8 text-center shadow-[0_4px_14px_rgba(0,0,0,0.08)] sm:px-6 sm:py-10">
       <Image
         alt={title}
-        className="h-auto w-full max-w-[146px] object-contain"
-        height={164}
+        className="h-auto w-full max-w-[100px] object-contain sm:max-w-[120px]"
+        height={1024}
         src={image}
-        width={146}
+        width={1024}
       />
-      <p className="text-[clamp(1.5rem,2.8vw,2.25rem)] font-semibold tracking-[-0.04em] text-black">
+      <p className="text-[1.125rem] font-semibold tracking-[-0.02em] text-black sm:text-[1.35rem]">
         {title}
       </p>
     </div>
@@ -293,23 +300,23 @@ function StepCard({
 }) {
   return (
     <Reveal className={className}>
-      <div className="relative flex max-w-[27rem] items-end gap-4 sm:gap-5">
+      <div className="relative flex max-w-[22rem] items-center gap-3">
+        {/* Faint background number behind the card */}
+        <span className="pointer-events-none absolute -left-4 -top-8 z-0 select-none text-[9rem] font-black leading-none text-black/[0.06] sm:-left-6 sm:-top-12 sm:text-[13rem]">
+          {number}
+        </span>
         <Image
           alt={title}
-          className="h-auto w-[4.75rem] object-contain sm:w-auto"
+          className="relative z-10 h-auto w-full max-w-[4rem] shrink-0 object-contain sm:max-w-[5.5rem]"
           height={imageHeight}
           src={image}
           width={imageWidth}
         />
-
-        <div className="relative pb-2">
-          <span className="pointer-events-none absolute right-0 top-[-3.9rem] text-[6rem] font-semibold leading-none text-black/10 sm:top-[-5.75rem] sm:text-[12.5rem]">
-            {number}
-          </span>
-          <h3 className="relative z-10 text-[clamp(1.6rem,2.4vw,2rem)] font-semibold tracking-[-0.03em] text-black">
+        <div className="relative z-10">
+          <h3 className="text-[1rem] font-bold tracking-[-0.01em] text-black sm:text-[1.15rem]">
             {title}
           </h3>
-          <p className="relative z-10 mt-3 max-w-[19rem] text-[clamp(1rem,2vw,1.75rem)] leading-[1.35] text-black">
+          <p className="mt-0.5 max-w-[14rem] text-[0.875rem] leading-[1.4] text-black/75 sm:text-[0.95rem]">
             {description}
           </p>
         </div>
@@ -447,7 +454,7 @@ export default function HomePage() {
             {navItems.map((item) => (
               <Link
                 key={item.label}
-                className="text-[24px] font-normal text-black transition-colors duration-[var(--transition-fast)] hover:text-[#209bd2]"
+                className="text-[24px] font-normal text-black transition-colors duration-150 hover:text-[#209bd2]"
                 href={item.href}
               >
                 {item.label}
@@ -528,7 +535,7 @@ export default function HomePage() {
                     <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-[16px] bg-[#f7f6f6] px-3 py-5 text-center md:gap-7 md:bg-transparent md:px-6 md:py-0">
                       <Image
                         alt={feature.title}
-                        className="h-auto max-h-[9.5rem] w-auto object-contain"
+                        className="h-auto w-full max-w-[16rem] object-contain md:max-w-[20rem] lg:max-w-[26rem] scale-110 md:scale-125 lg:scale-[1.4]"
                         height={feature.imageHeight}
                         src={feature.image}
                         width={feature.imageWidth}
@@ -557,9 +564,9 @@ export default function HomePage() {
             />
           </Reveal>
 
-          <div className="mt-12 grid gap-5 xl:grid-cols-3">
+          <div className="mt-12 grid items-stretch gap-5 xl:grid-cols-3">
             {examTracks.map((track, index) => (
-              <Reveal key={track.title} delay={index * 0.06}>
+              <Reveal key={track.title} className="h-full" delay={index * 0.06}>
                 <ExamCard description={track.description} title={track.title} />
               </Reveal>
             ))}
@@ -577,12 +584,12 @@ export default function HomePage() {
             />
           </Reveal>
 
-          <div className="mt-10 space-y-5 sm:mt-14 sm:space-y-[4.6875rem]">
+          <div className="mt-10 space-y-6 sm:mt-14 sm:space-y-8">
             {skillRows.map((row, rowIndex) => (
               <div
                 key={`skill-row-${rowIndex}`}
                 className={cx(
-                  "grid gap-5",
+                  "grid gap-6 sm:gap-8",
                   rowIndex === 0 ? "xl:grid-cols-4" : "mx-auto max-w-[1264px] xl:grid-cols-3",
                   "sm:grid-cols-2",
                 )}
@@ -598,9 +605,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden px-4 py-14 sm:px-8 sm:py-20 lg:px-12 xl:px-[194px]">
-        <div className="absolute left-[-10rem] top-[14rem] h-[24rem] w-[24rem] rounded-full bg-[#ffc107] sm:h-[33rem] sm:w-[33rem]" />
-        <div className="absolute right-[-7rem] top-[4rem] h-[20rem] w-[20rem] rounded-full bg-[#38c1ff] sm:h-[28rem] sm:w-[28rem]" />
+      <section
+        className="relative overflow-hidden px-4 pb-0 pt-14 sm:px-8 sm:pt-20 lg:px-12 xl:px-[194px]"
+        id="how-it-works"
+      >
+        {/* Yellow circle — bleeds off left, sits behind step 1 */}
+        <div className="pointer-events-none absolute left-[-6rem] top-[36%] h-[24rem] w-[24rem] rounded-full bg-[#ffc107] lg:left-[-5rem] lg:top-[38%] lg:h-[30rem] lg:w-[30rem]" />
+
+        {/* Blue circle — bleeds off right, top-right */}
+        <div className="pointer-events-none absolute right-[-6rem] top-[-1rem] h-[20rem] w-[20rem] rounded-full bg-[#38c1ff] lg:right-[-4rem] lg:h-[26rem] lg:w-[26rem]" />
+
+        {/* "3" watermark inside blue circle */}
+        <span className="pointer-events-none absolute right-[0.5rem] top-[1rem] z-10 hidden select-none text-[13rem] font-black leading-none text-white/[0.22] lg:block">
+          3
+        </span>
+
 
         <div className="relative mx-auto max-w-[1618px]">
           <Reveal className="max-w-[44.375rem]">
@@ -610,35 +629,128 @@ export default function HomePage() {
             />
           </Reveal>
 
-          <div className="relative mt-10 hidden min-h-[46rem] lg:block">
-            <Image
-              alt=""
+          {/* ── Desktop layout ── */}
+          <div className="relative mt-6 hidden min-h-[34rem] lg:block">
+
+            {/* Inline SVG: smooth S-curve bezier path */}
+            <svg
               aria-hidden
-              className="pointer-events-none absolute left-1/2 top-[5.75rem] h-auto w-full max-w-[88.125rem] -translate-x-1/2 object-contain"
-              height={619}
-              src={assets.flowPath}
-              width={1410}
+              className="pointer-events-none absolute inset-0 h-full w-full"
+              fill="none"
+              preserveAspectRatio="none"
+              viewBox="0 0 1000 540"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <filter id="pathGlow" x="-5%" y="-30%" width="110%" height="160%">
+                  <feDropShadow dx="0" dy="3" stdDeviation="7" floodColor="#209bd2" floodOpacity="0.25" />
+                </filter>
+              </defs>
+              <path
+                d="M 205 455 C 310 455 365 290 490 278 C 615 266 645 148 740 132 C 820 118 880 108 960 105"
+                filter="url(#pathGlow)"
+                stroke="#38b6d6"
+                strokeLinecap="round"
+                strokeWidth="2.5"
+              />
+            </svg>
+
+            {/* Dot 1 — WHITE with teal border (sits on yellow circle) */}
+            <div
+              className="absolute z-10 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[#38b6d6] bg-white shadow-md"
+              style={{ left: "20.5%", top: "84.3%" }}
+            />
+            {/* Dot 2 — GOLD */}
+            <div
+              className="absolute z-10 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-[#ffc107] shadow-md"
+              style={{ left: "49%", top: "51.5%" }}
+            />
+            {/* Dot 3 — GOLD, at curve end inside the blue circle */}
+            <div
+              className="absolute z-10 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-[#ffc107] shadow-md"
+              style={{ left: "96%", top: "19.4%" }}
             />
 
-            {steps.map((step) => (
-              <StepCard
-                key={step.number}
-                className={cx("absolute", step.className)}
-                description={step.description}
-                image={step.image}
-                imageHeight={step.imageHeight}
-                imageWidth={step.imageWidth}
-                number={step.number}
-                title={step.title}
-              />
-            ))}
+            {/* Step 1 card — bottom-left, just right of dot 1 */}
+            <div className="absolute z-10" style={{ left: "12%", top: "84%" }}>
+              <Reveal>
+                <div className="relative flex max-w-[22rem] items-center gap-3">
+                  <span className="pointer-events-none absolute -left-3 -top-8 z-0 select-none text-[9rem] font-black leading-none text-black/[0.06]">
+                    1
+                  </span>
+                  <Image
+                    alt="Enroll in a course"
+                    className="relative z-10 h-auto w-[4.5rem] shrink-0 object-contain"
+                    height={559}
+                    src={assets.stepEnroll}
+                    width={1024}
+                  />
+                  <div className="relative z-10">
+                    <h3 className="text-[1rem] font-bold tracking-[-0.01em] text-black">Enroll in a course</h3>
+                    <p className="mt-0.5 max-w-[14rem] text-[0.875rem] leading-[1.4] text-black/75">
+                      Choose your path and get started instantly.
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+
+            {/* Step 2 card — middle, just below/right of dot 2 */}
+            <div className="absolute z-10" style={{ left: "40%", top: "52%" }}>
+              <Reveal>
+                <div className="relative flex max-w-[22rem] items-center gap-3">
+                  <span className="pointer-events-none absolute -left-3 -top-8 z-0 select-none text-[9rem] font-black leading-none text-black/[0.06]">
+                    2
+                  </span>
+                  <Image
+                    alt="Attend classes & learn"
+                    className="relative z-10 h-auto w-[4.5rem] shrink-0 object-contain"
+                    height={559}
+                    src={assets.stepAttend}
+                    width={1024}
+                  />
+                  <div className="relative z-10">
+                    <h3 className="text-[1rem] font-bold tracking-[-0.01em] text-black">Attend classes &amp; learn</h3>
+                    <p className="mt-0.5 max-w-[14rem] text-[0.875rem] leading-[1.4] text-black/75">
+                      Join live sessions or watch anytime.
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+            {/* Step 3 card — to the left of dot 3, near the blue circle */}
+            <div className="absolute z-20" style={{ left: "68%", top: "17%" }}>
+              <Reveal>
+                <div className="relative flex max-w-[22rem] items-center gap-3">
+                  <span className="pointer-events-none absolute -left-3 -top-8 z-0 select-none text-[9rem] font-black leading-none text-black/[0.06]">
+                    3
+                  </span>
+                  <Image
+                    alt="Track progress & improve"
+                    className="relative z-10 h-auto w-[4.5rem] shrink-0 object-contain"
+                    height={559}
+                    src={assets.stepTrack}
+                    width={1024}
+                  />
+                  <div className="relative z-10">
+                    <h3 className="text-[1rem] font-bold tracking-[-0.01em] text-black">Track progress &amp; improve</h3>
+                    <p className="mt-0.5 max-w-[13rem] text-[0.875rem] leading-[1.4] text-black/75">
+                      Monitor growth and stay consistent.
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
           </div>
 
-          <div className="mt-12 grid gap-10 lg:hidden">
+          {/* ── Mobile fallback ── */}
+          <div className="mt-12 grid gap-10 pb-14 lg:hidden">
             {steps.map((step, index) => (
               <StepCard
                 key={step.number}
-                className={index === 1 ? "sm:mx-auto" : index === 2 ? "sm:ml-auto" : undefined}
+                className={
+                  index === 1 ? "sm:mx-auto" : index === 2 ? "sm:ml-auto" : undefined
+                }
                 description={step.description}
                 image={step.image}
                 imageHeight={step.imageHeight}

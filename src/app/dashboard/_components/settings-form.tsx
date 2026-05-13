@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { useAuth } from "@/context/auth-context";
-import { Loader2, Camera, Check } from "lucide-react";
+import { Loader2, Camera, Check, LogOut } from "lucide-react";
 import { cx } from "@/lib/cx";
 import Image from "next/image";
 
 export function SettingsForm() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   
   const [name, setName] = useState(user?.name || "");
   const [phone, setPhone] = useState(""); // Defaulting to empty since context doesn't have phone, but the profile might.
@@ -160,6 +160,23 @@ export function SettingsForm() {
             )}
           </div>
         </form>
+      </div>
+
+      <div className="rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8 mt-8">
+        <h3 className="text-[18px] font-semibold tracking-tight text-[#0f172a]">Account Actions</h3>
+        <p className="mt-1 text-[14px] text-gray-500 mb-6">
+          Log out of your account on this device.
+        </p>
+        <button
+          onClick={() => {
+            logout();
+          }}
+          type="button"
+          className="inline-flex items-center justify-center gap-2 rounded-full border border-red-200 bg-red-50 px-6 py-3 text-[15px] font-semibold text-red-600 transition-all hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
       </div>
     </div>
   );

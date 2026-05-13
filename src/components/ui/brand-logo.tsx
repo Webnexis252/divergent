@@ -24,7 +24,7 @@ export function BrandLogo({
         inverted && "brightness-0 invert",
       )}
       height={size === "sm" ? 44 : size === "lg" ? 72 : 56}
-      priority={priority}
+      priority={priority ?? true}
       src={brand.logoSrc}
       width={size === "sm" ? 140 : size === "lg" ? 228 : 176}
     />

@@ -8,8 +8,10 @@ import {
   BookOpen,
   Calendar,
   CalendarClock,
+  ChevronDown,
   Clock3,
   MessageSquareText,
+  PlayCircle,
   Radio,
   Users,
   Video,
@@ -63,7 +65,7 @@ const sidebarItems = [
 const statusMeta = {
   completed: {
     badgeTone: "success" as const,
-    label: "Completed",
+    label: "Past Class",
   },
   live: {
     badgeTone: "danger" as const,
@@ -81,7 +83,7 @@ type LiveClassCardItem = LiveClassItem & {
 
 function actionButtonStyles(className?: string) {
   return cx(
-    "inline-flex items-center justify-center rounded-[10px] font-semibold transition-transform duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5",
+    "inline-flex items-center justify-center rounded-[10px] font-semibold transition-transform duration-150 ease-out hover:-translate-y-0.5",
     "bg-[#38c1ff] text-white shadow-[0_4px_12px_rgba(56,193,255,0.28)]",
     className,
   );
@@ -390,6 +392,147 @@ function QuickRouteCard({
   );
 }
 
+// ─── Past Classes: grouped accordion by course ────────────────────────────────
+
+type CourseGroup = {
+  courseTitle: string;
+  courseSlug: string;
+  classes: LiveClassCardItem[];
+};
+
+function PastClassRow({ item }: { item: LiveClassCardItem }) {
+  const replayHref = `/dashboard/live-classes/${item.id}/recording`;
+  const date = new Date(item.startTime);
+  const dateStr = date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  const timeStr = date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className="flex items-center justify-between gap-4 border-t border-black/5 px-5 py-3.5 transition-colors hover:bg-[#38c1ff]/4">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[12px] bg-[#38c1ff]/10 text-[#38c1ff]">
+          <PlayCircle className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-[14px] font-semibold text-black">{item.title}</p>
+          <p className="flex items-center gap-2 text-[12px] text-black/45">
+            <Clock3 className="h-3 w-3 shrink-0" />
+            {dateStr} · {timeStr}
+          </p>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
+        <span className="hidden rounded-full bg-[#f0f9ff] px-2.5 py-1 text-[11px] font-medium text-[#38c1ff] sm:inline">
+          <Users className="mr-1 inline h-3 w-3" />
+          {item.attendeeCount} joined
+        </span>
+        <Link
+          href={replayHref}
+          className="inline-flex h-[34px] items-center gap-1.5 rounded-[10px] bg-[#38c1ff] px-3.5 text-[12px] font-semibold text-white shadow-[0_4px_10px_rgba(56,193,255,0.25)] transition-transform hover:-translate-y-0.5"
+        >
+          Open Replay
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function PastCourseAccordion({ group }: { group: CourseGroup }) {
+  const [open, setOpen] = useState(false);
+  const count = group.classes.length;
+
+  return (
+    <div className="overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
+      {/* Course header row – clickable */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-[#f9fafb]"
+        aria-expanded={open}
+      >
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[#38c1ff]/12 text-[#38c1ff]">
+            <Video className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-[15px] font-bold text-black">{group.courseTitle}</p>
+            <p className="text-[12px] text-black/45">
+              {count} past {count === 1 ? "session" : "sessions"}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="hidden rounded-full bg-[#f7f5f4] px-3 py-1 text-[12px] font-semibold text-black/55 sm:inline">
+            {count} recorded
+          </span>
+          <ChevronDown
+            className={cx(
+              "h-5 w-5 text-black/35 transition-transform duration-200",
+              open && "rotate-180",
+            )}
+          />
+        </div>
+      </button>
+
+      {/* Expandable class list */}
+      {open && (
+        <div>
+          {group.classes.map((cls) => (
+            <PastClassRow key={cls.id} item={cls} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PastClassesSection({ items }: { items: LiveClassCardItem[] }) {
+  // Group by course
+  const groups = useMemo<CourseGroup[]>(() => {
+    const map = new Map<string, CourseGroup>();
+    for (const item of items) {
+      const key = item.courseSlug;
+      if (!map.has(key)) {
+        map.set(key, { courseTitle: item.courseTitle, courseSlug: item.courseSlug, classes: [] });
+      }
+      map.get(key)!.classes.push(item);
+    }
+    return Array.from(map.values());
+  }, [items]);
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      {/* Section header */}
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+        <div>
+          <h2 className="text-[1.75rem] font-bold tracking-tight text-black sm:text-[clamp(2.2rem,4vw,2.5rem)]">
+            Past Classes
+          </h2>
+          <p className="mt-2.5 max-w-[42rem] text-[15px] leading-relaxed text-black/50 sm:text-[17px]">
+            Browse replays by course — click any course to reveal its recorded sessions.
+          </p>
+        </div>
+        <span className="shrink-0 self-start rounded-full bg-black/5 px-3 py-1 text-sm font-semibold text-black/52 sm:self-auto">
+          {items.length} saved
+        </span>
+      </div>
+
+      {groups.length === 0 ? (
+        <div className="rounded-[20px] bg-white px-5 py-10 text-center text-[14px] text-black/40 ring-1 ring-black/5 sm:px-6 sm:py-12 sm:text-[15px]">
+          No completed live classes are available yet.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {groups.map((group) => (
+            <PastCourseAccordion key={group.courseSlug} group={group} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 export function StudentLiveClassSchedule() {
   const { user } = useAuth();
   const [data, setData] = useState<LiveClassData | null>(null);
@@ -465,7 +608,7 @@ export function StudentLiveClassSchedule() {
                       <Link
                         key={item.href}
                         className={cx(
-                          "flex items-center min-h-[56px] gap-4 rounded-[22px] px-5 py-3 text-[18px] font-medium text-black transition-colors duration-[var(--transition-fast)]",
+                          "flex items-center min-h-[56px] gap-4 rounded-[22px] px-5 py-3 text-[18px] font-medium text-black transition-colors duration-150",
                           ("active" in item && item.active)
                             ? "bg-white/40 shadow-sm"
                             : "hover:bg-white/20",
@@ -606,17 +749,7 @@ export function StudentLiveClassSchedule() {
                       </RevealSection>
 
                       <RevealSection delay={0.12}>
-                        <ScheduleSection
-                          accent={
-                            <span className="rounded-full bg-black/5 px-3 py-1 text-sm font-semibold text-black/52">
-                              {completedItems.length} saved
-                            </span>
-                          }
-                          description="Completed sessions now route into the past-class page so the replay state matches the button label."
-                          emptyDescription="No completed live classes are available yet."
-                          items={completedItems}
-                          title="Past Classes"
-                        />
+                        <PastClassesSection items={completedItems} />
                       </RevealSection>
                     </div>
 

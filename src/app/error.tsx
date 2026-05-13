@@ -21,15 +21,15 @@ export default function GlobalError({
   return (
     <div className="flex min-h-[100svh] flex-col items-center justify-center bg-black px-4 text-white">
       <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#111] p-8 shadow-2xl">
-        <div className="pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full bg-[var(--danger)] opacity-20 blur-3xl" />
+        <div className="pointer-events-none absolute -top-24 right-0 h-48 w-48 rounded-full bg-(--danger) opacity-20 blur-3xl" />
         
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(255,61,0,0.15)] ring-8 ring-[rgba(255,61,0,0.05)]">
-            <AlertTriangle className="h-10 w-10 text-[var(--danger)]" />
+            <AlertTriangle className="h-10 w-10 text-(--danger)" />
           </div>
           
           <h1 className="mb-3 text-2xl font-bold tracking-tight">Something went wrong!</h1>
-          <p className="mb-8 text-sm text-[var(--text-muted)]">
+          <p className="mb-8 text-sm text-(--text-muted)">
             We&apos;ve encountered an unexpected error. Our team has been notified and is looking into it.
           </p>
 

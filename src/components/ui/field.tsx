@@ -7,7 +7,7 @@ import type {
 import { cx } from "@/lib/cx";
 
 const fieldBase =
-  "w-full rounded-[var(--radius-md)] border border-[var(--line-soft)] bg-white/92 px-4 text-[15px] text-[var(--text-strong)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-[border-color,box-shadow,background-color] duration-[var(--transition-fast)] ease-[var(--ease-standard)] placeholder:text-[var(--text-subtle)] focus-visible:border-[var(--brand-primary)] focus-visible:bg-white disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-(--radius-md) border border-(--line-soft) bg-white/92 px-4 text-[15px] text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-[border-color,box-shadow,background-color] duration-150 ease-out placeholder:text-(--text-subtle) focus-visible:border-(--brand-primary) focus-visible:bg-white disabled:cursor-not-allowed disabled:opacity-60";
 
 function FieldShell({
   label,
@@ -23,15 +23,15 @@ function FieldShell({
   return (
     <label className="block space-y-2">
       {label ? (
-        <span className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+        <span className="text-[13px] font-semibold uppercase tracking-[0.08em] text-(--text-muted)">
           {label}
         </span>
       ) : null}
       {children}
       {error ? (
-        <span className="text-[13px] text-[var(--danger)]">{error}</span>
+        <span className="text-[13px] text-(--danger)">{error}</span>
       ) : hint ? (
-        <span className="text-[13px] text-[var(--text-subtle)]">{hint}</span>
+        <span className="text-[13px] text-(--text-subtle)">{hint}</span>
       ) : null}
     </label>
   );
@@ -51,7 +51,7 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field(
     <FieldShell error={error} hint={hint} label={label}>
       <input
         ref={ref}
-        className={cx(fieldBase, "h-12", error && "border-[var(--danger)]", className)}
+        className={cx(fieldBase, "h-12", error && "border-(--danger)", className)}
         {...props}
       />
     </FieldShell>
@@ -73,7 +73,7 @@ export const TextAreaField = forwardRef<HTMLTextAreaElement, TextAreaFieldProps>
           className={cx(
             fieldBase,
             "min-h-[132px] py-3 leading-7",
-            error && "border-[var(--danger)]",
+            error && "border-(--danger)",
             className,
           )}
           {...props}
@@ -98,7 +98,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
           className={cx(
             fieldBase,
             "h-12 appearance-none pr-10",
-            error && "border-[var(--danger)]",
+            error && "border-(--danger)",
             className,
           )}
           {...props}

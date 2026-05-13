@@ -57,7 +57,7 @@ function overviewButtonStyles({
   className?: string;
 }) {
   return cx(
-    "inline-flex items-center justify-center rounded-[10px] font-medium transition-transform duration-[var(--transition-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5",
+    "inline-flex items-center justify-center rounded-[10px] font-medium transition-transform duration-(--transition-fast) ease-(--ease-standard) hover:-translate-y-0.5",
     tone === "primary"
       ? "bg-[#38c1ff] text-white shadow-[0_4px_12px_rgba(56,193,255,0.3)]"
       : "border border-[#38c1ff] bg-white text-[#38c1ff]",
@@ -96,7 +96,7 @@ function OverviewSidebar() {
             >
               <Link
                 className={cx(
-                  "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
+                  "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-(--transition-fast) xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
                   active
                     ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/16 xl:shadow-none"
                     : "hover:bg-white/46 xl:hover:bg-white/20",
@@ -139,9 +139,11 @@ function OverviewStatCard({
             width={160}
           />
         </div>
-        <p className="text-[2.6rem] font-bold leading-none text-[#fec600] sm:text-[clamp(2.6rem,5vw,3.5rem)]">
-          {value}
-        </p>
+        <div className="flex-1 min-w-0 text-right">
+          <p className="text-[2rem] font-bold leading-none text-[#fec600] sm:text-[clamp(2rem,3vw,3rem)] whitespace-nowrap tracking-tight">
+            {value}
+          </p>
+        </div>
       </div>
       <p className="mt-3 text-[1rem] font-bold text-white sm:text-[clamp(1rem,1.8vw,1.35rem)]">
         {title}
@@ -170,7 +172,7 @@ function OverviewCourseCard({ course }: { course: EnrolledCourse }) {
           style={course.thumbnail ? { backgroundImage: `url("${course.thumbnail}")` } : undefined}
         >
           {course.thumbnail ? null : (
-            <BookOpen className="h-9 w-9 text-[var(--brand-primary-dark)]" />
+            <BookOpen className="h-9 w-9 text-(--brand-primary-dark)" />
           )}
         </div>
 
@@ -298,7 +300,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Spinner className="h-10 w-10 border-[var(--brand-primary)] text-[var(--brand-primary)]" />
+        <Spinner className="h-10 w-10 border-(--brand-primary) text-(--brand-primary)" />
       </div>
     );
   }
@@ -409,8 +411,8 @@ export default function DashboardPage() {
 
                       {statsLoading ? (
                         <div className="flex min-h-[12rem] items-center justify-center rounded-[20px] bg-white shadow-[0_4px_10px_rgba(0,0,0,0.12)]">
-                          <div className="flex items-center gap-3 text-[var(--text-muted)]">
-                            <Spinner className="h-5 w-5 border-[var(--brand-primary)] text-[var(--brand-primary)]" />
+                          <div className="flex items-center gap-3 text-(--text-muted)">
+                            <Spinner className="h-5 w-5 border-(--brand-primary) text-(--brand-primary)" />
                             Loading your courses
                           </div>
                         </div>
@@ -447,7 +449,7 @@ export default function DashboardPage() {
                         {/* Real profile photo with purple ring */}
                         <Link href="/dashboard/profile" className="group relative h-[106px] w-[106px]">
                           <div className="absolute inset-0 rounded-full bg-[#925fe2] p-[3.5px]">
-                            <div className="h-full w-full overflow-hidden rounded-full bg-[var(--brand-primary-strong)] shadow-[0_14px_34px_rgba(0,0,0,0.18)]">
+                            <div className="h-full w-full overflow-hidden rounded-full bg-(--brand-primary-strong) shadow-[0_14px_34px_rgba(0,0,0,0.18)]">
                               {user?.image ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img

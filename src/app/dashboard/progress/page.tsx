@@ -445,7 +445,7 @@ function CourseProgressCard({
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,rgba(56,193,255,0.2),rgba(254,198,0,0.24))]">
-                <BookOpen className="h-10 w-10 text-[var(--brand-primary-dark)]" />
+                <BookOpen className="h-10 w-10 text-(--brand-primary-dark)" />
               </div>
             )}
 
@@ -900,7 +900,7 @@ export default function DashboardProgressPage() {
                   <Link
                     key={item.href}
                     className={cx(
-                      "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-[var(--transition-fast)] lg:min-h-[56px] lg:gap-4 lg:rounded-[22px] lg:bg-transparent lg:px-5 lg:py-3 lg:text-[18px] lg:font-medium",
+                      "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-150 lg:min-h-[56px] lg:gap-4 lg:rounded-[22px] lg:bg-transparent lg:px-5 lg:py-3 lg:text-[18px] lg:font-medium",
                       active
                         ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] lg:bg-white/40 lg:shadow-sm"
                         : "hover:bg-white/46 lg:hover:bg-white/20",
@@ -932,7 +932,7 @@ export default function DashboardProgressPage() {
                     Course Progress
                   </AnimHeading>
                   <Link
-                    className="inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--brand-primary-dark)]"
+                    className="inline-flex items-center gap-2 text-[14px] font-semibold text-(--brand-primary-dark)"
                     href="/dashboard/courses"
                   >
                     <span>View all courses</span>

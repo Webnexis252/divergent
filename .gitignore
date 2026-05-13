@@ -57,3 +57,7 @@ next-env.d.ts
 /public/uploads/live-class-messages
 /tmp/live-class-messages
 /tmp/live-class-assignments.json
+/*.png
+_trash_png/
+_scripts/
+.next

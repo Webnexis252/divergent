@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiSuccess, apiUnauthorized, apiServerError } from "@/lib/api-response";
+import { generateSmartNotificationsForUser } from "@/lib/smart-notifications";
 
 /**
  * GET /api/notifications
@@ -11,6 +12,12 @@ export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
     if (!auth) return apiUnauthorized();
+
+    // Auto-generate smart notifications for this user (non-blocking)
+    // This checks for missed classes, upcoming deadlines, and exams
+    if (auth.role === 'STUDENT') {
+      await generateSmartNotificationsForUser(auth.userId);
+    }
 
     const notifications = await prisma.notification.findMany({
       where: { userId: auth.userId },
