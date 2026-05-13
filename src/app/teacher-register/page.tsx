@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Eye, EyeOff, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
-import teacherRegisterBrand from "../../../cd23010a567b36e1844d8589c42431b3df2f362a.png";
+import teacherRegisterBrand from "@/assets/images/teacher-register-brand.png";
 
 function GoogleIcon() {
   return (
