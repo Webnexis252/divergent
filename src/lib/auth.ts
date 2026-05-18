@@ -15,7 +15,7 @@ export type JwtPayload = {
 export type MagicLinkPayload = {
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   passwordHash: string;
 };
 
@@ -94,7 +94,6 @@ export async function verifyMagicLinkTokenValue(
       !payload.isMagicLink ||
       typeof payload.name !== 'string' ||
       typeof payload.email !== 'string' ||
-      typeof payload.phone !== 'string' ||
       typeof payload.passwordHash !== 'string'
     ) {
       return null;
@@ -102,7 +101,7 @@ export async function verifyMagicLinkTokenValue(
     return {
       name: payload.name,
       email: payload.email,
-      phone: payload.phone,
+      phone: typeof payload.phone === 'string' ? payload.phone : undefined,
       passwordHash: payload.passwordHash,
     };
   } catch {
