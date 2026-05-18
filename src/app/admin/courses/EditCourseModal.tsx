@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   BookOpen,
   Check,
+  ChevronDown,
+  ChevronUp,
   Eye,
   EyeOff,
   GraduationCap,
@@ -23,6 +25,7 @@ import { cx } from "@/lib/cx";
 import type { Course, Teacher } from "./_types";
 import { teacherRoleLabel, getTeacherDisplayName } from "./_types";
 import { uploadCourseThumbnail } from "./upload-thumbnail";
+import CurriculumManager from "./CurriculumManager";
 
 type EditForm = {
   title: string;
@@ -43,6 +46,33 @@ type EditForm = {
   emiPrice: string;
   emiLink: string;
 };
+
+function CurriculumSection({ courseId }: { courseId: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="overflow-hidden rounded-[20px] border border-[#dde8f5]">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex w-full items-center gap-3 bg-[linear-gradient(180deg,#f6faff_0%,#edf4ff_100%)] px-5 py-4 text-left"
+      >
+        <div className="grid h-8 w-8 place-items-center rounded-xl bg-[#38c1ff]/10 text-[#38c1ff]">
+          <BookOpen className="h-4 w-4" />
+        </div>
+        <div className="flex-1">
+          <p className="text-[14px] font-semibold text-[#0f172a]">Course Curriculum</p>
+          <p className="text-[12px] text-[#64748b]">Add and manage modules and lessons</p>
+        </div>
+        {open ? <ChevronUp className="h-4 w-4 text-[#94a3b8]" /> : <ChevronDown className="h-4 w-4 text-[#94a3b8]" />}
+      </button>
+      {open && (
+        <div className="border-t border-[#dde8f5] bg-[#f8fbff] px-5 py-5">
+          <CurriculumManager courseId={courseId} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function EditCourseModal({
   course,
@@ -522,7 +552,7 @@ export default function EditCourseModal({
             </Surface>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
              <a
                 href={`/admin/courses/${course.id}/exams`}
                 className="inline-flex items-center gap-2 rounded-(--radius-md) border border-[#cbd5e1] bg-white px-4 py-2 text-sm font-semibold text-[#0f172a] shadow-sm transition-colors hover:bg-[#f1f5f9]"
@@ -531,6 +561,9 @@ export default function EditCourseModal({
                 Manage Exams
              </a>
           </div>
+
+          {/* Curriculum Section */}
+          <CurriculumSection courseId={course.id} />
 
           {/* Footer */}
           <div className="flex flex-col gap-4 rounded-[24px] border border-[#e3edf7] bg-[linear-gradient(180deg,#f6faff_0%,#edf4ff_100%)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
