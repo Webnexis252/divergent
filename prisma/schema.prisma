@@ -95,6 +95,9 @@ model Course {
   visibility         String    @default("PUBLIC")
   pricingType        String    @default("PAID")
   publishDate        DateTime?
+  originalPrice      Float?
+  emiPrice           Float?
+  emiLink            String?
 }
 
 model Chapter {

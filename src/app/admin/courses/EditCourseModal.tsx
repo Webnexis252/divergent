@@ -39,6 +39,9 @@ type EditForm = {
   category: string;
   courseLevel: string;
   language: string;
+  originalPrice: string;
+  emiPrice: string;
+  emiLink: string;
 };
 
 export default function EditCourseModal({
@@ -69,6 +72,9 @@ export default function EditCourseModal({
     category: course.category ?? "",
     courseLevel: course.courseLevel ?? "",
     language: course.language ?? "",
+    originalPrice: course.originalPrice !== null ? String(course.originalPrice) : "",
+    emiPrice: course.emiPrice !== null ? String(course.emiPrice) : "",
+    emiLink: course.emiLink ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -118,6 +124,9 @@ export default function EditCourseModal({
           category: form.category || undefined,
           courseLevel: form.courseLevel || undefined,
           language: form.language || undefined,
+          originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
+          emiPrice: form.emiPrice ? Number(form.emiPrice) : undefined,
+          emiLink: form.emiLink || undefined,
         }),
       });
 
@@ -232,6 +241,11 @@ export default function EditCourseModal({
             <Field label="Category" onChange={e => setForm(p => ({...p, category: e.target.value}))} value={form.category} placeholder="e.g. Design" />
             <Field label="Course Level" onChange={e => setForm(p => ({...p, courseLevel: e.target.value}))} value={form.courseLevel} placeholder="e.g. Beginner" />
             <Field label="Language" onChange={e => setForm(p => ({...p, language: e.target.value}))} value={form.language} placeholder="e.g. English" />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Field label="Original Price (INR)" onChange={e => setForm(p => ({...p, originalPrice: e.target.value}))} value={form.originalPrice} placeholder="e.g. 2000" type="number" hint="Crossed out price" />
+            <Field label="EMI Starting Price" onChange={e => setForm(p => ({...p, emiPrice: e.target.value}))} value={form.emiPrice} placeholder="e.g. 500" type="number" hint="Per month EMI" />
+            <Field label="EMI Link" onChange={e => setForm(p => ({...p, emiLink: e.target.value}))} value={form.emiLink} placeholder="https://..." hint="Link for EMI plans" />
           </div>
 
           {/* Description & Thumbnail */}

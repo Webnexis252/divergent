@@ -52,6 +52,9 @@ export const CreateCourseSchema = z.object({
   visibility: z.string().default('PUBLIC'),
   pricingType: z.string().default('PAID'),
   publishDate: z.string().optional().nullable().refine((val) => !val || !isNaN(Date.parse(val)), { message: 'Invalid ISO date' }),
+  originalPrice: z.number().min(0).optional().nullable(),
+  emiPrice: z.number().min(0).optional().nullable(),
+  emiLink: z.string().url('EMI Link must be a valid URL').optional().nullable().or(z.literal('')),
 });
 export const UpdateCourseSchema = CreateCourseSchema.partial().extend({
   isPublished: z.boolean().optional(),

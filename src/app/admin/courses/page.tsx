@@ -57,6 +57,9 @@ export default function AdminCoursesPage() {
     language: "",
     visibility: "Public",
     pricingType: "Paid",
+    originalPrice: "",
+    emiPrice: "",
+    emiLink: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -152,12 +155,15 @@ export default function AdminCoursesPage() {
           language: form.language,
           visibility: form.visibility,
           pricingType: form.pricingType,
+          originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
+          emiPrice: form.emiPrice ? Number(form.emiPrice) : undefined,
+          emiLink: form.emiLink || undefined,
         }),
       });
       const p = await res.json();
       if (!res.ok || !p.success) { setError(p.error ?? "Failed to create course"); return; }
       setCourses((prev) => [p.data, ...prev]);
-      setForm({ title: "", subtitle: "", description: "", overviewContent: "", thumbnail: "", price: "", teacherIds: [], totalHours: "", lessonCount: "", courseRating: "", autoCalculateRating: true, enrolledStudents: "", autoUpdateEnrolled: true, learningOutcomes: [], category: "", courseLevel: "", language: "", visibility: "Public", pricingType: "Paid" });
+      setForm({ title: "", subtitle: "", description: "", overviewContent: "", thumbnail: "", price: "", teacherIds: [], totalHours: "", lessonCount: "", courseRating: "", autoCalculateRating: true, enrolledStudents: "", autoUpdateEnrolled: true, learningOutcomes: [], category: "", courseLevel: "", language: "", visibility: "Public", pricingType: "Paid", originalPrice: "", emiPrice: "", emiLink: "" });
       setThumbnailUploadError("");
       setShowCreate(false);
     } catch { setError("Network error"); }
@@ -329,6 +335,11 @@ export default function AdminCoursesPage() {
                     <Field label="Category" onChange={e => setForm(p => ({...p, category: e.target.value}))} value={form.category} placeholder="e.g. Design" />
                     <Field label="Course Level" onChange={e => setForm(p => ({...p, courseLevel: e.target.value}))} value={form.courseLevel} placeholder="e.g. Beginner" />
                     <Field label="Language" onChange={e => setForm(p => ({...p, language: e.target.value}))} value={form.language} placeholder="e.g. English" />
+                  </div>
+                  <div className="grid gap-4 lg:grid-cols-3">
+                    <Field label="Original Price (INR)" onChange={e => setForm(p => ({...p, originalPrice: e.target.value}))} value={form.originalPrice} placeholder="e.g. 2000" type="number" hint="Crossed out price" />
+                    <Field label="EMI Starting Price" onChange={e => setForm(p => ({...p, emiPrice: e.target.value}))} value={form.emiPrice} placeholder="e.g. 500" type="number" hint="Per month EMI" />
+                    <Field label="EMI Link" onChange={e => setForm(p => ({...p, emiLink: e.target.value}))} value={form.emiLink} placeholder="https://..." hint="Link for EMI plans" />
                   </div>
                   <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.7fr)]">
                     <div className="flex flex-col gap-4">

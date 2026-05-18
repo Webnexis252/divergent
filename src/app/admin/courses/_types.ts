@@ -32,6 +32,9 @@ export type Course = {
   visibility: string;
   pricingType: string;
   publishDate: string | null;
+  originalPrice: number | null;
+  emiPrice: number | null;
+  emiLink: string | null;
   createdAt: string;
   teachers: Pick<Teacher, "id" | "name" | "email" | "role">[];
   _count: { chapters: number; enrollments: number };

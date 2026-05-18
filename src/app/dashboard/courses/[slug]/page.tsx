@@ -23,7 +23,18 @@ import {
   TrendingUp, 
   Calendar,
   Award,
-  Star
+  Star,
+  CheckCircle2,
+  Clock,
+  Globe,
+  BarChart3,
+  Zap,
+  GraduationCap,
+  MessageCircle,
+  Quote,
+  ChevronRight,
+  Play,
+  Shield
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -194,6 +205,9 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       overviewContent: true,
       thumbnail: true,
       price: true,
+      originalPrice: true,
+      emiPrice: true,
+      emiLink: true,
       isPublished: true,
       totalHours: true,
       lessonCount: true,
@@ -315,12 +329,22 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
   const firstLesson = course.chapters.find((chapter) => chapter.lessons.length > 0)?.lessons[0] ?? null;
   const nextLiveClass = course.liveClasses.find((item) => !item.recordingUrl) ?? course.liveClasses[0] ?? null;
   const originalPrice =
-    course.price > 0 ? Math.max(Math.round(course.price / 0.56), Math.round(course.price)) : 0;
+    course.originalPrice !== null && course.originalPrice > 0
+      ? course.originalPrice
+      : course.price > 0
+        ? Math.max(Math.round(course.price / 0.56), Math.round(course.price))
+        : 0;
   const discountPercent =
     course.price > 0 && originalPrice > course.price
       ? Math.max(1, Math.round((1 - course.price / originalPrice) * 100))
       : 0;
-  const emiAmount = course.price > 0 ? Math.max(1, Math.round(course.price / 12)) : 0;
+  const emiAmount =
+    course.emiPrice !== null && course.emiPrice > 0
+      ? course.emiPrice
+      : course.price > 0
+        ? Math.max(1, Math.round(course.price / 12))
+        : 0;
+  const emiLink = course.emiLink ?? null;
   const courseHours = totalDuration > 0 ? Math.max(1, Math.round(totalDuration / 60)) : 0;
   const learningItems = Array.isArray(course.learningOutcomes) && course.learningOutcomes.length > 0
     ? (course.learningOutcomes as string[])
@@ -479,21 +503,24 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
             <section className="relative px-0 sm:px-4 xl:pr-10">
               <div className="mx-auto max-w-[1368px]">
                 <RevealSection>
-                  <div className="relative overflow-hidden rounded-[24px] bg-[#38c1ff] px-6 pb-12 pt-10 sm:px-10 lg:px-14 xl:min-h-[436px] xl:px-[70px] xl:pb-20 xl:pt-[52px]">
-                    <div className="pointer-events-none absolute right-[170px] top-0 h-[34px] w-[220px] rounded-b-[25px] bg-white/20" />
-                    <div className="pointer-events-none absolute right-[116px] top-0 h-[93px] w-[117px] rounded-bl-[20px] rounded-tr-[40px] bg-white/22" />
-                    <div className="pointer-events-none absolute bottom-[112px] right-[116px] h-[43px] w-[220px] rounded-b-[25px] bg-white/14" />
+                  <div className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(135deg,#38c1ff_0%,#2db4f0_40%,#45caff_100%)] px-6 pb-12 pt-10 sm:px-10 lg:px-14 xl:min-h-[436px] xl:px-[70px] xl:pb-20 xl:pt-[52px]">
+                    {/* Decorative shapes */}
+                    <div className="pointer-events-none absolute right-[170px] top-0 h-[34px] w-[220px] rounded-b-[25px] bg-white/15" />
+                    <div className="pointer-events-none absolute right-[116px] top-0 h-[93px] w-[117px] rounded-bl-[20px] rounded-tr-[40px] bg-white/12" />
+                    <div className="pointer-events-none absolute bottom-[112px] right-[116px] h-[43px] w-[220px] rounded-b-[25px] bg-white/10" />
+                    <div className="pointer-events-none absolute -left-20 -top-20 h-[200px] w-[200px] rounded-full bg-white/[0.06] blur-2xl" />
+                    <div className="pointer-events-none absolute -bottom-10 right-[30%] h-[160px] w-[160px] rounded-full bg-white/[0.05] blur-3xl" />
                     <div className="relative z-10 grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] xl:items-center">
-                      <div className="space-y-4 pt-2 text-white">
-                        <h1 className="max-w-[18ch] text-[clamp(2.2rem,4vw,2.5rem)] font-semibold leading-[1.12]">
+                      <div className="space-y-5 pt-2 text-white">
+                        <h1 className="max-w-[18ch] text-[clamp(2.2rem,4vw,2.8rem)] font-bold leading-[1.08] tracking-[-0.01em] drop-shadow-[0_2px_12px_rgba(0,0,0,0.10)]">
                           {course.title}
                         </h1>
-                        <p className="max-w-[42rem] text-[clamp(1.2rem,2vw,1.5rem)] font-medium leading-[1.45] text-white/94">
+                        <p className="max-w-[42rem] text-[clamp(1.15rem,2vw,1.4rem)] font-medium leading-[1.5] text-white/90">
                           {course.subtitle?.trim() || course.description?.trim() ||
                             "Build design aptitude, logical reasoning, and visual skills through a focused preparation path."}
                         </p>
                         {course.subtitle && course.description && (
-                          <p className="mt-2 max-w-[42rem] text-[clamp(0.9rem,1.5vw,1.1rem)] leading-[1.5] text-white/80">
+                          <p className="mt-1 max-w-[42rem] text-[clamp(0.9rem,1.5vw,1.05rem)] leading-[1.6] text-white/70">
                             {course.description.trim()}
                           </p>
                         )}
@@ -501,10 +528,11 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
                       <FloatPulse className="mx-auto xl:mx-0 xl:justify-self-end">
                         <div className="relative flex items-center justify-center">
+                          <div className="pointer-events-none absolute inset-0 rounded-full bg-white/[0.06] blur-3xl" />
                           <Image
                             alt=""
                             aria-hidden
-                            className="h-auto w-[200px] object-contain opacity-95 drop-shadow-[0_20px_45px_rgba(0,0,0,0.18)] sm:w-[320px] xl:w-[420px]"
+                            className="relative h-auto w-[200px] object-contain drop-shadow-[0_24px_48px_rgba(0,0,0,0.20)] sm:w-[320px] xl:w-[420px]"
                             height={852}
                             src={assets.heroIllustration}
                             width={1561}
@@ -514,13 +542,13 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     </div>
 
                     <div className="relative z-10 mt-10 xl:mt-[86px]">
-                      <div className="overflow-hidden rounded-[10px] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] xl:max-w-[877px]">
+                      <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.06)] xl:max-w-[877px]">
                         <div className="grid gap-5 sm:grid-cols-[153px_minmax(0,1fr)]">
-                          <div className="flex min-h-[148px] flex-col items-center justify-center gap-3 bg-[#ffc107] px-6 py-7 text-center text-white">
-                            <div className="relative rounded-full rounded-bl-sm border border-white/40 p-2">
+                          <div className="flex min-h-[148px] flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,#ffc107_0%,#ffab00_100%)] px-6 py-7 text-center text-white">
+                            <div className="relative rounded-full rounded-bl-sm border border-white/40 bg-white/10 p-2.5 backdrop-blur-sm">
                               <Award className="h-6 w-6 text-white drop-shadow-sm" />
                             </div>
-                            <p className="text-[20px] font-semibold">Premium</p>
+                            <p className="text-[20px] font-bold tracking-wide">Premium</p>
                           </div>
 
                           <div className="grid gap-5 px-5 py-5 sm:grid-cols-[minmax(0,1fr)_1px_88px_1px_94px] sm:items-center sm:px-8 sm:py-0">
@@ -529,27 +557,27 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                             </p>
 
                             <div className="hidden justify-center sm:flex">
-                              <div className="h-[90px] w-px bg-gray-200" />
+                              <div className="h-[90px] w-px bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
                             </div>
 
                             <div className="flex flex-col items-center gap-2 text-center text-black">
-                              <Users className="h-8 w-8 text-black/60" />
-                              <p className="text-[12px]">{formatCompactCount(course._count.enrollments)}</p>
-                              <p className="text-[16px] font-bold">Learners</p>
+                              <Users className="h-8 w-8 text-[#38c1ff]/70" />
+                              <p className="text-[13px] font-semibold tabular-nums">{formatCompactCount(course._count.enrollments)}</p>
+                              <p className="text-[15px] font-bold">Learners</p>
                             </div>
 
                             <div className="hidden justify-center sm:flex">
-                              <div className="h-[90px] w-px bg-gray-200" />
+                              <div className="h-[90px] w-px bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
                             </div>
 
                             <div className="flex flex-col items-center gap-1.5 text-center text-black">
-                              <p className="text-[32px] font-bold leading-none">{course.courseRating || "4.7"}</p>
-                              <div className="flex items-center gap-1">
+                              <p className="text-[34px] font-extrabold leading-none tabular-nums">{course.courseRating || "4.7"}</p>
+                              <div className="flex items-center gap-0.5">
                                 {[1, 2, 3, 4, 5].map((i) => (
                                   <Star key={i} className={cx("h-3.5 w-3.5", i <= Math.round(course.courseRating || 4.7) ? "fill-[#ffc107] text-[#ffc107]" : "fill-transparent text-[#ffc107]")} />
                                 ))}
                               </div>
-                              <p className="text-[12px]">{Math.max(course._count.enrollments, 1259).toLocaleString("en-IN")} ratings</p>
+                              <p className="text-[12px] text-[#999]">{Math.max(course._count.enrollments, 1259).toLocaleString("en-IN")} ratings</p>
                             </div>
                           </div>
                         </div>
@@ -561,13 +589,19 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                 <div className="mt-6 grid gap-8 xl:grid-cols-[minmax(0,876px)_391px] xl:items-start">
                   <div className="space-y-8">
                     <RevealSection delay={0.05}>
-                      <section className="rounded-[10px] bg-white px-6 py-8 shadow-[0_8px_24px_rgba(0,0,0,0.06)] sm:px-10 xl:px-11 xl:py-[42px]">
-                        <div id="what-youll-learn" className="space-y-5">
-                          <h2 className="text-[24px] font-semibold text-black">What you&rsquo;ll learn</h2>
-                          <ul className="grid gap-2 text-[15px] leading-7 text-[#aeaeae] sm:text-[16px]">
+                      <section className="rounded-[18px] bg-white px-6 py-8 shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] sm:px-10 xl:px-11 xl:py-[42px]">
+                        <div id="what-youll-learn" className="space-y-6">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#38c1ff]/10">
+                              <Zap className="h-[18px] w-[18px] text-[#38c1ff]" />
+                            </div>
+                            <h2 className="text-[24px] font-bold text-black">What you&rsquo;ll learn</h2>
+                          </div>
+                          <ul className="grid gap-3 sm:grid-cols-2">
                             {learningItems.map((item) => (
-                              <li key={item} className="ml-6 list-disc">
-                                <span>{item}</span>
+                              <li key={item} className="flex items-start gap-3 rounded-[12px] bg-[#f7fdf9] px-4 py-3">
+                                <CheckCircle2 className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[#4caf50]" />
+                                <span className="text-[14.5px] leading-[1.6] text-[#444]">{item}</span>
                               </li>
                             ))}
                           </ul>
@@ -577,23 +611,34 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
                     <div className="grid gap-6 xl:grid-cols-[407px_minmax(0,1fr)] xl:items-start">
                       <RevealSection delay={0.08}>
-                        <section className="rounded-[10px] bg-white px-7 py-8 shadow-[0_8px_24px_rgba(0,0,0,0.06)] xl:min-h-[247px]">
-                          <h2 className="text-[24px] font-semibold text-black">Course Overview</h2>
-                          <ul className="mt-8 grid gap-3 text-[16px] leading-7 text-[#b3b3b3]">
-                            {overviewItems.map((item) => (
-                              <li key={item} className="ml-6 list-disc">
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
+                        <section className="rounded-[18px] bg-white px-7 py-8 shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] xl:min-h-[247px]">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#38c1ff]/10">
+                              <BookOpen className="h-[18px] w-[18px] text-[#38c1ff]" />
+                            </div>
+                            <h2 className="text-[24px] font-bold text-black">Course Overview</h2>
+                          </div>
+                          <div className="mt-8 grid gap-3">
+                            {overviewItems.map((item, idx) => {
+                              const icons = [Clock, BarChart3, Globe, Play];
+                              const Icon = icons[idx] || Clock;
+                              return (
+                                <div key={item} className="flex items-center gap-3 rounded-[10px] bg-[#f8f9fa] px-4 py-3">
+                                  <Icon className="h-[16px] w-[16px] shrink-0 text-[#38c1ff]" />
+                                  <span className="text-[15px] text-[#555]">{item}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </section>
                       </RevealSection>
 
                       <StaggerGrid className="grid gap-4 sm:grid-cols-2">
                         {mentorCards.map((mentor) => (
                           <AnimCard key={mentor.name}>
-                            <section className="rounded-[10px] bg-white px-4 py-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.06)] xl:min-h-[247px]">
-                              <div className="mx-auto h-[82px] w-[82px] overflow-hidden rounded-full bg-[#d9d9d9]">
+                            <section className="group relative overflow-hidden rounded-[18px] bg-white px-4 py-8 text-center shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] transition-shadow duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.09)] xl:min-h-[247px]">
+                              <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#38c1ff,#ffc107)]" />
+                              <div className="mx-auto h-[82px] w-[82px] overflow-hidden rounded-full bg-[#f0f0f0] ring-3 ring-[#38c1ff]/10 ring-offset-2">
                                 <div
                                   aria-hidden="true"
                                   className="h-full w-full bg-cover bg-center"
@@ -601,10 +646,10 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                                 />
                               </div>
                               <div className="mt-4 space-y-1">
-                                <p className="text-[16px] font-medium text-black">{mentor.name}</p>
-                                <p className="text-[12px] text-black">{mentor.subtitle}</p>
+                                <p className="text-[16px] font-semibold text-black">{mentor.name}</p>
+                                <p className="text-[12px] font-medium text-[#38c1ff]">{mentor.subtitle}</p>
                               </div>
-                              <p className="mt-4 text-[11px] leading-5 text-black">{mentor.body}</p>
+                              <p className="mt-4 text-[12px] leading-[1.7] text-[#666]">{mentor.body}</p>
                             </section>
                           </AnimCard>
                         ))}
@@ -612,14 +657,20 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     </div>
 
                     <RevealSection delay={0.1}>
-                      <section className="rounded-[10px] bg-white px-6 py-8 shadow-[0_8px_24px_rgba(0,0,0,0.06)] sm:px-10 xl:px-[38px] xl:py-10">
+                      <section className="rounded-[18px] bg-white px-6 py-8 shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] sm:px-10 xl:px-[38px] xl:py-10">
                         <div id="curriculum" className="space-y-6">
                           {/* Curriculum header with total progress (enrolled only) */}
-                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                            <h2 className="text-[24px] font-semibold text-black">Course Curriculum</h2>
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#38c1ff]/10">
+                                <ClipboardList className="h-[18px] w-[18px] text-[#38c1ff]" />
+                              </div>
+                              <h2 className="text-[24px] font-bold text-black">Course Curriculum</h2>
+                            </div>
                             {isEnrolled && totalLessons > 0 && (
-                              <span className="text-[13px] font-medium text-[#4caf50]">
-                                {completedLessonCount} / {totalLessons} lessons completed ({progressPercent}%)
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-[13px] font-medium text-[#4caf50]">
+                                <CheckCircle2 className="h-4 w-4" />
+                                {completedLessonCount} / {totalLessons} completed ({progressPercent}%)
                               </span>
                             )}
                           </div>
@@ -637,14 +688,15 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                                     : 0;
 
                                 return (
-                                  <div key={chapter.id} className="space-y-2">
+                                  <div key={chapter.id} className="space-y-3">
                                     {/* Chapter header */}
                                     <div className="flex items-center justify-between gap-3">
-                                      <p className="text-[18px] font-semibold text-black">
-                                        Module {index + 1}: {chapter.title}
+                                      <p className="text-[17px] font-semibold text-black">
+                                        <span className="mr-2 text-[#38c1ff]">Module {index + 1}:</span>
+                                        {chapter.title}
                                       </p>
                                       {isEnrolled && chapterTotal > 0 && (
-                                        <span className="shrink-0 text-[12px] font-medium text-[#959595]">
+                                        <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[12px] font-medium text-[#777]">
                                           {chapterCompletedCount}/{chapterTotal}
                                         </span>
                                       )}
@@ -722,16 +774,18 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     </RevealSection>
 
                     <RevealSection delay={0.12}>
-                      <section className="rounded-[10px] bg-white px-6 py-8 shadow-[0_8px_24px_rgba(0,0,0,0.06)] sm:px-10 xl:px-[103px] xl:py-[43px]">
+                      <section className="rounded-[18px] bg-white px-6 py-8 shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] sm:px-10 xl:px-[103px] xl:py-[43px]">
                         <div className="space-y-9">
-                          <h2 className="text-[24px] font-semibold text-black">Features</h2>
+                          <div className="flex items-center justify-center gap-3">
+                            <h2 className="text-[26px] font-bold text-black">What's included</h2>
+                          </div>
 
                           <div className="space-y-5">
                             <StaggerGrid className="grid gap-5 md:grid-cols-3">
                               {featureTiles.slice(0, 3).map((feature) => (
                                 <AnimCard key={feature.label} className="h-full">
                                   <Link
-                                    className="flex h-full w-full flex-col items-center justify-center gap-[10px] rounded-[20px] bg-[#71d3ff] px-4 py-5 text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
+                                    className="flex h-full w-full flex-col items-center justify-center gap-[10px] rounded-[20px] bg-[#71d3ff] px-4 py-5 text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)] hover:-translate-y-1 transition-transform duration-300"
                                     href={feature.href}
                                   >
                                     <div className="flex h-[100px] items-center justify-center">
@@ -755,7 +809,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                               {featureTiles.slice(3).map((feature) => (
                                 <AnimCard key={feature.label} className="h-full">
                                   <Link
-                                    className="flex h-full w-full flex-col items-center justify-center gap-[10px] rounded-[20px] bg-[#71d3ff] px-4 py-5 text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
+                                    className="flex h-full w-full flex-col items-center justify-center gap-[10px] rounded-[20px] bg-[#71d3ff] px-4 py-5 text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)] hover:-translate-y-1 transition-transform duration-300"
                                     href={feature.href}
                                   >
                                     <div className="flex h-[100px] items-center justify-center">
@@ -782,34 +836,55 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     <StaggerGrid className="grid gap-4 md:grid-cols-2">
                       {testimonialCards.map((testimonial) => (
                         <AnimCard key={testimonial.author + testimonial.quote}>
-                          <section className="rounded-[20px] bg-white px-8 py-7 text-right shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
-                            <p className="text-[20px]">
-                              {Array.from({ length: testimonial.rating || 5 }).map(() => "⭐").join("")}
+                          <section className="relative rounded-[20px] bg-white px-8 py-8 shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] border border-gray-100 h-full flex flex-col">
+                            <Quote className="absolute right-6 top-6 h-10 w-10 text-gray-100" />
+                            <div className="flex gap-1 mb-4 text-[#ffc107]">
+                              {Array.from({ length: testimonial.rating || 5 }).map((_, i) => (
+                                <Star key={i} className="h-4 w-4 fill-current" />
+                              ))}
+                            </div>
+                            <p className="flex-1 text-[16px] leading-[1.6] text-black italic">
+                              "{testimonial.quote}"
                             </p>
-                            <p className="mt-3 text-left text-[15px] leading-7 text-black">
-                              {testimonial.quote}
-                            </p>
-                            <p className="mt-4 text-[15px] text-black">— {testimonial.author}</p>
+                            <div className="mt-6 flex items-center gap-3">
+                              <div className="h-10 w-10 overflow-hidden rounded-full bg-gray-100">
+                                <Image
+                                  src={`https://api.dicebear.com/9.x/initials/svg?seed=${testimonial.author}`}
+                                  alt={testimonial.author}
+                                  width={40}
+                                  height={40}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                              <p className="text-[14px] font-semibold text-black">{testimonial.author}</p>
+                            </div>
                           </section>
                         </AnimCard>
                       ))}
                     </StaggerGrid>
 
                     <RevealSection delay={0.14}>
-                      <section className="rounded-[10px] bg-white px-6 py-8 shadow-[0_8px_24px_rgba(0,0,0,0.06)] sm:px-10 xl:px-[29px] xl:py-[47px]">
-                        <div id="faqs" className="space-y-5">
-                          <h2 className="text-[24px] font-semibold text-black">FAQs</h2>
-                          <div className="space-y-4">
+                      <section className="rounded-[18px] bg-white px-6 py-8 shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] sm:px-10 xl:px-[40px] xl:py-[47px]">
+                        <div id="faqs" className="space-y-6">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#38c1ff]/10">
+                              <MessageCircle className="h-[18px] w-[18px] text-[#38c1ff]" />
+                            </div>
+                            <h2 className="text-[24px] font-bold text-black">Frequently Asked Questions</h2>
+                          </div>
+                          <div className="space-y-3">
                             {faqItems.map((faq) => (
                               <div
                                 key={faq.question}
-                                className="overflow-hidden rounded-[10px] border border-[#e9e9e9]"
+                                className="overflow-hidden rounded-[14px] border border-gray-100 bg-white shadow-sm transition-all hover:border-[#38c1ff]/30 hover:shadow-md"
                               >
-                                <div className="bg-[#feefef] px-[13px] py-[11px] text-[15px] font-medium text-black">
-                                  Q: {faq.question}
+                                <div className="flex gap-4 px-[20px] py-[16px] text-[16px] font-semibold text-black bg-gray-50/50">
+                                  <span className="text-[#38c1ff]">Q.</span>
+                                  <span className="flex-1">{faq.question}</span>
                                 </div>
-                                <div className="bg-white px-[13px] py-[11px] text-[15px] text-black">
-                                  A: {faq.answer}
+                                <div className="flex gap-4 px-[20px] pb-[16px] pt-1 text-[15px] leading-[1.6] text-gray-600">
+                                  <span className="text-gray-300">A.</span>
+                                  <span className="flex-1">{faq.answer}</span>
                                 </div>
                               </div>
                             ))}
@@ -821,39 +896,43 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
                   <div className="space-y-4 xl:-mt-[226px]">
                     <RevealSection delay={0.08}>
-                      <aside className="rounded-[10px] bg-white px-[21px] pb-5 pt-4 shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
-                        <div className="space-y-3">
-                          <div className="overflow-hidden rounded-[10px] bg-[#d9d9d9]">
+                      <aside className="rounded-[24px] bg-white px-[24px] pb-[24px] pt-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.03]">
+                        <div className="space-y-5">
+                          <div className="overflow-hidden rounded-[16px] bg-[#d9d9d9] shadow-inner">
                             <div
                               aria-hidden="true"
-                              className="h-[184px] w-full bg-cover bg-center"
+                              className="h-[184px] w-full bg-cover bg-center transition-transform duration-700 hover:scale-105"
                               style={{
                                 backgroundImage: course.thumbnail
-                                  ? `linear-gradient(180deg, rgba(8, 16, 24, 0.04), rgba(8, 16, 24, 0.18)), url("${course.thumbnail}")`
+                                  ? `linear-gradient(180deg, rgba(8, 16, 24, 0.02), rgba(8, 16, 24, 0.12)), url("${course.thumbnail}")`
                                   : `url("${assets.fallbackThumbnail}")`,
                               }}
                             />
                           </div>
 
-                          <div className="space-y-1.5">
-                            <h2 className="text-[16px] font-semibold leading-[1.25] text-black">
+                          <div className="space-y-2">
+                            <h2 className="text-[18px] font-bold leading-[1.3] text-black">
                               {course.title}
                             </h2>
-                            <p className="text-[12px] text-[#959595]">by {teacherName}</p>
-                            <p className="text-[12px] font-medium text-black">
-                              ⭐ 4.7 ({formatAudienceLabel(course._count.enrollments)})
-                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-[13px] text-gray-500 font-medium">by <span className="text-black">{teacherName}</span></p>
+                              <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                                <Star className="h-3 w-3 fill-[#ffc107] text-[#ffc107]" />
+                                <p className="text-[12px] font-bold text-yellow-700">4.7</p>
+                              </div>
+                            </div>
+                            
                             {isEnrolled && totalLessons > 0 ? (
-                              <div className="pt-1 space-y-1">
+                              <div className="pt-2 space-y-1.5">
                                 <div className="flex items-center justify-between">
-                                  <p className="text-[11px] font-medium text-[#4caf50]">
-                                    {completedLessonCount} / {totalLessons} lessons completed
+                                  <p className="text-[12px] font-semibold text-[#4caf50]">
+                                    {completedLessonCount} / {totalLessons} lessons
                                   </p>
-                                  <p className="text-[11px] text-[#959595]">{progressPercent}%</p>
+                                  <p className="text-[12px] font-bold text-[#4caf50]">{progressPercent}%</p>
                                 </div>
-                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/8">
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
                                   <div
-                                    className="h-full rounded-full bg-[linear-gradient(90deg,#4caf50,#38c1ff)]"
+                                    className="h-full rounded-full bg-[linear-gradient(90deg,#4caf50,#34d399)] shadow-[0_0_8px_rgba(76,175,80,0.4)]"
                                     style={{ width: `${progressPercent}%` }}
                                   />
                                 </div>
@@ -861,71 +940,77 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                             ) : null}
                           </div>
 
-
-                          <div className="rounded-[10px] border border-[#d9d9d9] px-[17px] py-[12px]">
+                          <div className="rounded-[16px] border border-gray-100 bg-gray-50/50 p-4">
                             <div className="flex items-center gap-2">
-                              <Image
-                                alt=""
-                                aria-hidden
-                                className="h-auto w-[10px] object-contain"
-                                height={11}
-                                src={assets.buyNowIcon}
-                                width={10}
-                              />
-                              <p className="text-[12px] font-semibold text-black">
-                                {course.price > 0 ? "Buy now" : "Instant access"}
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#38c1ff]/10">
+                                <Shield className="h-3.5 w-3.5 text-[#38c1ff]" />
+                              </div>
+                              <p className="text-[13px] font-semibold text-gray-600">
+                                {course.price > 0 ? "Full Access" : "Open Access"}
                               </p>
                             </div>
 
-                            <div className="mt-2 flex items-end gap-2">
-                              <p className="text-[20px] font-semibold leading-none text-black">
+                            <div className="mt-3 flex items-end gap-2.5">
+                              <p className="text-[28px] font-extrabold leading-none tracking-tight text-black">
                                 {formatPrice(course.price)}
                               </p>
                               {course.price > 0 && originalPrice > course.price ? (
-                                <p className="pb-0.5 text-[10px] leading-none text-[#d1d1d1] line-through">
+                                <p className="mb-1 text-[13px] font-semibold text-gray-400 line-through">
                                   ₹{originalPrice.toLocaleString("en-IN")}
                                 </p>
                               ) : null}
                             </div>
 
-                            <p className="mt-1 text-[12px] font-medium text-[#4caf50]">
-                              {course.price > 0 && discountPercent > 0 ? `${discountPercent}% OFF` : "Open access"}
-                            </p>
-                          </div>
-
-                          <div className="rounded-[10px] border border-[#d9d9d9] px-[17px] py-[15px]">
-                            {course.price > 0 ? (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Image
-                                    alt=""
-                                    aria-hidden
-                                    className="h-auto w-[14px] object-contain"
-                                    height={10}
-                                    src={assets.emiIcon}
-                                    width={14}
-                                  />
-                                  <p className="text-[12px] font-semibold text-black">Pay with EMI</p>
-                                  <span className="rounded-[2px] border border-[#4caf50] bg-[rgba(76,175,80,0.1)] px-1.5 py-0.5 text-[8px] font-semibold text-[#4caf50]">
-                                    No Cost EMI
-                                  </span>
-                                </div>
-                                <p className="text-[11px] leading-5 text-[#959595]">
-                                  Starting at <span className="font-semibold text-black">₹{emiAmount.toLocaleString("en-IN")}</span>/month for 12 months.
-                                </p>
-                                <p className="text-[10px] font-medium text-[#38c1ff] underline">
-                                  View all EMI Plans
-                                </p>
-                              </div>
-                            ) : (
-                              <div className="space-y-1">
-                                <p className="text-[12px] font-semibold text-black">Included with enrollment</p>
-                                <p className="text-[11px] leading-5 text-[#959595]">
-                                  Get course access, modules, tests, and any upcoming live sessions from your student dashboard.
+                            {course.price > 0 && discountPercent > 0 && (
+                              <div className="mt-2 inline-flex rounded-full bg-green-100 px-2 py-0.5">
+                                <p className="text-[11px] font-bold text-green-700">
+                                  {discountPercent}% OFF APPLIED
                                 </p>
                               </div>
                             )}
                           </div>
+
+                          {course.price > 0 ? (
+                            <div className="rounded-[16px] border border-gray-100 bg-white p-4 shadow-sm">
+                              <div className="space-y-2.5">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-50">
+                                    <Award className="h-3.5 w-3.5 text-purple-500" />
+                                  </div>
+                                  <p className="text-[13px] font-semibold text-black">Pay with EMI</p>
+                                  <span className="ml-auto rounded bg-purple-100 px-1.5 py-0.5 text-[9px] font-bold text-purple-700">
+                                    NO COST EMI
+                                  </span>
+                                </div>
+                                <p className="text-[12px] leading-[1.5] text-gray-500">
+                                  Starting at <span className="font-bold text-black">₹{emiAmount.toLocaleString("en-IN")}</span>/mo.
+                                </p>
+                                {emiLink ? (
+                                  <a href={emiLink} target="_blank" rel="noopener noreferrer" className="inline-flex cursor-pointer items-center text-[11px] font-bold text-[#38c1ff] hover:underline">
+                                    View all EMI Plans <ChevronRight className="h-3 w-3" />
+                                  </a>
+                                ) : (
+                                  <p className="inline-flex cursor-pointer items-center text-[11px] font-bold text-[#38c1ff] hover:underline">
+                                    View all EMI Plans <ChevronRight className="h-3 w-3" />
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="rounded-[16px] border border-gray-100 bg-white p-4 shadow-sm">
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-50">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                  </div>
+                                  <p className="text-[13px] font-semibold text-black">Free Enrollment</p>
+                                </div>
+                                <p className="text-[12px] leading-[1.5] text-gray-500">
+                                  Get course access, modules, tests, and live sessions from your dashboard.
+                                </p>
+                              </div>
+                            </div>
+                          )}
 
                           {isEnrolled ? (
                             <Link
@@ -935,49 +1020,43 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                               Continue Course
                             </Link>
                           ) : (
-                            <EnrollButton
-                              courseId={course.id}
-                              courseTitle={course.title}
-                              initialEnrolled={false}
-                              price={course.price}
-                              variant="detailCard"
-                            />
+                            <div className="pt-2">
+                              <EnrollButton
+                                courseId={course.id}
+                                courseTitle={course.title}
+                                initialEnrolled={false}
+                                price={course.price}
+                                variant="detailCard"
+                              />
+                            </div>
                           )}
                         </div>
                       </aside>
                     </RevealSection>
 
                     <RevealSection delay={0.1}>
-                      <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <AnimCard>
                           <Link
-                            className="flex min-h-[179px] flex-col items-center justify-center gap-[7px] rounded-[20px] bg-[#71d3ff] px-6 py-[15px] text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
+                            className="group flex min-h-[160px] flex-col items-center justify-center gap-4 rounded-[20px] bg-[linear-gradient(135deg,#38c1ff_0%,#45caff_100%)] px-6 py-6 text-center text-white shadow-[0_8px_20px_rgba(56,193,255,0.25)] transition-all hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(56,193,255,0.35)]"
                             href={`/dashboard/courses/${course.slug}/tests`}
                           >
-                            <Image
-                              alt="Tests"
-                              className="h-auto w-[101px] object-contain"
-                              height={108}
-                              src={assets.testsTile}
-                              width={101}
-                            />
-                            <span className="text-[24px] font-semibold">Tests</span>
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                              <ClipboardList className="h-7 w-7 text-white" />
+                            </div>
+                            <span className="text-[20px] font-bold">Explore Tests</span>
                           </Link>
                         </AnimCard>
 
                         <AnimCard>
                           <Link
-                            className="flex min-h-[179px] flex-col items-center justify-center gap-[7px] rounded-[20px] bg-[#71d3ff] px-6 py-[15px] text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
+                            className="group flex min-h-[160px] flex-col items-center justify-center gap-4 rounded-[20px] bg-[linear-gradient(135deg,#2db4f0_0%,#38c1ff_100%)] px-6 py-6 text-center text-white shadow-[0_8px_20px_rgba(45,180,240,0.25)] transition-all hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(45,180,240,0.35)]"
                             href="#curriculum"
                           >
-                            <Image
-                              alt="Modules"
-                              className="h-auto w-[101px] object-contain"
-                              height={108}
-                              src={assets.modulesTile}
-                              width={101}
-                            />
-                            <span className="text-[24px] font-semibold">Modules</span>
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                              <BookOpen className="h-7 w-7 text-white" />
+                            </div>
+                            <span className="text-[20px] font-bold">View Modules</span>
                           </Link>
                         </AnimCard>
                       </div>
