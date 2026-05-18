@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
+import cashfree from "@/lib/cashfree";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiError, apiSuccess, apiServerError } from "@/lib/api-response";
-import crypto from "crypto";
 import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
 
 export async function POST(req: NextRequest) {
@@ -11,43 +11,48 @@ export async function POST(req: NextRequest) {
     if (!auth) return apiError("Unauthorized", 401);
 
     const body = await req.json();
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, courseId } = body;
+    const { order_id, courseId } = body;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !courseId) {
+    if (!order_id || !courseId) {
       return apiError("Missing required payment details", 400);
     }
 
-    const secret = process.env.RAZORPAY_KEY_SECRET || "YourTestSecret";
-    
-    const sign = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(sign.toString())
-      .digest("hex");
+    // Verify order status with Cashfree server
+    const response = await cashfree.PGOrderFetchPayments(order_id);
 
-    if (expectedSignature !== razorpay_signature) {
-      // Security measure: mark payment as failed/malicious if tampered
-      await prisma.payment.updateMany({
-        where: { razorpayOrderId: razorpay_order_id },
-        data: { status: "FAILED" },
-      });
-      return apiError("Invalid payment signature", 400);
+    if (!response?.data) {
+      return apiError("Could not verify payment with Cashfree", 400);
     }
 
-    // 1. Update Payment status to COMPLETED
+    const payments = response.data;
+
+    // Find the successful payment
+    const successfulPayment = payments.find(
+      (p: { payment_status?: string }) => p.payment_status === "SUCCESS",
+    );
+
+    if (!successfulPayment) {
+      // Mark payment as failed if no successful payment found
+      await prisma.payment.updateMany({
+        where: { cashfreeOrderId: order_id },
+        data: { status: "FAILED" },
+      });
+      return apiError("Payment was not successful", 400);
+    }
+
+    // Update Payment status to SUCCESS
     await prisma.payment.updateMany({
-      where: { razorpayOrderId: razorpay_order_id, userId: auth.userId },
+      where: { cashfreeOrderId: order_id, userId: auth.userId },
       data: {
         status: "SUCCESS",
-        razorpayPaymentId: razorpay_payment_id,
+        cashfreePaymentId: String(successfulPayment.cf_payment_id || ""),
       },
     });
 
-    // 2. Enroll user in the course
+    // Enroll user in the course
     const { enrollment } = await ensureActiveEnrollmentWithXp(auth.userId, courseId);
 
     return apiSuccess({ enrolled: true, enrollment });
-
   } catch (error: unknown) {
     console.error("VERIFY ORDER ERROR:", error);
     return apiServerError(error instanceof Error ? error.message : "Could not verify payment");

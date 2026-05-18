@@ -16,7 +16,7 @@ type Params = { params: Promise<{ courseId: string }> };
 /**
  * POST /api/courses/[courseId]/enroll
  * Student only: Enroll the authenticated student in a course.
- * In production this will be triggered AFTER payment confirmation (Razorpay webhook).
+ * In production this will be triggered AFTER payment confirmation (Cashfree webhook).
  * For prototype: manual enrollment.
  */
 export async function POST(req: NextRequest, { params }: Params) {
@@ -29,6 +29,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     const course = await prisma.course.findUnique({ where: { id: courseId } });
     if (!course) return apiNotFound('Course');
     if (!course.isPublished) return apiError('This course is not yet available', 403);
+
+    if (course.price > 0) {
+      const settings = await prisma.instituteSettings.findFirst();
+      if (settings?.requirePayment !== false) {
+        return apiError('Payment is required to enroll in this course', 402);
+      }
+    }
 
     const result = await ensureActiveEnrollmentWithXp(user.userId, courseId, 'ACTIVE', false);
     if (!result.created) return apiError('You are already enrolled in this course', 409);

@@ -12,6 +12,13 @@ export type JwtPayload = {
   role: UserRole;
 };
 
+export type MagicLinkPayload = {
+  name: string;
+  email: string;
+  phone: string;
+  passwordHash: string;
+};
+
 /**
  * Returns the JWT secret as a Uint8Array, required by the `jose` library.
  */
@@ -56,6 +63,47 @@ export async function verifyTokenValue(
       userId: payload.userId,
       email: payload.email,
       role: payload.role as UserRole,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Signs a JWT for a magic link registration.
+ */
+export async function signMagicLinkToken(payload: MagicLinkPayload): Promise<string> {
+  return new SignJWT({ ...payload, isMagicLink: true })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('1h') // Magic links expire in 1 hour
+    .sign(getSecretKey());
+}
+
+/**
+ * Verifies a magic link JWT string and returns the decoded payload or null if invalid.
+ */
+export async function verifyMagicLinkTokenValue(
+  token?: string | null,
+): Promise<MagicLinkPayload | null> {
+  if (!token) return null;
+
+  try {
+    const { payload } = await jwtVerify(token, getSecretKey());
+    if (
+      !payload.isMagicLink ||
+      typeof payload.name !== 'string' ||
+      typeof payload.email !== 'string' ||
+      typeof payload.phone !== 'string' ||
+      typeof payload.passwordHash !== 'string'
+    ) {
+      return null;
+    }
+    return {
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone,
+      passwordHash: payload.passwordHash,
     };
   } catch {
     return null;

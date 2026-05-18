@@ -1,9 +1,10 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
-import { getAuthCookieOptions, AUTH_COOKIE_NAME, signToken } from '@/lib/auth';
+import { signMagicLinkToken } from '@/lib/auth';
 import { RegisterSchema } from '@/lib/validators';
-import { apiCreated, apiError, apiServerError } from '@/lib/api-response';
+import { apiError, apiServerError, apiSuccess } from '@/lib/api-response';
+import { sendStudentMagicLinkEmail } from '@/lib/email';
 import { checkRateLimit, authLimiter } from '@/lib/rate-limit';
 import { awardDailyLoginXp } from '@/lib/xp';
 
@@ -18,6 +19,8 @@ export async function POST(req: NextRequest) {
   if (!withinLimit) {
     return apiError('Too many registration attempts. Please try again later.', 429);
   }
+
+  let magicLinkForErrorLog = '';
 
   try {
     const body = await req.json();
@@ -39,29 +42,27 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const user = await prisma.user.create({
-      data: { name, email, phone, passwordHash, role },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
+    // Instead of creating the user immediately, sign a magic link token
+    const magicToken = await signMagicLinkToken({
+      name,
+      email,
+      phone,
+      passwordHash,
     });
 
-    await awardDailyLoginXp(user.id);
+    // Send the email with the magic link
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    const magicLink = `${baseUrl}/api/auth/verify-magic-link?token=${magicToken}`;
+    magicLinkForErrorLog = magicLink;
 
-    const token = await signToken({
-      userId: user.id,
-      email: user.email!,
-      role: user.role,
-    });
+    await sendStudentMagicLinkEmail({ to: email, name, magicLink });
 
-    // Return only safe, non-sensitive user data. Token lives in the httpOnly cookie.
-    const response = apiCreated({ user }, 'Account created successfully');
-    response.cookies.set(AUTH_COOKIE_NAME, token, getAuthCookieOptions());
-    return response;
+    // Return success message. Do NOT log the user in yet.
+    return apiSuccess(
+      { magicLinkSent: true },
+      'Registration link sent! Please check your email to complete signup.',
+      200
+    );
   } catch (err: unknown) {
     const error = err as {
       code?: string;
@@ -72,6 +73,29 @@ export async function POST(req: NextRequest) {
 
     if (error.code === 'P2002') {
       return apiError('A user with these details already exists.', 409);
+    }
+    
+    // Handle SMTP auth errors gracefully
+    if (error.code === 'EAUTH' || error.message?.includes('Invalid login')) {
+      console.log('\n=========================================================');
+      console.log('⚠️ SMTP Configuration Error: Could not send magic link email.');
+      console.log('Since you are in development, you can use this link directly:');
+      console.log(magicLinkForErrorLog);
+      console.log('=========================================================\n');
+      
+      if (process.env.NODE_ENV === 'development') {
+        // In dev, pretend it succeeded so the developer can click the link in the terminal
+        return apiSuccess(
+          { magicLinkSent: true },
+          'Registration link logged to terminal! (SMTP configuration error)',
+          200
+        );
+      }
+      
+      return apiError(
+        'Email configuration error. Please contact support or check SMTP settings.', 
+        500
+      );
     }
 
     return apiServerError(

@@ -138,7 +138,7 @@ export default function AdminCoursesPage() {
           description: form.description,
           overviewContent: form.overviewContent,
           thumbnail: form.thumbnail || undefined,
-          price: 0,
+          price: form.price ? Number(form.price) : 0,
           teacherIds: form.teacherIds,
           totalHours: form.totalHours ? Number(form.totalHours) : undefined,
           lessonCount: form.lessonCount ? Number(form.lessonCount) : undefined,
@@ -313,9 +313,8 @@ export default function AdminCoursesPage() {
                       placeholder="0"
                       type="number"
                       min={0}
-                      value={"0"}
-                      disabled={true}
-                      hint="Locked to Free (0) during testing period"
+                      value={form.price}
+                      hint="Set to 0 for free access"
                     />
                   </div>
 

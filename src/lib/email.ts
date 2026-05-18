@@ -162,3 +162,59 @@ export async function sendTeacherPasswordSetEmail({
     text: `Hi ${name || "there"},\n\nAn admin has set a password for your teacher account. Login at: ${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/login\n\nDivergent Classes`,
   });
 }
+
+// ─── Student Magic Link Email ──────────────────────────────────────────────────
+
+export async function sendStudentMagicLinkEmail({
+  to,
+  name,
+  magicLink,
+}: {
+  to: string;
+  name: string;
+  magicLink: string;
+}) {
+  const transport = createTransport();
+  await transport.sendMail({
+    from: FROM,
+    to,
+    subject: "Confirm your email to join Divergent Classes",
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f5f6f8;font-family:'Segoe UI',sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0"
+        style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+        <tr>
+          <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:36px 40px;text-align:center">
+            <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff">Almost there!</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px">
+            <p style="margin:0 0 20px;font-size:16px;color:#374151">Hi <strong>${name || "there"}</strong>,</p>
+            <p style="margin:0 0 28px;font-size:15px;color:#6b7280;line-height:1.7">
+              Click the button below to confirm your email and create your Divergent Classes account. This link will expire in 1 hour.
+            </p>
+            <div style="text-align:center;margin-bottom:32px">
+              <a href="${magicLink}"
+                style="display:inline-block;background:#6366f1;color:#ffffff;font-weight:700;font-size:14px;
+                       text-decoration:none;padding:14px 32px;border-radius:12px">
+                Create Account →
+              </a>
+            </div>
+            <p style="margin:0;font-size:12px;color:#9ca3af">
+              If you did not request this, please ignore this email.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+    text: `Hi ${name || "there"},\n\nClick the link below to confirm your email and create your account:\n${magicLink}\n\nThis link expires in 1 hour.\n\nDivergent Classes`,
+  });
+}

@@ -1,37 +1,34 @@
 import { NextResponse, NextRequest } from "next/server";
-import Razorpay from "razorpay";
+import cashfree from "@/lib/cashfree";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/api-response";
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_YourTestKey",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "YourTestSecret",
-});
+import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json(apiError("Unauthorized", 401), { status: 401 });
+    if (!auth) return apiError("Unauthorized", 401);
 
     const body = await req.json();
     const { courseId } = body;
 
     if (!courseId) {
-      return NextResponse.json(apiError("Course ID is required", 400), { status: 400 });
+      return apiError("Course ID is required", 400);
     }
 
+    // Fetch the course to get pricing
     const course = await prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, price: true },
+      select: { id: true, price: true, title: true },
     });
 
     if (!course) {
-      return NextResponse.json(apiError("Course not found", 404), { status: 404 });
+      return apiError("Course not found", 404);
     }
 
     if (course.price <= 0) {
-      return NextResponse.json(apiError("Course is free, use normal enrollment", 400), { status: 400 });
+      return apiError("Course is free, use normal enrollment", 400);
     }
 
     // Check if already enrolled
@@ -40,21 +37,59 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingEnrollment) {
-      return NextResponse.json(apiError("Already enrolled", 409), { status: 409 });
+      return apiError("Already enrolled", 409);
     }
 
-    // Initialize Razorpay Order
-    // Amount must be in smallest currency unit (paise for INR)
-    const options = {
-      amount: Math.round(course.price * 100), 
-      currency: "INR",
-      receipt: `rcpt_${auth.userId.substring(0, 8)}_${Date.now()}`,
+    // Check if payment is bypassed globally
+    const settings = await prisma.instituteSettings.findFirst();
+    if (settings && settings.requirePayment === false) {
+      await ensureActiveEnrollmentWithXp(auth.userId, courseId);
+      return apiSuccess({ bypassPayment: true });
+    }
+
+    // Fetch user details for Cashfree customer info
+    const user = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { id: true, name: true, email: true, phone: true },
+    });
+
+    if (!user) {
+      return apiError("User not found", 404);
+    }
+
+    // Generate a unique order ID
+    const orderId = `order_${auth.userId.substring(0, 8)}_${Date.now()}`;
+
+    // Create Cashfree order
+    const orderRequest = {
+      order_amount: course.price,
+      order_currency: "INR",
+      order_id: orderId,
+      customer_details: {
+        customer_id: auth.userId,
+        customer_name: user.name || "Student",
+        customer_email: user.email || "student@divergentclasses.in",
+        customer_phone: user.phone || "9999999999",
+      },
+      order_meta: {
+        return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/payments/callback?order_id={order_id}`,
+        notify_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/payments/webhook`,
+      },
+      order_note: `Enrollment for: ${course.title}`,
     };
 
-    const order = await razorpay.orders.create(options);
+    const response = await cashfree.PGCreateOrder(orderRequest);
 
-    if (!order) {
-      throw new Error("Failed to create Razorpay order");
+    console.log("Cashfree PGCreateOrder response:", JSON.stringify(response?.data, null, 2));
+
+    if (!response?.data) {
+      throw new Error("Failed to create Cashfree order - empty response");
+    }
+
+    const cfOrder = response.data;
+
+    if (!cfOrder.payment_session_id) {
+      throw new Error(`Cashfree order created but no payment_session_id. Order status: ${cfOrder.order_status}`);
     }
 
     // Create a pending payment record
@@ -65,14 +100,24 @@ export async function POST(req: NextRequest) {
         amount: course.price,
         currency: "INR",
         status: "PENDING",
-        razorpayOrderId: order.id,
+        cashfreeOrderId: cfOrder.order_id || orderId,
       },
     });
 
-    return NextResponse.json(apiSuccess(order), { status: 200 });
-
+    return apiSuccess({
+      order_id: cfOrder.order_id,
+      payment_session_id: cfOrder.payment_session_id,
+      order_status: cfOrder.order_status,
+    });
   } catch (error: unknown) {
+    // Log the actual Cashfree API error body if available
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosErr = error as { response?: { data?: unknown; status?: number } };
+      console.error("CREATE ORDER - Cashfree API Error:", axiosErr.response?.status, JSON.stringify(axiosErr.response?.data));
+      const cfMsg = (axiosErr.response?.data as { message?: string })?.message;
+      return apiError(cfMsg ?? "Payment gateway error", 500);
+    }
     console.error("CREATE ORDER ERROR:", error);
-    return NextResponse.json(apiError(error instanceof Error ? error.message : "Something went wrong", 500), { status: 500 });
+    return apiError(error instanceof Error ? error.message : "Something went wrong", 500);
   }
 }

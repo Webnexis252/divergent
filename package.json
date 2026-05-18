@@ -15,6 +15,7 @@
     "prisma:fix": "mkdir -p node_modules/@prisma/client/.prisma && ln -sfn $(pwd)/node_modules/.prisma/client node_modules/@prisma/client/.prisma/client"
   },
   "dependencies": {
+    "@cashfreepayments/cashfree-js": "^1.0.7",
     "@daily-co/daily-js": "^0.89.1",
     "@dnd-kit/core": "6.3.1",
     "@dnd-kit/sortable": "10.0.0",
@@ -28,6 +29,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "bcryptjs": "^3.0.3",
+    "cashfree-pg": "^5.1.3",
     "date-fns": "^4.1.0",
     "dotenv": "^17.4.2",
     "googleapis": "^171.4.0",
@@ -40,7 +42,6 @@
     "plyr": "3.8.4",
     "plyr-react": "6.0.0",
     "prisma": "^6.19.3",
-    "razorpay": "2.9.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "swr": "^2.4.1",

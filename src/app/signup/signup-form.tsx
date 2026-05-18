@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, GraduationCap, UserRound } from "lucide-react";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Surface } from "@/components/ui/surface";
 import { cx } from "@/lib/cx";
-
 
 type SignupRole = "STUDENT" | "MENTOR";
 
@@ -35,6 +35,7 @@ function getPostSignupHref(role: SignupRole) {
 
 export function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [role, setRole] = useState<SignupRole>("MENTOR");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -42,10 +43,23 @@ export function SignupForm() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "invalid_token") {
+      setError("The registration link is invalid or has expired. Please sign up again.");
+    } else if (errorParam === "missing_token") {
+      setError("Registration link is missing.");
+    } else if (errorParam === "server_error") {
+      setError("An error occurred while creating your account. Please try again.");
+    }
+  }, [searchParams]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSuccessMessage(null);
     setIsSubmitting(true);
 
     try {
@@ -64,7 +78,12 @@ export function SignupForm() {
         }),
       });
 
-      const payload = (await response.json()) as { success: boolean; error?: string; data?: { user?: { role: SignupRole } } };
+      const payload = (await response.json()) as { 
+        success: boolean; 
+        error?: string; 
+        data?: { user?: { role: SignupRole }; magicLinkSent?: boolean };
+        message?: string;
+      };
 
       if (!response.ok || !payload.success) {
         setError(payload.error ?? "Unable to create your account right now.");
@@ -77,19 +96,38 @@ export function SignupForm() {
         return;
       }
 
-      // Student registration logs in immediately
-      if (!payload.data?.user) {
-        setError("Invalid response from server.");
+      // Student registration sends a magic link
+      if (payload.data?.magicLinkSent) {
+        setSuccessMessage(payload.message ?? "Registration link sent! Please check your email to complete signup.");
         return;
       }
 
-      router.push(getPostSignupHref(payload.data.user.role));
-      router.refresh();
+      // Fallback in case of unexpected response
+      setError("Invalid response from server.");
     } catch {
       setError("Network error. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (successMessage) {
+    return (
+      <Surface className="w-full max-w-[35rem] px-5 py-8 sm:px-8 text-center" tone="elevated">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 mb-6">
+          <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-semibold mb-3">Check Your Email</h2>
+        <p className="text-[15px] leading-7 text-(--text-muted) mb-6">
+          {successMessage}
+        </p>
+        <Button variant="secondary" onClick={() => setSuccessMessage(null)}>
+          Back to Signup
+        </Button>
+      </Surface>
+    );
   }
 
   return (

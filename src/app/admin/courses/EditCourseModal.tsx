@@ -109,7 +109,7 @@ export default function EditCourseModal({
           description: form.description || undefined,
           overviewContent: form.overviewContent || undefined,
           thumbnail: form.thumbnail || undefined,
-          price: 0,
+          price: form.price ? Number(form.price) : 0,
           teacherIds: form.teacherIds,
           isPublished: form.isPublished,
           totalHours: form.totalHours ? Number(form.totalHours) : undefined,
@@ -213,13 +213,12 @@ export default function EditCourseModal({
             />
             <Field
               label="Price (INR)"
-              value={"0"}
+              value={form.price}
               onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))}
               placeholder="0"
               type="number"
               min={0}
-              disabled={true}
-              hint="Locked to Free (0) during testing period"
+              hint="Set to 0 for free access"
             />
           </div>
 

@@ -14,6 +14,7 @@ type Settings = {
   contactPhone: string | null;
   address: string | null;
   gstNumber: string | null;
+  requirePayment: boolean;
   updatedAt: string;
 };
 
@@ -125,6 +126,24 @@ export default function SuperAdminSettingsPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                <div className="mt-8 rounded-[16px] border border-[#e2e8f0] bg-[#f8fafc] p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-[14px] font-semibold text-[#0f172a]">Require Payment for Courses</h3>
+                      <p className="mt-1 text-[13px] text-[#64748b]">If turned off, students can enroll in any course for free without passing through the Cashfree payment gateway.</p>
+                    </div>
+                    <label className="relative inline-flex cursor-pointer items-center">
+                      <input 
+                        type="checkbox" 
+                        className="peer sr-only" 
+                        checked={form.requirePayment ?? true} 
+                        onChange={(e) => setForm(p => ({ ...p, requirePayment: e.target.checked }))} 
+                      />
+                      <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#7c3aed] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#7c3aed]/30 dark:border-gray-600 dark:bg-gray-700"></div>
+                    </label>
+                  </div>
                 </div>
 
                 {error && <p className="mt-4 text-[13px] text-[#dc2626]">{error}</p>}

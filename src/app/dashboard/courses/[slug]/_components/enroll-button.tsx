@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { load } from "@cashfreepayments/cashfree-js";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle2, Loader2, Sparkles, AlertCircle, ShieldCheck } from "lucide-react";
 
@@ -30,22 +31,82 @@ export function EnrollButton({
     setErrorMessage("");
 
     try {
-      // TESTING BYPASS: Direct enrollment without payment gateway
-      const response = await fetch(`/api/courses/${courseId}/enroll`, {
-        method: "POST",
-      });
-      const json = await response.json();
+      if (price > 0) {
+        // 1. Create order
+        const response = await fetch("/api/payments/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ courseId }),
+        });
+        const json = await response.json();
 
-      if (!response.ok || !json.success) {
-        if (response.status === 409) {
+        if (!response.ok || !json.success) {
+          if (json.error === "Already enrolled") {
+            setStatus("enrolled");
+            return;
+          }
+          setErrorMessage(json.error ?? "Could not initiate payment.");
+          setStatus("error");
+          return;
+        }
+
+        if (json.data?.bypassPayment) {
           setStatus("enrolled");
           return;
         }
-        setErrorMessage(json.error ?? "Could not enroll. Please try again.");
-        setStatus("error");
-        return;
+
+        const { payment_session_id } = json.data;
+
+        // 2. Load Cashfree SDK and initialize checkout
+        const mode = process.env.NEXT_PUBLIC_CASHFREE_ENVIRONMENT === "PRODUCTION" ? "production" : "sandbox";
+        const cashfree = await load({ mode });
+
+        const result = await cashfree.checkout({
+          paymentSessionId: payment_session_id,
+          redirectTarget: "_modal", // Open Cashfree in a popup modal
+        });
+
+        if (result?.error) {
+          console.error("Cashfree checkout error:", result.error);
+          setErrorMessage(result.error.message ?? "Payment failed or cancelled.");
+          setStatus("error");
+          return;
+        }
+        
+        // Modal closed or payment completed. Verify with backend.
+        const verifyRes = await fetch("/api/payments/verify-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order_id: json.data.order_id, courseId }),
+        });
+        const verifyJson = await verifyRes.json();
+        
+        if (verifyRes.ok && verifyJson.success) {
+          setStatus("enrolled");
+          // Optionally, redirect to course page
+          window.location.href = `/dashboard/courses/${courseId}`;
+        } else {
+          setErrorMessage(verifyJson.error ?? "Payment verification failed.");
+          setStatus("error");
+        }
+      } else {
+        // Free enrollment logic
+        const response = await fetch(`/api/courses/${courseId}/enroll`, {
+          method: "POST",
+        });
+        const json = await response.json();
+
+        if (!response.ok || !json.success) {
+          if (response.status === 409) {
+            setStatus("enrolled");
+            return;
+          }
+          setErrorMessage(json.error ?? "Could not enroll. Please try again.");
+          setStatus("error");
+          return;
+        }
+        setStatus("enrolled");
       }
-      setStatus("enrolled");
     } catch {
       setErrorMessage("Something went wrong. Please try again.");
       setStatus("error");

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { getPageAuth } from "@/lib/page-auth";
 import { SignupForm } from "./signup-form";
@@ -32,7 +33,9 @@ export default async function SignupPage() {
       ]}
       title="Choose the right workspace once, then get moving."
     >
-      <SignupForm />
+      <Suspense fallback={<div>Loading...</div>}>
+        <SignupForm />
+      </Suspense>
     </AuthShell>
   );
 }

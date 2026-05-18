@@ -402,8 +402,8 @@ model Payment {
   amount            Float
   currency          String        @default("INR")
   status            PaymentStatus @default(PENDING)
-  razorpayOrderId   String?
-  razorpayPaymentId String?
+  cashfreeOrderId   String?
+  cashfreePaymentId String?
   couponCode        String?
   discountAmount    Float         @default(0)
   invoiceUrl        String?
@@ -550,6 +550,7 @@ model InstituteSettings {
   contactPhone String?
   address      String?
   gstNumber    String?
+  requirePayment Boolean  @default(true)
   updatedAt    DateTime @updatedAt
 }
 
