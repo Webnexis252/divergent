@@ -77,7 +77,7 @@ const statusMeta = {
   },
 } as const;
 
-type LiveClassCardItem = LiveClassItem & {
+export type LiveClassCardItem = LiveClassItem & {
   status: keyof typeof statusMeta;
 };
 
@@ -485,14 +485,14 @@ function PastCourseAccordion({ group }: { group: CourseGroup }) {
   );
 }
 
-function PastClassesSection({ items }: { items: LiveClassCardItem[] }) {
+export function PastClassesSection({ items, title = "Past Classes", description = "Browse replays by course — click any course to reveal its recorded sessions." }: { items: LiveClassCardItem[], title?: string, description?: string }) {
   // Group by course
   const groups = useMemo<CourseGroup[]>(() => {
     const map = new Map<string, CourseGroup>();
     for (const item of items) {
-      const key = item.courseSlug;
+      const key = item.courseSlug || item.courseTitle || "unknown";
       if (!map.has(key)) {
-        map.set(key, { courseTitle: item.courseTitle, courseSlug: item.courseSlug, classes: [] });
+        map.set(key, { courseTitle: item.courseTitle || "Unknown Course", courseSlug: key, classes: [] });
       }
       map.get(key)!.classes.push(item);
     }
@@ -505,10 +505,10 @@ function PastClassesSection({ items }: { items: LiveClassCardItem[] }) {
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
         <div>
           <h2 className="text-[1.75rem] font-bold tracking-tight text-black sm:text-[clamp(2.2rem,4vw,2.5rem)]">
-            Past Classes
+            {title}
           </h2>
           <p className="mt-2.5 max-w-[42rem] text-[15px] leading-relaxed text-black/50 sm:text-[17px]">
-            Browse replays by course — click any course to reveal its recorded sessions.
+            {description}
           </p>
         </div>
         <span className="shrink-0 self-start rounded-full bg-black/5 px-3 py-1 text-sm font-semibold text-black/52 sm:self-auto">
@@ -522,8 +522,8 @@ function PastClassesSection({ items }: { items: LiveClassCardItem[] }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {groups.map((group) => (
-            <PastCourseAccordion key={group.courseSlug} group={group} />
+          {groups.map((group, index) => (
+            <PastCourseAccordion key={group.courseSlug || index} group={group} />
           ))}
         </div>
       )}

@@ -39,14 +39,17 @@ import {
   RevealSection,
   StaggerGrid,
 } from "../_components/motion-wrappers";
+import { PastClassesSection, type LiveClassCardItem } from "../_components/student-live-class-schedule";
+import { CategoryPerformancePanel } from "../_components/test-taking/category-performance-panel";
+import type { CategoryPerformanceItem } from "@/lib/test-category-performance";
 
 const assets = {
   heroIllustration:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=75c44446-493a-4847-aea9-82ffdd5154ae",
+    "/assets/789e932c2f45a3aedd7967edba282c943ce97d1d.png",
   goalsMascot:
     "https://api.dicebear.com/9.x/shapes/svg?seed=52d69ee5-f3a1-45fc-9e50-0d2dd9a35209",
   studyWeekly:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=fb5afafa-601e-463f-9876-2fecdb2a6f4b",
+    "/assets/7ac54c6ed7ca5712e26b75ff032783a11d45b059.png",
   streak:
     "https://api.dicebear.com/9.x/shapes/svg?seed=bb63682e-9c1d-4902-a113-58530742394f",
   goalStudy:
@@ -119,7 +122,11 @@ type ProgressData = {
     id: string;
     title: string;
     mentor: string;
+    courseTitle: string;
+    courseSlug: string;
     time: string;
+    duration: number;
+    attendeeCount: number;
     recordingUrl: string | null;
   }>;
   weeklyGoals: Array<{
@@ -320,7 +327,7 @@ function HeroBanner({
         <div className="pointer-events-none absolute -left-20 top-[-5rem] h-56 w-56 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute bottom-[-5rem] right-[-3rem] h-52 w-52 rounded-full bg-[#fec600]/30 blur-3xl" />
 
-        <div className="relative z-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
+        <div className="relative z-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-center">
           <div className="max-w-[38rem]">
             <p className="text-[15px] font-medium text-white/86">
               {displayDateFormatter.format(new Date())}
@@ -351,7 +358,7 @@ function HeroBanner({
             </div>
           </div>
 
-          <FloatPulse className="pointer-events-none mx-auto hidden h-[250px] w-[280px] lg:block">
+          <FloatPulse className="pointer-events-none mx-auto hidden h-[340px] w-[380px] lg:block">
             <div className="relative h-full w-full">
               <Image
                 alt=""
@@ -577,12 +584,16 @@ function HighlightMetricCard({
   value,
   caption,
   index,
+  imageClassName,
+  imageSize,
 }: {
   image: string;
   label: string;
   value: string;
   caption: string;
   index: number;
+  imageClassName?: string;
+  imageSize?: number;
 }) {
   return (
     <motion.article
@@ -594,7 +605,7 @@ function HighlightMetricCard({
       whileInView={{ opacity: 1, scale: 1 }}
     >
       <div className="flex items-center justify-between gap-4">
-        <FloatPulse className="relative h-[86px] w-[86px]">
+        <FloatPulse className="relative shrink-0" style={{ width: imageSize ?? 86, height: imageSize ?? 86 }}>
           <Image
             alt=""
             className="object-contain"
@@ -830,6 +841,8 @@ export default function DashboardProgressPage() {
   const { user } = useAuth();
   const pathname = usePathname();
   const [progressData, setProgressData] = useState<ProgressData | null>(null);
+  const [skills, setSkills] = useState<CategoryPerformanceItem[]>([]);
+  const [skillTestsEvaluated, setSkillTestsEvaluated] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
@@ -846,6 +859,19 @@ export default function DashboardProgressPage() {
         if (payload.success) {
           setProgressData(payload.data);
           setLoadError(false);
+
+          // Also fetch skills data from profile-stats for Topic Mastery
+          try {
+            const statsRes = await fetch("/api/users/me/profile-stats");
+            const statsPayload = await statsRes.json();
+            if (statsPayload.success && statsPayload.data?.stats?.skills) {
+              setSkills(statsPayload.data.stats.skills);
+              setSkillTestsEvaluated(statsPayload.data.stats.skillTestsEvaluated ?? 0);
+            }
+          } catch {
+            // Non-fatal: Topic Mastery just won't show
+          }
+
           return;
         }
 
@@ -1030,42 +1056,23 @@ export default function DashboardProgressPage() {
                         )}
                       </div>
 
-                      <div>
-                        <div className="flex items-center gap-2 text-[14px] font-semibold text-black">
-                          <span className="h-2.5 w-2.5 rounded-full bg-[#fb2c36]" />
-                          <span>Missed Classes</span>
-                          <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#fb2c36] px-2 text-[11px] text-white">
-                            {missed.length}
-                          </span>
-                        </div>
-
-                        {missed.length === 0 ? (
-                          <div className="mt-4">
-                            <EmptyState
-                              description="No missed classes so far. You're staying on top of the schedule."
-                              icon={<TrendingUp className="h-6 w-6" />}
-                              title="Attendance looks great"
-                            />
-                          </div>
-                        ) : (
-                          <StaggerGrid className="mt-4 grid gap-4 md:grid-cols-2">
-                            {missed.map((item, index) => (
-                              <ClassCard
-                                key={item.id}
-                                actionExternal={Boolean(item.recordingUrl)}
-                                actionHref={
-                                  item.recordingUrl ?? `/dashboard/live-classes/${item.id}`
-                                }
-                                actionLabel="View recording"
-                                index={index}
-                                mentor={item.mentor}
-                                status="MISSED"
-                                time={item.time}
-                                title={item.title}
-                              />
-                            ))}
-                          </StaggerGrid>
-                        )}
+                      <div className="mt-8">
+                        <PastClassesSection
+                          items={missed.map((item) => ({
+                            id: item.id,
+                            courseTitle: item.courseTitle,
+                            courseSlug: item.courseSlug,
+                            title: item.title,
+                            startTime: item.time,
+                            duration: item.duration,
+                            attendeeCount: item.attendeeCount,
+                            meetingUrl: null,
+                            recordingUrl: item.recordingUrl,
+                            status: "completed",
+                          }))}
+                          title="Missed Classes"
+                          description="Browse replays by course for the live sessions you missed."
+                        />
                       </div>
                     </div>
 
@@ -1076,6 +1083,7 @@ export default function DashboardProgressPage() {
                         index={0}
                         label="Study this week"
                         value={`${studyHours}h`}
+                        imageSize={220}
                       />
                       <HighlightMetricCard
                         caption="Stay consistent to keep your daily learning streak climbing."
@@ -1140,15 +1148,18 @@ export default function DashboardProgressPage() {
                         Topic Mastery
                       </AnimHeading>
 
-                      <div className="mt-6 space-y-3">
-                        {mastery.map((topic, index) => (
-                          <MasteryRow
-                            key={`${topic.label}-${index}`}
-                            index={index}
-                            label={topic.label}
-                            tone={topic.tone}
+                      <div className="mt-6">
+                        {skills.length > 0 ? (
+                          <CategoryPerformancePanel
+                            items={skills}
+                            title="Topic Mastery"
+                            description={`Built from your latest ${skillTestsEvaluated} graded test${skillTestsEvaluated === 1 ? "" : "s"} (up to 3).`}
                           />
-                        ))}
+                        ) : (
+                          <p className="text-sm text-gray-400">
+                            Complete a few graded tests and your topic mastery chart will show up here.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

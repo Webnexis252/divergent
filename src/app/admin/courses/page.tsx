@@ -13,6 +13,7 @@ import {
   Pencil,
   ShieldCheck,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
@@ -191,6 +192,21 @@ export default function AdminCoursesPage() {
       prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)),
     );
   }, []);
+
+  async function handleDeleteCourse(id: string) {
+    if (!window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`/api/courses/${id}`, { method: "DELETE" });
+      const payload = await res.json();
+      if (!res.ok || !payload.success) {
+        alert(payload.error ?? "Failed to delete course");
+        return;
+      }
+      setCourses((prev) => prev.filter((c) => c.id !== id));
+    } catch {
+      alert("Network error while trying to delete the course.");
+    }
+  }
 
   const published = courses.filter((c) => c.isPublished).length;
   const totalEnrollments = courses.reduce((a, c) => a + (c._count?.enrollments ?? 0), 0);
@@ -805,13 +821,20 @@ export default function AdminCoursesPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-[#94a3b8]">{formatShortDate(course.createdAt)}</td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                           <button
                             onClick={() => setEditingCourse(course)}
                             className="inline-flex items-center gap-1.5 rounded-[14px] border border-[#e2e8f0] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#475569] shadow-[0_2px_6px_rgba(15,23,42,0.04)] transition-all hover:border-[#0284c7] hover:bg-[#f0f9ff] hover:text-[#0284c7] hover:shadow-[0_4px_12px_rgba(2,132,199,0.12)]"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                             Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCourse(course.id)}
+                            className="inline-flex items-center gap-1.5 rounded-[14px] border border-[#e2e8f0] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#ef4444] shadow-[0_2px_6px_rgba(15,23,42,0.04)] transition-all hover:border-[#ef4444] hover:bg-[#fef2f2] hover:shadow-[0_4px_12px_rgba(239,68,68,0.12)]"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
                           </button>
                         </td>
                       </motion.tr>
