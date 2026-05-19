@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
     const courseIds = enrollments.map((e) => e.course.id);
     const allClasses = await prisma.liveClass.findMany({
       where: courseIds.length > 0 ? { courseId: { in: courseIds } } : { id: '' }, // no results if no courses
-      include: { course: { select: { title: true, slug: true } }, attendance: { select: { id: true } } },
+      include: { course: { select: { title: true, slug: true } }, attendances: { select: { id: true } } },
       orderBy: { startTime: 'asc' },
     });
 
@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
         courseSlug: lc.course.slug,
         time: lc.startTime.toISOString(),
         duration: lc.duration,
-        attendeeCount: lc.attendance.length,
+        attendeeCount: lc.attendances.length,
         recordingUrl: lc.recordingUrl,
       }));
 
