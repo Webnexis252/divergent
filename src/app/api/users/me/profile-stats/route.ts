@@ -368,11 +368,20 @@ export async function GET(req: NextRequest) {
     }
 
     return apiUnauthorized("Invalid role for profile stats");
-  } catch (err) {
+  } catch (err: any) {
     console.error("[GET_PROFILE_STATS_ERROR]", err);
-    return apiServerError();
+    try {
+      require('fs').appendFileSync(
+        require('path').join(process.cwd(), 'api-error.log'),
+        `[GET_PROFILE_STATS_ERROR] ${new Date().toISOString()}\n${err?.stack || err}\n\n`
+      );
+    } catch (fsErr) {
+      console.error("Could not write error log", fsErr);
+    }
+    return apiServerError(err?.message || 'Unknown error');
   }
 }
+
 
 /**
  * POST /api/users/me/profile-stats
