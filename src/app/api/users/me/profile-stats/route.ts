@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
         enrollments,
         quizAttempts,
         latestTestAttempts,
+        studentGoals,
       ] = await Promise.all([
         prisma.notification.findMany({
           where: { userId, isRead: false },
@@ -113,6 +114,10 @@ export async function GET(req: NextRequest) {
             },
           },
         }),
+        prisma.studentGoal.findMany({
+          where: { studentId: userId, weekStart: { gte: startOfWeek } },
+          orderBy: { createdAt: "asc" },
+        }),
       ]);
 
       const courseIds = enrollments.map((e) => e.courseId);
@@ -146,7 +151,7 @@ export async function GET(req: NextRequest) {
             )
           : 0;
 
-      const weeklyGoals = [
+      const defaultGoals = [
         {
           title: "Complete 15 hours of study",
           percent: Math.min(100, Math.round((weeklyStudyHours / 15) * 100)),
@@ -163,6 +168,15 @@ export async function GET(req: NextRequest) {
           completed: weeklyAttendance >= 5,
         },
       ];
+
+      const weeklyGoals = studentGoals.length > 0 
+        ? studentGoals.map(g => ({
+            id: g.id,
+            title: g.title,
+            percent: g.isCompleted ? 100 : Math.min(100, Math.round((g.current / Math.max(g.target, 1)) * 100)),
+            completed: g.isCompleted || g.current >= g.target,
+          }))
+        : defaultGoals;
 
       // Topic mastery derived from real quiz performance where possible
       const topicMastery = [

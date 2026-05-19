@@ -40,6 +40,8 @@ model User {
   lessonProgress        LessonProgress[]
   mentorGoals           MentorGoal[]           @relation("MentorGoals")
   mentorSkills          MentorSkill[]          @relation("MentorSkills")
+  studentGoals          StudentGoal[]          @relation("StudentGoals")
+  assignedStudentGoals  StudentGoal[]          @relation("TeacherAssignedGoals")
   messages              Message[]
   notifications         Notification[]
   payments              Payment[]
@@ -769,4 +771,21 @@ enum ApprovalStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+model StudentGoal {
+  id          String   @id @default(cuid())
+  title       String
+  studentId   String
+  student     User     @relation("StudentGoals", fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId   String
+  teacher     User     @relation("TeacherAssignedGoals", fields: [teacherId], references: [id], onDelete: Cascade)
+  target      Int      @default(1)
+  current     Int      @default(0)
+  isCompleted Boolean  @default(false)
+  weekStart   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([studentId, weekStart])
 }

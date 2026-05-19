@@ -4,6 +4,8 @@ import { Fragment, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MoreVerticalIcon, PauseCircleIcon } from "./admin-icons";
 import { formatShortDate } from "@/lib/date-format";
+import { Target } from "lucide-react";
+import { AssignGoalModal } from "../students/_components/AssignGoalModal";
 
 import type { StudentRecord } from "../students/_types";
 
@@ -22,6 +24,7 @@ export function StudentTable({
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [xpDrafts, setXpDrafts] = useState<Record<string, string>>({});
   const [adjustingStudentId, setAdjustingStudentId] = useState<string | null>(null);
+  const [assignGoalStudent, setAssignGoalStudent] = useState<{ id: string; name: string } | null>(null);
 
   async function handleXpAction(studentId: string, direction: "ADD" | "REMOVE") {
     if (!onXpAdjust) return;
@@ -190,16 +193,28 @@ export function StudentTable({
                           <p className="mt-1 text-xs text-[#64748b]">Assignments</p>
                         </div>
                       </div>
-                      <button
-                        className="flex w-full items-center justify-between rounded-2xl border border-[#fecaca] bg-[#fff5f5] p-3 text-sm font-medium text-[#dc2626] transition active:bg-[#fee2e2]"
-                        onClick={() => onStatusChange(student.id, "SUSPENDED")}
-                        type="button"
-                      >
-                        <span className="flex items-center gap-2">
-                          <PauseCircleIcon className="h-4 w-4" />
-                          Suspend Account
-                        </span>
-                      </button>
+                      <div className="flex flex-col gap-3">
+                        <button
+                          className="flex w-full items-center justify-between rounded-2xl border border-[#bae6fd] bg-[#f0f9ff] p-3 text-sm font-medium text-[#0284c7] transition hover:bg-[#e0f2fe]"
+                          onClick={() => setAssignGoalStudent({ id: student.id, name: student.name ?? "Student" })}
+                          type="button"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Target className="h-4 w-4" />
+                            Assign Weekly Goal
+                          </span>
+                        </button>
+                        <button
+                          className="flex w-full items-center justify-between rounded-2xl border border-[#fecaca] bg-[#fff5f5] p-3 text-sm font-medium text-[#dc2626] transition active:bg-[#fee2e2]"
+                          onClick={() => onStatusChange(student.id, "SUSPENDED")}
+                          type="button"
+                        >
+                          <span className="flex items-center gap-2">
+                            <PauseCircleIcon className="h-4 w-4" />
+                            Suspend Account
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -387,16 +402,28 @@ export function StudentTable({
                                     </div>
                                   </div>
                                 ) : null}
-                                <button
-                                  className="flex w-full items-center justify-between rounded-2xl border border-[#fecaca] bg-[#fff5f5] p-3 text-sm font-medium text-[#dc2626] transition hover:bg-[#fee2e2]"
-                                  onClick={() => onStatusChange(student.id, "SUSPENDED")}
-                                  type="button"
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <PauseCircleIcon className="h-4 w-4" />
-                                    Suspend Account
-                                  </span>
-                                </button>
+                                <div className="flex flex-col gap-3">
+                                  <button
+                                    className="flex w-full items-center justify-between rounded-2xl border border-[#bae6fd] bg-[#f0f9ff] p-3 text-sm font-medium text-[#0284c7] transition hover:bg-[#e0f2fe]"
+                                    onClick={() => setAssignGoalStudent({ id: student.id, name: student.name ?? "Student" })}
+                                    type="button"
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      <Target className="h-4 w-4" />
+                                      Assign Weekly Goal
+                                    </span>
+                                  </button>
+                                  <button
+                                    className="flex w-full items-center justify-between rounded-2xl border border-[#fecaca] bg-[#fff5f5] p-3 text-sm font-medium text-[#dc2626] transition hover:bg-[#fee2e2]"
+                                    onClick={() => onStatusChange(student.id, "SUSPENDED")}
+                                    type="button"
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      <PauseCircleIcon className="h-4 w-4" />
+                                      Suspend Account
+                                    </span>
+                                  </button>
+                                </div>
                                 <div className="mt-4 grid grid-cols-2 gap-4">
                                   <div className="rounded-2xl bg-[#eff8ff] p-4 text-center">
                                     <p className="text-2xl font-bold text-[#0284c7]">
@@ -424,6 +451,13 @@ export function StudentTable({
           </tbody>
         </table>
       </div>
+
+      <AssignGoalModal
+        isOpen={!!assignGoalStudent}
+        onClose={() => setAssignGoalStudent(null)}
+        studentId={assignGoalStudent?.id ?? ""}
+        studentName={assignGoalStudent?.name ?? ""}
+      />
     </div>
   );
 }
