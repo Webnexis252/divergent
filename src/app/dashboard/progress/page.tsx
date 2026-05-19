@@ -605,15 +605,17 @@ function HighlightMetricCard({
       whileInView={{ opacity: 1, scale: 1 }}
     >
       <div className="flex items-center justify-between gap-4">
-        <FloatPulse className="relative shrink-0" style={{ width: imageSize ?? 86, height: imageSize ?? 86 }}>
-          <Image
-            alt=""
-            className="object-contain"
-            fill
-            src={image}
-            unoptimized
-          />
-        </FloatPulse>
+        <div className="relative shrink-0" style={{ width: imageSize ?? 86, height: imageSize ?? 86 }}>
+          <FloatPulse className="relative h-full w-full">
+            <Image
+              alt=""
+              className="object-contain"
+              fill
+              src={image}
+              unoptimized
+            />
+          </FloatPulse>
+        </div>
 
         <div className="text-right">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
