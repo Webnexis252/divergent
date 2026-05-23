@@ -110,7 +110,7 @@ export function TestResultsClient({
             You haven&apos;t attempted this test yet. Start now to see your results and join the leaderboard!
           </p>
           <div className="flex gap-4 justify-center">
-            <Button variant="outline" onClick={() => router.push(`/dashboard/courses/${slug}/tests`)}>
+            <Button variant="secondary" onClick={() => router.push(`/dashboard/courses/${slug}/tests`)}>
               Back to Tests
             </Button>
             <Button
@@ -287,7 +287,7 @@ export function TestResultsClient({
                   <span className={`text-lg font-bold ${attempt.isPassed ? "text-[#4caf50]" : "text-[#ff3d00]"}`}>
                     {attempt.score}%
                   </span>
-                  <Badge className={attempt.isPassed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"} variant="outline">
+                  <Badge tone={attempt.isPassed ? "success" : "danger"}>
                     {attempt.isPassed ? "Pass" : "Fail"}
                   </Badge>
                   <span className="ml-auto text-xs text-gray-500">
@@ -303,7 +303,7 @@ export function TestResultsClient({
         {canShowQuestionDetails && (
           <div className="text-center pt-4">
              <Button 
-               variant="outline" 
+               variant="secondary" 
                className="rounded-full px-6"
                onClick={() => setShowQuestions(!showQuestions)}
              >

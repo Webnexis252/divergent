@@ -12,6 +12,7 @@ type Resource = {
   type: string;
   createdAt: string;
   course?: { id: string; title: string } | null;
+  liveClass?: { id: string; title: string } | null;
 };
 
 type Course = {

@@ -1064,6 +1064,8 @@ export default function DashboardProgressPage() {
                             id: item.id,
                             courseTitle: item.courseTitle,
                             courseSlug: item.courseSlug,
+                            courseId: "",
+                            isEnded: true,
                             title: item.title,
                             startTime: item.time,
                             duration: item.duration,
