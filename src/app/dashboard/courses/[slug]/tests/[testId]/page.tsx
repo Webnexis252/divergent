@@ -1262,7 +1262,7 @@ export default function TakeTestPage() {
               </div>
 
               <div className="take-test__bottom-actions">
-                <Button variant="outline" size="sm" onClick={goPrevSection} disabled={prevSectionIndex === -1}>
+                <Button variant="secondary" size="sm" onClick={goPrevSection} disabled={prevSectionIndex === -1}>
                   &lt;&lt; Prev Type
                 </Button>
                 <Button variant="secondary" size="sm" onClick={goPrev} disabled={currentIndex === 0 || (currentPart === "B" && isPartAQuestion(currentIndex - 1))}>
@@ -1282,7 +1282,7 @@ export default function TakeTestPage() {
                     {currentPart === "A" && questions.some(q => q.type === "SKETCH") ? "End of Part A (Wait for Timer)" : "Review & Submit"}
                   </Button>
                 )}
-                <Button variant="outline" size="sm" onClick={goNextSection} disabled={nextSectionIndex === -1}>
+                <Button variant="secondary" size="sm" onClick={goNextSection} disabled={nextSectionIndex === -1}>
                   Next Type &gt;&gt;
                 </Button>
               </div>
