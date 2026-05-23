@@ -42,8 +42,8 @@ export async function POST(
     if (!test) return apiNotFound('Test');
 
     // Check availability window for students
+    const now = new Date();
     if (!isPrivileged) {
-      const now = new Date();
       if (test.availableFrom && now < test.availableFrom) {
         return apiError('This test is not yet available', 403);
       }
