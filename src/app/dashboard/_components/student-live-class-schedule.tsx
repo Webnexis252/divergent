@@ -22,6 +22,7 @@ import {
   Award,
   CalendarDays,
   UserCircle,
+  FileText,
 } from "lucide-react";
 import { brand } from "@/lib/brand";
 import { cx } from "@/lib/cx";
@@ -407,31 +408,46 @@ function PastClassRow({ item }: { item: LiveClassCardItem }) {
   const timeStr = date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="flex items-center justify-between gap-4 border-t border-black/5 px-5 py-3.5 transition-colors hover:bg-[#38c1ff]/4">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[12px] bg-[#38c1ff]/10 text-[#38c1ff]">
-          <PlayCircle className="h-4 w-4" />
+    <div className="flex flex-col border-t border-black/5 transition-colors hover:bg-[#38c1ff]/4">
+      <div className="flex items-center justify-between gap-4 px-5 py-3.5">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[12px] bg-[#38c1ff]/10 text-[#38c1ff]">
+            <PlayCircle className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-[14px] font-semibold text-black">{item.title}</p>
+            <p className="flex items-center gap-2 text-[12px] text-black/45">
+              <Clock3 className="h-3 w-3 shrink-0" />
+              {dateStr} · {timeStr}
+            </p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="truncate text-[14px] font-semibold text-black">{item.title}</p>
-          <p className="flex items-center gap-2 text-[12px] text-black/45">
-            <Clock3 className="h-3 w-3 shrink-0" />
-            {dateStr} · {timeStr}
-          </p>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="hidden rounded-full bg-[#f0f9ff] px-2.5 py-1 text-[11px] font-medium text-[#38c1ff] sm:inline">
+            <Users className="mr-1 inline h-3 w-3" />
+            {item.attendeeCount} joined
+          </span>
+          {item.resources && item.resources.map((res) => (
+            <a
+              key={res.id}
+              href={res.fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              title={res.title}
+              className="inline-flex h-[34px] max-w-[160px] items-center gap-1.5 rounded-[10px] bg-white border border-black/10 px-3.5 text-[12px] font-semibold text-black/70 shadow-sm transition-all hover:-translate-y-0.5 hover:border-black/20 hover:bg-black/[0.02]"
+            >
+              <FileText className="h-3.5 w-3.5 shrink-0 text-black/40" />
+              <span className="truncate">{res.title}</span>
+            </a>
+          ))}
+          <Link
+            href={replayHref}
+            className="inline-flex h-[34px] items-center gap-1.5 rounded-[10px] bg-[#38c1ff] px-3.5 text-[12px] font-semibold text-white shadow-[0_4px_10px_rgba(56,193,255,0.25)] transition-transform hover:-translate-y-0.5"
+          >
+            Open Replay
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-3">
-        <span className="hidden rounded-full bg-[#f0f9ff] px-2.5 py-1 text-[11px] font-medium text-[#38c1ff] sm:inline">
-          <Users className="mr-1 inline h-3 w-3" />
-          {item.attendeeCount} joined
-        </span>
-        <Link
-          href={replayHref}
-          className="inline-flex h-[34px] items-center gap-1.5 rounded-[10px] bg-[#38c1ff] px-3.5 text-[12px] font-semibold text-white shadow-[0_4px_10px_rgba(56,193,255,0.25)] transition-transform hover:-translate-y-0.5"
-        >
-          Open Replay
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
       </div>
     </div>
   );

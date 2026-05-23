@@ -29,77 +29,84 @@ function ModerationPostCard({
   onDelete: (postId: string) => void;
   onUnflag: (postId: string) => void;
 }) {
+  const initials = post.author.name?.charAt(0).toUpperCase() ?? '?';
+  const colors = ["#e53935", "#d81b60", "#8e24aa", "#3949ab", "#039be5", "#00897b", "#43a047", "#f4511e"];
+  const colorIndex = post.author.id ? post.author.id.charCodeAt(0) % colors.length : 0;
+  const authorColor = colors[colorIndex];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-[16px] border p-5 ${
-        post.isFlagged
-          ? "border-red-200 bg-red-50/40"
-          : "border-gray-200 bg-white"
-      }`}
+      className={`flex w-full mb-4`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          {post.author.image ? (
-            <Image
-              src={post.author.image}
-              alt=""
-              width={36}
-              height={36}
-              className="h-9 w-9 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-[14px] font-bold text-slate-700">
-              {post.author.name?.charAt(0) ?? "?"}
-            </div>
-          )}
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold text-[#101828]">{post.author.name ?? "Anonymous"}</p>
-              {post.isFlagged ? (
-                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+      <div className="flex-shrink-0 mr-3 mt-1">
+        {post.author.image ? (
+          <Image src={post.author.image} alt="" width={36} height={36} className="h-9 w-9 rounded-full object-cover shadow-sm" />
+        ) : (
+          <div className="flex h-9 w-9 items-center justify-center rounded-full text-white font-bold shadow-sm text-sm" style={{ backgroundColor: authorColor }}>
+            {initials}
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col w-full">
+        <div className={`relative rounded-[16px] rounded-tl-sm px-4 py-3 shadow-sm border ${
+          post.isFlagged ? "border-red-300 bg-[#fff5f5]" : "border-[#e5e7eb] bg-white"
+        }`}>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-[14px]" style={{ color: authorColor }}>
+                {post.author.name ?? 'Anonymous'}
+              </span>
+              <span className="text-[12px] text-[#94a3b8]">{post.author.email}</span>
+              {post.channel && (
+                <span className="text-[11px] text-[#38c1ff] font-medium bg-[#f0f9ff] px-2 py-0.5 rounded-full">
+                  #{post.channel.name}
+                </span>
+              )}
+              {post.isFlagged && (
+                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700 uppercase tracking-wider">
                   Flagged
                 </span>
-              ) : null}
+              )}
             </div>
-            <p className="text-[12px] text-[#94a3b8]">
-              {post.author.email}
-              {post.channel ? ` · #${post.channel.name}` : ""}
+
+            <div className="flex gap-2">
+              {post.isFlagged && (
+                <button onClick={() => onUnflag(post.id)} className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors">
+                  Approve
+                </button>
+              )}
+              <button onClick={() => onDelete(post.id)} disabled={deletingId === post.id} className="rounded-md bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-red-700 disabled:opacity-50 transition-colors">
+                {deletingId === post.id ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+
+          <h4 className="text-[15px] font-bold text-black mb-1">{post.title}</h4>
+          
+          {post.body && (
+            <p className="text-[14px] leading-relaxed text-[#303030] whitespace-pre-wrap">
+              {post.body}
             </p>
+          )}
+
+          {post.flagReason && (
+            <div className="mt-3 rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-[12px] text-red-700 flex gap-2 items-start">
+              <span className="text-red-500 mt-0.5">⚠️</span>
+              <div>
+                <span className="font-semibold">Flag reason:</span> {post.flagReason}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-4 mt-3 pt-2 border-t border-black/5 text-[11px] text-[#8b8888]">
+            <span>{new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            <span className="flex items-center gap-1"><span>👍</span> {post._count.likes}</span>
+            <span className="flex items-center gap-1"><span>💬</span> {post._count.replies}</span>
           </div>
         </div>
-        <div className="flex gap-2">
-          {post.isFlagged ? (
-            <button
-              onClick={() => onUnflag(post.id)}
-              className="rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-            >
-              Approve
-            </button>
-          ) : null}
-          <button
-            onClick={() => onDelete(post.id)}
-            disabled={deletingId === post.id}
-            className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-          >
-            {deletingId === post.id ? "Deleting…" : "Delete Post"}
-          </button>
-        </div>
-      </div>
-      <div className="mt-4">
-        <p className="font-semibold text-[#101828]">{post.title}</p>
-        <p className="mt-1 line-clamp-3 text-[13px] text-[#595959]">{post.body}</p>
-      </div>
-      {post.flagReason ? (
-        <div className="mt-3 rounded-lg bg-red-100 px-3 py-2 text-[12px] text-red-700">
-          <span className="font-semibold">Flag reason:</span> {post.flagReason}
-        </div>
-      ) : null}
-      <div className="mt-3 flex gap-4 text-[12px] text-[#94a3b8]">
-        <span>{post._count.likes} likes</span>
-        <span>{post._count.replies} replies</span>
-        <span>{new Date(post.createdAt).toLocaleDateString()}</span>
       </div>
     </motion.div>
   );

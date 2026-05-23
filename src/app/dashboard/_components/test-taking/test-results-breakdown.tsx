@@ -19,6 +19,7 @@ export function TestResultsBreakdown({
   canRetake,
   attemptsRemaining,
   categoryBreakdown,
+  gradingStatus,
   onRetake,
   onViewDetails,
 }: {
@@ -33,6 +34,7 @@ export function TestResultsBreakdown({
   canRetake: boolean;
   attemptsRemaining: number | string;
   categoryBreakdown?: CategoryPerformanceItem[];
+  gradingStatus?: "AUTO_GRADED" | "PENDING_REVIEW" | "MANUAL_GRADED";
   onRetake?: () => void;
   onViewDetails?: () => void;
 }) {
@@ -71,12 +73,18 @@ export function TestResultsBreakdown({
           </div>
         </div>
 
-        <div className="test-results__verdict" data-passed={isPassed}>
-          {isPassed ? "🎉 Passed!" : "❌ Not Passed"}
+        <div className="test-results__verdict" data-passed={gradingStatus === "PENDING_REVIEW" ? "pending" : isPassed}>
+          {gradingStatus === "PENDING_REVIEW" ? "⏳ Pending Review" : isPassed ? "🎉 Passed!" : "❌ Not Passed"}
         </div>
-        <p className="test-results__passing-info">
-          Passing score: {passingScore}%
-        </p>
+        {gradingStatus === "PENDING_REVIEW" ? (
+          <p className="test-results__passing-info text-amber-600 font-medium">
+            Provisional score. Waiting for teacher review.
+          </p>
+        ) : (
+          <p className="test-results__passing-info">
+            Passing score: {passingScore}%
+          </p>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -158,6 +166,9 @@ export function TestResultsBreakdown({
         .test-results__ring-fill[data-passed="false"] {
           stroke: var(--danger, #ff3d00);
         }
+        .test-results__ring-fill[data-passed="pending"] {
+          stroke: #f59e0b; /* amber-500 */
+        }
         .test-results__score-text {
           position: absolute;
           inset: 0;
@@ -185,6 +196,7 @@ export function TestResultsBreakdown({
         }
         .test-results__verdict[data-passed="true"] { color: var(--success, #4caf50); }
         .test-results__verdict[data-passed="false"] { color: var(--danger, #ff3d00); }
+        .test-results__verdict[data-passed="pending"] { color: #d97706; /* amber-600 */ }
         .test-results__passing-info {
           font-size: 0.8125rem;
           color: var(--text-muted, #6b7280);

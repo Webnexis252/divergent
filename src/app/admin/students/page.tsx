@@ -26,6 +26,8 @@ export default function AdminStudentsPage() {
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   async function fetchStudents(query = "") {
     setLoading(true);
@@ -46,9 +48,28 @@ export default function AdminStudentsPage() {
     }
   }
 
+  async function fetchExportStatus() {
+    if (user?.role === "SUPER_ADMIN") {
+      setExportStatus("APPROVED");
+      return;
+    }
+    try {
+      const response = await fetch("/api/admin/export-requests");
+      const payload = await response.json();
+      if (payload.success) {
+        setExportStatus(payload.status);
+      }
+    } catch (error) {
+      console.error("Failed to load export status", error);
+    }
+  }
+
   useEffect(() => {
     void fetchStudents();
-  }, []);
+    if (user) {
+      void fetchExportStatus();
+    }
+  }, [user]);
 
   const handleStatusChange = useCallback(async (studentId: string, status: string, courseId?: string) => {
     try {
@@ -131,6 +152,25 @@ export default function AdminStudentsPage() {
     setToast({ msg: "Export downloaded successfully", ok: true });
   }, [students]);
 
+  const handleRequestExport = async () => {
+    setExportLoading(true);
+    try {
+      const res = await fetch("/api/admin/export-requests", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setToast({ msg: data.error || "Failed to request export", ok: false });
+      } else {
+        setToast({ msg: "Export request submitted", ok: true });
+        void fetchExportStatus();
+      }
+    } catch {
+      setToast({ msg: "Network error", ok: false });
+    } finally {
+      setExportLoading(false);
+      setTimeout(() => setToast(null), 3500);
+    }
+  };
+
   const stats = useMemo(() => {
     const enrollmentCount = students.reduce(
       (count, student) => count + student._count.enrollments,
@@ -188,10 +228,29 @@ export default function AdminStudentsPage() {
                     <UserPlus className="h-[18px] w-[18px]" />
                     Add Student
                   </Button>
-                  <Button onClick={handleExportToExcel} variant="secondary" size="lg" type="button">
-                    <Download className="h-[18px] w-[18px]" />
-                    Export
-                  </Button>
+                  
+                  {exportStatus === "APPROVED" ? (
+                    <Button onClick={handleExportToExcel} variant="secondary" size="lg" type="button">
+                      <Download className="h-[18px] w-[18px]" />
+                      Export
+                    </Button>
+                  ) : exportStatus === "PENDING" ? (
+                    <Button variant="secondary" size="lg" type="button" disabled>
+                      <Download className="h-[18px] w-[18px]" />
+                      Export Pending Approval
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="secondary" 
+                      size="lg" 
+                      type="button" 
+                      onClick={handleRequestExport}
+                      disabled={exportLoading}
+                    >
+                      <Download className="h-[18px] w-[18px]" />
+                      Request Export Approval
+                    </Button>
+                  )}
                 </div>
               </div>
 

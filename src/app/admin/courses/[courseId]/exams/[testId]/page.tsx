@@ -10,6 +10,7 @@ import {
   QUESTION_TYPE_SECTION_LABELS,
   groupQuestionsBySection,
 } from "@/lib/test-question-sections";
+import { ImagePlus } from "lucide-react";
 
 type QuestionType = "SCQ" | "MCQ" | "SKETCH" | "NUMERIC";
 type QuestionCategory = (typeof QUESTION_CATEGORY_OPTIONS)[number];
@@ -23,7 +24,9 @@ type Question = {
   explanation: string | null;
   options: string[];
   correctAnswer: string[];
+  imageUrl: string | null;
   points: number;
+  negativeMarks: number;
   order: number;
 };
 
@@ -44,8 +47,10 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
     prompt: "",
     explanation: "",
     options: ["Option 1", "Option 2", "Option 3", "Option 4"],
-    correctAnswer: ["Option 1"],
+    correctAnswer: ["0"],
+    imageUrl: null as string | null,
     points: 1,
+    negativeMarks: 0,
     order: 0,
   });
 
@@ -94,9 +99,9 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
     }
     if (
       (form.type === "SCQ" || form.type === "MCQ") &&
-      form.correctAnswer.some((answer) => !trimmedOptions.includes(answer.trim()))
+      form.correctAnswer.some((idx) => !form.options[parseInt(idx, 10)]?.trim())
     ) {
-      setError("Correct answers must match the available options");
+      setError("Correct answers cannot be empty options");
       setSaving(false);
       return;
     }
@@ -112,8 +117,10 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          // options must be an array of strings, it already is
-          // correctAnswer must be an array of strings, it already is
+          options: form.options.filter((o) => o.trim()),
+          correctAnswer: (form.type === "SCQ" || form.type === "MCQ")
+            ? form.correctAnswer.map((idx) => form.options[parseInt(idx, 10)]).filter((o) => o?.trim())
+            : form.correctAnswer,
         }),
       });
       
@@ -130,8 +137,10 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
         prompt: "",
         explanation: "",
         options: ["Option 1", "Option 2", "Option 3", "Option 4"],
-        correctAnswer: ["Option 1"],
+        correctAnswer: ["0"],
+        imageUrl: null,
         points: 1,
+        negativeMarks: 0,
         order: 0,
       });
     } catch (err) {
@@ -164,18 +173,18 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
     <PageTransition>
       <div className="mx-auto max-w-[1000px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
-          <div className="flex items-center justify-between">
+          <div className="sticky top-0 z-50 -mx-4 sm:-mx-6 lg:-mx-10 px-4 sm:px-6 lg:px-10 py-4 bg-white/90 backdrop-blur-md border-b shadow-sm mb-6 flex items-center justify-between">
             <div>
               <button 
                 onClick={() => router.push(`/admin/courses/${courseId}/exams`)}
-                className="mb-4 text-sm text-blue-600 hover:underline"
+                className="mb-2 text-sm text-blue-600 hover:underline"
               >
                 &larr; Back to Exams
               </button>
               <h1 className="text-3xl font-bold text-gray-900">
                 Manage Questions
               </h1>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-1 text-gray-600">
                 {test ? `Exam: ${test.title}` : "Loading..."}
               </p>
             </div>
@@ -193,7 +202,7 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
               </button>
               <button
                 onClick={() => setShowAdd(!showAdd)}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 shadow-md"
               >
                 {showAdd ? "Cancel" : "+ Add Question"}
               </button>
@@ -228,32 +237,82 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
                       className="w-full rounded-md border p-2"
                       rows={3}
                     />
+                    {form.imageUrl ? (
+                      <div className="mt-3 overflow-hidden rounded-[14px] border border-[#e5e7eb] bg-gray-50/50">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={form.imageUrl} alt="Question" className="max-h-[280px] w-full object-contain" />
+                        <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-t border-[#e5e7eb]">
+                          <span className="text-[12px] text-gray-600 font-medium">Question image uploaded ✓</span>
+                          <button type="button" onClick={() => setForm({...form, imageUrl: null})} className="text-[12px] text-red-500 hover:text-red-700 font-semibold">Remove</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('qImageUpload')?.click()}
+                        className="mt-3 flex w-fit items-center gap-2 rounded-lg border border-[#e5e7eb] px-3 py-1.5 text-[12px] font-medium text-gray-600 transition hover:bg-gray-50"
+                      >
+                        <ImagePlus className="h-3.5 w-3.5" /> Add Question Image (Optional)
+                      </button>
+                    )}
+                    <input
+                      id="qImageUpload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const img = new Image();
+                            img.onload = () => {
+                              const scale = Math.min(1, 1400 / Math.max(img.width, img.height));
+                              const canvas = document.createElement("canvas");
+                              canvas.width = Math.round(img.width * scale);
+                              canvas.height = Math.round(img.height * scale);
+                              canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+                              setForm({...form, imageUrl: canvas.toDataURL("image/jpeg", 0.85)});
+                            };
+                            img.src = ev.target!.result as string;
+                          };
+                          reader.readAsDataURL(f);
+                        }
+                      }}
+                    />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
                     <div>
                       <label className="mb-1 block text-sm font-medium">Type</label>
                       <select 
                         value={form.type}
                         onChange={e => {
                           const nextType = e.target.value as QuestionType;
+                          const isOldTypeChoice = form.type === "SCQ" || form.type === "MCQ";
+                          const isNewTypeChoice = nextType === "SCQ" || nextType === "MCQ";
+
+                          let nextCorrectAnswer: string[] = [];
+                          if (isNewTypeChoice) {
+                            if (isOldTypeChoice) {
+                              nextCorrectAnswer = form.correctAnswer.filter((idx) => parseInt(idx, 10) < form.options.length);
+                              if (nextType === "SCQ") nextCorrectAnswer = nextCorrectAnswer.slice(0, 1);
+                            } else {
+                              nextCorrectAnswer = ["0"];
+                            }
+                          } else if (nextType === "NUMERIC") {
+                            nextCorrectAnswer = !isOldTypeChoice && form.correctAnswer.length > 0 ? [form.correctAnswer[0]] : [];
+                          }
+
                           setForm({
                             ...form,
                             type: nextType,
-                            options:
-                              nextType === "SCQ" || nextType === "MCQ"
+                            options: isNewTypeChoice
                                 ? form.options.length > 0
                                   ? form.options
                                   : ["Option 1", "Option 2", "Option 3", "Option 4"]
                                 : [],
-                            correctAnswer:
-                              nextType === "MCQ"
-                                ? form.correctAnswer
-                                : nextType === "SCQ"
-                                  ? [form.correctAnswer[0] ?? "Option 1"]
-                                  : nextType === "NUMERIC"
-                                    ? [form.correctAnswer[0] ?? ""]
-                                    : [],
+                            correctAnswer: nextCorrectAnswer,
                           });
                         }}
                         className="w-full rounded-md border p-2"
@@ -288,6 +347,17 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
                         className="w-full rounded-md border p-2"
                       />
                     </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">Negative Marks</label>
+                      <input 
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={form.negativeMarks}
+                        onChange={e => setForm({...form, negativeMarks: parseFloat(e.target.value) || 0})}
+                        className="w-full rounded-md border p-2"
+                      />
+                    </div>
                   </div>
 
                   {(form.type === "SCQ" || form.type === "MCQ") && (
@@ -316,19 +386,19 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
                               <input 
                                 type="radio" 
                                 name="correctAnswer"
-                                checked={form.correctAnswer[0] === opt}
-                                onChange={() => setForm({...form, correctAnswer: [opt]})}
+                                checked={form.correctAnswer[0] === String(i)}
+                                onChange={() => setForm({...form, correctAnswer: [String(i)]})}
                               />
                             ) : (
                               <input
                                 type="checkbox"
-                                checked={form.correctAnswer.includes(opt)}
+                                checked={form.correctAnswer.includes(String(i))}
                                 onChange={() =>
                                   setForm({
                                     ...form,
-                                    correctAnswer: form.correctAnswer.includes(opt)
-                                      ? form.correctAnswer.filter((answer) => answer !== opt)
-                                      : [...form.correctAnswer, opt],
+                                    correctAnswer: form.correctAnswer.includes(String(i))
+                                      ? form.correctAnswer.filter((answer) => answer !== String(i))
+                                      : [...form.correctAnswer, String(i)],
                                   })
                                 }
                               />
@@ -342,13 +412,46 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
 
                   {form.type === "NUMERIC" && (
                     <div>
-                      <label className="mb-1 block text-sm font-medium">Correct Answer</label>
-                      <input
-                        value={form.correctAnswer[0] ?? ""}
-                        onChange={e => setForm({...form, correctAnswer: [e.target.value]})}
-                        className="w-full rounded-md border p-2"
-                        placeholder="Enter the exact expected answer"
-                      />
+                      <div className="mb-1 flex items-center justify-between">
+                        <label className="block text-sm font-medium">Correct Answer *</label>
+                        <button
+                          type="button"
+                          onClick={() => setForm({...form, correctAnswer: form.correctAnswer.length > 1 ? [form.correctAnswer[0] ?? ""] : [form.correctAnswer[0] ?? "", ""]})}
+                          className="text-[12px] font-medium text-[#38c1ff] hover:underline"
+                        >
+                          {form.correctAnswer.length > 1 ? "Switch to Exact Match" : "Switch to Range Match"}
+                        </button>
+                      </div>
+
+                      {form.correctAnswer.length > 1 ? (
+                        <div className="flex gap-4">
+                          <input
+                            value={form.correctAnswer[0] ?? ""}
+                            onChange={(e) => setForm({...form, correctAnswer: [e.target.value, form.correctAnswer[1] ?? ""]})}
+                            placeholder="Min value"
+                            className="w-full rounded-md border p-2 text-sm"
+                          />
+                          <input
+                            value={form.correctAnswer[1] ?? ""}
+                            onChange={(e) => setForm({...form, correctAnswer: [form.correctAnswer[0] ?? "", e.target.value]})}
+                            placeholder="Max value"
+                            className="w-full rounded-md border p-2 text-sm"
+                          />
+                        </div>
+                      ) : (
+                        <input
+                          value={form.correctAnswer[0] ?? ""}
+                          onChange={(e) => setForm({...form, correctAnswer: [e.target.value]})}
+                          placeholder="Enter the exact expected answer"
+                          className="w-full rounded-md border p-2 text-sm"
+                        />
+                      )}
+                      
+                      <p className="mt-1 text-[12px] text-gray-500">
+                        {form.correctAnswer.length > 1 
+                          ? "Student answer must be a number between Min and Max (inclusive)." 
+                          : 'Exact match (case-insensitive, trimmed). For numbers: "12" and "12.0" are treated as different.'}
+                      </p>
                     </div>
                   )}
 
@@ -413,8 +516,15 @@ export default function AdminManageQuestionsPage({ params }: { params: Promise<{
                               </span>
                             </div>
                             <p className="mt-1 font-medium text-gray-900">{q.prompt}</p>
+                            {q.imageUrl && (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={q.imageUrl} alt="Question" className="mt-3 max-h-[200px] rounded-lg border object-contain bg-gray-50" />
+                            )}
                           </div>
-                          <span className="rounded bg-gray-100 px-2 py-1 text-xs font-semibold">{q.points} pts</span>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="rounded bg-gray-100 px-2 py-1 text-xs font-semibold">{q.points} pts</span>
+                            {q.negativeMarks > 0 && <span className="rounded bg-red-50 text-red-600 px-2 py-1 text-xs font-semibold">-{q.negativeMarks} pts</span>}
+                          </div>
                         </div>
 
                         {q.options.length > 0 ? (

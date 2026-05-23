@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
-import { ArrowRight, GraduationCap, UserRound } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Surface } from "@/components/ui/surface";
@@ -24,32 +23,8 @@ type LoginResponse = {
   error?: string;
 };
 
-type AuthRole = "STUDENT" | "MENTOR" | "ADMIN";
-type LoginMode = "TEACHER" | "STUDENT";
-
-function getPostLoginHref(role: AuthRole) {
-  if (role === "MENTOR") return "/dashboard/teacher/overview";
-  return "/dashboard";
-}
-
-const modes = [
-  {
-    value: "TEACHER" as const,
-    label: "Teacher",
-    description: "Open the mentor dashboard, live-class tools, and review queues.",
-    icon: <GraduationCap className="h-4 w-4" />,
-  },
-  {
-    value: "STUDENT" as const,
-    label: "Student",
-    description: "Continue into your classes, assignments, quizzes, and progress view.",
-    icon: <UserRound className="h-4 w-4" />,
-  },
-];
-
 export function LoginForm() {
   const router = useRouter();
-  const [loginMode, setLoginMode] = useState<LoginMode>("TEACHER");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,7 +51,7 @@ export function LoginForm() {
         return;
       }
 
-      router.push(getPostLoginHref(payload.data.user.role));
+      router.push("/dashboard");
       router.refresh();
     } catch {
       setError("Network error. Please try again.");
@@ -90,7 +65,7 @@ export function LoginForm() {
       <div className="space-y-3">
         <p className="section-eyebrow">Account Access</p>
         <h2 className="text-[clamp(2rem,4vw,3rem)] font-semibold leading-[0.98] tracking-[-0.06em] text-balance">
-          Log in to your {loginMode === "TEACHER" ? "mentor" : "student"} workspace.
+          Log in to your student workspace.
         </h2>
         <p className="text-[15px] leading-7 text-(--text-muted)">
           Use your existing account. The workspace adapts automatically after sign-in.
@@ -98,50 +73,6 @@ export function LoginForm() {
       </div>
 
       <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {modes.map((option) => {
-            const active = loginMode === option.value;
-
-            return (
-              <motion.button
-                key={option.value}
-                aria-pressed={active}
-                className={cx(
-                  "group rounded-(--radius-lg) border px-4 py-4 text-left transition-[transform,border-color,background-color,box-shadow] duration-150 ease-out focus-visible:outline-none",
-                  active
-                    ? "border-(--brand-primary) bg-(--brand-primary-soft) shadow-[0_0_0_4px_rgba(56,193,255,0.12)]"
-                    : "border-(--line-soft) bg-white/74 hover:border-(--line-strong) hover:bg-white",
-                )}
-                onClick={() => setLoginMode(option.value)}
-                type="button"
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.99 }}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 text-[14px] font-semibold text-(--text-strong)">
-                      {option.icon}
-                      {option.label}
-                    </div>
-                    <p className="mt-3 text-[13px] leading-6 text-(--text-muted)">
-                      {option.description}
-                    </p>
-                  </div>
-                  <span
-                    aria-hidden="true"
-                    className={cx(
-                      "mt-1 h-4 w-4 rounded-full border transition-colors",
-                      active
-                        ? "border-(--brand-primary) bg-(--brand-primary)"
-                        : "border-black/15 bg-transparent",
-                    )}
-                  />
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
-
         <Field
           autoComplete="email"
           label="Email"
@@ -169,11 +100,7 @@ export function LoginForm() {
         ) : null}
 
         <Button block loading={isSubmitting} size="lg" type="submit">
-          {isSubmitting
-            ? "Signing in"
-            : loginMode === "TEACHER"
-              ? "Enter Mentor Workspace"
-              : "Enter Student Workspace"}
+          {isSubmitting ? "Signing in" : "Enter Student Workspace"}
         </Button>
       </form>
 
@@ -188,7 +115,7 @@ export function LoginForm() {
           buttonStyles({ variant: "secondary", size: "lg", className: "mt-6 w-full" }),
           "justify-between px-5",
         )}
-        href={`/api/auth/google?action=login&role=${loginMode === "TEACHER" ? "MENTOR" : "STUDENT"}`}
+        href="/api/auth/google?action=login&role=STUDENT"
       >
         <span className="flex items-center gap-3">
           <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24">

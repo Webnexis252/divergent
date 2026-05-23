@@ -28,7 +28,7 @@ export default async function TestResultsPage({
   });
 
   if (!course) {
-    return <TestResultsClient data={null} slug={slug} testId={testId} />;
+    return <TestResultsClient data={null} slug={slug} testId={testId} courseId="" />;
   }
 
   // 3. Fetch test
@@ -63,7 +63,7 @@ export default async function TestResultsPage({
   });
 
   if (!test) {
-    return <TestResultsClient data={null} slug={slug} testId={testId} />;
+    return <TestResultsClient data={null} slug={slug} testId={testId} courseId={course.id} />;
   }
 
   // 4. Fetch attempts
@@ -179,5 +179,5 @@ export default async function TestResultsPage({
     };
   }
 
-  return <TestResultsClient data={data} slug={slug} testId={testId} />;
+  return <TestResultsClient data={data} slug={slug} testId={testId} courseId={course.id} />;
 }

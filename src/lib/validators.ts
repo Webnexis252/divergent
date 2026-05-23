@@ -194,9 +194,10 @@ export const CreateTestQuestionSchema = z.object({
   explanation: z.string().optional(),
   options: z.array(z.string()).default([]),              // SCQ/MCQ: options list; SKETCH/NUMERIC: empty
   correctAnswer: z.union([z.string(), z.array(z.string())]).default([]), // SCQ/NUMERIC: string; MCQ: string[]; SKETCH: []
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().optional().nullable(),
   referenceImage: z.string().optional().nullable(),     // SKETCH only: teacher's reference sketch
   points: z.number().int().min(1).default(1),
+  negativeMarks: z.number().min(0).default(0),
   order: z.number().int().default(0),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
 }).superRefine((data, ctx) => {

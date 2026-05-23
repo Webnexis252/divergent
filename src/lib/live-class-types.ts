@@ -2,6 +2,7 @@ export type LiveClassItem = {
   id: string;
   title: string;
   description?: string | null;
+  courseId: string;
   courseTitle: string;
   courseSlug: string;
   startTime: string;
@@ -9,6 +10,8 @@ export type LiveClassItem = {
   meetingUrl: string | null;
   recordingUrl: string | null;
   attendeeCount: number;
+  isEnded: boolean;
+  resources?: { id: string; title: string; fileUrl: string; type: string }[];
 };
 
 export type LiveClassData = {

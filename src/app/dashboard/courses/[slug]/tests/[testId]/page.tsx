@@ -49,6 +49,7 @@ type SubmitResult = {
   isPassed: boolean;
   passingScore: number;
   timeSpentSecs: number;
+  gradingStatus?: "AUTO_GRADED" | "PENDING_REVIEW" | "MANUAL_GRADED";
   questionResults?: Record<
     string,
     { type: string; isCorrect: boolean | null; pointsAwarded: number; correctAnswer?: unknown; explanation?: string | null }
@@ -83,6 +84,11 @@ export default function TakeTestPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [startTime] = useState<number>(Date.now());
+
+  const [currentPart, setCurrentPart] = useState<"A" | "B">("A");
+  const [partATimeLeft, setPartATimeLeft] = useState<number | null>(null);
+  const [partBTimeLeft, setPartBTimeLeft] = useState<number | null>(null);
+
 
   useEffect(() => {
     async function resolve() {
@@ -138,8 +144,32 @@ export default function TakeTestPage() {
         setPhase("error");
         return;
       }
+      const fetchedQuestions = data.data.questions;
       setTestInfo(data.data.test);
-      setQuestions(data.data.questions);
+      setQuestions(fetchedQuestions);
+
+      const totalSecs = data.data.test.remainingSecs; 
+      const durationTotalSecs = data.data.test.durationMins * 60;
+      const partBTotal = Math.floor(durationTotalSecs / 3);
+      
+      const hasPartB = fetchedQuestions.some((q: QuestionData) => q.type === "SKETCH");
+      if (hasPartB) {
+        if (totalSecs > partBTotal) {
+          setCurrentPart("A");
+          setPartATimeLeft(totalSecs - partBTotal);
+          setPartBTimeLeft(partBTotal);
+        } else {
+          setCurrentPart("B");
+          setPartATimeLeft(0);
+          setPartBTimeLeft(totalSecs);
+          const firstBIndex = fetchedQuestions.findIndex((q: QuestionData) => q.type === "SKETCH");
+          if (firstBIndex !== -1) setCurrentIndex(firstBIndex);
+        }
+      } else {
+        setCurrentPart("A");
+        setPartATimeLeft(totalSecs);
+        setPartBTimeLeft(null);
+      }
       setPhase("in-progress");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start test");
@@ -177,6 +207,24 @@ export default function TakeTestPage() {
     void handleSubmit();
   }, [handleSubmit]);
 
+  const handlePartATimeUp = useCallback(() => {
+    const hasPartB = questions.some(q => q.type === "SKETCH");
+    if (hasPartB && currentPart === "A") {
+      setCurrentPart("B");
+      const firstBIndex = questions.findIndex(q => q.type === "SKETCH");
+      if (firstBIndex !== -1) setCurrentIndex(firstBIndex);
+    } else {
+      void handleSubmit();
+    }
+  }, [questions, currentPart, handleSubmit]);
+
+  const activeTimeUpHandler = currentPart === "A" ? handlePartATimeUp : handleTimeUp;
+  const activeInitialSeconds = currentPart === "A" ? partATimeLeft : partBTimeLeft;
+
+  const isPartAQuestion = useCallback((index: number) => questions[index]?.type !== "SKETCH", [questions]);
+  const isPartBQuestion = useCallback((index: number) => questions[index]?.type === "SKETCH", [questions]);
+
+
   const handleAnswer = (questionId: string, answer: unknown) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
@@ -190,8 +238,50 @@ export default function TakeTestPage() {
     });
   };
 
-  const goNext = () => setCurrentIndex((index) => Math.min(index + 1, questions.length - 1));
-  const goPrev = () => setCurrentIndex((index) => Math.max(index - 1, 0));
+  const goNext = () => setCurrentIndex((index) => {
+    const next = Math.min(index + 1, questions.length - 1);
+    if (currentPart === "A" && isPartBQuestion(next)) return index;
+    if (currentPart === "B" && isPartAQuestion(next)) return index;
+    return next;
+  });
+
+  const goPrev = () => setCurrentIndex((index) => {
+    const prev = Math.max(index - 1, 0);
+    if (currentPart === "A" && isPartBQuestion(prev)) return index;
+    if (currentPart === "B" && isPartAQuestion(prev)) return index;
+    return prev;
+  });
+
+  const currentType = questions[currentIndex]?.type;
+  
+  let nextSectionIndex = -1;
+  for (let i = currentIndex + 1; i < questions.length; i++) {
+    if (questions[i].type !== currentType) {
+      if ((currentPart === "A" && isPartAQuestion(i)) || (currentPart === "B" && isPartBQuestion(i))) {
+        nextSectionIndex = i;
+        break;
+      }
+    }
+  }
+
+  let prevSectionIndex = -1;
+  for (let i = currentIndex - 1; i >= 0; i--) {
+    if (questions[i].type !== currentType) {
+      if ((currentPart === "A" && isPartAQuestion(i)) || (currentPart === "B" && isPartBQuestion(i))) {
+        const type = questions[i].type;
+        let start = i;
+        while (start > 0 && questions[start - 1].type === type) {
+          start--;
+        }
+        prevSectionIndex = start;
+        break;
+      }
+    }
+  }
+
+  const goNextSection = () => { if (nextSectionIndex !== -1) setCurrentIndex(nextSectionIndex); };
+  const goPrevSection = () => { if (prevSectionIndex !== -1) setCurrentIndex(prevSectionIndex); };
+
 
   const answeredSet = new Set(
     questions.map((question, index) => (answers[question.id] !== undefined ? index : -1)).filter((index) => index >= 0)
@@ -707,6 +797,7 @@ export default function TakeTestPage() {
               canRetake={false}
               attemptsRemaining={0}
               categoryBreakdown={categoryBreakdown}
+              gradingStatus={result.gradingStatus}
               onViewDetails={() => router.push(`/dashboard/courses/${slug}/tests/${testId}/results`)}
             />
           </div>
@@ -1120,7 +1211,7 @@ export default function TakeTestPage() {
               Live Assessment
             </div>
             <p className="take-test__command-kicker">{courseTitle}</p>
-            <h1 className="take-test__command-title">{testInfo?.title ?? previewTitle}</h1>
+            <h1 className="take-test__command-title">{testInfo?.title ?? previewTitle} <span className="text-sm font-normal text-blue-600 bg-blue-50 px-2 py-1 rounded ml-2">Part {currentPart}</span></h1>
             <p className="take-test__command-description">
               {previewDescription}
             </p>
@@ -1135,9 +1226,9 @@ export default function TakeTestPage() {
               <span>Flagged</span>
               <strong>{flagged.size}</strong>
             </div>
-            {testInfo ? (
+            {testInfo && activeInitialSeconds !== null ? (
               <div className="take-test__timer-wrap">
-                <TestTimer initialSeconds={testInfo.remainingSecs} onTimeUp={handleTimeUp} />
+                <TestTimer key={currentPart} initialSeconds={activeInitialSeconds} onTimeUp={activeTimeUpHandler} />
               </div>
             ) : null}
           </div>
@@ -1171,43 +1262,55 @@ export default function TakeTestPage() {
               </div>
 
               <div className="take-test__bottom-actions">
-                <Button variant="secondary" size="sm" onClick={goPrev} disabled={currentIndex === 0}>
+                <Button variant="outline" size="sm" onClick={goPrevSection} disabled={prevSectionIndex === -1}>
+                  &lt;&lt; Prev Type
+                </Button>
+                <Button variant="secondary" size="sm" onClick={goPrev} disabled={currentIndex === 0 || (currentPart === "B" && isPartAQuestion(currentIndex - 1))}>
                   Previous
                 </Button>
 
-                {currentIndex < questions.length - 1 ? (
+                {(currentIndex < questions.length - 1 && !isPartBQuestion(currentIndex + 1) && currentPart === "A") || (currentIndex < questions.length - 1 && currentPart === "B") ? (
                   <Button size="sm" onClick={goNext}>
                     Next
                   </Button>
                 ) : (
-                  <Button size="sm" onClick={() => setPhase("reviewing")}>
-                    Review & Submit
+                  <Button size="sm" disabled={currentPart === "A" && questions.some(q => q.type === "SKETCH")} onClick={() => {
+                    if (currentPart === "B" || !questions.some(q => q.type === "SKETCH")) {
+                      setPhase("reviewing");
+                    }
+                  }}>
+                    {currentPart === "A" && questions.some(q => q.type === "SKETCH") ? "End of Part A (Wait for Timer)" : "Review & Submit"}
                   </Button>
                 )}
+                <Button variant="outline" size="sm" onClick={goNextSection} disabled={nextSectionIndex === -1}>
+                  Next Type &gt;&gt;
+                </Button>
               </div>
             </div>
           </div>
 
           <aside className="take-test__sidebar">
             <QuestionNavigator
-              totalQuestions={questions.length}
+              questions={questions}
               currentIndex={currentIndex}
               answeredSet={answeredSet}
               flaggedSet={flagged}
               onNavigate={setCurrentIndex}
             />
 
-            <button
-              className="take-test__review-cta"
-              onClick={() => setPhase("reviewing")}
-              type="button"
-            >
-              <span className="take-test__review-cta-copy">
-                <strong>Open final review</strong>
-                <span>{unansweredCount} unanswered · {flagged.size} flagged</span>
-              </span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
+            {(currentPart === "B" || !questions.some(q => q.type === "SKETCH")) && (
+              <button
+                className="take-test__review-cta"
+                onClick={() => setPhase("reviewing")}
+                type="button"
+              >
+                <span className="take-test__review-cta-copy">
+                  <strong>Open final review</strong>
+                  <span>{unansweredCount} unanswered · {flagged.size} flagged</span>
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
           </aside>
         </div>
       </div>

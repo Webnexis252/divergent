@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = useCallback(async () => {
     try {
-      const response = await fetch("/api/users/me");
+      const response = await fetch("/api/users/me", { cache: "no-store" });
       if (response.ok) {
         const payload = await response.json();
         if (payload.success) {

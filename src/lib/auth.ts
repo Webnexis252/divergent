@@ -172,3 +172,34 @@ export async function requireAuth(
   }
   return user;
 }
+
+/**
+ * Signs a short-lived JWT that proves a phone number was successfully OTP-verified.
+ * Used during signup: the form stores this token and passes it to /api/auth/register.
+ */
+export async function signPhoneVerifiedToken(phone: string): Promise<string> {
+  return new SignJWT({ phone, isPhoneVerified: true })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('15m')
+    .sign(getSecretKey());
+}
+
+/**
+ * Verifies a phone-verified JWT and returns the phone number, or null if invalid/expired.
+ */
+export async function verifyPhoneVerifiedToken(
+  token?: string | null,
+): Promise<{ phone: string } | null> {
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, getSecretKey());
+    if (payload.isPhoneVerified !== true || typeof payload.phone !== 'string') {
+      return null;
+    }
+    return { phone: payload.phone };
+  } catch {
+    return null;
+  }
+}
+

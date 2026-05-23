@@ -14,7 +14,15 @@ import {
   ChevronDown,
   ChevronUp,
   ImagePlus,
+  CircleDot,
+  CheckSquare,
+  Palette,
+  Hash,
+  LucideIcon,
+  Eye,
+  X,
 } from "lucide-react";
+import { ExamPreview } from "./_components/exam-preview";
 import {
   QUESTION_CATEGORY_LABELS,
   QUESTION_CATEGORY_OPTIONS,
@@ -34,17 +42,19 @@ type DraftQuestion = {
   prompt: string;
   options: string[];            // used by SCQ / MCQ
   correctAnswer: string[];      // indices for SCQ, multiple for MCQ; value for NUMERIC; [] for SKETCH
+  imageUrl: string | null;      // optional image for the question prompt
   referenceImage: string | null; // SKETCH only
   points: number;
+  negativeMarks: number;
   difficulty: "EASY" | "MEDIUM" | "HARD";
   explanation: string;
 };
 
-const TYPE_META: Record<QuestionType, { label: string; color: string; icon: string; desc: string }> = {
-  SCQ: { label: "Single Choice", color: "bg-blue-50 border-blue-200 text-blue-700", icon: "🔘", desc: "Exactly 1 correct option" },
-  MCQ: { label: "Multiple Choice", color: "bg-violet-50 border-violet-200 text-violet-700", icon: "☑️", desc: "Select 1 to 4 correct options" },
-  SKETCH: { label: "Sketch Upload", color: "bg-amber-50 border-amber-200 text-amber-700", icon: "🎨", desc: "Student uploads a hand-drawn sketch" },
-  NUMERIC: { label: "Numeric / Text", color: "bg-emerald-50 border-emerald-200 text-emerald-700", icon: "🔢", desc: "Student types an exact value" },
+const TYPE_META: Record<QuestionType, { label: string; color: string; icon: LucideIcon; desc: string }> = {
+  SCQ: { label: "Single Choice", color: "bg-blue-50 border-blue-200 text-blue-700", icon: CircleDot, desc: "Exactly 1 correct option" },
+  MCQ: { label: "Multiple Choice", color: "bg-violet-50 border-violet-200 text-violet-700", icon: CheckSquare, desc: "Select 1 to 4 correct options" },
+  SKETCH: { label: "Sketch Upload", color: "bg-amber-50 border-amber-200 text-amber-700", icon: Palette, desc: "Student uploads a hand-drawn sketch" },
+  NUMERIC: { label: "Numeric / Text", color: "bg-emerald-50 border-emerald-200 text-emerald-700", icon: Hash, desc: "Student types an exact value" },
 };
 
 function uid() { return Math.random().toString(36).slice(2); }
@@ -57,8 +67,10 @@ function blankQuestion(type: QuestionType): DraftQuestion {
     prompt: "",
     options: type === "SCQ" || type === "MCQ" ? ["", "", "", ""] : [],
     correctAnswer: [],
+    imageUrl: null,
     referenceImage: null,
     points: 1,
+    negativeMarks: 0,
     difficulty: "MEDIUM",
     explanation: "",
   };
@@ -101,6 +113,7 @@ function QuestionEditor({
   onRemove: () => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const qImageRef = useRef<HTMLInputElement>(null);
   const refImageRef = useRef<HTMLInputElement>(null);
   const meta = TYPE_META[q.type];
 
@@ -114,22 +127,26 @@ function QuestionEditor({
           ? q.options
           : ["", "", "", ""]
         : [];
-    const matchingCorrectAnswers = q.correctAnswer.filter((answer) =>
-      nextOptions.includes(answer)
-    );
+    
+    const isOldTypeChoice = q.type === "SCQ" || q.type === "MCQ";
+    const isNewTypeChoice = nextType === "SCQ" || nextType === "MCQ";
+    
+    let nextCorrectAnswer: string[] = [];
+    if (isNewTypeChoice) {
+      if (isOldTypeChoice) {
+        nextCorrectAnswer = q.correctAnswer.filter((idx) => parseInt(idx, 10) < nextOptions.length);
+        if (nextType === "SCQ") nextCorrectAnswer = nextCorrectAnswer.slice(0, 1);
+      }
+    } else if (nextType === "NUMERIC") {
+      nextCorrectAnswer = !isOldTypeChoice && q.correctAnswer.length > 0 ? [q.correctAnswer[0]] : [];
+    }
 
     onChange({
       ...q,
       type: nextType,
       options: nextOptions,
-      correctAnswer:
-        nextType === "MCQ"
-          ? matchingCorrectAnswers
-          : nextType === "SCQ"
-            ? matchingCorrectAnswers.slice(0, 1)
-            : nextType === "NUMERIC"
-              ? [q.correctAnswer[0] ?? ""]
-              : [],
+      correctAnswer: nextCorrectAnswer,
+      imageUrl: q.imageUrl,
       referenceImage: nextType === "SKETCH" ? q.referenceImage : null,
     });
   };
@@ -137,19 +154,17 @@ function QuestionEditor({
   const setOption = (i: number, val: string) => {
     const opts = [...q.options];
     opts[i] = val;
-    // If this option was in correctAnswer and the text changed, update it
-    const prevText = q.options[i];
-    const newCorrect = q.correctAnswer.map((a) => (a === prevText ? val : a));
-    onChange({ ...q, options: opts, correctAnswer: newCorrect });
+    onChange({ ...q, options: opts });
   };
 
-  const toggleCorrect = (opt: string) => {
+  const toggleCorrect = (idx: number) => {
+    const optIdx = String(idx);
     if (q.type === "SCQ") {
-      setField("correctAnswer", [opt]);
+      setField("correctAnswer", [optIdx]);
     } else {
-      const updated = q.correctAnswer.includes(opt)
-        ? q.correctAnswer.filter((a) => a !== opt)
-        : [...q.correctAnswer, opt];
+      const updated = q.correctAnswer.includes(optIdx)
+        ? q.correctAnswer.filter((a) => a !== optIdx)
+        : [...q.correctAnswer, optIdx];
       setField("correctAnswer", updated);
     }
   };
@@ -157,6 +172,11 @@ function QuestionEditor({
   const handleRefImg = async (file: File) => {
     const dataUrl = await compressImage(file, 1400);
     setField("referenceImage", dataUrl);
+  };
+
+  const handleQImg = async (file: File) => {
+    const dataUrl = await compressImage(file, 1400);
+    setField("imageUrl", dataUrl);
   };
 
   return (
@@ -168,8 +188,9 @@ function QuestionEditor({
       <div className="flex items-center gap-3 border-b border-[#f0f0f5] px-5 py-4">
         <GripVertical className="h-5 w-5 shrink-0 text-[#d1d5db] cursor-grab" />
         <span className="text-[13px] font-bold text-[#9ca3af]">Q{index + 1}</span>
-        <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${meta.color}`}>
-          {meta.icon} {meta.label}
+        <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${meta.color}`}>
+          <meta.icon className="h-3.5 w-3.5" />
+          {meta.label}
         </span>
         <span className="ml-auto flex items-center gap-3">
           <button onClick={() => setCollapsed(!collapsed)} className="text-[#9ca3af] hover:text-[#374151]">
@@ -192,6 +213,30 @@ function QuestionEditor({
               placeholder="Write the question here…"
               rows={2}
               className="w-full resize-none rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] outline-none focus:border-[#38c1ff] focus:ring-2 focus:ring-blue-100"
+            />
+            {q.imageUrl ? (
+              <div className="mt-3 overflow-hidden rounded-[14px] border border-[#e5e7eb] bg-gray-50/50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={q.imageUrl} alt="Question" className="max-h-[280px] w-full object-contain" />
+                <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-t border-[#e5e7eb]">
+                  <span className="text-[12px] text-gray-600 font-medium">Question image uploaded ✓</span>
+                  <button onClick={() => setField("imageUrl", null)} className="text-[12px] text-red-500 hover:text-red-700 font-semibold">Remove</button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => qImageRef.current?.click()}
+                className="mt-3 flex w-fit items-center gap-2 rounded-lg border border-[#e5e7eb] px-3 py-1.5 text-[12px] font-medium text-gray-600 transition hover:bg-gray-50"
+              >
+                <ImagePlus className="h-3.5 w-3.5" /> Add Question Image (Optional)
+              </button>
+            )}
+            <input
+              ref={qImageRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleQImg(f); }}
             />
           </div>
 
@@ -239,14 +284,14 @@ function QuestionEditor({
               </p>
               {q.options.map((opt, i) => {
                 const letter = String.fromCharCode(65 + i);
-                const isCorrect = q.correctAnswer.includes(opt) && opt.trim() !== "";
+                const isCorrect = q.correctAnswer.includes(String(i)) && opt.trim() !== "";
                 return (
                   <div key={i} className="flex items-center gap-3">
                     {/* Correct toggle */}
                     <button
                       type="button"
                       title="Mark as correct"
-                      onClick={() => opt.trim() && toggleCorrect(opt)}
+                      onClick={() => toggleCorrect(i)}
                       className={`flex h-7 w-7 shrink-0 items-center justify-center border-2 text-[12px] font-bold transition ${
                         q.type === "MCQ" ? "rounded-[8px]" : "rounded-full"
                       } ${
@@ -318,19 +363,51 @@ function QuestionEditor({
           {/* NUMERIC correct answer */}
           {q.type === "NUMERIC" && (
             <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Correct Answer *</label>
-              <input
-                value={q.correctAnswer[0] ?? ""}
-                onChange={(e) => setField("correctAnswer", [e.target.value])}
-                placeholder="e.g. 42  or  Paris  or  12.5"
-                className="w-full rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] outline-none focus:border-[#38c1ff] focus:ring-2 focus:ring-blue-100"
-              />
-              <p className="mt-1 text-[12px] text-[#9ca3af]">Exact match (case-insensitive, trimmed). For numbers: "12" and "12.0" are treated as different.</p>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="block text-[13px] font-semibold text-[#374151]">Correct Answer *</label>
+                <button
+                  type="button"
+                  onClick={() => setField("correctAnswer", q.correctAnswer.length > 1 ? [q.correctAnswer[0] ?? ""] : [q.correctAnswer[0] ?? "", ""])}
+                  className="text-[12px] font-medium text-[#38c1ff] hover:underline"
+                >
+                  {q.correctAnswer.length > 1 ? "Switch to Exact Match" : "Switch to Range Match"}
+                </button>
+              </div>
+              
+              {q.correctAnswer.length > 1 ? (
+                <div className="flex gap-4">
+                  <input
+                    value={q.correctAnswer[0] ?? ""}
+                    onChange={(e) => setField("correctAnswer", [e.target.value, q.correctAnswer[1] ?? ""])}
+                    placeholder="Min value (e.g. 10.5)"
+                    className="w-full rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] outline-none focus:border-[#38c1ff] focus:ring-2 focus:ring-blue-100"
+                  />
+                  <input
+                    value={q.correctAnswer[1] ?? ""}
+                    onChange={(e) => setField("correctAnswer", [q.correctAnswer[0] ?? "", e.target.value])}
+                    placeholder="Max value (e.g. 12.0)"
+                    className="w-full rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] outline-none focus:border-[#38c1ff] focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+              ) : (
+                <input
+                  value={q.correctAnswer[0] ?? ""}
+                  onChange={(e) => setField("correctAnswer", [e.target.value])}
+                  placeholder="e.g. 42  or  Paris  or  12.5"
+                  className="w-full rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] outline-none focus:border-[#38c1ff] focus:ring-2 focus:ring-blue-100"
+                />
+              )}
+              
+              <p className="mt-1 text-[12px] text-[#9ca3af]">
+                {q.correctAnswer.length > 1 
+                  ? "Student answer must be a number between Min and Max (inclusive)." 
+                  : 'Exact match (case-insensitive, trimmed). For numbers: "12" and "12.0" are treated as different.'}
+              </p>
             </div>
           )}
 
-          {/* Points + Difficulty + Explanation */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {/* Points + Negative Marks + Difficulty + Explanation */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
               <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Points</label>
               <input
@@ -339,6 +416,18 @@ function QuestionEditor({
                 max={100}
                 value={q.points}
                 onChange={(e) => setField("points", Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full rounded-[10px] border border-[#e5e7eb] px-3 py-2 text-[14px] outline-none focus:border-[#38c1ff]"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Negative Marks</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={0.5}
+                value={q.negativeMarks}
+                onChange={(e) => setField("negativeMarks", Math.max(0, parseFloat(e.target.value) || 0))}
                 className="w-full rounded-[10px] border border-[#e5e7eb] px-3 py-2 text-[14px] outline-none focus:border-[#38c1ff]"
               />
             </div>
@@ -388,6 +477,7 @@ export default function CreateExamPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     fetch("/api/courses")
@@ -423,9 +513,23 @@ export default function CreateExamPage() {
         if (nonEmpty.length < 2) return `Q${i + 1}: Add at least 2 options`;
         if (q.correctAnswer.length === 0) return `Q${i + 1}: Mark at least one correct answer`;
         if (q.type === "SCQ" && q.correctAnswer.length > 1) return `Q${i + 1}: SCQ can have only 1 correct answer`;
+        const validCorrect = q.correctAnswer.filter((idx) => q.options[parseInt(idx, 10)]?.trim());
+        if (validCorrect.length === 0) return `Q${i + 1}: Correct answer cannot be empty`;
       }
-      if (q.type === "NUMERIC" && !q.correctAnswer[0]?.trim()) {
-        return `Q${i + 1}: Correct answer is required for Numeric questions`;
+      if (q.type === "NUMERIC") {
+        if (q.correctAnswer.length > 1) {
+          if (!q.correctAnswer[0]?.trim() || !q.correctAnswer[1]?.trim()) {
+            return `Q${i + 1}: Both Min and Max values are required for Numeric range`;
+          }
+          if (isNaN(Number(q.correctAnswer[0])) || isNaN(Number(q.correctAnswer[1]))) {
+            return `Q${i + 1}: Min and Max must be valid numbers`;
+          }
+          if (Number(q.correctAnswer[0]) > Number(q.correctAnswer[1])) {
+            return `Q${i + 1}: Min cannot be greater than Max`;
+          }
+        } else if (!q.correctAnswer[0]?.trim()) {
+          return `Q${i + 1}: Correct answer is required for Numeric questions`;
+        }
       }
     }
     return null;
@@ -449,9 +553,13 @@ export default function CreateExamPage() {
           type: q.type,
           category: q.category,
           options: q.options.filter((o) => o.trim()),
-          correctAnswer: q.correctAnswer,
+          correctAnswer: (q.type === "SCQ" || q.type === "MCQ")
+            ? q.correctAnswer.map((idx) => q.options[parseInt(idx, 10)]).filter((o) => o?.trim())
+            : q.correctAnswer,
+          imageUrl: q.imageUrl,
           referenceImage: q.referenceImage,
           points: q.points,
+          negativeMarks: q.negativeMarks,
           difficulty: q.difficulty,
           explanation: q.explanation || null,
           order: q.order,
@@ -554,46 +662,13 @@ export default function CreateExamPage() {
               {questions.length} question{questions.length !== 1 ? "s" : ""} · {totalPoints} total pts
             </p>
           </div>
-          <div className="relative">
-            <button
-              onClick={() => setShowTypeMenu(!showTypeMenu)}
-              className="flex items-center gap-2 rounded-[12px] bg-[#38c1ff] px-4 py-2.5 text-[13px] font-semibold text-white shadow transition hover:bg-[#0ea5e9]"
-            >
-              <Plus className="h-4 w-4" /> Add Question
-            </button>
-            <AnimatePresence>
-              {showTypeMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 6, scale: 0.97 }}
-                  transition={{ duration: 0.14 }}
-                  className="absolute right-0 top-full mt-2 z-20 w-[280px] overflow-hidden rounded-[16px] border border-[#e8eaef] bg-white shadow-xl"
-                >
-                  {(Object.entries(TYPE_META) as [QuestionType, typeof TYPE_META.SCQ][]).map(([type, meta]) => (
-                    <button
-                      key={type}
-                      onClick={() => addQuestion(type)}
-                      className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition hover:bg-gray-50"
-                    >
-                      <span className="text-xl">{meta.icon}</span>
-                      <div>
-                        <p className="text-[14px] font-semibold text-[#111827]">{meta.label}</p>
-                        <p className="text-[12px] text-[#9ca3af]">{meta.desc}</p>
-                      </div>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
         </div>
 
         <div className="space-y-4 p-6">
           {questions.length === 0 ? (
             <div className="rounded-[16px] border-2 border-dashed border-[#e5e7eb] py-12 text-center text-[#9ca3af]">
               <p className="text-[15px] font-medium">No questions yet</p>
-              <p className="mt-1 text-[13px]">Click "Add Question" above to get started</p>
+              <p className="mt-1 text-[13px]">Click &quot;+ Add Question&quot; below to get started</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -625,6 +700,58 @@ export default function CreateExamPage() {
         </div>
       </section>
 
+      {/* ── Sticky Add Question Bar ── */}
+      <div
+        className="sticky top-4 z-50 -mx-4 sm:-mx-6 lg:-mx-10 px-4 sm:px-6 lg:px-10 py-3"
+      >
+        <div className="flex items-center justify-between rounded-[18px] border border-[#e8eaef] bg-white/95 px-5 py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-md">
+          <div className="flex items-center gap-3 text-[13px] text-[#6b7280]">
+            <span className="font-semibold text-[#111827]">{questions.length}</span> question{questions.length !== 1 ? "s" : ""}
+            <span className="text-[#d1d5db]">·</span>
+            <span className="font-semibold text-[#111827]">{totalPoints}</span> pts
+          </div>
+          <div className="relative flex items-center gap-3">
+            <button
+              onClick={() => setShowPreview(true)}
+              className="flex items-center gap-2 rounded-[12px] bg-white border border-[#e8eaef] px-5 py-2.5 text-[13px] font-semibold text-[#374151] shadow-sm transition hover:bg-gray-50 active:scale-[0.97]"
+            >
+              <Eye className="h-4 w-4" /> Preview
+            </button>
+            <button
+              onClick={() => setShowTypeMenu(!showTypeMenu)}
+              className="flex items-center gap-2 rounded-[12px] bg-[#38c1ff] px-5 py-2.5 text-[13px] font-semibold text-white shadow-lg shadow-blue-200/50 transition hover:bg-[#0ea5e9] active:scale-[0.97]"
+            >
+              <Plus className="h-4 w-4" /> Add Question
+            </button>
+            <AnimatePresence>
+              {showTypeMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                  transition={{ duration: 0.14 }}
+                  className="absolute right-0 top-full mt-2 z-20 w-[280px] overflow-hidden rounded-[16px] border border-[#e8eaef] bg-white shadow-xl"
+                >
+                  {(Object.entries(TYPE_META) as [QuestionType, typeof TYPE_META.SCQ][]).map(([type, meta]) => (
+                    <button
+                      key={type}
+                      onClick={() => addQuestion(type)}
+                      className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition hover:bg-gray-50"
+                    >
+                      <span className="text-gray-500 mt-0.5"><meta.icon className="h-5 w-5" /></span>
+                      <div>
+                        <p className="text-[14px] font-semibold text-[#111827]">{meta.label}</p>
+                        <p className="text-[12px] text-[#9ca3af]">{meta.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
       {/* ── Step 3: Publish ── */}
       {questions.length > 0 && (
         <motion.section
@@ -648,6 +775,26 @@ export default function CreateExamPage() {
           </button>
         </motion.section>
       )}
+
+      {/* ── Preview Modal ── */}
+      <AnimatePresence>
+        {showPreview && (
+          <ExamPreview
+            exam={{ title, durationMins: parseInt(durationMins, 10) || 60 }}
+            questions={arrangedQuestions.map((q) => ({
+              id: q.id,
+              type: q.type,
+              category: q.category,
+              prompt: q.prompt,
+              options: q.options,
+              imageUrl: q.imageUrl,
+              referenceImage: q.referenceImage,
+              points: q.points,
+            }))}
+            onClose={() => setShowPreview(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

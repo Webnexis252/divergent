@@ -27,25 +27,93 @@ export async function PATCH(
     const auth = await requireAuth(req);
     if (!auth) return apiUnauthorized();
 
-    if (!canModerate(auth.role)) {
-      return apiForbidden("Only admins can moderate community posts.");
-    }
-
     const { postId } = await ctx.params;
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      select: { id: true, isFlagged: true, flagReason: true },
+      select: { id: true, authorId: true, isFlagged: true, flagReason: true },
     });
 
     if (!post) return apiNotFound("Post");
 
-    const body = await req.json().catch(() => null);
-    const hasIsFlagged = typeof body?.isFlagged === "boolean";
-    const hasFlagReason =
-      typeof body?.flagReason === "string" || body?.flagReason === null;
+    const isOwner = post.authorId === auth.userId;
+    const isModerator = canModerate(auth.role);
 
-    if (!hasIsFlagged && !hasFlagReason) {
-      return apiBadRequest("No valid moderation fields were provided.");
+    if (!isOwner && !isModerator) {
+      return apiForbidden("You do not have permission to update this post.");
+    }
+
+    const body = await req.json().catch(() => null);
+    if (!body) return apiBadRequest("No data provided");
+
+    const hasIsFlagged = typeof body.isFlagged === "boolean";
+    const hasFlagReason = typeof body.flagReason === "string" || body.flagReason === null;
+    const isEditingContent = typeof body.title === "string" || typeof body.body === "string" || typeof body.imageUrl === "string";
+
+    if (isEditingContent) {
+      if (!isOwner) {
+        return apiForbidden("Only the author can edit the post content.");
+      }
+
+      const { title, body: postBody, imageUrl } = body;
+      const dataToUpdate: any = {};
+      if (typeof title === "string") {
+        const trimmedTitle = title.trim();
+        if (!trimmedTitle) return apiBadRequest("Title cannot be empty");
+        dataToUpdate.title = trimmedTitle;
+      }
+      if (typeof postBody === "string") {
+        const trimmedBody = postBody.trim();
+        dataToUpdate.body = trimmedBody;
+      }
+      if (typeof imageUrl === "string") {
+        const trimmedImageUrl = imageUrl.trim();
+        if (trimmedImageUrl && !/^https?:\/\//.test(trimmedImageUrl)) {
+          return apiBadRequest("Post image must be a valid URL");
+        }
+        dataToUpdate.imageUrl = trimmedImageUrl || null;
+      }
+
+      const updated = await prisma.post.update({
+        where: { id: postId },
+        data: dataToUpdate,
+        include: {
+          author: { select: { id: true, name: true, image: true, role: true } },
+          channel: { select: { id: true, name: true } },
+          _count: { select: { replies: true, likes: true } },
+          likes: {
+            where: { userId: auth.userId },
+            select: { id: true },
+          },
+          replyTo: {
+            include: {
+              author: { select: { id: true, name: true } }
+            }
+          }
+        }
+      });
+
+      return apiSuccess({
+        id: updated.id,
+        title: updated.title,
+        body: updated.body,
+        imageUrl: updated.imageUrl,
+        createdAt: updated.createdAt,
+        author: updated.author,
+        channel: updated.channel,
+        replyCount: updated._count.replies,
+        likeCount: updated._count.likes,
+        likedByMe: updated.likes.length > 0,
+        replyTo: updated.replyTo ? {
+          id: updated.replyTo.id,
+          title: updated.replyTo.title,
+          body: updated.replyTo.body,
+          author: updated.replyTo.author
+        } : null,
+      }, "Post updated successfully");
+    }
+
+    if (!isModerator) {
+      return apiForbidden("Only admins can moderate community posts.");
     }
 
     const nextFlagged = hasIsFlagged ? Boolean(body.isFlagged) : post.isFlagged;

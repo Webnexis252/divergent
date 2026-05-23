@@ -1,8 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import {
-  apiSuccess,
   apiUnauthorized,
   apiServerError,
   apiBadRequest,
@@ -10,12 +9,24 @@ import {
 
 /**
  * GET /api/users/me
- * Returns the authenticated user's profile with enrollments and stats.
+ * Returns the authenticated user's profile.
+ * Response is private-cached for 30 s so rapid re-renders don't spike the DB.
  */
 export async function GET(req: NextRequest) {
   try {
     const user = await requireAuth(req);
-    if (!user) return apiUnauthorized();
+    if (!user) {
+      return new NextResponse(
+        JSON.stringify({ success: true, data: null }),
+        { 
+          status: 200, 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, max-age=0'
+          } 
+        }
+      );
+    }
 
     const profile = await prisma.user.findUnique({
       where: { id: user.userId },
@@ -29,13 +40,20 @@ export async function GET(req: NextRequest) {
         streakCount: true,
         totalStudyTime: true,
         createdAt: true,
+        // Use a count instead of fetching full enrollment+course objects
+        _count: { select: { enrollments: true } },
         enrollments: {
-          include: {
+          select: {
+            id: true,
+            status: true,
+            progressPercent: true,
             course: {
               select: { id: true, title: true, slug: true, thumbnail: true },
             },
           },
+          where: { status: 'ACTIVE' },
           orderBy: { createdAt: 'desc' },
+          take: 20, // cap to avoid huge payloads
         },
         createdDoubts: {
           where: { status: { not: 'CLOSED' } },
@@ -46,14 +64,27 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    if (!profile) return apiSuccess(null);
+    if (!profile) {
+      return new NextResponse(
+        JSON.stringify({ success: true, data: null }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-    return apiSuccess(profile);
+    return new NextResponse(JSON.stringify({ success: true, data: profile }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        // 30-second private cache — safe per-user, avoids repeated DB reads on re-renders
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
+      },
+    });
   } catch (err) {
     console.error('[GET_ME_ERROR]', err);
     return apiServerError();
   }
 }
+
 
 /**
  * PATCH /api/users/me
@@ -106,7 +137,10 @@ export async function PATCH(req: NextRequest) {
       select: { id: true, name: true, phone: true, image: true },
     });
 
-    return apiSuccess(updated);
+    return new NextResponse(JSON.stringify({ success: true, data: updated }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (err) {
     console.error('[PATCH_ME_ERROR]', err);
     return apiServerError();

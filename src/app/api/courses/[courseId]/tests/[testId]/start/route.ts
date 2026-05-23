@@ -23,22 +23,33 @@ export async function POST(
     const user = await requireAuth(req);
     if (!user) return apiUnauthorized();
 
+    const isPrivileged =
+      user.role === 'ADMIN' ||
+      user.role === 'SUPER_ADMIN' ||
+      user.role === 'MENTOR';
+
     // Fetch the test with its questions
     const test = await prisma.courseTest.findFirst({
-      where: { id: testId, courseId, status: 'PUBLISHED' },
+      where: { 
+        id: testId, 
+        courseId, 
+        ...(isPrivileged ? {} : { status: 'PUBLISHED' }) 
+      },
       include: {
         questions: { orderBy: { order: 'asc' } },
       },
     });
     if (!test) return apiNotFound('Test');
 
-    // Check availability window
-    const now = new Date();
-    if (test.availableFrom && now < test.availableFrom) {
-      return apiError('This test is not yet available', 403);
-    }
-    if (test.availableUntil && now > test.availableUntil) {
-      return apiError('This test is no longer available', 403);
+    // Check availability window for students
+    if (!isPrivileged) {
+      const now = new Date();
+      if (test.availableFrom && now < test.availableFrom) {
+        return apiError('This test is not yet available', 403);
+      }
+      if (test.availableUntil && now > test.availableUntil) {
+        return apiError('This test is no longer available', 403);
+      }
     }
 
     // Check max attempts
@@ -97,11 +108,18 @@ export async function POST(
     }
 
     // Build question order (shuffle if configured, limit if configured)
-    let questionIds = test.questions.map((q) => q.id);
+    let questionsPool = test.questions.slice();
     if (test.shuffleQuestions) {
-      questionIds = shuffleArray(questionIds);
+      questionsPool = shuffleArray(questionsPool);
     }
+    
+    // Group by type: SCQ -> MCQ -> NUMERIC -> SKETCH
+    const typeOrder = { 'SCQ': 1, 'MCQ': 2, 'NUMERIC': 3, 'SKETCH': 4 };
+    questionsPool.sort((a, b) => typeOrder[a.type as keyof typeof typeOrder] - typeOrder[b.type as keyof typeof typeOrder]);
+
+    let questionIds = questionsPool.map((q) => q.id);
     if (test.questionsToShow && test.questionsToShow < questionIds.length) {
+      // Apply limit per type if possible, or just slice. We'll just slice for now.
       questionIds = questionIds.slice(0, test.questionsToShow);
     }
 

@@ -37,7 +37,7 @@ export default async function AdminExamsPage() {
               href="/admin/exams/create"
               className="shrink-0 rounded-[16px] bg-white px-6 py-3 text-[14px] font-semibold text-[#2563eb] shadow-[0_8px_24px_rgba(0,0,0,0.14)] transition hover:scale-105 hover:shadow-[0_12px_28px_rgba(0,0,0,0.18)]"
             >
-              + Generate Exam
+              Create test
             </Link>
           </div>
         </section>
@@ -57,7 +57,7 @@ export default async function AdminExamsPage() {
                   No exams yet
                 </p>
                 <p className="mt-2 text-[13px] text-[#667085]">
-                  Click &ldquo;+ Generate Exam&rdquo; to parse a PDF and create your first exam.
+                  Click &ldquo;Create test&rdquo; to parse a PDF and create your first exam.
                 </p>
               </div>
             ) : (

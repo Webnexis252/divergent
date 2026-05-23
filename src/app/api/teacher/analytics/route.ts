@@ -14,15 +14,26 @@ import {
  */
 export async function GET(req: NextRequest) {
   try {
-    const user = await requireAuth(req, ['MENTOR', 'ADMIN']);
-    if (!user) return apiForbidden('Only mentors can access analytics');
+    const user = await requireAuth(req, ['MENTOR', 'ADMIN', 'SUPER_ADMIN']);
+    if (!user) return apiForbidden('Only mentors and admins can access analytics');
 
     const { searchParams } = new URL(req.url);
-    const days = parseInt(searchParams.get('days') ?? '7', 10);
+    const days = Math.min(Math.max(parseInt(searchParams.get('days') ?? '7', 10), 1), 365);
     const courseId = searchParams.get('courseId') ?? undefined;
+    const cohortId = searchParams.get('cohortId') ?? undefined;
 
     const now = new Date();
     const windowStart = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+    // Resolve cohort → student IDs for filtering
+    let cohortUserIds: string[] | undefined;
+    if (cohortId) {
+      const members = await prisma.cohortStudent.findMany({
+        where: { cohortId },
+        select: { studentId: true },
+      });
+      cohortUserIds = members.map((m) => m.studentId);
+    }
 
     // ── Parallel queries ────────────────────────────────────────────────────
     const [
@@ -38,7 +49,11 @@ export async function GET(req: NextRequest) {
       // Active unique students enrolled
       prisma.enrollment.groupBy({
         by: ['userId'],
-        where: { status: 'ACTIVE', ...(courseId ? { courseId } : {}) },
+        where: {
+          status: 'ACTIVE',
+          ...(courseId ? { courseId } : {}),
+          ...(cohortUserIds ? { userId: { in: cohortUserIds } } : {}),
+        },
       }).then((g) => g.length),
 
       // Doubts resolved in window
@@ -46,35 +61,53 @@ export async function GET(req: NextRequest) {
         where: {
           status: { in: ['RESOLVED', 'CLOSED'] },
           updatedAt: { gte: windowStart },
+          ...(cohortUserIds ? { studentId: { in: cohortUserIds } } : {}),
         },
       }),
 
       // Total doubts in window
       prisma.doubtTicket.count({
-        where: { createdAt: { gte: windowStart } },
+        where: {
+          createdAt: { gte: windowStart },
+          ...(cohortUserIds ? { studentId: { in: cohortUserIds } } : {}),
+        },
       }),
 
       // Currently open doubts
       prisma.doubtTicket.count({
-        where: { status: { in: ['OPEN', 'ASSIGNED'] } },
+        where: {
+          status: { in: ['OPEN', 'ASSIGNED'] },
+          ...(cohortUserIds ? { studentId: { in: cohortUserIds } } : {}),
+        },
       }),
 
       // Lesson progress for video completion rate
       prisma.lessonProgress.findMany({
-        where: { updatedAt: { gte: windowStart } },
+        where: {
+          updatedAt: { gte: windowStart },
+          ...(cohortUserIds ? { userId: { in: cohortUserIds } } : {}),
+        },
         select: { isCompleted: true, userId: true },
       }),
 
       // New enrollments per day in window (for trend)
       prisma.enrollment.findMany({
-        where: { createdAt: { gte: windowStart } },
+        where: {
+          createdAt: { gte: windowStart },
+          ...(courseId ? { courseId } : {}),
+          ...(cohortUserIds ? { userId: { in: cohortUserIds } } : {}),
+        },
         select: { createdAt: true },
         orderBy: { createdAt: 'asc' },
       }),
 
       // Top students by XP in window
       prisma.user.findMany({
-        where: { role: 'STUDENT', xpPoints: { gt: 0 } },
+        where: {
+          role: 'STUDENT',
+          xpPoints: { gt: 0 },
+          ...(cohortUserIds ? { id: { in: cohortUserIds } } : {}),
+        },
         orderBy: { xpPoints: 'desc' },
         take: 5,
         select: { id: true, name: true, xpPoints: true, streakCount: true },
@@ -82,7 +115,11 @@ export async function GET(req: NextRequest) {
 
       // Students with low activity (for "needs attention")
       prisma.enrollment.findMany({
-        where: { status: 'ACTIVE' },
+        where: {
+          status: 'ACTIVE',
+          ...(courseId ? { courseId } : {}),
+          ...(cohortUserIds ? { userId: { in: cohortUserIds } } : {}),
+        },
         include: {
           user: { select: { id: true, name: true, totalStudyTime: true, streakCount: true } },
           course: { select: { title: true } },

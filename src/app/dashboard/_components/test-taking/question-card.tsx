@@ -403,12 +403,24 @@ function NumericInput({
   explanation?: string | null;
 }) {
   const value = typeof selectedAnswer === "string" ? selectedAnswer : "";
-  const correct = Array.isArray(correctAnswer)
-    ? (correctAnswer as string[])[0]
-    : String(correctAnswer ?? "");
-  const isCorrect = showResult
-    ? value.trim().toLowerCase() === correct.trim().toLowerCase()
-    : null;
+  const correctArr = Array.isArray(correctAnswer) ? (correctAnswer as string[]) : [String(correctAnswer ?? "")];
+  
+  let isCorrect: boolean | null = null;
+  let correctDisplay = "";
+
+  if (showResult) {
+    if (correctArr.length > 1) {
+      const minNum = Number(correctArr[0]);
+      const maxNum = Number(correctArr[1]);
+      const givenNum = Number(value.trim());
+      isCorrect = !isNaN(givenNum) && givenNum >= minNum && givenNum <= maxNum;
+      correctDisplay = `${minNum} to ${maxNum}`;
+    } else {
+      const correctStr = (correctArr[0] ?? "").toLowerCase();
+      isCorrect = value.trim().toLowerCase() === correctStr;
+      correctDisplay = correctArr[0] ?? "";
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -431,7 +443,7 @@ function NumericInput({
           <span className="text-base font-bold">{isCorrect ? "✓" : "✗"}</span>
           <span>
             {isCorrect ? "Correct!" : `Incorrect. Correct answer: `}
-            {!isCorrect && <strong>{correct}</strong>}
+            {!isCorrect && <strong>{correctDisplay}</strong>}
             {explanation && <span className="ml-2 text-[#6b7280]"> — {explanation}</span>}
           </span>
         </div>

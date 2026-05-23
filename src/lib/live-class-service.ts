@@ -29,6 +29,14 @@ const liveClassArgs = Prisma.validator<Prisma.LiveClassDefaultArgs>()({
         },
       },
     },
+    teacherResources: {
+      select: {
+        id: true,
+        title: true,
+        fileUrl: true,
+        type: true,
+      },
+    },
   },
 });
 
@@ -47,6 +55,8 @@ function endOfDay(date = new Date()) {
 }
 
 function getLiveClassStatus(item: LiveClassItem, now = new Date()) {
+  if (item.isEnded) return "completed" as const;
+
   const start = new Date(item.startTime);
   const end = new Date(start.getTime() + item.duration * 60 * 1000);
 
@@ -60,6 +70,7 @@ function toLiveClassItem(liveClass: LiveClassRow): LiveClassItem {
     id: liveClass.id,
     title: liveClass.title,
     description: liveClass.description,
+    courseId: liveClass.courseId,
     courseTitle: liveClass.course.title,
     courseSlug: liveClass.course.slug,
     startTime: liveClass.startTime.toISOString(),
@@ -67,6 +78,8 @@ function toLiveClassItem(liveClass: LiveClassRow): LiveClassItem {
     meetingUrl: liveClass.meetingUrl,
     recordingUrl: liveClass.recordingUrl,
     attendeeCount: liveClass._count.attendances,
+    isEnded: liveClass.isEnded,
+    resources: liveClass.teacherResources,
   };
 }
 
@@ -380,4 +393,46 @@ export async function getStudentScheduleData(
     today,
     thisWeek,
   };
+}
+
+export async function getTeacherPastClasses(params: {
+  userId: string;
+  role: UserRole;
+}) {
+  const now = new Date();
+
+  const rows = await listLiveClassRows(
+    params.role === "MENTOR"
+      ? {
+          course: {
+            teachers: {
+              some: { id: params.userId },
+            },
+          },
+        }
+      : {}
+  );
+
+  const assignments = await getLiveClassTeacherAssignmentMap();
+  const visibleRows =
+    params.role === "MENTOR"
+      ? rows.filter((row) =>
+          isMentorAssignedToLiveClass(assignments.get(row.id), params.userId)
+        )
+      : rows;
+
+  const scheduleItems = visibleRows.map((row) => {
+    const item = toLiveClassItem(row);
+
+    return {
+      ...item,
+      status: getLiveClassStatus(item, now),
+      assignmentState: getMentorAssignmentState(
+        assignments.get(row.id),
+        params.userId
+      ),
+    } as TeacherScheduleItem;
+  });
+
+  return scheduleItems.filter((item) => item.status === "completed").sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
 }

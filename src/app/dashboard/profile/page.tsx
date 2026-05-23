@@ -159,26 +159,61 @@ export default function StudentProfilePage() {
     // Auth resolved but no user (unauthenticated) — nothing to fetch
     if (!user?.id) return;
 
+    const CACHE_KEY = `profile_stats_${user.id}`;
+    const CACHE_TTL_MS = 60_000; // 60 seconds
+
+    // Serve from sessionStorage if fresh enough
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const { ts, data } = JSON.parse(raw) as { ts: number; data: ProfileStats };
+        if (Date.now() - ts < CACHE_TTL_MS) {
+          setStats(data);
+          return; // skip network request entirely
+        }
+      }
+    } catch {
+      // sessionStorage may be unavailable (private mode); fall through
+    }
+
     let mounted = true;
+    const controller = new AbortController();
     setLoading(true);
-    fetch("/api/users/me/profile-stats")
-      .then((res) => res.json())
+
+    fetch("/api/users/me/profile-stats", { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
         if (!mounted) return;
         if (data.success) {
           setStats(data.data.stats);
+          // Cache the result in sessionStorage
+          try {
+            sessionStorage.setItem(
+              CACHE_KEY,
+              JSON.stringify({ ts: Date.now(), data: data.data.stats })
+            );
+          } catch {
+            // Ignore quota errors
+          }
         } else {
           setError(data.error || "Failed to load profile stats.");
         }
       })
-      .catch(() => {
-        if (mounted) setError("Network error — could not load profile stats.");
+      .catch((err: unknown) => {
+        if (!mounted) return;
+        if (err instanceof Error && err.name === 'AbortError') return;
+        setError("Network error — could not load profile stats.");
       })
       .finally(() => {
         if (mounted) setLoading(false);
       });
+
     return () => {
       mounted = false;
+      controller.abort();
     };
   }, [authLoading, user?.id]);
 

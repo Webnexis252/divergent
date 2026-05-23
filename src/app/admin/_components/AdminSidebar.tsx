@@ -7,6 +7,7 @@ import {
   Bell,
   BookOpen,
   CalendarDays,
+  ClipboardList,
   DollarSign,
   LayoutDashboard,
   LogOut,
@@ -30,12 +31,14 @@ import { cx } from "@/lib/cx";
 
 const adminNavItems = [
   { label: "Overview", href: "/admin/overview", icon: LayoutDashboard },
+  { label: "Analytics", href: "/admin/analytics", icon: TrendingUp },
   { label: "Calendar", href: "/admin/calendar", icon: CalendarDays },
   { label: "Students", href: "/admin/students", icon: Users },
   { label: "Courses", href: "/admin/courses", icon: BookOpen },
   { label: "Mentors", href: "/admin/mentors", icon: Star },
   { label: "Cohorts", href: "/admin/cohorts", icon: UsersRound },
   { label: "Exams", href: "/admin/exams", icon: FileText },
+  { label: "Assignments", href: "/admin/assignments", icon: ClipboardList },
   { label: "Live Classes", href: "/admin/live-classes", icon: Video },
   { label: "Doubts", href: "/admin/doubts", icon: MessageSquare },
   { label: "Moderation", href: "/admin/moderation", icon: ShieldAlert },

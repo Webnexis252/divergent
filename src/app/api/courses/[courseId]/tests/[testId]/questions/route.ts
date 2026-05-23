@@ -69,6 +69,7 @@ export async function POST(
           imageUrl: q.imageUrl,
           referenceImage: q.referenceImage ?? null,
           points: q.points,
+          negativeMarks: q.negativeMarks ?? 0,
           order: q.order !== 0 ? q.order : startOrder + i,
           difficulty: q.difficulty,
         })),

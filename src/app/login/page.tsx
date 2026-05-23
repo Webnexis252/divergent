@@ -16,18 +16,13 @@ export default async function LoginPage() {
 
   return (
     <AuthShell
-      description="Enter the workspace built for your rhythm. Students return to classes, deadlines, and progress in one place. Mentors move straight into their teaching surface."
+      description="Enter the workspace built for your rhythm. Students return to classes, deadlines, and progress in one place."
       eyebrow="Welcome Back"
       highlights={[
         {
           title: "Student workspace",
           description:
             "Open upcoming classes, assignments, and progress without bouncing between disconnected screens.",
-        },
-        {
-          title: "Mentor workspace",
-          description:
-            "Jump into the teaching dashboard, live-class controls, and support flow with the same sign-in.",
         },
       ]}
       title="Sign back in without re-entering the maze."

@@ -4,22 +4,32 @@
  * Grid of question numbers for quick navigation during a test.
  * Shows answered vs. unanswered vs. flagged vs. current state.
  */
+import type { QuestionData } from "@/app/dashboard/_components/test-taking/question-card";
+
 export function QuestionNavigator({
-  totalQuestions,
+  questions,
   currentIndex,
   answeredSet,
   flaggedSet,
   onNavigate,
 }: {
-  totalQuestions: number;
+  questions: QuestionData[];
   currentIndex: number;
   answeredSet: Set<number>;
   flaggedSet: Set<number>;
   onNavigate: (index: number) => void;
 }) {
-  const answeredCount = answeredSet.size;
-  const flaggedCount = flaggedSet.size;
-  const completionPercent = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+  const currentType = questions[currentIndex]?.type;
+  
+  const sectionIndices = questions
+    .map((q, i) => ({ type: q.type, originalIndex: i }))
+    .filter(q => q.type === currentType)
+    .map(q => q.originalIndex);
+
+  const answeredCount = sectionIndices.filter(i => answeredSet.has(i)).length;
+  const flaggedCount = sectionIndices.filter(i => flaggedSet.has(i)).length;
+  const sectionTotal = sectionIndices.length;
+  const completionPercent = sectionTotal > 0 ? Math.round((answeredCount / sectionTotal) * 100) : 0;
 
   return (
     <div className="question-nav">
@@ -36,15 +46,15 @@ export function QuestionNavigator({
       </div>
 
       <div className="question-nav__meta">
-        <span>{answeredCount}/{totalQuestions} answered</span>
-        <span>{totalQuestions - answeredCount} left</span>
+        <span>{answeredCount}/{sectionTotal} answered</span>
+        <span>{sectionTotal - answeredCount} left</span>
       </div>
 
       <div className="question-nav__grid">
-        {Array.from({ length: totalQuestions }, (_, i) => {
-          const isCurrent = i === currentIndex;
-          const isAnswered = answeredSet.has(i);
-          const isFlagged = flaggedSet.has(i);
+        {sectionIndices.map((originalIndex, visualIndex) => {
+          const isCurrent = originalIndex === currentIndex;
+          const isAnswered = answeredSet.has(originalIndex);
+          const isFlagged = flaggedSet.has(originalIndex);
 
           let state = "default";
           if (isCurrent) state = "current";
@@ -52,14 +62,14 @@ export function QuestionNavigator({
 
           return (
             <button
-              key={i}
+              key={originalIndex}
               className="question-nav__btn"
               data-state={state}
               data-flagged={isFlagged || undefined}
-              onClick={() => onNavigate(i)}
-              title={`Question ${i + 1}${isFlagged ? " (flagged)" : ""}${isAnswered ? " (answered)" : ""}`}
+              onClick={() => onNavigate(originalIndex)}
+              title={`Question ${visualIndex + 1}${isFlagged ? " (flagged)" : ""}${isAnswered ? " (answered)" : ""}`}
             >
-              {i + 1}
+              {visualIndex + 1}
               {isFlagged && <span className="question-nav__flag-dot" />}
             </button>
           );

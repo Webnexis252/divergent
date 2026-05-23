@@ -56,6 +56,7 @@ model User {
   teachingCourses       Course[]               @relation("CourseTeachers")
   studentApprovalRequests StudentApprovalRequest[] @relation("AdminStudentRequests")
   announcementRecipients AnnouncementRecipient[]
+  dataExportRequests   DataExportRequest[] @relation("AdminExportRequests")
 }
 
 model Course {
@@ -165,6 +166,9 @@ model LessonProgress {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
+  // Index on userId alone + updatedAt for weekly-progress filtering
+  @@index([userId])
+  @@index([userId, updatedAt])
 }
 
 model DoubtTicket {
@@ -243,6 +247,11 @@ model Post {
   channel    Channel?    @relation(fields: [channelId], references: [id])
   likes      PostLike[]
   replies    PostReply[]
+
+  // self-relation for nested replies
+  replyToId  String?
+  replyTo    Post?       @relation("PostReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  repliedBy  Post[]      @relation("PostReplies")
 
   @@index([authorId])
   @@index([channelId])
@@ -345,6 +354,8 @@ model AssignmentSubmission {
 
   @@unique([assignmentId, studentId])
   @@index([studentId])
+  // Index for weekly submission window query
+  @@index([studentId, submittedAt])
 }
 
 model LiveClass {
@@ -360,9 +371,12 @@ model LiveClass {
   endedAt      DateTime?
   isEnded      Boolean      @default(false)
   attendances  Attendance[]
+  teacherResources TeacherResource[]
   course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
+  // Composite index for the (courseId, startTime < now) range scan in profile-stats
+  @@index([courseId, startTime])
 }
 
 model Attendance {
@@ -377,6 +391,10 @@ model Attendance {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, liveClassId])
+  // Composite index for the isCounted filter used in profile-stats
+  @@index([userId, isCounted])
+  // Index for weekly attendance window query
+  @@index([userId, joinedAt])
 }
 
 model AchievementBadge {
@@ -516,6 +534,7 @@ model TestQuestion {
   imageUrl       String?
   referenceImage String?
   points         Int          @default(1)
+  negativeMarks  Float        @default(0)
   order          Int          @default(0)
   difficulty     String?
   test           CourseTest   @relation(fields: [testId], references: [id], onDelete: Cascade)
@@ -544,6 +563,10 @@ model TestAttempt {
 
   @@index([testId])
   @@index([userId])
+  // Composite index to speed up the profile-stats query (userId + submittedAt + gradingStatus)
+  @@index([userId, submittedAt])
+  // Composite index for leaderboard ranking (testId + score DESC)
+  @@index([testId, score])
 }
 
 model InstituteSettings {
@@ -604,15 +627,18 @@ model TeacherResource {
   id        String   @id @default(cuid())
   teacherId String
   courseId  String?
+  liveClassId String?
   title     String
   fileUrl   String
   type      String   @default("PDF")
   createdAt DateTime @default(now())
   teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   course    Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  liveClass LiveClass? @relation(fields: [liveClassId], references: [id], onDelete: SetNull)
 
   @@index([teacherId])
   @@index([courseId])
+  @@index([liveClassId])
 }
 
 model Cohort {
@@ -771,6 +797,19 @@ enum ApprovalStatus {
   PENDING
   APPROVED
   REJECTED
+  USED
+}
+
+model DataExportRequest {
+  id          String         @id @default(cuid())
+  adminId     String
+  status      ApprovalStatus @default(PENDING)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  admin       User           @relation("AdminExportRequests", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
 }
 
 model StudentGoal {
@@ -788,4 +827,15 @@ model StudentGoal {
   updatedAt   DateTime @updatedAt
   
   @@index([studentId, weekStart])
+}
+
+// Tracks pending phone OTP verification sessions (for signup & settings phone change)
+model PhoneOtp {
+  id        String   @id @default(cuid())
+  phone     String
+  context   String   // "SIGNUP" | "SETTINGS"
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([phone])
 }

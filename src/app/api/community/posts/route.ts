@@ -36,6 +36,11 @@ export async function GET(req: NextRequest) {
           where: { userId: auth.userId },
           select: { id: true },
         },
+        replyTo: {
+          include: {
+            author: { select: { id: true, name: true } }
+          }
+        }
       },
       orderBy: { createdAt: 'desc' },
       take,
@@ -60,6 +65,12 @@ export async function GET(req: NextRequest) {
       replyCount: p._count.replies,
       likeCount: p._count.likes,
       likedByMe: p.likes.length > 0,
+      replyTo: p.replyTo ? {
+        id: p.replyTo.id,
+        title: p.replyTo.title,
+        body: p.replyTo.body,
+        author: p.replyTo.author
+      } : null,
     }));
 
     const nextCursor =
@@ -95,7 +106,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, postBody, channelId, imageUrl } = body;
+    const { title, postBody, channelId, imageUrl, replyToId } = body;
     const trimmedTitle = title?.trim();
     const trimmedBody = postBody?.trim() ?? '';
     const trimmedImageUrl = typeof imageUrl === 'string' ? imageUrl.trim() : '';
@@ -125,6 +136,7 @@ export async function POST(req: NextRequest) {
           imageUrl: trimmedImageUrl || null,
           authorId: auth.userId,
           channelId: channelId ?? null,
+          replyToId: replyToId || null,
         },
       });
     });
@@ -140,6 +152,12 @@ export async function POST(req: NextRequest) {
     const author = await getCachedUser(auth.userId);
     const channel = await getCachedChannel(channelId ?? null);
 
+    // Fetch parent reply info if replyToId is present
+    const replyTo = replyToId ? await prisma.post.findUnique({
+      where: { id: replyToId },
+      include: { author: { select: { id: true, name: true } } }
+    }) : null;
+
     return apiCreated({
       id: post.id,
       title: post.title,
@@ -151,6 +169,12 @@ export async function POST(req: NextRequest) {
       replyCount: 0,
       likeCount: 0,
       likedByMe: false,
+      replyTo: replyTo ? {
+        id: replyTo.id,
+        title: replyTo.title,
+        body: replyTo.body,
+        author: replyTo.author
+      } : null,
     });
   } catch (err) {
     console.error('[CREATE_POST_ERROR]', err);

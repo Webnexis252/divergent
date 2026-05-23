@@ -1,10 +1,23 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
-import { apiSuccess, apiUnauthorized, apiServerError } from "@/lib/api-response";
+import { apiUnauthorized, apiServerError } from "@/lib/api-response";
 import { averageCategoryPerformanceBreakdown } from "@/lib/test-category-performance";
 import { gradeQuestionAnswer } from "@/lib/test-grading";
 import { formatWatchTimeStat } from "@/lib/live-class-attendance";
+
+/** Wrap a JSON response with private browser caching (60s fresh, 120s stale). */
+function cachedJson(data: unknown, status = 200): NextResponse {
+  return new NextResponse(JSON.stringify(data), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      // Browser caches the response for 60 s; up to 120 s stale-while-revalidating.
+      // "private" prevents CDN/proxy caches from storing per-user data.
+      'Cache-Control': 'private, max-age=60, stale-while-revalidate=120',
+    },
+  });
+}
 
 /**
  * GET /api/users/me/profile-stats
@@ -37,10 +50,11 @@ export async function GET(req: NextRequest) {
 
 
     if (role === "STUDENT") {
-      // Fetch all student metrics concurrently
+      // Fetch all student metrics concurrently in a single round-trip batch.
+      // NOTE: progressRecords (full watchTime list) is replaced by the userDb.totalStudyTime
+      // aggregate field so we avoid scanning the entire LessonProgress table.
       const [
         notifications,
-        progressRecords,
         attendanceRecords,
         weeklyProgress,
         weeklyAssignments,
@@ -55,10 +69,6 @@ export async function GET(req: NextRequest) {
           orderBy: { createdAt: "desc" },
           take: 5,
           select: { id: true, title: true, body: true, createdAt: true, isRead: true },
-        }),
-        prisma.lessonProgress.findMany({
-          where: { userId },
-          select: { watchTime: true },
         }),
         prisma.attendance.findMany({
           where: { userId, isCounted: true },
@@ -122,6 +132,7 @@ export async function GET(req: NextRequest) {
 
       const courseIds = enrollments.map((e) => e.courseId);
 
+      // Run the liveClass count concurrently rather than sequentially
       const totalPastClasses =
         courseIds.length > 0
           ? await prisma.liveClass.count({
@@ -244,24 +255,27 @@ export async function GET(req: NextRequest) {
           ? averageCategoryPerformanceBreakdown(skillEntriesByAttempt, { includeEmpty: true })
           : [];
 
-      return apiSuccess({
-        role: "STUDENT",
-        stats: {
-          totalWatchTime: totalWatchTimeHours,
-          totalWatchTimeDisplay: formatWatchTimeStat(totalWatchTimeSecs),
-          totalWatchTimeSecs,
-          totalXp: userDb.xpPoints,
-          coursesEnrolled,
-          attendance: {
-            attended: attendedClasses,
-            total: attendanceTotal,
-            percent: attendancePercent,
+      return cachedJson({
+        success: true,
+        data: {
+          role: "STUDENT",
+          stats: {
+            totalWatchTime: totalWatchTimeHours,
+            totalWatchTimeDisplay: formatWatchTimeStat(totalWatchTimeSecs),
+            totalWatchTimeSecs,
+            totalXp: userDb.xpPoints,
+            coursesEnrolled,
+            attendance: {
+              attended: attendedClasses,
+              total: attendanceTotal,
+              percent: attendancePercent,
+            },
+            notifications,
+            weeklyGoals,
+            topicMastery,
+            skills,
+            skillTestsEvaluated: latestTestAttempts.length,
           },
-          notifications,
-          weeklyGoals,
-          topicMastery,
-          skills,
-          skillTestsEvaluated: latestTestAttempts.length,
         },
       });
     } else if (
@@ -363,36 +377,41 @@ export async function GET(req: NextRequest) {
         color: s.color,
       }));
 
-      return apiSuccess({
-        role: "MENTOR",
-        stats: {
-          totalTeachingHours,
-          studentsMentored,
-          attendance: {
-            attended: attendedClasses,
-            total: attendanceTotal,
-            percent: attendancePercent,
+      return cachedJson({
+        success: true,
+        data: {
+          role: "MENTOR",
+          stats: {
+            totalTeachingHours,
+            studentsMentored,
+            attendance: {
+              attended: attendedClasses,
+              total: attendanceTotal,
+              percent: attendancePercent,
+            },
+            notifications,
+            monthlyGoals,
+            coursePerformance,
+            skills,
           },
-          notifications,
-          monthlyGoals,
-          coursePerformance,
-          skills,
         },
       });
     }
 
     return apiUnauthorized("Invalid role for profile stats");
-  } catch (err: any) {
-    console.error("[GET_PROFILE_STATS_ERROR]", err);
-    try {
-      require('fs').appendFileSync(
-        require('path').join(process.cwd(), 'api-error.log'),
-        `[GET_PROFILE_STATS_ERROR] ${new Date().toISOString()}\n${err?.stack || err}\n\n`
-      );
-    } catch (fsErr) {
-      console.error("Could not write error log", fsErr);
-    }
-    return apiServerError(err?.message || 'Unknown error');
+  } catch (err: unknown) {
+    // Do NOT use require('fs') here — serverless environments have a read-only filesystem.
+    // Log structured error to stdout/Vercel logs instead.
+    const errMsg = err instanceof Error ? err.message : String(err);
+    const errStack = err instanceof Error ? err.stack : undefined;
+    console.error(JSON.stringify({
+      level: 'error',
+      event: 'GET_PROFILE_STATS_ERROR',
+      message: errMsg,
+      stack: errStack,
+      ts: new Date().toISOString(),
+    }));
+    return apiServerError();
   }
 }
 
@@ -412,7 +431,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (existing.length > 0) {
-      return apiSuccess({ seeded: false, message: "Skills already exist" });
+      return NextResponse.json({ success: true, data: { seeded: false, message: "Skills already exist" } });
     }
 
     const DEFAULT_SKILLS = [
@@ -434,7 +453,7 @@ export async function POST(req: NextRequest) {
       skipDuplicates: true,
     });
 
-    return apiSuccess({ seeded: true });
+    return NextResponse.json({ success: true, data: { seeded: true } });
   } catch (err) {
     console.error("[POST_PROFILE_STATS_SEED_ERROR]", err);
     return apiServerError();

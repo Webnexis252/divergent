@@ -314,13 +314,13 @@ export default function DashboardPage() {
   const quickStartItems = [
     {
       label: "Classes",
-      href: "/dashboard/upcoming",
+      href: "/dashboard/live-classes",
       image: assets.quickClasses,
       value: overviewLoading ? "…" : String(overview?.counts.upcomingClasses ?? 0),
     },
     {
       label: "Exam",
-      href: overview?.nextExam?.ctaHref ?? "/dashboard/courses",
+      href: "/dashboard/tests",
       image: assets.quickExam,
       value: overviewLoading ? "…" : String(overview?.counts.openExams ?? 0),
     },

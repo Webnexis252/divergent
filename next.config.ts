@@ -2,8 +2,15 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
-  // Increase in-memory cache to reduce disk writes during dev
-  cacheMaxMemorySize: 0,
+  // Enable gzip/brotli compression to reduce bandwidth and response time
+  compress: true,
+  // Remove X-Powered-By header (minor security improvement)
+  poweredByHeader: false,
+  // Allow 60s for static page generation (prevents timeouts under load)
+  staticPageGenerationTimeout: 60,
+  // In-memory cache for the Next.js data cache (0 = disabled, which was wrong).
+  // 50 MB is a reasonable cap that keeps hot API responses in memory.
+  cacheMaxMemorySize: 52428800, // 50 MB
   images: {
     remotePatterns: [
       {

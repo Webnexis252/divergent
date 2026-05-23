@@ -19,6 +19,12 @@ type Course = {
   title: string;
 };
 
+type PastClass = {
+  id: string;
+  title: string;
+  courseId?: string;
+};
+
 const typeIcons: Record<string, string> = {
   PDF: "📄", SLIDE: "📊", CODE: "💻", OTHER: "📎",
 };
@@ -26,28 +32,36 @@ const typeIcons: Record<string, string> = {
 export default function TeacherResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [pastClasses, setPastClasses] = useState<PastClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [selectedLiveClassId, setSelectedLiveClassId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const selectedCourse = courses.find((course) => course.id === selectedCourseId) ?? null;
   const hasAssignedCourses = courses.length > 0;
+  const filteredPastClasses = pastClasses.filter(c => !c.courseId || c.courseId === selectedCourseId);
 
   const load = () => {
     setLoading(true);
     Promise.all([
       fetch("/api/teacher/resources").then((r) => r.json()),
       fetch("/api/teacher/courses").then((r) => r.json()),
+      fetch("/api/teacher/live-classes/past").then((r) => r.json()),
     ])
-      .then(([resJson, coursesJson]) => {
+      .then(([resJson, coursesJson, pastClassesJson]) => {
         if (resJson.success) {
           setResources(resJson.data);
         }
         if (coursesJson.success) setCourses(coursesJson.data);
+        if (pastClassesJson.success) {
+          console.log("[DEBUG] Frontend received past classes:", pastClassesJson.data);
+          setPastClasses(pastClassesJson.data);
+        }
       })
-      .catch(() => {})
+      .catch((err) => { console.error("[DEBUG] Load error:", err); })
       .finally(() => setLoading(false));
   };
   useEffect(() => { load(); }, []);
@@ -87,7 +101,8 @@ export default function TeacherResourcesPage() {
           title, 
           fileUrl: uploadJson.data.url, 
           type: "PDF",
-          courseId: selectedCourseId || null 
+          courseId: selectedCourseId || null,
+          liveClassId: selectedLiveClassId || null,
         }),
       });
       const resJson = await res.json();
@@ -96,6 +111,7 @@ export default function TeacherResourcesPage() {
         setTitle(""); 
         setFile(null); 
         setSelectedCourseId("");
+        setSelectedLiveClassId("");
         setShowForm(false); 
         load(); 
       } else {
@@ -208,6 +224,24 @@ export default function TeacherResourcesPage() {
                               Selected course: <span className="font-semibold">{selectedCourse.title}</span>
                             </div>
                           ) : null}
+
+                          {selectedCourseId && (
+                            <div className="pt-2">
+                              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1 mb-1 block">Link to Past Class (Optional)</label>
+                              <select
+                                value={selectedLiveClassId}
+                                onChange={(e) => setSelectedLiveClassId(e.target.value)}
+                                className="w-full rounded-[12px] border px-4 py-2.5 text-sm outline-none focus:border-[#059669] bg-white"
+                              >
+                                <option value="">No specific class</option>
+                                {filteredPastClasses.map((cls) => (
+                                  <option key={cls.id} value={cls.id}>
+                                    {cls.title}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -272,6 +306,12 @@ export default function TeacherResourcesPage() {
                           {r.course && (
                             <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 uppercase tracking-tight">
                               {r.course.title}
+                            </span>
+                          )}
+                          {/* @ts-ignore */}
+                          {r.liveClass && (
+                            <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 uppercase tracking-tight">
+                              Class: {/* @ts-ignore */}{r.liveClass.title}
                             </span>
                           )}
                           {!r.course && (

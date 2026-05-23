@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
-import { signMagicLinkToken } from '@/lib/auth';
+import { signMagicLinkToken, verifyPhoneVerifiedToken } from '@/lib/auth';
 import { RegisterSchema } from '@/lib/validators';
 import { apiError, apiServerError, apiSuccess } from '@/lib/api-response';
 import { sendStudentMagicLinkEmail } from '@/lib/email';
@@ -34,6 +34,32 @@ export async function POST(req: NextRequest) {
     // Mentor/Admin accounts can only be created by Super Admins.
     const { name, email, password, phone } = parsed.data;
     const role = 'STUDENT' as const;
+
+    // --- Phone verification check ---
+    // If the student provided a phone number, they must have verified it via OTP first.
+    if (phone) {
+      const rawPhoneVerifiedToken = body.phoneVerifiedToken;
+      if (!rawPhoneVerifiedToken || typeof rawPhoneVerifiedToken !== 'string') {
+        return apiError(
+          'Phone number must be verified via OTP before creating your account.',
+          400,
+        );
+      }
+      const verifiedPhone = await verifyPhoneVerifiedToken(rawPhoneVerifiedToken);
+      if (!verifiedPhone) {
+        return apiError(
+          'Phone verification token is invalid or has expired. Please verify your phone number again.',
+          400,
+        );
+      }
+      const normalizedPhone = phone.replace(/\s/g, '');
+      if (verifiedPhone.phone !== normalizedPhone) {
+        return apiError(
+          'Phone number does not match the verified number. Please re-verify.',
+          400,
+        );
+      }
+    }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {

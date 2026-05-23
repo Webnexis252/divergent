@@ -36,7 +36,10 @@ export async function GET(req: NextRequest) {
 
     const resources = await prisma.teacherResource.findMany({
       where: { teacherId: auth.userId },
-      include: { course: { select: { id: true, title: true } } },
+      include: { 
+        course: { select: { id: true, title: true } },
+        liveClass: { select: { id: true, title: true } }
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -56,7 +59,7 @@ export async function POST(req: NextRequest) {
     const auth = await requireAuth(req, ['MENTOR', 'ADMIN', 'SUPER_ADMIN']);
     if (!auth) return apiForbidden('Teacher access required');
 
-    const { title, fileUrl, type, courseId } = await req.json();
+    const { title, fileUrl, type, courseId, liveClassId } = await req.json();
     if (!title?.trim() || !fileUrl?.trim()) {
       return apiError('Title and File URL are required', 400);
     }
@@ -70,6 +73,7 @@ export async function POST(req: NextRequest) {
       data: {
         teacherId: auth.userId,
         courseId: accessibleCourseId,
+        liveClassId: liveClassId || null,
         title: title.trim(),
         fileUrl: fileUrl.trim(),
         type: type ?? 'PDF',

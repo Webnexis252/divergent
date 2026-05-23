@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const requests = await prisma.studentApprovalRequest.findMany({
+    const studentRequests = await prisma.studentApprovalRequest.findMany({
       where: { status: "PENDING" },
       include: {
         admin: {
@@ -19,7 +19,17 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" }
     });
 
-    return NextResponse.json({ success: true, data: requests });
+    const exportRequests = await prisma.dataExportRequest.findMany({
+      where: { status: "PENDING" },
+      include: {
+        admin: {
+          select: { name: true, email: true }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    return NextResponse.json({ success: true, data: { studentRequests, exportRequests } });
   } catch (error: any) {
     console.error("Error fetching approvals:", error);
     return NextResponse.json({ success: false, error: "Failed to fetch approvals" }, { status: 500 });
