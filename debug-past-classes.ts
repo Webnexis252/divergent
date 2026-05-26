@@ -14,7 +14,7 @@ interface DebugLiveClass {
   title: string;
   courseId: string;
   course: { title: string; slug: string };
-  startTime: Date | string | number;
+  startTime: Date;
   duration: number;
   isEnded: boolean;
   recordingUrl?: string | null;
