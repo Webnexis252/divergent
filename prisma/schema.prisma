@@ -24,6 +24,7 @@ model User {
   lastDailyLoginXpAt    DateTime?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?              // soft-delete support
   mentorOtp             String?
   mentorOtpExpiry       DateTime?
   mentorStatus          String?
@@ -433,7 +434,9 @@ model Payment {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   course            Course?       @relation(fields: [courseId], references: [id])
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // onDelete: Restrict prevents financial record loss when a user account is deleted.
+  // Payments must be retained for legal/compliance purposes.
+  user              User          @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@index([userId])
   @@index([courseId])
@@ -668,13 +671,15 @@ model CohortStudent {
 
 model AuditLog {
   id         String   @id @default(cuid())
-  actorId    String
+  actorId    String?
   action     String
   entityType String
   entityId   String
   details    Json?
   createdAt  DateTime @default(now())
-  actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  // actorId is nullable so audit records survive if the user account is deleted.
+  // onDelete: SetNull preserves the log entry while clearing the actor reference.
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([actorId])
   @@index([entityType])
@@ -723,6 +728,7 @@ enum DoubtStatus {
 enum QuestionType {
   SCQ
   MCQ
+  MULTIPLE_RESPONSE
   SKETCH
   NUMERIC
 }

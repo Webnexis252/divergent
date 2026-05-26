@@ -211,8 +211,11 @@ export function StudentLiveClassroomPage({
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMeetStarted(false);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAttendanceMarked(false);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAttendanceTrackingStarted(false);
   }, [focusClass?.id]);
 
@@ -244,7 +247,7 @@ export function StudentLiveClassroomPage({
         console.error("Failed to mark attendance", error);
       }
     },
-    [focusClass?.id],
+    [focusClass],
   );
 
   const meetingLaunchUrl = useMemo(() => {

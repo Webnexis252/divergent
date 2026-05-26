@@ -384,7 +384,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     },
   ];
   const featureTiles = Array.isArray(course.features) && course.features.length > 0
-    ? (course.features as any[]).map(f => ({ label: f.title, image: f.icon || assets.liveClassFeature, href: "#" }))
+    ? (course.features as Array<{ title: string; icon?: string }>).map(f => ({ label: f.title, image: f.icon || assets.liveClassFeature, href: "#" }))
     : [
     {
       label: "Live Class",
@@ -413,7 +413,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     },
   ];
   const testimonialCards = Array.isArray(course.testimonials) && course.testimonials.length > 0
-    ? (course.testimonials as any[]).map(t => ({ quote: t.text, author: t.name, rating: t.rating }))
+    ? (course.testimonials as Array<{ text: string; name: string; rating?: number }>).map(t => ({ quote: t.text, author: t.name, rating: t.rating }))
     : [
     {
       quote: "This course helped me understand exactly what UCEED expects.",
@@ -427,7 +427,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     },
   ];
   const faqItems = Array.isArray(course.faqs) && course.faqs.length > 0
-    ? (course.faqs as any[])
+    ? (course.faqs as Array<{ question: string; answer: string }>)
     : [
     {
       question: "Is this course beginner-friendly?",
@@ -777,7 +777,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                       <section className="rounded-[18px] bg-white px-6 py-8 shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] sm:px-10 xl:px-[103px] xl:py-[43px]">
                         <div className="space-y-9">
                           <div className="flex items-center justify-center gap-3">
-                            <h2 className="text-[26px] font-bold text-black">What's included</h2>
+                            <h2 className="text-[26px] font-bold text-black">What&apos;s included</h2>
                           </div>
 
                           <div className="space-y-5">
@@ -844,7 +844,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                               ))}
                             </div>
                             <p className="flex-1 text-[16px] leading-[1.6] text-black italic">
-                              "{testimonial.quote}"
+                              &quot;{testimonial.quote}&quot;
                             </p>
                             <div className="mt-6 flex items-center gap-3">
                               <div className="h-10 w-10 overflow-hidden rounded-full bg-gray-100">

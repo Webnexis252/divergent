@@ -315,7 +315,12 @@ export default function DashboardCommunityPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   // Comments states
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<Array<{
+    id: string;
+    body: string;
+    createdAt: string;
+    author: { id: string; name: string | null; image: string | null; role?: string };
+  }>>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);

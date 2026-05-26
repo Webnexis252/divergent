@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, status: latestRequest?.status || null });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching export request status:", error);
     return NextResponse.json({ success: false, error: "Failed to fetch export request status" }, { status: 500 });
   }
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, message: "Export request submitted successfully." });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating export request:", error);
     return NextResponse.json({ success: false, error: "Failed to create export request" }, { status: 500 });
   }

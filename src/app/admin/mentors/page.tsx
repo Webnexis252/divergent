@@ -129,7 +129,10 @@ export default function AdminMentorsPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData(); 
+  }, []);
 
   const filtered = useMemo(() => {
     let result = [...active];

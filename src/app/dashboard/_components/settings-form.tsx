@@ -176,8 +176,8 @@ export function SettingsForm() {
       await refreshUser();
       setIsSuccess(true);
       setTimeout(() => setIsSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }

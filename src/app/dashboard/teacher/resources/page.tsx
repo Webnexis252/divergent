@@ -309,10 +309,9 @@ export default function TeacherResourcesPage() {
                               {r.course.title}
                             </span>
                           )}
-                          {/* @ts-ignore */}
                           {r.liveClass && (
                             <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 uppercase tracking-tight">
-                              Class: {/* @ts-ignore */}{r.liveClass.title}
+                              Class: {r.liveClass.title}
                             </span>
                           )}
                           {!r.course && (

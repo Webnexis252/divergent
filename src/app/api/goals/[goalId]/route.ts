@@ -35,7 +35,7 @@ export async function PATCH(
     // Depending on business rules, maybe check if teacher is allowed, but MENTOR/ADMIN covers it usually.
 
     const { isCompleted, current } = body;
-    const updateData: any = {};
+    const updateData: { isCompleted?: boolean; current?: number } = {};
     
     if (typeof isCompleted === "boolean") {
       updateData.isCompleted = isCompleted;

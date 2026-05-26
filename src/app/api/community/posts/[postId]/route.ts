@@ -55,7 +55,7 @@ export async function PATCH(
       }
 
       const { title, body: postBody, imageUrl } = body;
-      const dataToUpdate: any = {};
+      const dataToUpdate: { title?: string; body?: string; imageUrl?: string | null } = {};
       if (typeof title === "string") {
         const trimmedTitle = title.trim();
         if (!trimmedTitle) return apiBadRequest("Title cannot be empty");

@@ -44,13 +44,16 @@ export function GlobalSearch() {
 
   // Close on route change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsOpen(false);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setQuery("");
   }, [pathname]);
 
   // Fetch results when debounced query changes
   useEffect(() => {
     if (debouncedQuery.length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults({ courses: [], lessons: [], assignments: [] });
       return;
     }

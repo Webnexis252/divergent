@@ -15,6 +15,13 @@ type Admin = {
   image: string | null;
 };
 
+type UserSearchResult = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  role: string;
+};
+
 export default function SuperAdminAdminsPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +34,7 @@ export default function SuperAdminAdminsPage() {
 
   const [mode, setMode] = useState<"create" | "promote">("create");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [searching, setSearching] = useState(false);
 

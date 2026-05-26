@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
 
     return NextResponse.json({ success: true, message: `Export request ${action.toLowerCase()}d successfully.` });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating export approval:", error);
     return NextResponse.json({ success: false, error: "Failed to update export approval" }, { status: 500 });
   }

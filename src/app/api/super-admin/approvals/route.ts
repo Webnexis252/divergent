@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, data: { studentRequests, exportRequests } });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching approvals:", error);
     return NextResponse.json({ success: false, error: "Failed to fetch approvals" }, { status: 500 });
   }

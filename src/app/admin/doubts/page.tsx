@@ -49,7 +49,7 @@ export default function AdminDoubtsPage() {
           const mentorList = Array.isArray(mentorsRes.data) 
             ? mentorsRes.data 
             : mentorsRes.data?.active || [];
-          setMentors(mentorList.map((m: any) => ({ id: m.id, name: m.name })));
+          setMentors(mentorList.map((m: { id: string; name: string | null }) => ({ id: m.id, name: m.name })));
         }
       })
       .catch(console.error)
@@ -82,7 +82,7 @@ export default function AdminDoubtsPage() {
         body: JSON.stringify({ status }),
       });
       if (res.ok) {
-        setDoubts((prev) => prev.map((d) => (d.id === doubtId ? { ...d, status: status as any } : d)));
+        setDoubts((prev) => prev.map((d) => (d.id === doubtId ? { ...d, status: status as Doubt["status"] } : d)));
       }
     } finally {
       setActionLoading(null);

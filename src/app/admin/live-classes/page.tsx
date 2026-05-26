@@ -75,7 +75,7 @@ export default function AdminLiveClassesPage() {
       .then((p) => {
         if (!cancelled && p.success) {
           setCourses(
-            p.data.map((c: any) => ({
+            p.data.map((c: { id: string; title: string; slug: string; teacher?: { name: string | null; email: string | null } | null }) => ({
               id: c.id,
               title: c.title,
               slug: c.slug,
@@ -189,8 +189,8 @@ export default function AdminLiveClassesPage() {
         setRecordingFile(null);
         setRecordingSuccess("");
       }, 1500);
-    } catch (err: any) {
-      setRecordingError(err.message || "Network error — please try again.");
+    } catch (err: unknown) {
+      setRecordingError(err instanceof Error ? err.message : "Network error — please try again.");
     } finally {
       setRecordingSaving(false);
     }
@@ -224,8 +224,8 @@ export default function AdminLiveClassesPage() {
         setRecordingFile(null);
         setRecordingSuccess("");
       }, 1500);
-    } catch (err: any) {
-      setRecordingError(err.message || "Network error — please try again.");
+    } catch (err: unknown) {
+      setRecordingError(err instanceof Error ? err.message : "Network error — please try again.");
     } finally {
       setRecordingSaving(false);
     }
@@ -256,7 +256,7 @@ export default function AdminLiveClassesPage() {
                 </h1>
                 <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/85">
                   Schedule live sessions for any course. The class instantly
-                  appears on the teacher's control panel and in enrolled students'
+                  appears on the teacher&apos;s control panel and in enrolled students&apos;
                   dashboards.
                 </p>
               </div>

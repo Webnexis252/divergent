@@ -13,8 +13,8 @@ describe("test question sections", () => {
     expect(reindexQuestionsBySection(questions)).toEqual([
       { id: "2", type: "SCQ", order: 0 },
       { id: "4", type: "MCQ", order: 1 },
-      { id: "3", type: "SKETCH", order: 2 },
-      { id: "1", type: "NUMERIC", order: 3 },
+      { id: "1", type: "NUMERIC", order: 2 },
+      { id: "3", type: "SKETCH", order: 3 },
     ]);
   });
 

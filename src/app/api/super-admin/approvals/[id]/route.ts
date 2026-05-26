@@ -71,10 +71,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
       return NextResponse.json({ success: true, message: "Request rejected successfully." });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error processing approval:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to process approval" },
+      { success: false, error: error instanceof Error ? error.message : "Failed to process approval" },
       { status: 500 }
     );
   }

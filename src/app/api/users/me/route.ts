@@ -99,7 +99,7 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const { image, name, phone } = body as { image?: string; name?: string; phone?: string };
 
-    const updateData: any = {};
+    const updateData: { image?: string; name?: string; phone?: string } = {};
 
     if (image !== undefined) {
       if (typeof image !== 'string') {

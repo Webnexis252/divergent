@@ -67,7 +67,7 @@ export async function GET(
     const url = new URL(req.url);
     const weekStartParam = url.searchParams.get("weekStart");
     
-    let whereClause: any = { studentId };
+    const whereClause: { studentId: string; weekStart?: Date } = { studentId };
     
     if (weekStartParam) {
       whereClause.weekStart = new Date(weekStartParam);

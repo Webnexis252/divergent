@@ -86,7 +86,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const { teacherIds, learningOutcomes, features, testimonials, faqs, publishDate, ...restData } = parsed.data;
 
-    const dataToUpdate: any = { ...restData };
+    const dataToUpdate: Record<string, unknown> = { ...restData };
     
     if (learningOutcomes !== undefined) dataToUpdate.learningOutcomes = learningOutcomes ? JSON.parse(JSON.stringify(learningOutcomes)) : null;
     if (features !== undefined) dataToUpdate.features = features ? JSON.parse(JSON.stringify(features)) : null;
@@ -105,9 +105,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     });
 
     return apiSuccess(course, 'Course updated successfully');
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[UPDATE_COURSE_ERROR]', err);
-    return apiError(err.message || 'Unknown server error', 500);
+    return apiError(err instanceof Error ? err.message : 'Unknown server error', 500);
   }
 }
 

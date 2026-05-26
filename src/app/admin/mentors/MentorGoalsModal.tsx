@@ -45,6 +45,7 @@ export function MentorGoalsModal({
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchGoals();
   }, [mentor.id]);
 

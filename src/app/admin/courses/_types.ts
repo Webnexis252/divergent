@@ -22,10 +22,10 @@ export type Course = {
   autoCalculateRating: boolean;
   enrolledStudents: number | null;
   autoUpdateEnrolled: boolean;
-  learningOutcomes: any | null;
-  features: any | null;
-  testimonials: any | null;
-  faqs: any | null;
+  learningOutcomes: unknown;
+  features: unknown;
+  testimonials: unknown;
+  faqs: unknown;
   category: string | null;
   courseLevel: string | null;
   language: string | null;

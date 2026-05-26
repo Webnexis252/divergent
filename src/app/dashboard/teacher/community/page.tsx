@@ -112,9 +112,12 @@ function ChatBubble({
             onClick={() => onOpenPost(post)}
           >
             {post.author.image ? (
-              <img
+              <Image
                 src={post.author.image}
                 alt=""
+                width={32}
+                height={32}
+                unoptimized
                 className="h-8 w-8 rounded-full object-cover shadow-sm"
               />
             ) : (
@@ -190,9 +193,12 @@ function ChatBubble({
             {/* Image attachment */}
             {post.imageUrl && (
               <div className="mt-2 -mx-1 mb-0.5 overflow-hidden rounded-[8px]">
-                <img
+                <Image
                   src={post.imageUrl}
                   alt=""
+                  width={600}
+                  height={220}
+                  unoptimized
                   className="w-full max-h-[220px] object-cover border border-black/5"
                 />
               </div>
@@ -325,7 +331,12 @@ export default function TeacherCommunityPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   // Comments states
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<Array<{
+    id: string;
+    body: string;
+    createdAt: string;
+    author: { id: string; name: string | null; image: string | null; role?: string };
+  }>>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -930,9 +941,12 @@ export default function TeacherCommunityPage() {
 
                     {selectedImageUrl && (
                       <div className="mb-3 relative inline-block">
-                        <img
+                        <Image
                           src={selectedImageUrl}
                           alt="Preview"
+                          width={64}
+                          height={64}
+                          unoptimized
                           className="h-16 w-16 rounded-lg object-cover border-2 border-white shadow-sm"
                         />
                         <button
@@ -1126,9 +1140,12 @@ export default function TeacherCommunityPage() {
                      return (
                        <div key={comment.id} className="flex items-start gap-3 text-left">
                          {comment.author.image ? (
-                           <img
+                           <Image
                              src={comment.author.image}
                              alt=""
+                             width={32}
+                             height={32}
+                             unoptimized
                              className="h-8 w-8 rounded-full object-cover shadow-xs mt-0.5"
                            />
                          ) : (

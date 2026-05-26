@@ -9,7 +9,18 @@ const liveClassArgs = {
   },
 };
 
-function getLiveClassStatus(item: any, now = new Date()) {
+interface DebugLiveClass {
+  id: string;
+  title: string;
+  courseId: string;
+  course: { title: string; slug: string };
+  startTime: Date | string | number;
+  duration: number;
+  isEnded: boolean;
+  recordingUrl?: string | null;
+}
+
+function getLiveClassStatus(item: DebugLiveClass, now = new Date()) {
   if (item.isEnded) return "completed" as const;
   const start = new Date(item.startTime);
   const end = new Date(start.getTime() + item.duration * 60 * 1000);
@@ -24,7 +35,7 @@ async function main() {
     ...liveClassArgs
   });
   
-  const scheduleItems = rows.map((liveClass: any) => {
+  const scheduleItems = rows.map((liveClass: DebugLiveClass) => {
     const item = {
       id: liveClass.id,
       title: liveClass.title,

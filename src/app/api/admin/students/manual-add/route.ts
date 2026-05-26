@@ -65,10 +65,10 @@ export async function POST(req: NextRequest) {
       });
       return NextResponse.json({ success: true, data: request, message: "Verification message sent to Super Admin for approval." });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating student:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to create student" },
+      { success: false, error: error instanceof Error ? error.message : "Failed to create student" },
       { status: 500 }
     );
   }

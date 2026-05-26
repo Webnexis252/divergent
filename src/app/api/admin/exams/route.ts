@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { reindexQuestionsBySection } from '@/lib/test-question-sections';
+import { QuestionType, QuestionCategory } from '@prisma/client';
 import {
   apiSuccess,
   apiCreated,
@@ -9,6 +10,21 @@ import {
   apiForbidden,
   apiServerError,
 } from '@/lib/api-response';
+
+interface RawQuestion {
+  prompt: string;
+  options?: string[];
+  correctAnswer?: string[];
+  type?: string;
+  category?: string;
+  referenceImage?: string | null;
+  imageUrl?: string | null;
+  points?: number;
+  negativeMarks?: number;
+  difficulty?: string;
+  explanation?: string | null;
+  order?: number;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,8 +60,9 @@ export async function POST(req: NextRequest) {
     }
 
     const orderedQuestions = reindexQuestionsBySection(
-      questions.map((q: any, i: number) => ({
+      questions.map((q: RawQuestion, i: number) => ({
         ...q,
+        type: q.type ?? 'SCQ',
         order: q.order ?? i,
       }))
     );
@@ -62,12 +79,12 @@ export async function POST(req: NextRequest) {
         availableFrom: availableFrom ? new Date(availableFrom) : null,
         questions: orderedQuestions.length
           ? {
-              create: orderedQuestions.map((q: any, i: number) => ({
+              create: orderedQuestions.map((q: RawQuestion, i: number) => ({
                 prompt: q.prompt,
                 options: q.options || [],
                 correctAnswer: q.correctAnswer || [],
-                type: q.type || 'SCQ',
-                category: q.category || 'CONCEPT',
+                type: (q.type as QuestionType) || QuestionType.SCQ,
+                category: (q.category as QuestionCategory) || QuestionCategory.CONCEPT,
                 referenceImage: q.referenceImage ?? null,
                 imageUrl: q.imageUrl ?? null,
                 points: q.points ?? 1,

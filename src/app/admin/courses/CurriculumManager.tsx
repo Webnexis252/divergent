@@ -68,7 +68,7 @@ function LessonRow({ lesson, courseId, chapterId, onUpdate, onDelete }: {
         <div className="space-y-2">
           <input className="w-full rounded-[8px] border border-[#dde3ee] px-3 py-1.5 text-[13px] outline-none focus:border-[#38c1ff]" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Lesson title" />
           <div className="flex gap-2">
-            <select className="flex-1 rounded-[8px] border border-[#dde3ee] px-2 py-1.5 text-[12px] outline-none" value={form.contentType} onChange={e => setForm(p => ({ ...p, contentType: e.target.value as any }))}>
+            <select className="flex-1 rounded-[8px] border border-[#dde3ee] px-2 py-1.5 text-[12px] outline-none" value={form.contentType} onChange={e => setForm(p => ({ ...p, contentType: e.target.value as Lesson["contentType"] }))}>
               <option value="VIDEO">Video</option>
               <option value="PDF">PDF</option>
               <option value="TEXT">Text</option>

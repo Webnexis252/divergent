@@ -40,6 +40,7 @@ export default function AuditLogsPage() {
 
   useEffect(() => {
     const url = `/api/admin/audit-logs${entityType ? `?entityType=${entityType}` : ""}`;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetch(url)
       .then(r => r.json())

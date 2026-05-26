@@ -291,7 +291,7 @@ export function RecordingPlayer({
                     Recording Not Available Yet
                   </h2>
                   <p className="mt-2 max-w-md text-[15px] text-white/60">
-                    The recording for this class hasn't been uploaded yet. Check back later or contact your teacher.
+                    The recording for this class hasn&apos;t been uploaded yet. Check back later or contact your teacher.
                   </p>
                 </div>
               )}

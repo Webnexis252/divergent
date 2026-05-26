@@ -612,7 +612,7 @@ function DeleteConfirmModal({
         </div>
         <h3 className="mt-4 text-[18px] font-bold text-[#111827]">Delete Assignment?</h3>
         <p className="mt-2 text-[14px] text-[#6b7280]">
-          "<span className="font-semibold text-[#374151]">{assignmentTitle}</span>" and all its submissions will be permanently deleted. This cannot be undone.
+          &quot;<span className="font-semibold text-[#374151]">{assignmentTitle}</span>&quot; and all its submissions will be permanently deleted. This cannot be undone.
         </p>
         <div className="mt-6 flex gap-3">
           <button onClick={onClose} className="flex-1 rounded-[12px] border border-[#e5e7eb] py-2.5 text-[14px] font-medium text-[#374151] hover:bg-[#f9fafb]">Cancel</button>

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     const monthParam = searchParams.get("month");
     const yearParam = searchParams.get("year");
 
-    const whereClause: any = { mentorId };
+    const whereClause: { mentorId: string; month?: number; year?: number } = { mentorId };
     if (monthParam) whereClause.month = parseInt(monthParam, 10);
     if (yearParam) whereClause.year = parseInt(yearParam, 10);
 
@@ -83,7 +83,7 @@ export async function PATCH(req: NextRequest) {
 
     if (!goalId) return apiError("Goal ID is required", 400);
 
-    const dataToUpdate: any = {};
+    const dataToUpdate: { current?: number; isCompleted?: boolean } = {};
     if (current !== undefined) dataToUpdate.current = parseInt(current, 10);
     if (isCompleted !== undefined) dataToUpdate.isCompleted = Boolean(isCompleted);
 

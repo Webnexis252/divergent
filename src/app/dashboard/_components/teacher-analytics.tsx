@@ -458,6 +458,7 @@ export function SharedAnalyticsDashboard({
 
   // Reset cohort when course changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedCohortId("all");
   }, [selectedCourseId]);
 
@@ -478,6 +479,7 @@ export function SharedAnalyticsDashboard({
   }, [days, selectedCourseId, selectedCohortId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAnalytics();
   }, [fetchAnalytics]);
 

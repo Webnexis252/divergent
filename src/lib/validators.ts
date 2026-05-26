@@ -121,13 +121,25 @@ export const CreateMessageSchema = z.object({
 
 export const CreateQuestionSchema = z.object({
   type: z
-    .enum(['SCQ', 'MCQ', 'SKETCH', 'NUMERIC'])
+    .enum(['SCQ', 'MCQ', 'MULTIPLE_RESPONSE', 'SKETCH', 'NUMERIC'])
     .default('SCQ'),
   prompt: z.string().min(5, 'Question prompt required'),
   options: z.array(z.string()).default([]),
   correctAnswer: z.union([z.string(), z.array(z.string())]).default([]),
   imageUrl: z.string().url().optional(),
   order: z.number().int().default(0),
+}).superRefine((data, ctx) => {
+  const choiceTypes = ['SCQ', 'MCQ', 'MULTIPLE_RESPONSE'];
+  if (choiceTypes.includes(data.type)) {
+    const opts = data.options.map((o) => o.trim()).filter(Boolean);
+    if (opts.length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['options'],
+        message: 'Choice questions need at least 2 options',
+      });
+    }
+  }
 });
 
 export const CreateQuizSchema = z.object({
