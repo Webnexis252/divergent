@@ -45,7 +45,7 @@ async function main() {
       duration: liveClass.duration,
       isEnded: liveClass.isEnded,
     };
-    return { ...item, status: getLiveClassStatus(item) };
+    return { ...item, status: getLiveClassStatus(liveClass) };
   });
 
   const completed = scheduleItems.filter(i => i.status === 'completed');
