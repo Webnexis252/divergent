@@ -219,7 +219,7 @@ export default function StudentProfilePage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto grid max-w-[1920px] gap-0 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
         <DashboardSidebar />
 
         <main className="min-h-screen bg-[#f8fafc]">

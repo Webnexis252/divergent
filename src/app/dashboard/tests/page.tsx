@@ -35,7 +35,7 @@ export default async function TestsPage() {
   return (
     <div className="text-black bg-[#f9fafb] min-h-screen pb-24 sm:bg-[#f7f5f4] sm:pb-0">
       <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0 lg:px-0 xl:py-8">
+        <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
           <DashboardSidebar />
 
           <section className="min-w-0 space-y-6 px-4 py-5 sm:px-6 sm:py-6 sm:space-y-8 lg:px-[38px] lg:py-[18px] xl:pr-10">

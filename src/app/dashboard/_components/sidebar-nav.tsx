@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
 import { cx } from "@/lib/cx";
 
 import { studentNavItems } from "./nav-items";
@@ -18,52 +17,33 @@ export function DashboardSidebar() {
   const pathname = usePathname();
 
   const navItems = studentNavItems;
-  const workspaceLabel = "Student Workspace";
 
   return (
-    <aside className="hidden relative overflow-hidden bg-[linear-gradient(180deg,#ffc107_0%,#ffca28_100%)] text-[#111827] px-4 py-6 lg:min-h-screen lg:px-5 lg:py-8 lg:rounded-tr-[40px] shadow-[2px_0_24px_rgba(255,193,7,0.15)] lg:flex flex-col">
-      <div className="relative z-10 flex h-full flex-col">
-        <div className="mb-8 px-4">
-          <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-black/40">
-            {workspaceLabel}
-          </p>
-        </div>
-
-        <nav className="space-y-2">
+    <div className="hidden lg:block lg:pr-7 py-6">
+      <aside className="sticky top-3 z-20 -mx-1 overflow-hidden rounded-[28px] border border-[#ffe08a] bg-[linear-gradient(180deg,#ffcb2f_0%,#ffe58f_100%)] px-3 py-3 shadow-[0_16px_36px_rgba(254,198,0,0.22)] lg:static lg:mx-0 lg:rounded-l-[0] lg:rounded-r-[40px] lg:border-none lg:bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] lg:px-7 lg:py-12 lg:shadow-[0_18px_48px_rgba(254,198,0,0.18)] lg:min-h-[calc(100vh-48px)]">
+        <nav className="scrollbar-none flex snap-x gap-2 overflow-x-auto pb-0.5 lg:flex-col lg:gap-1 lg:overflow-visible">
           {navItems.map((item) => {
             const active = isNavActive(pathname, item.href);
             const Icon = item.icon;
 
             return (
-              <motion.div
+              <Link
                 key={item.href}
-                transition={{ duration: 0.18 }}
-                whileHover={{ x: 4 }}
+                className={cx(
+                  "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-150 lg:min-h-[56px] lg:gap-4 lg:rounded-[22px] lg:bg-transparent lg:px-5 lg:py-3 lg:text-[18px] lg:font-medium",
+                  active
+                    ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] lg:bg-white/40 lg:shadow-sm"
+                    : "hover:bg-white/46 lg:hover:bg-white/20",
+                )}
+                href={item.href}
               >
-                <Link
-                  className={cx(
-                    "group relative flex items-center gap-4 rounded-[22px] px-5 py-3.5 text-[16px] xl:text-[18px] font-medium tracking-wide transition-[background-color,color] duration-150 ease-out",
-                    active
-                      ? "bg-white/30 text-black shadow-[0_4px_10px_rgba(0,0,0,0.03)]"
-                      : "bg-transparent text-black/80 hover:bg-white/10 hover:text-black",
-                  )}
-                  href={item.href}
-                >
-                  <Icon className="h-[22px] w-[22px] stroke-[1.75]" />
-                  <span>{item.label}</span>
-                  
-                  {item.label === "Community" && (
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 flex h-2.5 w-2.5 rounded-full bg-[#e11d48]" />
-                  )}
-                </Link>
-              </motion.div>
+                <Icon className="h-5 w-5 shrink-0" />
+                <span>{item.label}</span>
+              </Link>
             );
           })}
         </nav>
-
-
-      </div>
-    </aside>
+      </aside>
+    </div>
   );
 }
-

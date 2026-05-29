@@ -46,10 +46,8 @@ export default async function ModulesPage() {
   return (
     <div className="text-black bg-[#f9fafb] min-h-screen pb-24 sm:bg-[#f7f5f4] sm:pb-0">
       <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-4 px-3 py-4 sm:gap-6 sm:px-6 sm:py-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0 lg:px-0">
-          <div className="hidden lg:block">
-            <DashboardSidebar />
-          </div>
+        <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
+          <DashboardSidebar />
 
           <section className="min-w-0 px-0 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <div className="mx-auto max-w-[1160px] space-y-6 sm:space-y-10">

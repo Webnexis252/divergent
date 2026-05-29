@@ -22,7 +22,7 @@ export default async function LibraryPage() {
   return (
     <div className="text-black bg-[#f7f5f4] min-h-screen">
       <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 py-5 sm:px-6 sm:py-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0 lg:px-0">
+        <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
           <DashboardSidebar />
 
           <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">

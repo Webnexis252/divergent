@@ -23,8 +23,8 @@ export function DashboardPlaceholderPage({
         </div>
       </header>
 
-      {/* Reduced sidebar column width to 280px down from 426px to fix oversized layout */}
-      <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
+      {/* Sidebar column matches all other student panel pages */}
+      <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
         <DashboardSidebar />
 
         <section className="flex items-center px-6 py-12 lg:px-14">

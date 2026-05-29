@@ -524,7 +524,7 @@ export default function UpcomingPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
         <DashboardSidebar />
 
         <section className="px-6 py-8 lg:px-10 lg:py-10">
