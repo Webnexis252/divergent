@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     if (action === "APPROVE") {
-      // Create user
+      // Check user doesn't already exist
       const existingUser = await prisma.user.findFirst({
         where: {
           OR: [
@@ -47,7 +48,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         );
       }
 
-      await prisma.$transaction([
+      // Create user and mark request as approved in a transaction
+      const [newUser] = await prisma.$transaction([
         prisma.user.create({
           data: {
             name: request.name,
@@ -63,7 +65,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         })
       ]);
 
-      return NextResponse.json({ success: true, message: "Student approved and created successfully." });
+      // Enroll in course if specified (offline/cash payment requested by admin)
+      if (request.courseId) {
+        await ensureActiveEnrollmentWithXp(newUser.id, request.courseId);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: request.courseId
+          ? "Student approved, created, and enrolled in course successfully."
+          : "Student approved and created successfully.",
+      });
     } else {
       await prisma.studentApprovalRequest.update({
         where: { id },

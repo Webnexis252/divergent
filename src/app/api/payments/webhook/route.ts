@@ -16,10 +16,10 @@ export async function POST(req: NextRequest) {
     const signature = req.headers.get("x-webhook-signature") || "";
 
     // Verify webhook signature for security
-    if (process.env.CASHFREE_SECRET_KEY) {
+    if (process.env.CASHFREE_WEBHOOK_SECRET) {
       const signedPayload = timestamp + rawBody;
       const expectedSignature = crypto
-        .createHmac("sha256", process.env.CASHFREE_SECRET_KEY)
+        .createHmac("sha256", process.env.CASHFREE_WEBHOOK_SECRET)
         .update(signedPayload)
         .digest("base64");
 

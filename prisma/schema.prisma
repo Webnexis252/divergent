@@ -790,6 +790,7 @@ model StudentApprovalRequest {
   phone          String?
   passwordHash   String?
   requestedBy    String
+  courseId       String?        // Optional: course to enroll student in (for offline/cash payments)
   status         ApprovalStatus @default(PENDING)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt

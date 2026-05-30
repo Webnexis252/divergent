@@ -1,7 +1,14 @@
-import { useState } from "react";
-import { X, UserPlus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, UserPlus, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
+
+interface Course {
+  id: string;
+  title: string;
+  price: number;
+  isPublished: boolean;
+}
 
 interface AddStudentModalProps {
   isOpen: boolean;
@@ -15,8 +22,26 @@ export function AddStudentModal({ isOpen, onClose, onSuccess, isSuperAdmin }: Ad
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [courseId, setCourseId] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch courses when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoadingCourses(true);
+    fetch("/api/courses")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          setCourses(data.data);
+        }
+      })
+      .catch(() => {/* silently ignore */})
+      .finally(() => setLoadingCourses(false));
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +52,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess, isSuperAdmin }: Ad
       const res = await fetch("/api/admin/students/manual-add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, password }),
+        body: JSON.stringify({ name, email, phone, password, courseId: courseId || null }),
       });
       const data = await res.json();
 
@@ -40,8 +65,9 @@ export function AddStudentModal({ isOpen, onClose, onSuccess, isSuperAdmin }: Ad
         setEmail("");
         setPhone("");
         setPassword("");
+        setCourseId("");
       }
-    } catch (err) {
+    } catch {
       setError("Network error occurred");
     } finally {
       setLoading(false);
@@ -135,6 +161,39 @@ export function AddStudentModal({ isOpen, onClose, onSuccess, isSuperAdmin }: Ad
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                   placeholder="••••••••"
                 />
+              </div>
+
+              {/* Course Enrollment (for offline / cash payments) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <span className="flex items-center gap-1.5">
+                    <BookOpen className="h-4 w-4 text-gray-400" />
+                    Enroll in Course
+                    <span className="text-xs font-normal text-gray-400">(Optional – for offline/cash payment)</span>
+                  </span>
+                </label>
+                <select
+                  value={courseId}
+                  onChange={(e) => setCourseId(e.target.value)}
+                  disabled={loadingCourses}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  <option value="">
+                    {loadingCourses ? "Loading courses…" : "— No course (register only) —"}
+                  </option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                      {c.price > 0 ? ` (₹${c.price})` : " (Free)"}
+                    </option>
+                  ))}
+                </select>
+                {courseId && (
+                  <p className="mt-1.5 text-xs text-emerald-600">
+                    ✓ Student will be enrolled immediately upon{" "}
+                    {isSuperAdmin ? "adding" : "approval"}.
+                  </p>
+                )}
               </div>
             </div>
 
