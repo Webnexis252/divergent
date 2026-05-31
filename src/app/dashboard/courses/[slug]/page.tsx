@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { EnrollmentStatus } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { brand } from "@/lib/brand";
 import { cx } from "@/lib/cx";
 import { getPageAuth } from "@/lib/page-auth";
+import { logger } from "@/lib/logger";
 import {
   AnimCard,
   FloatPulse,
@@ -191,10 +192,20 @@ async function getCourseEnrollment(userId: string, courseId: string) {
 }
 
 export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
-  const auth = await getPageAuth(["STUDENT"]);
+  // Allow any authenticated user to view course detail pages (students, teachers, admins)
+  // Role-specific restrictions (e.g. enrolled-only content) are handled below per-section
+  const auth = await getPageAuth();
   const { slug } = await params;
 
-  const course = await prisma.course.findUnique({
+  // Unauthenticated users are redirected to login
+  if (!auth) {
+    redirect(`/login?callbackUrl=/dashboard/courses/${slug}`);
+  }
+
+  // Wrap DB fetch in try/catch so transient errors hit the error boundary
+  // instead of crashing with an opaque 500. TypeScript infers the full
+  // select type from the query — do NOT widen the variable type.
+  const courseResult = await prisma.course.findUnique({
     where: { slug },
     select: {
       id: true,
@@ -275,15 +286,19 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         },
       },
     },
+  }).catch((err: unknown) => {
+    logger.error("CourseDetailPage: failed to load course from DB", err instanceof Error ? err : new Error(String(err)), { slug });
+    throw err; // re-throw so Next.js error boundary renders error.tsx
   });
 
-  if (!course || !course.isPublished) {
+  if (!courseResult || !courseResult.isPublished) {
     notFound();
   }
 
-  const enrollment = auth?.userId
-    ? await getCourseEnrollment(auth.userId, course.id)
-    : null;
+  // After notFound() the type is narrowed — course is guaranteed non-null.
+  const course = courseResult;
+
+  const enrollment = await getCourseEnrollment(auth.userId, course.id).catch(() => null);
 
   const isEnrolled =
     enrollment && "status" in enrollment
@@ -295,19 +310,19 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
   // Fetch real completed lesson count from LessonProgress
   const allCourseLessonIds = course.chapters.flatMap((ch) => ch.lessons.map((l) => l.id));
   let completedLessonCount = 0;
-  if (isEnrolled && auth?.userId && allCourseLessonIds.length > 0) {
+  if (isEnrolled && allCourseLessonIds.length > 0) {
     completedLessonCount = await prisma.lessonProgress.count({
       where: {
         userId: auth.userId,
         isCompleted: true,
         lessonId: { in: allCourseLessonIds },
       },
-    });
+    }).catch(() => 0);
   }
 
   // Build a set of completed lesson IDs for per-lesson indicators in the curriculum
   const completedLessonIds: Set<string> = new Set();
-  if (isEnrolled && auth?.userId && allCourseLessonIds.length > 0) {
+  if (isEnrolled && allCourseLessonIds.length > 0) {
     const rows = await prisma.lessonProgress.findMany({
       where: {
         userId: auth.userId,
@@ -315,7 +330,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         lessonId: { in: allCourseLessonIds },
       },
       select: { lessonId: true },
-    });
+    }).catch(() => []);
     rows.forEach((r) => completedLessonIds.add(r.lessonId));
   }
 
