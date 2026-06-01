@@ -1,0 +1,11 @@
+
+> lmsproto@0.1.0 dev
+> next dev --turbo
+
+▲ Next.js 16.2.2 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://127.0.2.2:3000
+- Environments: .env
+✓ Ready in 490ms
+
+[?25h

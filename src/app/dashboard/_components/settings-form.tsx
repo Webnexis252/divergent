@@ -351,7 +351,7 @@ export function SettingsForm() {
                         ) : (
                           <>
                             <Phone className="h-3.5 w-3.5" />
-                            {phoneOtpSent ? "Resend" : "Send OTP"}
+                            {phoneOtpSent ? "Resend" : "Send via WhatsApp"}
                           </>
                         )}
                       </button>
@@ -369,7 +369,7 @@ export function SettingsForm() {
                       >
                         <div className="pt-2 space-y-2">
                           <p className="text-[12.5px] text-gray-500">
-                            OTP sent — enter the 6-digit code below.
+                            OTP sent to your WhatsApp — enter the 6-digit code below.
                           </p>
                           <div className="flex gap-2">
                             <input

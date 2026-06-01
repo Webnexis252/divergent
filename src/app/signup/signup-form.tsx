@@ -379,7 +379,7 @@ export function SignupForm() {
                 ) : (
                   <>
                     <Phone className="h-3.5 w-3.5" />
-                    {phoneOtpSent ? "Resend" : "Send OTP"}
+                    {phoneOtpSent ? "Resend" : "Send via WhatsApp"}
                   </>
                 )}
               </button>
@@ -425,9 +425,9 @@ export function SignupForm() {
               >
                 <div className="mt-2 rounded-[12px] border border-(--line-soft) bg-(--surface-raised) p-4 space-y-3">
                   <p className="text-[13px] text-(--text-muted)">
-                    Enter the 6-digit OTP sent to{" "}
+                    Enter the 6-digit OTP sent to your{" "}
                     <span className="font-semibold text-(--text-strong)">
-                      {phone.trim()}
+                      WhatsApp ({phone.trim()})
                     </span>
                   </p>
                   <div className="flex gap-2">

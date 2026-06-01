@@ -841,8 +841,10 @@ model PhoneOtp {
   id        String   @id @default(cuid())
   phone     String
   context   String   // "SIGNUP" | "SETTINGS"
+  otpHash   String   // bcrypt hash of the 6-digit OTP
   expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([phone])
 }
+

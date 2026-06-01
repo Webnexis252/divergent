@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { requireAuth, signPhoneVerifiedToken } from '@/lib/auth';
 import {
@@ -8,16 +9,10 @@ import {
   apiUnauthorized,
   apiServerError,
 } from '@/lib/api-response';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
 
 /**
  * POST /api/auth/phone-otp/verify
- * Verifies an OTP for a phone number using Supabase Auth.
+ * Verifies the OTP entered by the user against the bcrypt hash stored in DB.
  *
  * Body: { phone: string, otp: string, context: "SIGNUP" | "SETTINGS" }
  *
@@ -45,7 +40,7 @@ export async function POST(req: NextRequest) {
       return apiBadRequest('Invalid context. Must be "SIGNUP" or "SETTINGS"');
     }
 
-    // --- Check there is a valid pending OTP session in our DB ---
+    // --- Fetch the most recent valid pending OTP session ---
     const pendingOtp = await prisma.phoneOtp.findFirst({
       where: {
         phone: normalizedPhone,
@@ -62,19 +57,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // --- Verify OTP with Supabase ---
-    const { data, error: supabaseError } = await supabase.auth.verifyOtp({
-      phone: normalizedPhone,
-      token: otp,
-      type: 'sms',
-    });
+    // --- Verify OTP against stored bcrypt hash ---
+    const isValid = await bcrypt.compare(otp, pendingOtp.otpHash);
 
-    if (supabaseError || !data.session) {
-      console.error('[PHONE_OTP_VERIFY_ERROR]', supabaseError?.message);
-      return apiError('Invalid or expired OTP. Please try again.', 400);
+    if (!isValid) {
+      return apiError('Invalid OTP. Please check the code and try again.', 400);
     }
 
-    // --- Cleanup the pending OTP record ---
+    // --- Cleanup: delete the used OTP record ---
     await prisma.phoneOtp.delete({ where: { id: pendingOtp.id } }).catch(() => {});
 
     // --- Handle each context ---

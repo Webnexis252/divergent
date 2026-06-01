@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server';
+import { randomInt } from 'crypto';
+import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import {
@@ -8,12 +10,7 @@ import {
   apiServerError,
 } from '@/lib/api-response';
 import { checkRateLimit, authLimiter } from '@/lib/rate-limit';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+import { sendWhatsAppOtp } from '@/lib/interakt';
 
 /**
  * Validates international phone format: must start with + and contain 7–15 digits.
@@ -23,8 +20,16 @@ function isValidPhone(phone: string): boolean {
 }
 
 /**
+ * Generates a cryptographically secure 6-digit OTP string.
+ */
+function generateOtp(): string {
+  return String(randomInt(100000, 999999));
+}
+
+/**
  * POST /api/auth/phone-otp/send
- * Sends a 6-digit SMS OTP to the given phone number via Supabase Auth.
+ * Generates a 6-digit OTP, stores a bcrypt hash, and sends it to the phone
+ * via WhatsApp using the Interakt template message API.
  *
  * Body: { phone: string, context: "SIGNUP" | "SETTINGS" }
  *
@@ -106,24 +111,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // --- Send OTP via Supabase Auth ---
-    const { error: supabaseError } = await supabase.auth.signInWithOtp({
-      phone: normalizedPhone,
-    });
+    // --- Generate OTP and hash it ---
+    const otp = generateOtp();
+    const otpHash = await bcrypt.hash(otp, 10);
 
-    if (supabaseError) {
-      console.error('[PHONE_OTP_SEND_ERROR]', supabaseError.message);
+    // --- Send via WhatsApp (Interakt) ---
+    try {
+      await sendWhatsAppOtp(normalizedPhone, otp);
+    } catch (sendErr) {
+      console.error('[WHATSAPP_OTP_SEND_ERROR]', sendErr);
       return apiError(
-        'Failed to send OTP. Please check the phone number and try again.',
+        'Failed to send OTP via WhatsApp. Please check the phone number and try again.',
         500,
       );
     }
 
-    // --- Record the pending OTP session ---
+    // --- Invalidate any previous unused OTPs for this phone+context ---
+    await prisma.phoneOtp.deleteMany({
+      where: { phone: normalizedPhone, context },
+    });
+
+    // --- Store the new hashed OTP ---
     await prisma.phoneOtp.create({
       data: {
         phone: normalizedPhone,
         context,
+        otpHash,
         expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
       },
     });
@@ -136,7 +149,7 @@ export async function POST(req: NextRequest) {
 
     return apiSuccess(
       { sent: true, maskedPhone: masked },
-      `OTP sent to ${masked}. It expires in 10 minutes.`,
+      `OTP sent to your WhatsApp (${masked}). It expires in 10 minutes.`,
     );
   } catch (err) {
     console.error('[PHONE_OTP_SEND_ERROR]', err);
