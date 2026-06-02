@@ -4,7 +4,7 @@ import { getPageAuth } from "@/lib/page-auth";
 import { DashboardSidebar } from "../../dashboard/_components/sidebar-nav";
 import { PageTransition, RevealSection, AnimCard } from "../../dashboard/_components/motion-wrappers";
 import Link from "next/link";
-import { FileQuestion, Clock, CheckCircle, ChevronRight, BookOpen, AlertCircle, PlayCircle, BarChart2 } from "lucide-react";
+import { GraduationCap, Timer, Hourglass, BadgeCheck, ChevronRight, BookOpen, AlertCircle, Zap, TrendingUp, Library, ListChecks } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +47,7 @@ export default async function TestsPage() {
                 
                 <div className="relative z-10">
                   <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 backdrop-blur-md border border-white/20">
-                    <FileQuestion className="h-4 w-4" />
+                    <GraduationCap className="h-4 w-4" />
                     <span className="text-[12px] font-bold uppercase tracking-wider">Assessments</span>
                   </div>
                   <h1 className="text-[2.2rem] font-bold leading-tight tracking-[-0.02em] sm:text-[clamp(2rem,4vw,3rem)]">
@@ -86,7 +86,7 @@ export default async function TestsPage() {
                     {/* Course Header */}
                     <div className="flex items-center gap-4 border-b border-gray-200/80 pb-4">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-indigo-50 to-blue-50 shadow-sm border border-indigo-100/50">
-                        <FileQuestion className="h-6 w-6 text-indigo-500" />
+                        <Library className="h-6 w-6 text-indigo-500" />
                       </div>
                       <div>
                         <h2 className="text-[22px] font-bold text-gray-900 tracking-tight">{enrollment.course.title}</h2>
@@ -114,19 +114,19 @@ export default async function TestsPage() {
                                 <div className="mb-4 flex items-center justify-between">
                                   {hasAttempted ? (
                                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-emerald-600 ring-1 ring-inset ring-emerald-600/20">
-                                      <CheckCircle className="h-3.5 w-3.5" />
+                                      <BadgeCheck className="h-3.5 w-3.5" />
                                       ATTEMPTED
                                     </span>
                                   ) : (
                                     <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-amber-600 ring-1 ring-inset ring-amber-600/20">
-                                      <Clock className="h-3.5 w-3.5" />
+                                      <Hourglass className="h-3.5 w-3.5" />
                                       PENDING
                                     </span>
                                   )}
                                   
                                   <div className="flex items-center gap-3 text-[12px] font-semibold text-gray-400">
                                     <span className="flex items-center gap-1.5">
-                                      <Clock className="h-4 w-4 text-gray-300" />
+                                      <Timer className="h-4 w-4 text-gray-300" />
                                       {test.durationMins}m
                                     </span>
                                   </div>
@@ -145,7 +145,7 @@ export default async function TestsPage() {
                                 {/* Footer */}
                                 <div className="mt-auto pt-5 border-t border-gray-100 flex items-center justify-between">
                                   <div className="flex items-center gap-1.5 text-[12px] font-bold text-gray-600 bg-gray-50 px-2.5 py-1 rounded-lg">
-                                    <FileQuestion className="h-3.5 w-3.5 text-gray-400" />
+                                    <ListChecks className="h-3.5 w-3.5 text-gray-400" />
                                     {test._count.questions} Qs
                                   </div>
                                   
@@ -159,11 +159,11 @@ export default async function TestsPage() {
                                   >
                                     {hasAttempted ? (
                                       <>
-                                        View Results <BarChart2 className="h-4 w-4" />
+                                        View Results <TrendingUp className="h-4 w-4" />
                                       </>
                                     ) : (
                                       <>
-                                        Start Test <PlayCircle className="h-4 w-4" />
+                                        Start Test <Zap className="h-4 w-4" />
                                       </>
                                     )}
                                   </Link>

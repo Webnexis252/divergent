@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
 
 export type UserRole = "STUDENT" | "MENTOR" | "ADMIN" | "SUPER_ADMIN";
 
@@ -31,36 +32,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      const response = await fetch("/api/users/me", { cache: "no-store" });
-      if (response.ok) {
-        const payload = await response.json();
-        if (payload.success) {
-          setUser(payload.data);
-        } else {
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-    } catch {
-      // Network failures (ad-blockers, no connectivity) are expected for
-      // unauthenticated visitors — swallow silently so the Next.js dev
-      // overlay doesn't hijack the screen with a red TypeError banner.
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const { data, isLoading, mutate } = useSWR("/api/users/me", fetcher, {
+    revalidateOnFocus: false, // Prevents spamming the DB when switching tabs
+    shouldRetryOnError: false, // Fail fast for unauthenticated users
+  });
 
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+  const user = data?.success ? data.data : null;
+
+  const refreshUser = async () => {
+    await mutate();
+  };
 
   const logout = async () => {
     try {

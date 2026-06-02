@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     // Auto-generate smart notifications for this user (non-blocking)
     // This checks for missed classes, upcoming deadlines, and exams
     if (auth.role === 'STUDENT') {
-      await generateSmartNotificationsForUser(auth.userId);
+      generateSmartNotificationsForUser(auth.userId).catch(console.error);
     }
 
     const notifications = await prisma.notification.findMany({

@@ -42,6 +42,7 @@ import {
 import { PastClassesSection, type LiveClassCardItem } from "../_components/student-live-class-schedule";
 import { CategoryPerformancePanel } from "../_components/test-taking/category-performance-panel";
 import type { CategoryPerformanceItem } from "@/lib/test-category-performance";
+import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
 
 const assets = {
   heroIllustration:
@@ -67,19 +68,6 @@ const goalImages = [
   assets.goalAssignments,
   assets.goalLectures,
   assets.goalReview,
-] as const;
-
-const sidebarItems = [
-  { label: "Dashboard", href: "/dashboard", icon: House },
-  { label: "Courses", href: "/dashboard/courses", icon: BookOpen },
-  { label: "Calendar", href: "/dashboard/calendar", icon: CalendarDays },
-  { label: "Live Classes", href: "/dashboard/live-classes", icon: Video },
-  { label: "Community", href: "/dashboard/community", icon: MessageSquareText },
-  { label: "Doubts", href: "/dashboard/doubts", icon: CircleHelp },
-  { label: "Assignments", href: "/dashboard/assignments", icon: NotebookPen },
-  { label: "Progress", href: "/dashboard/progress", icon: ChartNoAxesColumn, active: true },
-  { label: "Certificates", href: "/dashboard/certificates", icon: Award },
-  { label: "Profile", href: "/dashboard/profile", icon: UserCircle },
 ] as const;
 
 const WEEK_DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
@@ -914,35 +902,7 @@ export default function DashboardProgressPage() {
     <div className="text-black bg-[#f9fafb] min-h-screen pb-24 sm:bg-[#f7f5f4] sm:pb-0">
       <PageTransition>
         <div className="mx-auto grid max-w-[1920px] gap-8 text-black lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-          <RevealSection className="hidden lg:block lg:pr-7 py-6">
-            <aside className="sticky top-3 z-20 -mx-1 overflow-hidden rounded-[28px] border border-[#ffe08a] bg-[linear-gradient(180deg,#ffcb2f_0%,#ffe58f_100%)] px-3 py-3 shadow-[0_16px_36px_rgba(254,198,0,0.22)] lg:static lg:mx-0 lg:rounded-l-[0] lg:rounded-r-[40px] lg:border-none lg:bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] lg:px-7 lg:py-12 lg:shadow-[0_18px_48px_rgba(254,198,0,0.18)]">
-            <nav className="scrollbar-none flex snap-x gap-2 overflow-x-auto pb-0.5 lg:flex-col lg:gap-1 lg:overflow-visible">
-              {sidebarItems.map((item) => {
-                let href: string = item.href;
-                if (item.label === "Profile" && user?.role === "MENTOR") {
-                  href = "/dashboard/teacher/profile";
-                }
-                const Icon = item.icon;
-                const active = pathname === href || (item.label === "Progress");
-                return (
-                  <Link
-                    key={item.href}
-                    className={cx(
-                      "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-150 lg:min-h-[56px] lg:gap-4 lg:rounded-[22px] lg:bg-transparent lg:px-5 lg:py-3 lg:text-[18px] lg:font-medium",
-                      active
-                        ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] lg:bg-white/40 lg:shadow-sm"
-                        : "hover:bg-white/46 lg:hover:bg-white/20",
-                    )}
-                    href={href}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </aside>
-        </RevealSection>
+          <DashboardSidebar />
 
         <main className="px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-6">
           <div className="mx-auto max-w-[1280px] space-y-8">

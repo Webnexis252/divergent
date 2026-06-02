@@ -34,6 +34,7 @@ import { GlobalSearch } from "@/components/global-search";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/context/auth-context";
+import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
 import {
   AnimCard,
   FloatPulse,
@@ -49,19 +50,6 @@ const assets = {
   weekStat: "/assets/dashboard/stat-past.png",
   liveStat: "/assets/dashboard/stat-live.png",
 } as const;
-
-const sidebarItems = [
-  { label: "Dashboard", href: "/dashboard", icon: House },
-  { label: "Courses", href: "/dashboard/courses", icon: BookOpen },
-  { label: "Calendar", href: "/dashboard/calendar", icon: CalendarDays },
-  { label: "Live Classes", href: "/dashboard/live-classes", icon: Video, active: true },
-  { label: "Community", href: "/dashboard/community", icon: MessageSquareText },
-  { label: "Doubts", href: "/dashboard/doubts", icon: CircleHelp },
-  { label: "Assignments", href: "/dashboard/assignments", icon: NotebookPen },
-  { label: "Progress", href: "/dashboard/progress", icon: ChartNoAxesColumn },
-  { label: "Certificates", href: "/dashboard/certificates", icon: Award },
-  { label: "Profile", href: "/dashboard/profile", icon: UserCircle },
-] as const;
 
 const statusMeta = {
   completed: {
@@ -615,30 +603,7 @@ export function StudentLiveClassSchedule() {
 
         <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-0 xl:py-8">
           <div className="grid gap-4 sm:gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
-            <RevealSection className="hidden xl:block xl:pr-7">
-              <aside className="sticky top-3 z-20 overflow-hidden rounded-l-[0] rounded-r-[40px] bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] px-4 py-12 shadow-[0_18px_48px_rgba(254,198,0,0.18)]">
-                <nav className="flex flex-col gap-1">
-                  {sidebarItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.href}
-                        className={cx(
-                          "flex items-center min-h-[56px] gap-4 rounded-[22px] px-5 py-3 text-[18px] font-medium text-black transition-colors duration-150",
-                          ("active" in item && item.active)
-                            ? "bg-white/40 shadow-sm"
-                            : "hover:bg-white/20",
-                        )}
-                        href={item.href}
-                      >
-                        <Icon className="h-5 w-5 shrink-0" />
-                        <span className="whitespace-nowrap">{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </nav>
-              </aside>
-            </RevealSection>
+            <DashboardSidebar />
 
             <section className="min-w-0 px-0 xl:pr-10">
               <div className="mx-auto max-w-[1160px] space-y-6 sm:space-y-10">

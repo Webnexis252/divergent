@@ -34,6 +34,7 @@ import { useAuth } from "@/context/auth-context";
 import { brand } from "@/lib/brand";
 import { cx } from "@/lib/cx";
 import { formatShortDate } from "@/lib/date-format";
+import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
 import {
   AnimCard,
   PageTransition,
@@ -89,19 +90,6 @@ const assets = {
   calendarIcon:
     "https://api.dicebear.com/9.x/shapes/svg?seed=4853766a-1632-4bc4-912e-5e43efdf5ec1",
 } as const;
-
-const sidebarItems = [
-  { label: "Dashboard", href: "/dashboard", icon: House },
-  { label: "Courses", href: "/dashboard/courses", icon: BookOpen },
-  { label: "Calendar", href: "/dashboard/calendar", icon: CalendarDays },
-  { label: "Live Classes", href: "/dashboard/live-classes", icon: Video },
-  { label: "Community", href: "/dashboard/community", icon: MessageSquareText },
-  { label: "Doubts", href: "/dashboard/doubts", icon: CircleHelp },
-  { label: "Assignments", href: "/dashboard/assignments", icon: NotebookPen, active: true },
-  { label: "Progress", href: "/dashboard/progress", icon: ChartNoAxesColumn },
-  { label: "Certificates", href: "/dashboard/certificates", icon: Award },
-  { label: "Profile", href: "/dashboard/profile", icon: UserCircle },
-] as const;
 
 const filters: Array<{
   description: string;
@@ -838,34 +826,7 @@ export default function DashboardAssignmentsPage() {
 
           <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-0 xl:py-8">
             <div className="grid gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
-              <RevealSection className="hidden xl:block xl:pr-7">
-              <aside className="sticky top-3 z-20 -mx-1 overflow-hidden rounded-[28px] border border-[#ffe08a] bg-[linear-gradient(180deg,#ffcb2f_0%,#ffe58f_100%)] px-3 py-3 shadow-[0_16px_36px_rgba(254,198,0,0.22)] xl:static xl:mx-0 xl:rounded-l-[0] xl:rounded-r-[40px] xl:border-none xl:bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] xl:px-4 xl:py-12 xl:shadow-[0_18px_48px_rgba(254,198,0,0.18)]">
-                  <nav className="scrollbar-none flex snap-x gap-2 overflow-x-auto pb-0.5 xl:flex-col xl:gap-1 xl:overflow-visible">
-                    {sidebarItems.map((item) => {
-                      const Icon = item.icon;
-                      let href: string = item.href;
-                      if (item.label === "Profile" && user?.role === "MENTOR") {
-                        href = "/dashboard/teacher/profile";
-                      }
-                      return (
-                        <Link
-                          key={item.href}
-                          className={cx(
-                            "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-150 xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
-                            ("active" in item && item.active)
-                              ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/40 xl:shadow-sm"
-                              : "hover:bg-white/46 xl:hover:bg-white/20",
-                          )}
-                          href={href}
-                        >
-                          <Icon className="h-5 w-5 shrink-0" />
-                          <span className="whitespace-nowrap">{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </nav>
-                </aside>
-              </RevealSection>
+              <DashboardSidebar />
 
               <section className="min-w-0 px-0 sm:px-4 xl:pr-10">
                 <div className="mx-auto max-w-[1160px] space-y-5 sm:space-y-6">

@@ -47,72 +47,7 @@ const assets = {
   quickAssignment: "/assets/dashboard/quick-assignment.png",
 } as const;
 
-import { studentNavItems as overviewNavItems } from "./_components/nav-items";
 
-function overviewButtonStyles({
-  tone = "primary",
-  className,
-}: {
-  tone?: "primary" | "secondary";
-  className?: string;
-}) {
-  return cx(
-    "inline-flex items-center justify-center rounded-[10px] font-medium transition-transform duration-(--transition-fast) ease-(--ease-standard) hover:-translate-y-0.5",
-    tone === "primary"
-      ? "bg-[#38c1ff] text-white shadow-[0_4px_12px_rgba(56,193,255,0.3)]"
-      : "border border-[#38c1ff] bg-white text-[#38c1ff]",
-    className,
-  );
-}
-
-function OverviewSidebar() {
-  const pathname = usePathname();
-  const { user } = useAuth();
-
-  return (
-    <motion.aside
-      animate={{ opacity: 1, x: 0 }}
-      className="sticky top-3 z-20 -mx-1 overflow-hidden rounded-[28px] border border-[#ffe08a] bg-[linear-gradient(180deg,#ffcb2f_0%,#ffe58f_100%)] px-3 py-3 shadow-[0_16px_36px_rgba(254,198,0,0.22)] xl:static xl:mx-0 xl:rounded-l-[0] xl:rounded-r-[40px] xl:border-none xl:bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] xl:px-7 xl:py-12 xl:shadow-[0_18px_48px_rgba(254,198,0,0.18)]"
-      initial={{ opacity: 0, x: -14 }}
-      transition={{ duration: 0.32 }}
-    >
-      <nav className="scrollbar-none flex snap-x gap-2 overflow-x-auto pb-0.5 xl:flex-col xl:gap-1 xl:overflow-visible">
-        {overviewNavItems.map((item) => {
-          let href: string = item.href;
-          if (item.label === "Profile" && user?.role === "MENTOR") {
-            href = "/dashboard/teacher/profile";
-          }
-          const Icon = item.icon;
-
-          const active =
-            pathname === href ||
-            (href !== "/dashboard" && pathname.startsWith(href));
-
-          return (
-            <motion.div
-              key={item.href}
-              transition={{ duration: 0.18 }}
-              whileHover={{ x: 2 }}
-            >
-              <Link
-                className={cx(
-                  "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-(--transition-fast) xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
-                  active
-                    ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/16 xl:shadow-none"
-                    : "hover:bg-white/46 xl:hover:bg-white/20",
-                )}
-                href={href}
-              >
-                <Icon className="h-4.5 w-4.5 xl:h-5 xl:w-5" />
-                <span>{item.label}</span>
-              </Link>
-            </motion.div>
-          );
-        })}
-      </nav>
-    </motion.aside>
-  );
-}
 
 function OverviewStatCard({
   title,
@@ -130,7 +65,7 @@ function OverviewStatCard({
       whileHover={{ y: -4 }}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="relative w-[80px] shrink-0 sm:w-[7rem] lg:w-[8.5rem]">
+        <div className="relative w-[60px] shrink-0 sm:w-[5rem] lg:w-[6rem]">
           <Image
             alt={title}
             className="h-auto w-full object-contain drop-shadow-lg"
@@ -140,12 +75,12 @@ function OverviewStatCard({
           />
         </div>
         <div className="flex-1 min-w-0 text-right">
-          <p className="text-[2rem] font-bold leading-none text-[#fec600] sm:text-[clamp(2rem,3vw,3rem)] whitespace-nowrap tracking-tight">
+          <p className="text-[1.75rem] font-bold leading-none text-[#fec600] sm:text-[clamp(1.75rem,2.5vw,2.5rem)] truncate tracking-tight">
             {value}
           </p>
         </div>
       </div>
-      <p className="mt-3 text-[1rem] font-bold text-white sm:text-[clamp(1rem,1.8vw,1.35rem)]">
+      <p className="mt-3 text-[1rem] font-bold text-white sm:text-[clamp(1rem,1.5vw,1.25rem)]">
         {title}
       </p>
     </motion.article>
@@ -247,45 +182,43 @@ function QuickStartCard({
 
 
 
+import { DashboardSidebar } from "./_components/sidebar-nav";
+
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+function overviewButtonStyles({
+  tone = "primary",
+  className,
+}: {
+  tone?: "primary" | "secondary";
+  className?: string;
+}) {
+  return cx(
+    "inline-flex items-center justify-center rounded-[10px] font-medium transition-transform duration-(--transition-fast) ease-(--ease-standard) hover:-translate-y-0.5",
+    tone === "primary"
+      ? "bg-[#38c1ff] text-white shadow-[0_4px_12px_rgba(56,193,255,0.3)]"
+      : "border border-[#38c1ff] bg-white text-[#38c1ff]",
+    className,
+  );
+}
+
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [overview, setOverview] = useState<UpcomingOverviewResponse | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [overviewLoading, setOverviewLoading] = useState(true);
+  
+  const { data: statsPayload, isLoading: statsLoading } = useSWR(
+    user ? "/api/users/me/stats" : null,
+    fetcher
+  );
+  
+  const { data: overviewPayload, isLoading: overviewLoading } = useSWR(
+    user ? "/api/users/me/upcoming-overview" : null,
+    fetcher
+  );
 
-  useEffect(() => {
-    let active = true;
-
-    Promise.all([
-      fetch("/api/users/me/stats")
-        .then((response) => response.json())
-        .catch(() => null),
-      fetch("/api/users/me/upcoming-overview")
-        .then((response) => response.json())
-        .catch(() => null),
-    ])
-      .then(([statsPayload, overviewPayload]) => {
-        if (!active) return;
-
-        if (statsPayload?.success) {
-          setStats(statsPayload.data);
-        }
-
-        if (overviewPayload?.success) {
-          setOverview(overviewPayload.data);
-        }
-      })
-      .finally(() => {
-        if (!active) return;
-        setStatsLoading(false);
-        setOverviewLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  const stats = statsPayload?.success ? statsPayload.data : null;
+  const overview = overviewPayload?.success ? overviewPayload.data : null;
 
   const displayDate = useMemo(
     () =>
@@ -335,15 +268,11 @@ export default function DashboardPage() {
   return (
     <PageTransition>
       <main className="min-h-screen overflow-x-hidden bg-[#f9fafb] pb-24 sm:bg-[#f7f5f4] sm:pb-0">
+        <div className="mx-auto max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0 lg:grid">
+          <DashboardSidebar />
 
 
-        <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-0 xl:py-8">
-          <div className="grid gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
-            <div className="hidden xl:block xl:pr-7">
-              <OverviewSidebar />
-            </div>
-
-            <section className="min-w-0 space-y-5 px-0 sm:space-y-6 xl:pr-10">
+            <section className="min-w-0 space-y-5 px-4 py-5 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px] sm:space-y-6 xl:pr-10">
               <RevealSection>
                 <div className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(145deg,#38c1ff_0%,#00a7fa_100%)] px-5 py-6 text-white shadow-[0_12px_32px_rgba(56,193,255,0.25)] sm:px-10 sm:py-7 sm:shadow-[0_18px_44px_rgba(56,193,255,0.24)]">
                   <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl sm:hidden" />
@@ -504,7 +433,6 @@ export default function DashboardPage() {
                 </div>
               </div>
             </section>
-          </div>
         </div>
       </main>
     </PageTransition>

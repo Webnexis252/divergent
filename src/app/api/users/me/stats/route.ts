@@ -13,50 +13,51 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req);
     if (!auth) return apiUnauthorized();
 
-    const user = await prisma.user.findUnique({
-      where: { id: auth.userId },
-      select: {
-        streakCount: true,
-        xpPoints: true,
-        enrollments: {
-          where: { status: 'ACTIVE' },
-          orderBy: { updatedAt: 'desc' },
-          take: 4,
-          select: {
-            progressPercent: true,
-            createdAt: true,
-            course: {
-              select: {
-                id: true,
-                title: true,
-                slug: true,
-                thumbnail: true,
-                description: true,
-                teachers: {
-                  select: {
-                    name: true,
+    const [user, enrollmentCount] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: auth.userId },
+        select: {
+          streakCount: true,
+          xpPoints: true,
+          enrollments: {
+            where: { status: 'ACTIVE' },
+            orderBy: { updatedAt: 'desc' },
+            take: 4,
+            select: {
+              progressPercent: true,
+              createdAt: true,
+              course: {
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                  thumbnail: true,
+                  description: true,
+                  teachers: {
+                    select: {
+                      name: true,
+                    },
                   },
-                },
-                _count: {
-                  select: { chapters: true },
-                },
-                chapters: {
-                  select: {
-                    _count: { select: { lessons: true } },
+                  _count: {
+                    select: { chapters: true },
+                  },
+                  chapters: {
+                    select: {
+                      _count: { select: { lessons: true } },
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-    });
+      }),
+      prisma.enrollment.count({
+        where: { userId: auth.userId, status: 'ACTIVE' },
+      })
+    ]);
 
     if (!user) return apiUnauthorized();
-
-    const enrollmentCount = await prisma.enrollment.count({
-      where: { userId: auth.userId, status: 'ACTIVE' },
-    });
 
     const enrolledCourses = user.enrollments.map((e) => {
       const lessonCount = e.course.chapters.reduce(

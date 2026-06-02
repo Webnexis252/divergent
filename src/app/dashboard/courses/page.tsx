@@ -43,6 +43,7 @@ const assets = {
 } as const;
 
 import { studentNavItems } from "../_components/nav-items";
+import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
 
 const sidebarItems = studentNavItems.map(item => ({
   ...item,
@@ -215,27 +216,7 @@ export default async function DashboardCoursesPage() {
 
         <div className="mx-auto max-w-[1920px] px-4 py-6 sm:px-6 lg:px-8 xl:px-0 xl:py-8">
           <div className="grid gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
-            <RevealSection className="hidden xl:block xl:pr-7">
-              <aside className="sticky top-3 z-20 -mx-1 overflow-hidden rounded-[28px] border border-[#ffe08a] bg-[linear-gradient(180deg,#ffcb2f_0%,#ffe58f_100%)] px-3 py-3 shadow-[0_16px_36px_rgba(254,198,0,0.22)] xl:static xl:mx-0 xl:rounded-l-[0] xl:rounded-r-[40px] xl:border-none xl:bg-[linear-gradient(180deg,#ffbf00_0%,#ffd86a_100%)] xl:px-7 xl:py-12 xl:shadow-[0_18px_48px_rgba(254,198,0,0.18)]">
-                <nav className="scrollbar-none flex snap-x gap-2 overflow-x-auto pb-0.5 xl:flex-col xl:gap-1 xl:overflow-visible">
-                  {sidebarItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      className={cx(
-                        "flex min-w-max snap-start items-center gap-2.5 rounded-[20px] bg-white/28 px-3 py-2.5 text-[13px] font-semibold text-black transition-colors duration-150 xl:min-h-[56px] xl:gap-4 xl:rounded-[22px] xl:bg-transparent xl:px-5 xl:py-3 xl:text-[18px] xl:font-medium",
-                        ("active" in item && item.active)
-                          ? "bg-white/78 shadow-[0_10px_22px_rgba(0,0,0,0.08)] xl:bg-white/16 xl:shadow-none"
-                          : "hover:bg-white/46 xl:hover:bg-white/20",
-                      )}
-                      href={item.href}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </Link>
-                  ))}
-                </nav>
-              </aside>
-            </RevealSection>
+            <DashboardSidebar />
 
             <section className="min-w-0 px-0 sm:px-4 xl:pr-10">
               <div className="mx-auto max-w-[1160px] space-y-10">

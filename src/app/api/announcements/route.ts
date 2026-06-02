@@ -17,16 +17,16 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req);
     if (!auth) return apiUnauthorized();
 
-    const user = await prisma.user.findUnique({
-      where: { id: auth.userId },
-      select: { role: true },
-    });
-
-    // Get course IDs the student is enrolled in
-    const enrollments = await prisma.enrollment.findMany({
-      where: { userId: auth.userId },
-      select: { courseId: true },
-    });
+    const [user, enrollments] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: auth.userId },
+        select: { role: true },
+      }),
+      prisma.enrollment.findMany({
+        where: { userId: auth.userId },
+        select: { courseId: true },
+      })
+    ]);
     const enrolledCourseIds = enrollments.map((e) => e.courseId);
 
     const announcements = await prisma.announcement.findMany({
