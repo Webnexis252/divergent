@@ -14,7 +14,7 @@ const prismaClientSingleton = () => {
       ? [{ level: 'warn', emit: 'stdout' }, { level: 'error', emit: 'stdout' }]
       : [{ level: 'error', emit: 'stdout' }];
 
-  return new PrismaClient({
+  const client = new PrismaClient({
     log,
     datasources: {
       db: {
@@ -28,6 +28,36 @@ const prismaClientSingleton = () => {
       timeout: 15000, // max ms a transaction can run before auto-abort
     },
   });
+
+  // Add robust retry mechanism for transient connection errors (like Supabase pooler drops)
+  return client.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ operation, model, args, query }) {
+          let retries = 3;
+          while (true) {
+            try {
+              return await query(args);
+            } catch (error: any) {
+              const isConnectionError = 
+                error instanceof Prisma.PrismaClientInitializationError ||
+                (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P1001') ||
+                error.message?.includes('reach database server') ||
+                error.message?.includes('timed out');
+              
+              if (isConnectionError && retries > 0) {
+                retries -= 1;
+                console.warn(`[Prisma] Connection error on ${model || 'unknown'}.${operation}, retrying... (${3 - retries}/3)`);
+                await new Promise(res => setTimeout(res, 1500));
+                continue;
+              }
+              throw error;
+            }
+          }
+        },
+      },
+    },
+  }) as unknown as PrismaClient;
 };
 
 type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
