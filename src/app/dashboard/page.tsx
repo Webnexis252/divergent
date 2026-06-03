@@ -241,7 +241,7 @@ export default function DashboardPage() {
   const displayName = user?.name?.trim() || "Student";
   const firstName = displayName.split(" ")[0] || "Student";
   const displayEmail = user?.email ?? "student@divergent.in";
-  const enrolledCourses = stats?.enrolledCourses ?? [];
+  const enrolledCourses: EnrolledCourse[] = stats?.enrolledCourses ?? [];
   const featuredCourses = enrolledCourses.slice(0, 2);
 
   const quickStartItems = [

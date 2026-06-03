@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Logout fetch can also fail if shields block it — safe to ignore
     } finally {
-      setUser(null);
+      mutate(undefined, false);
       router.push("/login");
       router.refresh();
     }
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
-        refreshUser: fetchProfile,
+        refreshUser,
         logout,
       }}
     >

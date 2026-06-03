@@ -13,8 +13,20 @@ import prisma from '@/lib/prisma';
  * Each notification is deduplicated by title + actionUrl + userId
  * to prevent duplicate notifications on repeated calls.
  */
+const lastGenerationTime = new Map<string, number>();
+const GENERATION_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
 export async function generateSmartNotificationsForUser(userId: string) {
   const now = new Date();
+  
+  // Debounce: Only run once per hour per user to avoid exhausting the DB connection pool
+  const lastTime = lastGenerationTime.get(userId) || 0;
+  if (now.getTime() - lastTime < GENERATION_COOLDOWN_MS) {
+    return;
+  }
+  
+  // Optimistically set the last generation time to prevent concurrent executions
+  lastGenerationTime.set(userId, now.getTime());
 
   try {
     // Get user's enrolled course IDs
