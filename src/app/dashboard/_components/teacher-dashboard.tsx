@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/context/auth-context";
 import { TeacherAssignmentModal } from "./teacher-assignment-modal";
 import { TeacherSidebar } from "./teacher-sidebar";
+import { TeacherTopBar } from "./teacher-top-bar";
 import { TeacherStatCard } from "./teacher-stats-grid";
 import { ClassControlIcon, DoubtIcon, DashboardIcon, AnalyticsIcon, ProfileIcon, ReplyIcon, WarningIcon } from "./teacher-icons";
 
@@ -137,6 +138,7 @@ export function TeacherDashboard() {
   return (
     <div className="min-h-screen bg-[#f7f6f6] text-black">
       <PageTransition>
+        <TeacherTopBar />
         {/* Shared layout: sidebar + main — same grid as student/admin pages */}
         <div className="mx-auto grid max-w-[1920px] gap-0 lg:grid-cols-[280px_minmax(0,1fr)]">
           <TeacherSidebar />

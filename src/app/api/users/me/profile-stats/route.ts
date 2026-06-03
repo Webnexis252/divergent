@@ -214,7 +214,7 @@ export async function GET(req: NextRequest) {
       ];
 
       const skillEntriesByAttempt = latestTestAttempts.map((attempt) => {
-        const answers = attempt.answers as Record<string, unknown>;
+        const answers = (attempt.answers as Record<string, unknown> | null) || {};
         const sketchGrades =
           (attempt.sketchGrades as Record<string, { points: number; feedback?: string }> | null) ?? {};
 

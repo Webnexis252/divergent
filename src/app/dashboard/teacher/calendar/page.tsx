@@ -1,5 +1,6 @@
 import { PageTransition } from "@/app/dashboard/_components/motion-wrappers";
 import { TeacherSidebar } from "@/app/dashboard/_components/teacher-sidebar";
+import { TeacherTopBar } from "@/app/dashboard/_components/teacher-top-bar";
 import { CalendarWorkspaceClient } from "@/components/calendar/calendar-workspace-client";
 import { requirePageAuth } from "@/lib/page-auth";
 
@@ -7,8 +8,9 @@ export default async function TeacherCalendarPage() {
   await requirePageAuth(["MENTOR"]);
 
   return (
-    <div className="text-black">
+    <div className="min-h-screen bg-[#f7f6f6] text-black">
       <PageTransition>
+        <TeacherTopBar />
         <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
           <TeacherSidebar />
 
