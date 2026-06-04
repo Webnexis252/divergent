@@ -145,37 +145,47 @@ async function getRecentStudentEnrollments(userId: string) {
 export default async function DashboardCoursesPage() {
   const auth = await getPageAuth(["STUDENT"]);
 
-  const [viewer, activeEnrollments, courses] = await Promise.all([
-    auth?.userId
-      ? prisma.user.findUnique({
-          where: { id: auth.userId },
-          select: { name: true, email: true },
-        })
-      : null,
-    auth?.userId
-      ? getRecentStudentEnrollments(auth.userId)
-      : [],
-    prisma.course.findMany({
-      where: { isPublished: true },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        description: true,
-        thumbnail: true,
-        price: true,
-        teachers: {
-          select: { name: true },
-        },
-        _count: {
-          select: {
-            enrollments: true,
+  let viewer = null;
+  let activeEnrollments: Awaited<ReturnType<typeof getRecentStudentEnrollments>> = [];
+  let courses: Array<{ id: string; title: string; slug: string; description: string | null; thumbnail: string | null; price: number; teachers: { name: string | null }[]; _count: { enrollments: number } }> = [];
+  let dbError = false;
+
+  try {
+    [viewer, activeEnrollments, courses] = await Promise.all([
+      auth?.userId
+        ? prisma.user.findUnique({
+            where: { id: auth.userId },
+            select: { name: true, email: true },
+          })
+        : null,
+      auth?.userId
+        ? getRecentStudentEnrollments(auth.userId)
+        : [],
+      prisma.course.findMany({
+        where: { isPublished: true },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          thumbnail: true,
+          price: true,
+          teachers: {
+            select: { name: true },
+          },
+          _count: {
+            select: {
+              enrollments: true,
+            },
           },
         },
-      },
-      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
-    }),
-  ]);
+        orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      }),
+    ]);
+  } catch (err) {
+    console.error('[CoursesPage] DB error:', err);
+    dbError = true;
+  }
 
   const currentEnrollment =
     activeEnrollments.find((enrollment) => enrollment.course.isPublished) ?? null;
@@ -208,6 +218,19 @@ export default async function DashboardCoursesPage() {
     tests: "/dashboard/tests",
     catalog: "/dashboard/library",
   } as const;
+
+  if (dbError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f9fafb] p-8">
+        <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
+          <div className="mb-4 text-5xl">⚠️</div>
+          <h1 className="mb-2 text-xl font-bold text-gray-900">Couldn&apos;t load courses</h1>
+          <p className="mb-6 text-sm text-gray-500">We&apos;re having trouble connecting to the database. This is temporary — please try again in a moment.</p>
+          <a href="/dashboard/courses" className="inline-block rounded-xl bg-[#38c1ff] px-6 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">Retry</a>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <PageTransition>
