@@ -1,13 +1,34 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 
 /**
- * Prisma client singleton with connection-pool tuning for high-concurrency.
+ * Prisma client singleton with connection-pool tuning for Vercel serverless.
  *
- * Connection limit strategy:
- *  - Supabase free tier allows up to 60 direct connections (Supavisor pooler: ~200).
- *  - We cap per-instance at 10 so that multiple serverless instances don't exhaust the pool.
- *  - In development a smaller cap is fine since only one instance runs.
+ * Connection limit strategy for Vercel + Supabase PgBouncer (Transaction Mode):
+ *  - DATABASE_URL must point to port 6543 with ?pgbouncer=true
+ *  - Each serverless function instance must only open 1 connection (connection_limit=1)
+ *  - We enforce this at the code level by overriding the URL at runtime
+ *  - pool_timeout=10 prevents queries from hanging forever if pool is busy
  */
+
+/**
+ * Ensures the DATABASE_URL has connection_limit=1 and pool_timeout=10
+ * appended, which is critical for Vercel serverless environments.
+ */
+function buildDatabaseUrl(): string {
+  const baseUrl = process.env.DATABASE_URL || '';
+  try {
+    const url = new URL(baseUrl);
+    // Force connection_limit=1 for serverless — each function only needs 1 connection.
+    url.searchParams.set('connection_limit', '1');
+    // pool_timeout: wait max 10s for a free connection before erroring.
+    url.searchParams.set('pool_timeout', '10');
+    return url.toString();
+  } catch {
+    // Fallback: if URL is malformed, return as-is
+    return baseUrl;
+  }
+}
+
 const prismaClientSingleton = () => {
   const log: Prisma.LogDefinition[] =
     process.env.NODE_ENV === 'development'
@@ -18,11 +39,9 @@ const prismaClientSingleton = () => {
     log,
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: buildDatabaseUrl(),
       },
     },
-    // Prisma connection pool — this controls the Prisma-level pool,
-    // in addition to PgBouncer/Supavisor at the DB layer.
     transactionOptions: {
       maxWait: 5000,  // max ms to wait for a connection from the pool
       timeout: 15000, // max ms a transaction can run before auto-abort
