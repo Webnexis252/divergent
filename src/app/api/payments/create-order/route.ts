@@ -6,6 +6,16 @@ import { apiError, apiSuccess } from "@/lib/api-response";
 import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
 
 export async function POST(req: NextRequest) {
+  // Guard: Catch missing Cashfree credentials early and return a clear,
+  // actionable error rather than letting Cashfree return a cryptic 400.
+  if (!process.env.CASHFREE_APP_ID || !process.env.CASHFREE_SECRET_KEY) {
+    console.error(
+      "[CREATE ORDER] CASHFREE_APP_ID or CASHFREE_SECRET_KEY is not set. " +
+      "Add these to Vercel Environment Variables (Settings → Environment Variables)."
+    );
+    return apiError("Payment service is not configured. Please contact support.", 503);
+  }
+
   try {
     const auth = await requireAuth(req);
     if (!auth) return apiError("Unauthorized", 401);
@@ -110,14 +120,24 @@ export async function POST(req: NextRequest) {
       order_status: cfOrder.order_status,
     });
   } catch (error: unknown) {
-    // Log the actual Cashfree API error body if available
+    // Log the full Cashfree API error server-side, but return a generic
+    // user-facing message so we don't leak internal details.
     if (error && typeof error === "object" && "response" in error) {
       const axiosErr = error as { response?: { data?: unknown; status?: number } };
-      console.error("CREATE ORDER - Cashfree API Error:", axiosErr.response?.status, JSON.stringify(axiosErr.response?.data));
-      const cfMsg = (axiosErr.response?.data as { message?: string })?.message;
-      return apiError(cfMsg ?? "Payment gateway error", 500);
+      const cfStatus = axiosErr.response?.status;
+      const cfData = axiosErr.response?.data;
+      console.error(
+        "[CREATE ORDER] Cashfree API Error",
+        JSON.stringify({ status: cfStatus, data: cfData })
+      );
+      // Surface specific Cashfree errors only in development
+      if (process.env.NODE_ENV === "development") {
+        const cfMsg = (cfData as { message?: string })?.message;
+        return apiError(cfMsg ?? "Payment gateway error", 500);
+      }
+      return apiError("Could not connect to payment gateway. Please try again or contact support.", 502);
     }
-    console.error("CREATE ORDER ERROR:", error);
-    return apiError(error instanceof Error ? error.message : "Something went wrong", 500);
+    console.error("[CREATE ORDER] Unexpected error:", error);
+    return apiError("Something went wrong while processing your payment. Please try again.", 500);
   }
 }
