@@ -5,7 +5,7 @@ import { Camera } from "lucide-react";
 import { motion } from "motion/react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/context/auth-context";
-import { TeacherTopBar } from "../../_components/teacher-top-bar";
+
 import { TeacherSidebar } from "../../_components/teacher-sidebar";
 import {
   FloatPulse,
@@ -213,9 +213,7 @@ export default function TeacherProfilePage() {
 
   return (
     <PageTransition>
-      <main className="min-h-screen bg-[#f8fafc]">
-        <TeacherTopBar />
-
+      <main>
         <div className="mx-auto max-w-[1920px] px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-12">
             <TeacherSidebar />

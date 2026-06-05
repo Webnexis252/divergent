@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { TeacherSidebar } from "./teacher-sidebar";
-import { TeacherTopBar } from "./teacher-top-bar";
+
 import { PageTransition, RevealSection, StaggerGrid } from "./motion-wrappers";
 import { formatShortDate } from "@/lib/date-format";
 
@@ -443,10 +443,7 @@ export function TeacherAssignmentsView() {
   const active = assignments.filter((a) => a.status === "ACTIVE").length;
 
   return (
-    <div className="min-h-screen bg-[#f7f6f6] text-black">
-      <PageTransition>
-        <TeacherTopBar />
-
+    <PageTransition>
         <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
           <TeacherSidebar />
 
@@ -624,7 +621,6 @@ export function TeacherAssignmentsView() {
             />
           )}
         </AnimatePresence>
-      </PageTransition>
-    </div>
+    </PageTransition>
   );
 }

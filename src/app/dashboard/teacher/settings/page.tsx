@@ -9,11 +9,12 @@ export const metadata: Metadata = {
 
 export default function TeacherSettingsPage() {
   return (
-    <div className="flex gap-8 px-4 py-8 sm:px-6 lg:px-[40px] lg:py-12">
+    <div className="mx-auto grid max-w-[1920px] gap-6 px-0 pb-14 pt-0 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
       <TeacherSidebar />
-      <main className="flex-1 min-w-0">
+      <main className="px-4 py-6 sm:px-6 sm:py-8 lg:px-[38px] lg:py-[18px]">
         <SettingsForm />
       </main>
     </div>
   );
 }
+

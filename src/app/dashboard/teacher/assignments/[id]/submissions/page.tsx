@@ -18,7 +18,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { TeacherSidebar } from "@/app/dashboard/_components/teacher-sidebar";
-import { TeacherTopBar } from "@/app/dashboard/_components/teacher-top-bar";
+
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { cx } from "@/lib/cx";
 
@@ -233,10 +233,7 @@ export default function TeacherSubmissionsPage() {
   const pending = submissions.length - graded;
 
   return (
-    <div className="min-h-screen bg-[#f7f6f6] text-black">
-      <PageTransition>
-        <TeacherTopBar />
-
+    <PageTransition>
         <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
           <TeacherSidebar />
 
@@ -425,7 +422,6 @@ export default function TeacherSubmissionsPage() {
             />
           )}
         </AnimatePresence>
-      </PageTransition>
-    </div>
+    </PageTransition>
   );
 }

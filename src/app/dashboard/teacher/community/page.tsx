@@ -676,8 +676,8 @@ export default function TeacherCommunityPage() {
   const orderedPosts = [...posts].reverse();
 
   return (
-    <div className="text-black bg-[#f9fafb] min-h-screen pb-24 sm:bg-[#f7f5f4] sm:pb-0">
-      <PageTransition>
+    <>
+    <PageTransition>
         <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
           <TeacherSidebar />
 
@@ -1205,6 +1205,6 @@ export default function TeacherCommunityPage() {
           </motion.div>
         </div>
       )}
-    </div>
+    </>
   );
 }

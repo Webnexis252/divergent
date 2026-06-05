@@ -9,7 +9,7 @@ import {
   RevealSection,
 } from "./motion-wrappers";
 import { TeacherSidebar } from "./teacher-sidebar";
-import { TeacherTopBar } from "./teacher-top-bar";
+
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -229,10 +229,7 @@ export function TeacherDoubtDetail() {
     : "?";
 
   return (
-    <div className="min-h-screen bg-[#f7f6f6] text-black">
-      <PageTransition>
-        <TeacherTopBar />
-
+    <PageTransition>
         <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
           <TeacherSidebar />
 
@@ -524,7 +521,6 @@ export function TeacherDoubtDetail() {
             )}
           </main>
         </div>
-      </PageTransition>
-    </div>
+    </PageTransition>
   );
 }
