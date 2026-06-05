@@ -55,10 +55,12 @@ export function EnrollButton({
           return;
         }
 
-        const { payment_session_id } = json.data;
+        const { payment_session_id, cashfree_environment } = json.data;
 
-        // 2. Load Cashfree SDK and initialize checkout
-        const mode = process.env.NEXT_PUBLIC_CASHFREE_ENVIRONMENT === "PRODUCTION" ? "production" : "sandbox";
+        // 2. Load Cashfree SDK using the environment returned by the server.
+        // This avoids relying on NEXT_PUBLIC_ build-time variables which can
+        // cause a sandbox/production mismatch if not set before the build.
+        const mode = cashfree_environment === "production" ? "production" : "sandbox";
         const cashfree = await load({ mode });
 
         const result = await cashfree.checkout({

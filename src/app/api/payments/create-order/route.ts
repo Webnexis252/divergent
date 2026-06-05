@@ -114,10 +114,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Return the environment so the client always opens the correct
+    // Cashfree SDK (production vs sandbox) regardless of NEXT_PUBLIC_ vars.
+    const cashfreeEnvironment =
+      process.env.CASHFREE_ENVIRONMENT === "PRODUCTION" ? "production" : "sandbox";
+
     return apiSuccess({
       order_id: cfOrder.order_id,
       payment_session_id: cfOrder.payment_session_id,
       order_status: cfOrder.order_status,
+      cashfree_environment: cashfreeEnvironment,
     });
   } catch (error: unknown) {
     // Log the full Cashfree API error server-side, but return a generic
