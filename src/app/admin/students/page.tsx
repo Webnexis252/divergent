@@ -93,6 +93,26 @@ export default function AdminStudentsPage() {
     }
   }, [search]);
 
+  const handleDeleteStudent = useCallback(async (studentId: string) => {
+    if (!confirm("Are you sure you want to request deletion for this student? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`/api/admin/students/${studentId}`, {
+        method: "DELETE",
+      });
+      const payload = await res.json();
+      if (!res.ok || !payload.success) {
+        setToast({ msg: payload.error ?? "Failed to delete student", ok: false });
+      } else {
+        setToast({ msg: payload.message || "Student account deleted", ok: true });
+        void fetchStudents(search);
+      }
+    } catch {
+      setToast({ msg: "Network error", ok: false });
+    } finally {
+      setTimeout(() => setToast(null), 3500);
+    }
+  }, [search]);
+
   const handleXpAdjust = useCallback(
     async (studentId: string, direction: "ADD" | "REMOVE", amount: number) => {
       try {
@@ -297,6 +317,7 @@ export default function AdminStudentsPage() {
               canManageXp={user?.role === "SUPER_ADMIN"}
               onXpAdjust={handleXpAdjust}
               onStatusChange={handleStatusChange}
+              onDelete={handleDeleteStudent}
               students={students}
             />
           )}

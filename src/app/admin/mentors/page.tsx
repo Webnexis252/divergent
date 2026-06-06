@@ -114,6 +114,7 @@ export default function AdminMentorsPage() {
   const [roleFilter, setRoleFilter] = useState("All");
   const [sortBy, setSortBy] = useState<"name" | "doubts" | "replies" | "joined">("joined");
   const [modal, setModal] = useState<ModalState>(null);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
   const loadData = () => {
     setLoading(true);
@@ -133,6 +134,48 @@ export default function AdminMentorsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData(); 
   }, []);
+
+  const handleSuspendTeacher = async (mentorId: string) => {
+    if (!confirm("Are you sure you want to suspend this teacher account?")) return;
+    try {
+      const res = await fetch(`/api/admin/mentors/${mentorId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "SUSPENDED" }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setToast({ msg: data.error || "Failed to suspend teacher", ok: false });
+      } else {
+        setToast({ msg: data.message || "Teacher suspended", ok: true });
+        loadData();
+      }
+    } catch {
+      setToast({ msg: "Network error", ok: false });
+    } finally {
+      setTimeout(() => setToast(null), 3500);
+    }
+  };
+
+  const handleDeleteTeacher = async (mentorId: string) => {
+    if (!confirm("Are you sure you want to request deletion for this teacher? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`/api/admin/mentors/${mentorId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setToast({ msg: data.error || "Failed to delete teacher", ok: false });
+      } else {
+        setToast({ msg: data.message || "Teacher deleted", ok: true });
+        loadData();
+      }
+    } catch {
+      setToast({ msg: "Network error", ok: false });
+    } finally {
+      setTimeout(() => setToast(null), 3500);
+    }
+  };
 
   const filtered = useMemo(() => {
     let result = [...active];
@@ -313,6 +356,8 @@ export default function AdminMentorsPage() {
                       index={i}
                       onGenerateOtp={() => setModal({ type: "otp", mentor })}
                       onSetPassword={() => setModal({ type: "password", mentor })}
+                      onSuspend={handleSuspendTeacher}
+                      onDelete={handleDeleteTeacher}
                     />
                   ))}
                 </Suspense>
@@ -342,6 +387,22 @@ export default function AdminMentorsPage() {
             onClose={() => setModal(null)}
             onSuccess={loadData}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Toast notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className={`fixed bottom-6 right-6 z-50 rounded-2xl px-5 py-3 text-[14px] font-semibold text-white shadow-xl ${
+              toast.ok ? "bg-[#15803d]" : "bg-[#dc2626]"
+            }`}
+          >
+            {toast.ok ? "✓" : "✗"} {toast.msg}
+          </motion.div>
         )}
       </AnimatePresence>
     </PageTransition>

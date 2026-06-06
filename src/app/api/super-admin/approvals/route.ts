@@ -19,6 +19,16 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" }
     });
 
+    const teacherRequests = await prisma.teacherApprovalRequest.findMany({
+      where: { status: "PENDING" },
+      include: {
+        admin: {
+          select: { name: true, email: true }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
     const exportRequests = await prisma.dataExportRequest.findMany({
       where: { status: "PENDING" },
       include: {
@@ -29,7 +39,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" }
     });
 
-    return NextResponse.json({ success: true, data: { studentRequests, exportRequests } });
+    return NextResponse.json({ success: true, data: { studentRequests, teacherRequests, exportRequests } });
   } catch (error: unknown) {
     console.error("Error fetching approvals:", error);
     return NextResponse.json({ success: false, error: "Failed to fetch approvals" }, { status: 500 });

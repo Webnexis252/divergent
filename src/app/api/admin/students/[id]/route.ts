@@ -133,3 +133,48 @@ export async function GET(req: NextRequest, { params }: Params) {
     return apiServerError();
   }
 }
+
+/**
+ * DELETE /api/admin/students/[id]
+ * Deletes a student account, or creates a deletion request for Super Admin approval.
+ */
+export async function DELETE(req: NextRequest, { params }: Params) {
+  try {
+    const auth = await requireAuth(req, ['ADMIN', 'SUPER_ADMIN']);
+    if (!auth) return apiForbidden('Admin access required');
+
+    const { id } = await params;
+
+    // Verify student exists
+    const student = await prisma.user.findUnique({
+      where: { id, role: 'STUDENT' },
+      select: { id: true, name: true, email: true },
+    });
+    if (!student) return apiNotFound('Student');
+
+    // If Admin tries to delete the account
+    if (auth.role === 'ADMIN') {
+      await prisma.studentApprovalRequest.create({
+        data: {
+          type: 'DELETE',
+          targetUserId: student.id,
+          name: student.name || 'Unknown',
+          email: student.email || 'unknown@example.com',
+          requestedBy: auth.userId,
+          status: 'PENDING',
+        },
+      });
+      return apiSuccess({ studentId: id, status: 'PENDING_APPROVAL' }, 'Deletion request sent to Super Admin');
+    }
+
+    // If Super Admin, delete immediately
+    await prisma.user.delete({
+      where: { id },
+    });
+
+    return apiSuccess({ studentId: id }, 'Student account deleted successfully');
+  } catch (err) {
+    console.error('[DELETE_STUDENT_ERROR]', err);
+    return apiServerError();
+  }
+}

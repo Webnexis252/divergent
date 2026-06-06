@@ -56,6 +56,7 @@ model User {
   achievements          UserAchievement[]
   teachingCourses       Course[]               @relation("CourseTeachers")
   studentApprovalRequests StudentApprovalRequest[] @relation("AdminStudentRequests")
+  teacherApprovalRequests TeacherApprovalRequest[] @relation("AdminTeacherRequests")
   announcementRecipients AnnouncementRecipient[]
   dataExportRequests   DataExportRequest[] @relation("AdminExportRequests")
 }
@@ -801,9 +802,27 @@ model StudentApprovalRequest {
   @@index([requestedBy])
 }
 
+model TeacherApprovalRequest {
+  id             String              @id @default(cuid())
+  type           ApprovalRequestType @default(CREATE)
+  targetUserId   String?             // The user being suspended/deleted
+  name           String
+  email          String
+  phone          String?
+  requestedBy    String
+  status         ApprovalStatus      @default(PENDING)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  admin User @relation("AdminTeacherRequests", fields: [requestedBy], references: [id], onDelete: Cascade)
+
+  @@index([requestedBy])
+}
+
 enum ApprovalRequestType {
   CREATE
   SUSPEND
+  DELETE
 }
 
 enum ApprovalStatus {

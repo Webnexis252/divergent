@@ -4,7 +4,7 @@ import { Fragment, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MoreVerticalIcon, PauseCircleIcon } from "./admin-icons";
 import { formatShortDate } from "@/lib/date-format";
-import { Target } from "lucide-react";
+import { Target, Trash2 } from "lucide-react";
 import { AssignGoalModal } from "../students/_components/AssignGoalModal";
 
 import type { StudentRecord } from "../students/_types";
@@ -15,11 +15,13 @@ export function StudentTable({
   onXpAdjust,
   students,
   onStatusChange,
+  onDelete,
 }: {
   canManageXp?: boolean;
   onXpAdjust?: (id: string, direction: "ADD" | "REMOVE", amount: number) => Promise<void> | void;
   students: StudentRecord[];
   onStatusChange: (id: string, status: string) => void;
+  onDelete?: (id: string) => void;
 }) {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [xpDrafts, setXpDrafts] = useState<Record<string, string>>({});
@@ -214,6 +216,18 @@ export function StudentTable({
                             Suspend Account
                           </span>
                         </button>
+                        {onDelete && (
+                          <button
+                            className="flex w-full items-center justify-between rounded-2xl border border-[#ef4444] bg-[#fef2f2] p-3 text-sm font-medium text-[#b91c1c] transition active:bg-[#fee2e2]"
+                            onClick={() => onDelete(student.id)}
+                            type="button"
+                          >
+                            <span className="flex items-center gap-2">
+                              <Trash2 className="h-4 w-4" />
+                              Delete Account
+                            </span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -423,6 +437,18 @@ export function StudentTable({
                                       Suspend Account
                                     </span>
                                   </button>
+                                  {onDelete && (
+                                    <button
+                                      className="flex w-full items-center justify-between rounded-2xl border border-[#ef4444] bg-[#fef2f2] p-3 text-sm font-medium text-[#b91c1c] transition hover:bg-[#fee2e2]"
+                                      onClick={() => onDelete(student.id)}
+                                      type="button"
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        <Trash2 className="h-4 w-4" />
+                                        Delete Account
+                                      </span>
+                                    </button>
+                                  )}
                                 </div>
                                 <div className="mt-4 grid grid-cols-2 gap-4">
                                   <div className="rounded-2xl bg-[#eff8ff] p-4 text-center">

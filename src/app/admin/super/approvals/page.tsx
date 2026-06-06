@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, X, UserCheck } from "lucide-react";
+import { Check, X, UserCheck, Trash2 } from "lucide-react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Surface } from "@/components/ui/surface";
@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 interface ApprovalRequest {
   id: string;
-  type: "CREATE" | "SUSPEND";
+  type: "CREATE" | "SUSPEND" | "DELETE";
   name: string;
   email: string;
   phone: string | null;
@@ -24,6 +24,7 @@ interface ApprovalRequest {
 
 export default function StudentApprovalsPage() {
   const [studentRequests, setStudentRequests] = useState<ApprovalRequest[]>([]);
+  const [teacherRequests, setTeacherRequests] = useState<ApprovalRequest[]>([]);
   const [exportRequests, setExportRequests] = useState<ApprovalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -35,6 +36,7 @@ export default function StudentApprovalsPage() {
       const data = await res.json();
       if (data.success) {
         setStudentRequests(data.data.studentRequests || []);
+        setTeacherRequests(data.data.teacherRequests || []);
         setExportRequests(data.data.exportRequests || []);
       }
     } catch (err) {
@@ -92,8 +94,34 @@ export default function StudentApprovalsPage() {
     }
   };
 
+  const handleTeacherAction = async (id: string, action: "APPROVE" | "REJECT") => {
+    try {
+      const res = await fetch(`/api/super-admin/teacher-approvals/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setToast({ msg: data.error || `Failed to ${action.toLowerCase()} teacher request`, ok: false });
+      } else {
+        setToast({ msg: data.message, ok: true });
+        void fetchRequests();
+      }
+    } catch (err) {
+      setToast({ msg: "Network error", ok: false });
+    } finally {
+      setTimeout(() => setToast(null), 3500);
+    }
+  };
+
   const creationRequests = studentRequests.filter(req => req.type === "CREATE");
   const suspensionRequests = studentRequests.filter(req => req.type === "SUSPEND");
+  const deletionRequests = studentRequests.filter(req => req.type === "DELETE");
+
+  const teacherSuspensionRequests = teacherRequests.filter(req => req.type === "SUSPEND");
+  const teacherDeletionRequests = teacherRequests.filter(req => req.type === "DELETE");
 
   return (
     <PageTransition>
@@ -116,7 +144,7 @@ export default function StudentApprovalsPage() {
             <Surface className="h-64 animate-pulse">
               <span className="sr-only">Loading approval requests</span>
             </Surface>
-          ) : (studentRequests.length === 0 && exportRequests.length === 0) ? (
+          ) : (studentRequests.length === 0 && teacherRequests.length === 0 && exportRequests.length === 0) ? (
             <EmptyState
               icon={<UserCheck className="h-6 w-6" />}
               title="No pending requests"
@@ -189,6 +217,114 @@ export default function StudentApprovalsPage() {
                             className="bg-red-600 hover:bg-red-700 text-white"
                           >
                             <Check className="mr-2 h-4 w-4" /> Approve Suspension
+                          </Button>
+                        </div>
+                      </div>
+                    </Surface>
+                  ))}
+                </div>
+              )}
+
+              {deletionRequests.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-gray-900 px-1">Account Deletion Requests</h2>
+                  {deletionRequests.map((req) => (
+                    <Surface key={req.id} className="border-red-400 bg-red-100 p-6 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-red-800">DELETE ACCOUNT: {req.name}</h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-red-900/80">
+                            <span>Email: {req.email}</span>
+                          </div>
+                          <div className="mt-2 text-xs font-medium text-red-700/70">
+                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleAction(req.id, "REJECT")}
+                            className="text-red-900 hover:text-red-950 bg-red-50 hover:bg-red-200"
+                          >
+                            <X className="mr-2 h-4 w-4" /> Reject
+                          </Button>
+                          <Button
+                            onClick={() => handleAction(req.id, "APPROVE")}
+                            className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Confirm Deletion
+                          </Button>
+                        </div>
+                      </div>
+                    </Surface>
+                  ))}
+                </div>
+              )}
+
+              {teacherSuspensionRequests.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-gray-900 px-1">Teacher Suspension Requests</h2>
+                  {teacherSuspensionRequests.map((req) => (
+                    <Surface key={req.id} className="border-red-200 bg-red-50/30 p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-red-700">Suspend: {req.name}</h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+                            <span>Email: {req.email}</span>
+                          </div>
+                          <div className="mt-2 text-xs font-medium text-gray-500">
+                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleTeacherAction(req.id, "REJECT")}
+                            className="text-gray-600 hover:text-gray-900"
+                          >
+                            <X className="mr-2 h-4 w-4" /> Reject
+                          </Button>
+                          <Button
+                            onClick={() => handleTeacherAction(req.id, "APPROVE")}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            <Check className="mr-2 h-4 w-4" /> Approve Suspension
+                          </Button>
+                        </div>
+                      </div>
+                    </Surface>
+                  ))}
+                </div>
+              )}
+
+              {teacherDeletionRequests.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-gray-900 px-1">Teacher Deletion Requests</h2>
+                  {teacherDeletionRequests.map((req) => (
+                    <Surface key={req.id} className="border-red-400 bg-red-100 p-6 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-red-800">DELETE TEACHER: {req.name}</h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-red-900/80">
+                            <span>Email: {req.email}</span>
+                          </div>
+                          <div className="mt-2 text-xs font-medium text-red-700/70">
+                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleTeacherAction(req.id, "REJECT")}
+                            className="text-red-900 hover:text-red-950 bg-red-50 hover:bg-red-200"
+                          >
+                            <X className="mr-2 h-4 w-4" /> Reject
+                          </Button>
+                          <Button
+                            onClick={() => handleTeacherAction(req.id, "APPROVE")}
+                            className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Confirm Deletion
                           </Button>
                         </div>
                       </div>

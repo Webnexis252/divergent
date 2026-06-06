@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { KeyRound, Lock } from "lucide-react";
+import { KeyRound, Lock, PauseCircle, Trash2 } from "lucide-react";
 import { formatShortDate } from "@/lib/date-format";
 import type { Mentor } from "./_types";
 import { MentorGoalsModal } from "./MentorGoalsModal";
@@ -38,11 +38,15 @@ export function MentorCard({
   index,
   onGenerateOtp,
   onSetPassword,
+  onSuspend,
+  onDelete,
 }: {
   mentor: Mentor;
   index: number;
   onGenerateOtp?: () => void;
   onSetPassword?: () => void;
+  onSuspend?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }) {
   const [isGoalsOpen, setIsGoalsOpen] = useState(false);
   const [isSkillsOpen, setIsSkillsOpen] = useState(false);
@@ -169,6 +173,32 @@ export function MentorCard({
                 >
                   <Lock className="h-3.5 w-3.5" />
                   Set Password
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Account Management Actions */}
+          {mentor.role !== "SUPER_ADMIN" && (onSuspend || onDelete) && (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {onSuspend && (
+                <button
+                  id={`mentor-suspend-btn-${mentor.id}`}
+                  onClick={() => onSuspend(mentor.id)}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
+                >
+                  <PauseCircle className="h-3.5 w-3.5" />
+                  Suspend
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  id={`mentor-delete-btn-${mentor.id}`}
+                  onClick={() => onDelete(mentor.id)}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
                 </button>
               )}
             </div>

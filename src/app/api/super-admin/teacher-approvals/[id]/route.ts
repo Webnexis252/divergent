@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -18,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
     }
 
-    const request = await prisma.studentApprovalRequest.findUnique({
+    const request = await prisma.teacherApprovalRequest.findUnique({
       where: { id }
     });
 
@@ -36,86 +35,42 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           return NextResponse.json({ success: false, error: "Target user ID missing for suspension request" }, { status: 400 });
         }
 
-        // Suspend the user (pause all enrollments)
+        // Suspend the teacher
         await prisma.$transaction([
-          prisma.enrollment.updateMany({
-            where: { userId: request.targetUserId },
-            data: { status: "PAUSED" }
+          prisma.user.update({
+            where: { id: request.targetUserId },
+            data: { mentorStatus: "SUSPENDED" }
           }),
-          prisma.studentApprovalRequest.update({
+          prisma.teacherApprovalRequest.update({
             where: { id },
             data: { status: "APPROVED" }
           })
         ]);
 
-        return NextResponse.json({ success: true, message: "Student account suspended successfully." });
+        return NextResponse.json({ success: true, message: "Teacher account suspended successfully." });
       } else if (request.type === "DELETE") {
         if (!request.targetUserId) {
           return NextResponse.json({ success: false, error: "Target user ID missing for deletion request" }, { status: 400 });
         }
 
-        // Delete the user and update request status
+        // Delete the teacher and update request status
         await prisma.$transaction([
           prisma.user.delete({
             where: { id: request.targetUserId }
           }),
-          prisma.studentApprovalRequest.update({
+          prisma.teacherApprovalRequest.update({
             where: { id },
             data: { status: "APPROVED" }
           })
         ]);
 
-        return NextResponse.json({ success: true, message: "Student account deleted successfully." });
+        return NextResponse.json({ success: true, message: "Teacher account deleted successfully." });
       } else {
-        // Default CREATE behavior
-        // Check user doesn't already exist
-        const existingUser = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { email: request.email },
-              { phone: request.phone || undefined }
-            ]
-          }
-        });
-
-        if (existingUser) {
-          return NextResponse.json(
-            { success: false, error: "User with this email or phone already exists" },
-            { status: 400 }
-          );
-        }
-
-        // Create user and mark request as approved in a transaction
-        const [newUser] = await prisma.$transaction([
-          prisma.user.create({
-            data: {
-              name: request.name,
-              email: request.email,
-              phone: request.phone,
-              passwordHash: request.passwordHash,
-              role: "STUDENT"
-            }
-          }),
-          prisma.studentApprovalRequest.update({
-            where: { id },
-            data: { status: "APPROVED" }
-          })
-        ]);
-
-        // Enroll in course if specified (offline/cash payment requested by admin)
-        if (request.courseId) {
-          await ensureActiveEnrollmentWithXp(newUser.id, request.courseId);
-        }
-
-        return NextResponse.json({
-          success: true,
-          message: request.courseId
-            ? "Student approved, created, and enrolled in course successfully."
-            : "Student approved and created successfully.",
-        });
+        // Handle CREATE if implemented later, or just error for now.
+        return NextResponse.json({ success: false, error: "Teacher creation via approval request not supported yet." }, { status: 400 });
       }
     } else {
-      await prisma.studentApprovalRequest.update({
+      await prisma.teacherApprovalRequest.update({
         where: { id },
         data: { status: "REJECTED" }
       });
