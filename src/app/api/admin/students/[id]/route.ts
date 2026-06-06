@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           targetUserId: student.id,
           name: student.name || 'Unknown',
           email: student.email || 'unknown@example.com',
-          requestedBy: auth.id,
+          requestedBy: auth.userId,
           status: 'PENDING',
         },
       });
