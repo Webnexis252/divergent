@@ -68,6 +68,7 @@ const footerVariants = {
       { label: "Teacher Login", href: "/teacher-login" },
       { label: "Sign Up", href: "/signup" },
       { label: "Teacher Access", href: "/teacher-register" },
+      { label: "Contact Us", href: "/contact" },
     ],
     description:
       "Divergent Classes brings live learning, structured courses, mentorship, and progress systems into one calmer experience for students and educators.",
@@ -75,6 +76,12 @@ const footerVariants = {
       "Prepared for discovery, enrollment, and a smoother path into the learning workspace.",
   },
 } as const;
+
+const policyLinks = [
+  { label: "Contact Us", href: "/contact" },
+  { label: "Terms & Conditions", href: "/terms" },
+  { label: "Refund & Cancellation", href: "/refund-policy" },
+];
 
 export function DashboardFooter() {
   const pathname = usePathname();
@@ -121,7 +128,17 @@ export function DashboardFooter() {
 
         <div className="flex flex-col gap-3 border-t border-white/10 pt-5 text-[12px] text-white/42 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Divergent Classes. All rights reserved.</p>
-          <p>{variant.closing}</p>
+          <div className="flex flex-wrap items-center gap-4">
+            {policyLinks.map((pl) => (
+              <Link
+                key={pl.href}
+                href={pl.href}
+                className="text-white/40 transition-colors hover:text-white/70"
+              >
+                {pl.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </motion.div>
     </footer>
