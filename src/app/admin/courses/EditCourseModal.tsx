@@ -159,6 +159,8 @@ export default function EditCourseModal({
     } finally {
       setSaving(false);
     }
+  }
+
   const TABS: { id: TabValue; label: string; icon: React.ReactNode }[] = [
     { id: "general", label: "General", icon: <Settings className="h-4 w-4" /> },
     { id: "pricing", label: "Pricing & Plans", icon: <CreditCard className="h-4 w-4" /> },
