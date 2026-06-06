@@ -4,7 +4,7 @@ import { Fragment, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MoreVerticalIcon, PauseCircleIcon } from "./admin-icons";
 import { formatShortDate } from "@/lib/date-format";
-import { Target, Trash2 } from "lucide-react";
+import { Target, Trash2, Lock } from "lucide-react";
 import { AssignGoalModal } from "../students/_components/AssignGoalModal";
 
 import type { StudentRecord } from "../students/_types";
@@ -16,12 +16,14 @@ export function StudentTable({
   students,
   onStatusChange,
   onDelete,
+  onSetPassword,
 }: {
   canManageXp?: boolean;
   onXpAdjust?: (id: string, direction: "ADD" | "REMOVE", amount: number) => Promise<void> | void;
   students: StudentRecord[];
   onStatusChange: (id: string, status: string) => void;
   onDelete?: (id: string) => void;
+  onSetPassword?: (id: string) => void;
 }) {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [xpDrafts, setXpDrafts] = useState<Record<string, string>>({});
@@ -195,37 +197,41 @@ export function StudentTable({
                           <p className="mt-1 text-xs text-[#64748b]">Assignments</p>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-3">
+                      <div className="grid grid-cols-2 gap-2 mt-4">
                         <button
-                          className="flex w-full items-center justify-between rounded-2xl border border-[#bae6fd] bg-[#f0f9ff] p-3 text-sm font-medium text-[#0284c7] transition hover:bg-[#e0f2fe]"
+                          className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-[12px] font-semibold text-blue-700 transition-all hover:bg-blue-100 hover:shadow-sm active:scale-95"
                           onClick={() => setAssignGoalStudent({ id: student.id, name: student.name ?? "Student" })}
                           type="button"
                         >
-                          <span className="flex items-center gap-2">
-                            <Target className="h-4 w-4" />
-                            Assign Weekly Goal
-                          </span>
+                          <Target className="h-3.5 w-3.5" />
+                          Assign Goal
                         </button>
+                        {onSetPassword && (
+                          <button
+                            className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[12px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:shadow-sm active:scale-95"
+                            onClick={() => onSetPassword(student.id)}
+                            type="button"
+                          >
+                            <Lock className="h-3.5 w-3.5" />
+                            Set Password
+                          </button>
+                        )}
                         <button
-                          className="flex w-full items-center justify-between rounded-2xl border border-[#fecaca] bg-[#fff5f5] p-3 text-sm font-medium text-[#dc2626] transition active:bg-[#fee2e2]"
+                          className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
                           onClick={() => onStatusChange(student.id, "SUSPENDED")}
                           type="button"
                         >
-                          <span className="flex items-center gap-2">
-                            <PauseCircleIcon className="h-4 w-4" />
-                            Suspend Account
-                          </span>
+                          <PauseCircleIcon className="h-3.5 w-3.5" />
+                          Suspend
                         </button>
                         {onDelete && (
                           <button
-                            className="flex w-full items-center justify-between rounded-2xl border border-[#ef4444] bg-[#fef2f2] p-3 text-sm font-medium text-[#b91c1c] transition active:bg-[#fee2e2]"
+                            className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
                             onClick={() => onDelete(student.id)}
                             type="button"
                           >
-                            <span className="flex items-center gap-2">
-                              <Trash2 className="h-4 w-4" />
-                              Delete Account
-                            </span>
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
                           </button>
                         )}
                       </div>
@@ -416,37 +422,41 @@ export function StudentTable({
                                     </div>
                                   </div>
                                 ) : null}
-                                <div className="flex flex-col gap-3">
+                                <div className="grid grid-cols-2 gap-2 mt-2">
                                   <button
-                                    className="flex w-full items-center justify-between rounded-2xl border border-[#bae6fd] bg-[#f0f9ff] p-3 text-sm font-medium text-[#0284c7] transition hover:bg-[#e0f2fe]"
+                                    className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-[12px] font-semibold text-blue-700 transition-all hover:bg-blue-100 hover:shadow-sm active:scale-95"
                                     onClick={() => setAssignGoalStudent({ id: student.id, name: student.name ?? "Student" })}
                                     type="button"
                                   >
-                                    <span className="flex items-center gap-2">
-                                      <Target className="h-4 w-4" />
-                                      Assign Weekly Goal
-                                    </span>
+                                    <Target className="h-3.5 w-3.5" />
+                                    Assign Goal
                                   </button>
+                                  {onSetPassword && (
+                                    <button
+                                      className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[12px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:shadow-sm active:scale-95"
+                                      onClick={() => onSetPassword(student.id)}
+                                      type="button"
+                                    >
+                                      <Lock className="h-3.5 w-3.5" />
+                                      Set Password
+                                    </button>
+                                  )}
                                   <button
-                                    className="flex w-full items-center justify-between rounded-2xl border border-[#fecaca] bg-[#fff5f5] p-3 text-sm font-medium text-[#dc2626] transition hover:bg-[#fee2e2]"
+                                    className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
                                     onClick={() => onStatusChange(student.id, "SUSPENDED")}
                                     type="button"
                                   >
-                                    <span className="flex items-center gap-2">
-                                      <PauseCircleIcon className="h-4 w-4" />
-                                      Suspend Account
-                                    </span>
+                                    <PauseCircleIcon className="h-3.5 w-3.5" />
+                                    Suspend
                                   </button>
                                   {onDelete && (
                                     <button
-                                      className="flex w-full items-center justify-between rounded-2xl border border-[#ef4444] bg-[#fef2f2] p-3 text-sm font-medium text-[#b91c1c] transition hover:bg-[#fee2e2]"
+                                      className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
                                       onClick={() => onDelete(student.id)}
                                       type="button"
                                     >
-                                      <span className="flex items-center gap-2">
-                                        <Trash2 className="h-4 w-4" />
-                                        Delete Account
-                                      </span>
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                      Delete
                                     </button>
                                   )}
                                 </div>

@@ -13,6 +13,7 @@ import { PageTransition, RevealSection } from "@/app/dashboard/_components/motio
 import { useAuth } from "@/context/auth-context";
 import { AddStudentModal } from "./_components/AddStudentModal";
 import type { StudentRecord } from "./_types";
+import { SetStudentPasswordModal } from "./_components/SetStudentPasswordModal";
 import dynamic from "next/dynamic";
 
 const StudentTable = dynamic(() => import("../_components/StudentTable").then(m => m.StudentTable), {
@@ -26,6 +27,7 @@ export default function AdminStudentsPage() {
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [setPassStudent, setSetPassStudent] = useState<{ id: string; name: string | null; email: string | null } | null>(null);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
 
@@ -318,6 +320,10 @@ export default function AdminStudentsPage() {
               onXpAdjust={handleXpAdjust}
               onStatusChange={handleStatusChange}
               onDelete={handleDeleteStudent}
+              onSetPassword={(id) => {
+                const s = students.find((st) => st.id === id);
+                if (s) setSetPassStudent({ id, name: s.name, email: s.email });
+              }}
               students={students}
             />
           )}
@@ -349,6 +355,18 @@ export default function AdminStudentsPage() {
           void fetchStudents(search);
         }}
       />
+
+      <AnimatePresence>
+        {setPassStudent && (
+          <SetStudentPasswordModal
+            studentId={setPassStudent.id}
+            studentName={setPassStudent.name}
+            studentEmail={setPassStudent.email}
+            onClose={() => setSetPassStudent(null)}
+            onSuccess={() => setToast({ msg: "Password set successfully.", ok: true })}
+          />
+        )}
+      </AnimatePresence>
     </PageTransition>
   );
 }
