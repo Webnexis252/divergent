@@ -24,8 +24,8 @@ export type Course = {
   autoUpdateEnrolled: boolean;
   learningOutcomes: unknown;
   features: unknown;
-  testimonials: unknown;
-  faqs: unknown;
+  testimonials: Array<{ text: string; name: string; rating?: number }> | null;
+  faqs: Array<{ question: string; answer: string }> | null;
   category: string | null;
   courseLevel: string | null;
   language: string | null;

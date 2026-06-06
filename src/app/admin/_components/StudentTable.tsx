@@ -197,9 +197,9 @@ export function StudentTable({
                           <p className="mt-1 text-xs text-[#64748b]">Assignments</p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 mt-4">
+                      <div className="mt-4 flex flex-wrap gap-2">
                         <button
-                          className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-[12px] font-semibold text-blue-700 transition-all hover:bg-blue-100 hover:shadow-sm active:scale-95"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-95"
                           onClick={() => setAssignGoalStudent({ id: student.id, name: student.name ?? "Student" })}
                           type="button"
                         >
@@ -208,7 +208,7 @@ export function StudentTable({
                         </button>
                         {onSetPassword && (
                           <button
-                            className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[12px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:shadow-sm active:scale-95"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 active:scale-95"
                             onClick={() => onSetPassword(student.id)}
                             type="button"
                           >
@@ -217,7 +217,7 @@ export function StudentTable({
                           </button>
                         )}
                         <button
-                          className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
                           onClick={() => onStatusChange(student.id, "SUSPENDED")}
                           type="button"
                         >
@@ -226,7 +226,7 @@ export function StudentTable({
                         </button>
                         {onDelete && (
                           <button
-                            className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
                             onClick={() => onDelete(student.id)}
                             type="button"
                           >
@@ -422,9 +422,9 @@ export function StudentTable({
                                     </div>
                                   </div>
                                 ) : null}
-                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                <div className="mt-3 flex flex-wrap gap-2">
                                   <button
-                                    className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-[12px] font-semibold text-blue-700 transition-all hover:bg-blue-100 hover:shadow-sm active:scale-95"
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-95"
                                     onClick={() => setAssignGoalStudent({ id: student.id, name: student.name ?? "Student" })}
                                     type="button"
                                   >
@@ -433,7 +433,7 @@ export function StudentTable({
                                   </button>
                                   {onSetPassword && (
                                     <button
-                                      className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[12px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:shadow-sm active:scale-95"
+                                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 active:scale-95"
                                       onClick={() => onSetPassword(student.id)}
                                       type="button"
                                     >
@@ -442,7 +442,7 @@ export function StudentTable({
                                     </button>
                                   )}
                                   <button
-                                    className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
                                     onClick={() => onStatusChange(student.id, "SUSPENDED")}
                                     type="button"
                                   >
@@ -451,7 +451,7 @@ export function StudentTable({
                                   </button>
                                   {onDelete && (
                                     <button
-                                      className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
+                                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
                                       onClick={() => onDelete(student.id)}
                                       type="button"
                                     >

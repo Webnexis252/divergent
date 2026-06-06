@@ -129,11 +129,11 @@ export function MentorCard({
           </p>
 
           {/* Actions */}
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             <button
               id={`mentor-goals-btn-${mentor.id}`}
               onClick={() => setIsGoalsOpen(true)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[12px] font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:shadow-sm active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 active:scale-95"
             >
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
@@ -143,66 +143,58 @@ export function MentorCard({
             <button
               id={`mentor-skills-btn-${mentor.id}`}
               onClick={() => setIsSkillsOpen(true)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-[12px] font-semibold text-violet-700 transition-all hover:bg-violet-100 hover:shadow-sm active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500/20 active:scale-95"
             >
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
               </svg>
               Skill Ratings
             </button>
+
+            {/* Teacher Security Actions (MENTOR only) */}
+            {mentor.role === "MENTOR" && onGenerateOtp && (
+              <button
+                id={`mentor-otp-btn-${mentor.id}`}
+                onClick={onGenerateOtp}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-yellow-50 hover:border-yellow-200 hover:text-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/20 active:scale-95"
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                Reset OTP
+              </button>
+            )}
+            {mentor.role === "MENTOR" && onSetPassword && (
+              <button
+                id={`mentor-setpw-btn-${mentor.id}`}
+                onClick={onSetPassword}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-95"
+              >
+                <Lock className="h-3.5 w-3.5" />
+                Set Password
+              </button>
+            )}
+
+            {/* Account Management Actions */}
+            {mentor.role !== "SUPER_ADMIN" && onSuspend && (
+              <button
+                id={`mentor-suspend-btn-${mentor.id}`}
+                onClick={() => onSuspend(mentor.id)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
+              >
+                <PauseCircle className="h-3.5 w-3.5" />
+                Suspend
+              </button>
+            )}
+            {mentor.role !== "SUPER_ADMIN" && onDelete && (
+              <button
+                id={`mentor-delete-btn-${mentor.id}`}
+                onClick={() => onDelete(mentor.id)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            )}
           </div>
-
-          {/* Teacher Security Actions (MENTOR only) */}
-          {mentor.role === "MENTOR" && (onGenerateOtp || onSetPassword) && (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {onGenerateOtp && (
-                <button
-                  id={`mentor-otp-btn-${mentor.id}`}
-                  onClick={onGenerateOtp}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2.5 text-[12px] font-semibold text-yellow-700 transition-all hover:bg-yellow-100 hover:shadow-sm active:scale-95"
-                >
-                  <KeyRound className="h-3.5 w-3.5" />
-                  Reset OTP
-                </button>
-              )}
-              {onSetPassword && (
-                <button
-                  id={`mentor-setpw-btn-${mentor.id}`}
-                  onClick={onSetPassword}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-[12px] font-semibold text-blue-700 transition-all hover:bg-blue-100 hover:shadow-sm active:scale-95"
-                >
-                  <Lock className="h-3.5 w-3.5" />
-                  Set Password
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Account Management Actions */}
-          {mentor.role !== "SUPER_ADMIN" && (onSuspend || onDelete) && (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {onSuspend && (
-                <button
-                  id={`mentor-suspend-btn-${mentor.id}`}
-                  onClick={() => onSuspend(mentor.id)}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
-                >
-                  <PauseCircle className="h-3.5 w-3.5" />
-                  Suspend
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  id={`mentor-delete-btn-${mentor.id}`}
-                  onClick={() => onDelete(mentor.id)}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[12px] font-semibold text-red-700 transition-all hover:bg-red-100 hover:shadow-sm active:scale-95"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Delete
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </motion.article>
 

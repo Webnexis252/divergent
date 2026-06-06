@@ -1,4 +1,7 @@
-"use client";
+import re
+
+with open("src/app/admin/courses/EditCourseModal.tsx", "w") as f:
+    f.write("""\"use client\";
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -7,6 +10,7 @@ import {
   Plus,
   Trash2,
   Pencil,
+  ImagePlus,
   Check,
   Eye,
   EyeOff,
@@ -21,7 +25,7 @@ import { Button, buttonStyles } from "@/components/ui/button";
 import { Field, TextAreaField } from "@/components/ui/field";
 
 import type { Course, Teacher } from "./_types";
-import { getTeacherDisplayName } from "./_types";
+import { teacherRoleLabel, getTeacherDisplayName } from "./_types";
 import { uploadCourseThumbnail } from "./upload-thumbnail";
 
 type TabValue = "general" | "pricing" | "curriculum" | "social";
@@ -29,11 +33,13 @@ type TabValue = "general" | "pricing" | "curriculum" | "social";
 export default function EditCourseModal({
   course,
   teachers,
+  teachersLoading,
   onClose,
   onSaved,
 }: {
   course: Course;
   teachers: Teacher[];
+  teachersLoading?: boolean;
   onClose: () => void;
   onSaved: (course: Course) => void;
 }) {
@@ -159,6 +165,16 @@ export default function EditCourseModal({
     } finally {
       setSaving(false);
     }
+  }
+
+  const selectedTeacher = teachers.find((t) => form.teacherIds.includes(t.id)) ?? null;
+  const selectedTeacherLabel = getTeacherDisplayName(selectedTeacher);
+  const priceValue = Number.parseFloat(form.price);
+  const priceLabel =
+    Number.isFinite(priceValue) && priceValue > 0
+      ? `₹${priceValue.toLocaleString("en-IN")}`
+      : "Free access";
+
   const TABS: { id: TabValue; label: string; icon: React.ReactNode }[] = [
     { id: "general", label: "General", icon: <Settings className="h-4 w-4" /> },
     { id: "pricing", label: "Pricing & Plans", icon: <CreditCard className="h-4 w-4" /> },
@@ -710,7 +726,7 @@ export default function EditCourseModal({
                                   <div className="flex items-start justify-between gap-4">
                                     <div>
                                       <p className="text-[14px] font-semibold text-[#0f172a]">{t.name} <span className="text-[#f59e0b] ml-1">({t.rating}★)</span></p>
-                                      <p className="mt-1 text-[13px] text-[#64748b]">&quot;{t.text}&quot;</p>
+                                      <p className="mt-1 text-[13px] text-[#64748b]">"{t.text}"</p>
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
                                       <button type="button" className="p-1.5 text-[#64748b] hover:text-[#0f172a]" onClick={() => { setEditTestimonial(t); setEditingTestimonialIdx(idx); }}>
@@ -819,3 +835,4 @@ export default function EditCourseModal({
     </motion.div>
   );
 }
+""")

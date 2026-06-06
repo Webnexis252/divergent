@@ -533,7 +533,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     </div>
 
                     <div className="relative z-10 mt-10 xl:mt-[86px]">
-                      <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.06)] xl:max-w-[877px]">
+                      <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.06)] xl:max-w-[calc(100%-423px)] 2xl:max-w-[877px]">
                         <div className="grid gap-5 sm:grid-cols-[153px_minmax(0,1fr)]">
                           <div className="flex min-h-[148px] flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,#ffc107_0%,#ffab00_100%)] px-6 py-7 text-center text-white">
                             <div className="relative rounded-full rounded-bl-sm border border-white/40 bg-white/10 p-2.5 backdrop-blur-sm">
