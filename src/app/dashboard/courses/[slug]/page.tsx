@@ -218,8 +218,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       thumbnail: true,
       price: true,
       originalPrice: true,
-      emiPrice: true,
-      emiLink: true,
+      emiPlans: true,
       isPublished: true,
       totalHours: true,
       lessonCount: true,
@@ -354,13 +353,9 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     course.price > 0 && originalPrice > course.price
       ? Math.max(1, Math.round((1 - course.price / originalPrice) * 100))
       : 0;
-  const emiAmount =
-    course.emiPrice !== null && course.emiPrice > 0
-      ? course.emiPrice
-      : course.price > 0
-        ? Math.max(1, Math.round(course.price / 12))
-        : 0;
-  const emiLink = course.emiLink ?? null;
+  const emiPlans = Array.isArray(course.emiPlans) && (course.emiPlans as Array<{ label: string; amount: number; dueDays: number }>).length > 0
+    ? (course.emiPlans as Array<{ label: string; amount: number; dueDays: number }>)
+    : null;
   const courseHours = totalDuration > 0 ? Math.max(1, Math.round(totalDuration / 60)) : 0;
   const learningItems = Array.isArray(course.learningOutcomes) && course.learningOutcomes.length > 0
     ? (course.learningOutcomes as string[])
@@ -966,30 +961,39 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                             )}
                           </div>
 
-                          {course.price > 0 ? (
+                          {course.price > 0 && emiPlans ? (
                             <div className="rounded-[16px] border border-gray-100 bg-white p-4 shadow-sm">
                               <div className="space-y-2.5">
                                 <div className="flex items-center gap-2">
                                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-50">
                                     <Award className="h-3.5 w-3.5 text-purple-500" />
                                   </div>
-                                  <p className="text-[13px] font-semibold text-black">Pay with EMI</p>
+                                  <p className="text-[13px] font-semibold text-black">Pay in Instalments</p>
                                   <span className="ml-auto rounded bg-purple-100 px-1.5 py-0.5 text-[9px] font-bold text-purple-700">
-                                    NO COST EMI
+                                    CUSTOM EMI
                                   </span>
                                 </div>
-                                <p className="text-[12px] leading-[1.5] text-gray-500">
-                                  Starting at <span className="font-bold text-black">₹{emiAmount.toLocaleString("en-IN")}</span>/mo.
+                                <table className="w-full text-[12px]">
+                                  <thead>
+                                    <tr className="border-b border-gray-100">
+                                      <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">#</th>
+                                      <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">Amount</th>
+                                      <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">Due</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {emiPlans.map((plan, i) => (
+                                      <tr key={i} className="border-b border-gray-50 last:border-0">
+                                        <td className="py-1.5 pr-2 font-medium text-[#475569]">{plan.label || `${i + 1}.`}</td>
+                                        <td className="py-1.5 pr-2 font-bold text-black">₹{plan.amount.toLocaleString("en-IN")}</td>
+                                        <td className="py-1.5 text-[#64748b]">{plan.dueDays === 0 ? 'On enrollment' : `${plan.dueDays} days`}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                                <p className="text-[11px] text-[#94a3b8]">
+                                  Total: ₹{emiPlans.reduce((s, p) => s + p.amount, 0).toLocaleString("en-IN")} over {emiPlans.length} instalment{emiPlans.length !== 1 ? 's' : ''}
                                 </p>
-                                {emiLink ? (
-                                  <a href={emiLink} target="_blank" rel="noopener noreferrer" className="inline-flex cursor-pointer items-center text-[11px] font-bold text-[#38c1ff] hover:underline">
-                                    View all EMI Plans <ChevronRight className="h-3 w-3" />
-                                  </a>
-                                ) : (
-                                  <p className="inline-flex cursor-pointer items-center text-[11px] font-bold text-[#38c1ff] hover:underline">
-                                    View all EMI Plans <ChevronRight className="h-3 w-3" />
-                                  </p>
-                                )}
                               </div>
                             </div>
                           ) : (

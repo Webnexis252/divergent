@@ -15,6 +15,9 @@ import {
   ShieldCheck,
   ClipboardList,
   X,
+  Plus,
+  Trash2,
+  Pencil,
 } from "lucide-react";
 import { formatShortDate } from "@/lib/date-format";
 import { Field, TextAreaField } from "@/components/ui/field";
@@ -26,6 +29,8 @@ import type { Course, Teacher } from "./_types";
 import { teacherRoleLabel, getTeacherDisplayName } from "./_types";
 import { uploadCourseThumbnail } from "./upload-thumbnail";
 import CurriculumManager from "./CurriculumManager";
+
+type EmiInstalment = { label: string; amount: string; dueDays: string };
 
 type EditForm = {
   title: string;
@@ -43,8 +48,7 @@ type EditForm = {
   courseLevel: string;
   language: string;
   originalPrice: string;
-  emiPrice: string;
-  emiLink: string;
+  emiPlans: EmiInstalment[];
 };
 
 function CurriculumSection({ courseId }: { courseId: string }) {
@@ -103,8 +107,9 @@ export default function EditCourseModal({
     courseLevel: course.courseLevel ?? "",
     language: course.language ?? "",
     originalPrice: course.originalPrice !== null ? String(course.originalPrice) : "",
-    emiPrice: course.emiPrice !== null ? String(course.emiPrice) : "",
-    emiLink: course.emiLink ?? "",
+    emiPlans: Array.isArray(course.emiPlans)
+      ? course.emiPlans.map((p) => ({ label: p.label, amount: String(p.amount), dueDays: String(p.dueDays) }))
+      : [],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -112,6 +117,11 @@ export default function EditCourseModal({
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const [thumbnailUploadError, setThumbnailUploadError] = useState("");
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  // Instalment editing state
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newInstalment, setNewInstalment] = useState<EmiInstalment>({ label: "", amount: "", dueDays: "" });
+  const [editInstalment, setEditInstalment] = useState<EmiInstalment>({ label: "", amount: "", dueDays: "" });
 
   async function handleThumbnailFileChange(file: File) {
     setThumbnailUploading(true);
@@ -155,8 +165,13 @@ export default function EditCourseModal({
           courseLevel: form.courseLevel || undefined,
           language: form.language || undefined,
           originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
-          emiPrice: form.emiPrice ? Number(form.emiPrice) : undefined,
-          emiLink: form.emiLink || undefined,
+          emiPlans: form.emiPlans.length > 0
+            ? form.emiPlans.map((p) => ({
+                label: p.label,
+                amount: Number(p.amount) || 0,
+                dueDays: Number(p.dueDays) || 0,
+              }))
+            : null,
         }),
       });
 
@@ -272,10 +287,214 @@ export default function EditCourseModal({
             <Field label="Course Level" onChange={e => setForm(p => ({...p, courseLevel: e.target.value}))} value={form.courseLevel} placeholder="e.g. Beginner" />
             <Field label="Language" onChange={e => setForm(p => ({...p, language: e.target.value}))} value={form.language} placeholder="e.g. English" />
           </div>
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
             <Field label="Original Price (INR)" onChange={e => setForm(p => ({...p, originalPrice: e.target.value}))} value={form.originalPrice} placeholder="e.g. 2000" type="number" hint="Crossed out price" />
-            <Field label="EMI Starting Price" onChange={e => setForm(p => ({...p, emiPrice: e.target.value}))} value={form.emiPrice} placeholder="e.g. 500" type="number" hint="Per month EMI" />
-            <Field label="EMI Link" onChange={e => setForm(p => ({...p, emiLink: e.target.value}))} value={form.emiLink} placeholder="https://..." hint="Link for EMI plans" />
+          </div>
+
+          {/* Instalment Plan Builder */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-(--text-muted)">Instalment Breakdown</p>
+                <p className="mt-0.5 text-[12px] text-[#94a3b8]">Define custom payment instalments (amount + days from enrollment)</p>
+              </div>
+              {!showAddForm && editingIdx === null && (
+                <button
+                  type="button"
+                  onClick={() => { setNewInstalment({ label: "", amount: "", dueDays: "" }); setShowAddForm(true); }}
+                  className="flex items-center gap-1.5 rounded-[10px] border border-[#dde8f5] bg-[#f6faff] px-3 py-1.5 text-[13px] font-semibold text-[#0284c7] transition hover:bg-[#e0f2fe]"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add instalment
+                </button>
+              )}
+            </div>
+
+            {/* Table */}
+            <div className="overflow-hidden rounded-[16px] border border-[#e2ebf5]">
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="border-b border-[#e2ebf5] bg-[#f6faff]">
+                    <th className="px-4 py-3 text-left font-semibold text-[#64748b]">#</th>
+                    <th className="px-4 py-3 text-left font-semibold text-[#64748b]">Amount (₹)</th>
+                    <th className="px-4 py-3 text-left font-semibold text-[#64748b]">Due (days)</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {form.emiPlans.length === 0 && !showAddForm ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-6 text-center text-[13px] text-[#94a3b8]">
+                        No instalments defined. Click &ldquo;Add instalment&rdquo; to create one.
+                      </td>
+                    </tr>
+                  ) : (
+                    form.emiPlans.map((plan, idx) => (
+                      <tr key={idx} className={cx("border-b border-[#f0f4f8] last:border-0 transition-colors", editingIdx === idx ? "bg-[#f0f9ff]" : "hover:bg-[#fafcff]")}>
+                        {editingIdx === idx ? (
+                          /* Inline edit row */
+                          <>
+                            <td className="px-4 py-2">
+                              <input
+                                autoFocus
+                                value={editInstalment.label}
+                                onChange={e => setEditInstalment(p => ({ ...p, label: e.target.value }))}
+                                className="w-full rounded-[8px] border border-[#bfdbfe] bg-white px-2 py-1.5 text-[13px] outline-none focus:border-[#38c1ff]"
+                                placeholder="e.g. 1st instalment"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input
+                                type="number"
+                                min={0}
+                                value={editInstalment.amount}
+                                onChange={e => setEditInstalment(p => ({ ...p, amount: e.target.value }))}
+                                className="w-24 rounded-[8px] border border-[#bfdbfe] bg-white px-2 py-1.5 text-[13px] outline-none focus:border-[#38c1ff]"
+                                placeholder="0"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <input
+                                type="number"
+                                min={0}
+                                value={editInstalment.dueDays}
+                                onChange={e => setEditInstalment(p => ({ ...p, dueDays: e.target.value }))}
+                                className="w-20 rounded-[8px] border border-[#bfdbfe] bg-white px-2 py-1.5 text-[13px] outline-none focus:border-[#38c1ff]"
+                                placeholder="0"
+                              />
+                            </td>
+                            <td className="px-4 py-2">
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setForm(p => ({
+                                      ...p,
+                                      emiPlans: p.emiPlans.map((pl, i) => i === idx ? editInstalment : pl)
+                                    }));
+                                    setEditingIdx(null);
+                                  }}
+                                  className="rounded-[8px] bg-[#38c1ff] px-2.5 py-1 text-[12px] font-semibold text-white transition hover:bg-[#0ea5e9]"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingIdx(null)}
+                                  className="rounded-[8px] border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold text-[#374151] transition hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          /* Display row */
+                          <>
+                            <td className="px-4 py-3 font-medium text-[#1e293b]">{plan.label || `${idx + 1}${idx === 0 ? 'st' : idx === 1 ? 'nd' : idx === 2 ? 'rd' : 'th'} instalment`}</td>
+                            <td className="px-4 py-3 font-semibold text-[#0f172a]">₹{plan.amount ? Number(plan.amount).toLocaleString("en-IN") : 0}</td>
+                            <td className="px-4 py-3 text-[#64748b]">{plan.dueDays || 0} days</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2 justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() => { setEditInstalment({ ...plan }); setEditingIdx(idx); }}
+                                  className="grid h-7 w-7 place-items-center rounded-[8px] border border-[#e5e7eb] text-[#64748b] transition hover:border-[#38c1ff] hover:text-[#38c1ff]"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setForm(p => ({ ...p, emiPlans: p.emiPlans.filter((_, i) => i !== idx) }))}
+                                  className="grid h-7 w-7 place-items-center rounded-[8px] border border-[#e5e7eb] text-[#94a3b8] transition hover:border-[#fca5a5] hover:text-[#dc2626]"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))
+                  )}
+
+                  {/* Add new instalment inline row */}
+                  {showAddForm && (
+                    <tr className="border-t border-[#bfdbfe] bg-[#f0f9ff]">
+                      <td className="px-4 py-2">
+                        <input
+                          autoFocus
+                          value={newInstalment.label}
+                          onChange={e => setNewInstalment(p => ({ ...p, label: e.target.value }))}
+                          className="w-full rounded-[8px] border border-[#bfdbfe] bg-white px-2 py-1.5 text-[13px] outline-none focus:border-[#38c1ff]"
+                          placeholder={`${form.emiPlans.length + 1}${form.emiPlans.length === 0 ? 'st' : form.emiPlans.length === 1 ? 'nd' : form.emiPlans.length === 2 ? 'rd' : 'th'} instalment`}
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          min={0}
+                          value={newInstalment.amount}
+                          onChange={e => setNewInstalment(p => ({ ...p, amount: e.target.value }))}
+                          className="w-24 rounded-[8px] border border-[#bfdbfe] bg-white px-2 py-1.5 text-[13px] outline-none focus:border-[#38c1ff]"
+                          placeholder="0"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          min={0}
+                          value={newInstalment.dueDays}
+                          onChange={e => setNewInstalment(p => ({ ...p, dueDays: e.target.value }))}
+                          className="w-20 rounded-[8px] border border-[#bfdbfe] bg-white px-2 py-1.5 text-[13px] outline-none focus:border-[#38c1ff]"
+                          placeholder="0"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!newInstalment.amount) return;
+                              const ordinals = ['1st', '2nd', '3rd', '4th', '5th', '6th'];
+                              const idx = form.emiPlans.length;
+                              setForm(p => ({
+                                ...p,
+                                emiPlans: [...p.emiPlans, {
+                                  label: newInstalment.label || `${ordinals[idx] ?? (idx + 1) + 'th'} instalment`,
+                                  amount: newInstalment.amount,
+                                  dueDays: newInstalment.dueDays || '0',
+                                }]
+                              }));
+                              setNewInstalment({ label: "", amount: "", dueDays: "" });
+                              setShowAddForm(false);
+                            }}
+                            className="rounded-[8px] bg-[#38c1ff] px-2.5 py-1 text-[12px] font-semibold text-white transition hover:bg-[#0ea5e9] disabled:opacity-50"
+                            disabled={!newInstalment.amount}
+                          >
+                            Add
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setShowAddForm(false); setNewInstalment({ label: "", amount: "", dueDays: "" }); }}
+                            className="rounded-[8px] border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold text-[#374151] transition hover:bg-gray-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {form.emiPlans.length > 0 && (
+              <p className="text-[12px] text-[#64748b]">
+                Total: ₹{form.emiPlans.reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString("en-IN")}
+                {" · "}{form.emiPlans.length} instalment{form.emiPlans.length !== 1 ? 's' : ''}
+              </p>
+            )}
           </div>
 
           {/* Description & Thumbnail */}

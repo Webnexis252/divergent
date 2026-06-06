@@ -33,8 +33,7 @@ export type Course = {
   pricingType: string;
   publishDate: string | null;
   originalPrice: number | null;
-  emiPrice: number | null;
-  emiLink: string | null;
+  emiPlans: Array<{ label: string; amount: number; dueDays: number }> | null;
   createdAt: string;
   teachers: Pick<Teacher, "id" | "name" | "email" | "role">[];
   _count: { chapters: number; enrollments: number };

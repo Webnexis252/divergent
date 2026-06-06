@@ -82,8 +82,7 @@ export async function POST(req: NextRequest) {
       pricingType,
       publishDate,
       originalPrice,
-      emiPrice,
-      emiLink
+      emiPlans,
     } = parsed.data;
 
     // Generate a URL-friendly slug from the title
@@ -136,8 +135,7 @@ export async function POST(req: NextRequest) {
         visibility,
         pricingType,
         originalPrice,
-        emiPrice,
-        emiLink,
+        emiPlans: emiPlans ? emiPlans : undefined,
         publishDate: publishDate ? new Date(publishDate) : undefined,
         teachers: teacherIds && teacherIds.length > 0 ? { connect: teacherIds.map(id => ({ id })) } : undefined
       },

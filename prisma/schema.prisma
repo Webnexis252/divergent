@@ -100,8 +100,7 @@ model Course {
   pricingType        String    @default("PAID")
   publishDate        DateTime?
   originalPrice      Float?
-  emiPrice           Float?
-  emiLink            String?
+  emiPlans           Json?     // [{label, amount, dueDays}]
 }
 
 model Chapter {
