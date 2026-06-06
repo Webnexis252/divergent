@@ -783,20 +783,27 @@ model PushToken {
 }
 
 model StudentApprovalRequest {
-  id             String         @id @default(cuid())
+  id             String              @id @default(cuid())
+  type           ApprovalRequestType @default(CREATE)
+  targetUserId   String?             // The user being suspended (if type is SUSPEND)
   name           String
   email          String
   phone          String?
   passwordHash   String?
   requestedBy    String
-  courseId       String?        // Optional: course to enroll student in (for offline/cash payments)
-  status         ApprovalStatus @default(PENDING)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  courseId       String?             // Optional: course to enroll student in (for offline/cash payments)
+  status         ApprovalStatus      @default(PENDING)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 
   admin User @relation("AdminStudentRequests", fields: [requestedBy], references: [id], onDelete: Cascade)
 
   @@index([requestedBy])
+}
+
+enum ApprovalRequestType {
+  CREATE
+  SUSPEND
 }
 
 enum ApprovalStatus {

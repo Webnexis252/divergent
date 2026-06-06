@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 interface ApprovalRequest {
   id: string;
+  type: "CREATE" | "SUSPEND";
   name: string;
   email: string;
   phone: string | null;
@@ -91,6 +92,9 @@ export default function StudentApprovalsPage() {
     }
   };
 
+  const creationRequests = studentRequests.filter(req => req.type === "CREATE");
+  const suspensionRequests = studentRequests.filter(req => req.type === "SUSPEND");
+
   return (
     <PageTransition>
       <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
@@ -100,8 +104,8 @@ export default function StudentApprovalsPage() {
             <div className="relative z-10">
               <SectionHeading
                 eyebrow="Super Admin"
-                title="Student Approvals"
-                description="Review and approve students manually added by administrators."
+                title="Admin Requests"
+                description="Review and approve student creation and suspension requests initiated by administrators."
               />
             </div>
           </Surface>
@@ -116,14 +120,14 @@ export default function StudentApprovalsPage() {
             <EmptyState
               icon={<UserCheck className="h-6 w-6" />}
               title="No pending requests"
-              description="There are currently no students or exports awaiting approval."
+              description="There are currently no actions awaiting approval."
             />
           ) : (
             <div className="space-y-8">
-              {studentRequests.length > 0 && (
+              {creationRequests.length > 0 && (
                 <div className="space-y-4">
                   <h2 className="text-xl font-bold text-gray-900 px-1">Student Creation Requests</h2>
-                  {studentRequests.map((req) => (
+                  {creationRequests.map((req) => (
                     <Surface key={req.id} className="p-6">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
@@ -149,6 +153,42 @@ export default function StudentApprovalsPage() {
                             className="bg-green-600 hover:bg-green-700 text-white"
                           >
                             <Check className="mr-2 h-4 w-4" /> Approve
+                          </Button>
+                        </div>
+                      </div>
+                    </Surface>
+                  ))}
+                </div>
+              )}
+
+              {suspensionRequests.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-gray-900 px-1">Account Suspension Requests</h2>
+                  {suspensionRequests.map((req) => (
+                    <Surface key={req.id} className="border-red-200 bg-red-50/30 p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-red-700">Suspend: {req.name}</h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+                            <span>Email: {req.email}</span>
+                          </div>
+                          <div className="mt-2 text-xs font-medium text-gray-500">
+                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleAction(req.id, "REJECT")}
+                            className="text-gray-600 hover:text-gray-900"
+                          >
+                            <X className="mr-2 h-4 w-4" /> Reject
+                          </Button>
+                          <Button
+                            onClick={() => handleAction(req.id, "APPROVE")}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            <Check className="mr-2 h-4 w-4" /> Approve Suspension
                           </Button>
                         </div>
                       </div>

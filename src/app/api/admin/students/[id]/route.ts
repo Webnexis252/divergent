@@ -25,17 +25,35 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const body = await req.json();
     const { courseId, status } = body as { courseId?: string; status?: string };
 
-    const validStatuses = ['ACTIVE', 'PAUSED', 'CANCELLED', 'COMPLETED'];
+    const validStatuses = ['ACTIVE', 'PAUSED', 'CANCELLED', 'COMPLETED', 'SUSPENDED'];
     if (!status || !validStatuses.includes(status)) {
-      return apiError('Invalid status. Must be ACTIVE, PAUSED, CANCELLED, or COMPLETED', 400);
+      return apiError('Invalid status. Must be ACTIVE, PAUSED, CANCELLED, COMPLETED, or SUSPENDED', 400);
     }
 
     // Verify student exists
     const student = await prisma.user.findUnique({
       where: { id, role: 'STUDENT' },
-      select: { id: true, name: true },
+      select: { id: true, name: true, email: true },
     });
     if (!student) return apiNotFound('Student');
+
+    // If Admin tries to suspend the entire account
+    if (status === 'SUSPENDED' && !courseId && auth.role === 'ADMIN') {
+      await prisma.studentApprovalRequest.create({
+        data: {
+          type: 'SUSPEND',
+          targetUserId: student.id,
+          name: student.name || 'Unknown',
+          email: student.email || 'unknown@example.com',
+          requestedBy: auth.id,
+          status: 'PENDING',
+        },
+      });
+      return apiSuccess({ studentId: id, status: 'PENDING_APPROVAL' }, 'Suspension request sent to Super Admin');
+    }
+
+    // Map SUSPENDED to PAUSED for the database
+    const dbStatus = status === 'SUSPENDED' ? 'PAUSED' : status;
 
     if (courseId) {
       // Update specific enrollment status
@@ -46,7 +64,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
       const updated = await prisma.enrollment.update({
         where: { id: enrollment.id },
-        data: { status: status as 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'COMPLETED' },
+        data: { status: dbStatus as 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'COMPLETED' },
         include: { course: { select: { title: true } } },
       });
 
@@ -55,10 +73,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // Update ALL enrollments for the student (e.g., suspend student)
       await prisma.enrollment.updateMany({
         where: { userId: id },
-        data: { status: status as 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'COMPLETED' },
+        data: { status: dbStatus as 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'COMPLETED' },
       });
 
-      return apiSuccess({ studentId: id, status }, 'All enrollments updated');
+      return apiSuccess({ studentId: id, status: dbStatus }, 'All enrollments updated');
     }
   } catch (err) {
     console.error('[PATCH_STUDENT_STATUS_ERROR]', err);

@@ -82,7 +82,7 @@ export default function AdminStudentsPage() {
       if (!res.ok || !payload.success) {
         setToast({ msg: payload.error ?? "Failed to update status", ok: false });
       } else {
-        setToast({ msg: "Enrollment status updated", ok: true });
+        setToast({ msg: payload.message || "Enrollment status updated", ok: true });
         // Refresh list
         void fetchStudents(search);
       }
