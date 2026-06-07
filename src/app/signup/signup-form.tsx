@@ -213,15 +213,9 @@ export function SignupForm() {
         return;
       }
 
-      if (payload.data?.magicLinkSent) {
-        setSuccessMessage(
-          payload.message ??
-            "Registration link sent! Please check your email to complete signup."
-        );
-        return;
-      }
-
-      setError("Invalid response from server.");
+      // Since email verification is disabled, redirect immediately to dashboard
+      router.push("/dashboard");
+      return;
     } catch {
       setError("Network error. Please try again.");
     } finally {
