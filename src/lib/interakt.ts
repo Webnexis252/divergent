@@ -76,6 +76,9 @@ export async function sendWhatsAppOtp(phone: string, otp: string): Promise<void>
       name: templateName,
       languageCode: 'en',
       bodyValues: [otp], // {{1}} in the template body = OTP
+      buttonValues: {
+        "0": [otp]       // Provide the OTP to the Copy Code button
+      }
     },
     callbackData: `otp_send_${Date.now()}`,
   };
