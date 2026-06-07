@@ -33,7 +33,7 @@ async function main() {
     if (u.phone) takenPhones.add(u.phone);
   }
 
-  const usersToCreate = [];
+  const usersToCreate: any[] = [];
   const processedEmails = new Set<string>();
 
   for (const record of records) {
@@ -75,7 +75,7 @@ async function main() {
     enrollmentsSet.add(`${e.userId}-${e.courseId}`);
   }
 
-  const enrollmentsToCreate = [];
+  const enrollmentsToCreate: any[] = [];
   const processedEnrollments = new Set<string>();
 
   for (const record of records) {
