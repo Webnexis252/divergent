@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const fileContent = fs.readFileSync('/Users/vedansh/Downloads/lmsproto/Learner_Enrollments (5).csv', 'utf-8');
-  const records = parse(fileContent, {
+  const records: any[] = parse(fileContent, {
     columns: true,
     skip_empty_lines: true,
   });
