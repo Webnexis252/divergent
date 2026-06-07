@@ -240,7 +240,7 @@ export function SignupForm() {
     );
   }
 
-  const showPhoneOtpSection = role === "STUDENT" && phone.trim().length >= 8;
+  const showPhoneOtpSection = phone.trim().length >= 8;
 
   return (
     <Surface className="w-full max-w-[35rem] px-5 py-5 sm:px-6 sm:py-6" tone="elevated">
@@ -322,11 +322,9 @@ export function SignupForm() {
         <div className="space-y-2">
           <label className="block text-[13.5px] font-medium text-(--text-strong)">
             Phone Number
-            {role === "STUDENT" && (
-              <span className="ml-1.5 text-[12px] font-normal text-(--text-muted)">
-                (Optional — use international format: +91XXXXXXXXXX)
-              </span>
-            )}
+            <span className="ml-1.5 text-[12px] font-normal text-(--text-muted)">
+              (Optional — use international format: +91XXXXXXXXXX)
+            </span>
           </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
