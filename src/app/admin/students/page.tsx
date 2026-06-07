@@ -188,6 +188,32 @@ export default function AdminStudentsPage() {
     setToast({ msg: "Export downloaded successfully", ok: true });
   }, [students]);
 
+  const handleExportEnrollmentsCsv = useCallback(async () => {
+    try {
+      setToast({ msg: "Generating CSV...", ok: true });
+      // Call the API endpoint
+      const response = await fetch("/api/admin/export/enrollments");
+      if (!response.ok) {
+        throw new Error("Failed to export");
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "learner_enrollments.csv";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setToast({ msg: "Export downloaded successfully", ok: true });
+    } catch (error) {
+      console.error(error);
+      setToast({ msg: "Failed to download export", ok: false });
+    }
+  }, []);
+
   const handleRequestExport = async () => {
     setExportLoading(true);
     try {
@@ -260,10 +286,16 @@ export default function AdminStudentsPage() {
                   </Button>
                   
                   {exportStatus === "APPROVED" ? (
-                    <Button onClick={handleExportToExcel} variant="secondary" size="lg" type="button">
-                      <Download className="h-[18px] w-[18px]" />
-                      Export
-                    </Button>
+                    <>
+                      <Button onClick={handleExportToExcel} variant="secondary" size="lg" type="button">
+                        <Download className="h-[18px] w-[18px]" />
+                        Export Students
+                      </Button>
+                      <Button onClick={handleExportEnrollmentsCsv} variant="secondary" size="lg" type="button">
+                        <Download className="h-[18px] w-[18px]" />
+                        Export Enrollments (CSV)
+                      </Button>
+                    </>
                   ) : exportStatus === "PENDING" ? (
                     <Button variant="secondary" size="lg" type="button" disabled>
                       <Download className="h-[18px] w-[18px]" />
