@@ -79,7 +79,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    const { email, name, picture } = profileData;
+    const { email: rawEmail, name, picture } = profileData;
+    const email = rawEmail.toLowerCase();
 
     // 3. Database Operation
     let user = await prisma.user.findUnique({ where: { email } });

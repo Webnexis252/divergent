@@ -42,6 +42,13 @@ export function SettingsForm() {
   const otpInputRef = useRef<HTMLInputElement>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // --- Password change states ---
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+
   // Fetch full user profile (including phone) on mount
   useEffect(() => {
     fetch("/api/users/me")
@@ -180,6 +187,44 @@ export function SettingsForm() {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setPasswordError("Password must be at least 8 characters, with 1 uppercase letter and 1 number.");
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordSuccess(false);
+    setPasswordError("");
+
+    try {
+      const res = await fetch("/api/users/me/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to update password");
+      }
+
+      setPasswordSuccess(true);
+      setPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setPasswordSuccess(false), 4000);
+    } catch (err: unknown) {
+      setPasswordError(err instanceof Error ? err.message : "An unexpected error occurred");
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -454,6 +499,82 @@ export function SettingsForm() {
               >
                 <Check className="h-4 w-4" />
                 Settings updated successfully
+              </motion.div>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {/* Password Form */}
+      <div className="rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8 mt-8">
+        <form onSubmit={handlePasswordSubmit} className="space-y-6">
+          <div>
+            <h3 className="text-[18px] font-semibold tracking-tight text-[#0f172a]">Security</h3>
+            <p className="mt-1 text-[14px] text-gray-500 mb-6">Change or set a new password for your account.</p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-[14px] font-semibold text-gray-700">
+                New Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordError("");
+                }}
+                className="block w-full rounded-xl border border-gray-200 px-4 py-3 text-[15px] text-gray-900 placeholder-gray-400 focus:border-[#925fe2] focus:outline-none focus:ring-1 focus:ring-[#925fe2]"
+                placeholder="Min 8 chars, 1 uppercase, 1 number"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="confirmPassword" className="block text-[14px] font-semibold text-gray-700">
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setPasswordError("");
+                }}
+                className="block w-full rounded-xl border border-gray-200 px-4 py-3 text-[15px] text-gray-900 placeholder-gray-400 focus:border-[#925fe2] focus:outline-none focus:ring-1 focus:ring-[#925fe2]"
+                placeholder="Confirm new password"
+              />
+            </div>
+          </div>
+
+          {passwordError && (
+            <div className="rounded-xl bg-red-50 p-4 text-[14px] font-medium text-red-600">
+              {passwordError}
+            </div>
+          )}
+
+          <div className="flex items-center gap-4 pt-2">
+            <button
+              type="submit"
+              disabled={passwordLoading || !password || !confirmPassword}
+              className={cx(
+                "inline-flex items-center justify-center gap-2 rounded-full bg-[#111827] px-6 py-3 text-[15px] font-semibold text-white transition-all hover:bg-[#1f2937] focus:outline-none focus:ring-2 focus:ring-[#111827] focus:ring-offset-2",
+                (passwordLoading || !password || !confirmPassword) && "opacity-70 cursor-not-allowed"
+              )}
+            >
+              {passwordLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              Update Password
+            </button>
+
+            {passwordSuccess && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-2 text-[14px] font-medium text-green-600"
+              >
+                <Check className="h-4 w-4" />
+                Password updated successfully
               </motion.div>
             )}
           </div>

@@ -20,69 +20,91 @@ async function main() {
     coursesCache.set(c.title.trim().toLowerCase(), c.id);
   }
 
-  const usersMap = new Map(); // email -> user
+  // Find all existing users
+  const existingUsers = await prisma.user.findMany({
+    select: { id: true, email: true, phone: true }
+  });
+  
+  const emailToId = new Map<string, string>();
+  const takenPhones = new Set<string>();
+  
+  for (const u of existingUsers) {
+    if (u.email) emailToId.set(u.email, u.id);
+    if (u.phone) takenPhones.add(u.phone);
+  }
+
+  const usersToCreate = [];
+  const processedEmails = new Set<string>();
 
   for (const record of records) {
     const email = record['Learner Details']?.trim().toLowerCase();
+    if (!email) continue;
+    
+    if (emailToId.has(email) || processedEmails.has(email)) continue;
+    
     const name = record['Name']?.trim() || null;
     let phone = record['Mobile']?.trim() || null;
     if (phone === 'NA' || phone === '') phone = null;
+    if (phone && takenPhones.has(phone)) phone = null;
+    if (phone) takenPhones.add(phone);
     
+    usersToCreate.push({ email, name, phone, role: 'STUDENT' });
+    processedEmails.add(email);
+  }
+
+  if (usersToCreate.length > 0) {
+    console.log(`Creating ${usersToCreate.length} new users...`);
+    await prisma.user.createMany({ data: usersToCreate, skipDuplicates: true });
+    console.log('Created new users.');
+  } else {
+    console.log('No new users to create.');
+  }
+
+  // Refresh users to get IDs
+  const allUsers = await prisma.user.findMany({ select: { id: true, email: true } });
+  for (const u of allUsers) {
+    if (u.email) emailToId.set(u.email, u.id);
+  }
+
+  // Pre-fetch all enrollments
+  const existingEnrollments = await prisma.enrollment.findMany({
+    select: { userId: true, courseId: true }
+  });
+  const enrollmentsSet = new Set<string>();
+  for (const e of existingEnrollments) {
+    enrollmentsSet.add(`${e.userId}-${e.courseId}`);
+  }
+
+  const enrollmentsToCreate = [];
+  const processedEnrollments = new Set<string>();
+
+  for (const record of records) {
+    const email = record['Learner Details']?.trim().toLowerCase();
     const productTitle = record['Product title']?.trim();
-    if (!email) continue;
+    if (!email || !productTitle) continue;
 
-    // Get or Create User
-    let user = usersMap.get(email);
-    if (!user) {
-      user = await prisma.user.findUnique({ where: { email } });
-      if (!user) {
-        // Find if phone is already used by another account (Prisma will throw unique constraint error)
-        if (phone) {
-          const existingPhoneUser = await prisma.user.findUnique({ where: { phone } });
-          if (existingPhoneUser) {
-            phone = null; // Ignore duplicate phone numbers for new users
-          }
-        }
+    const userId = emailToId.get(email);
+    const courseId = coursesCache.get(productTitle.toLowerCase());
 
-        user = await prisma.user.create({
-          data: {
-            email,
-            name,
-            phone,
-            role: 'STUDENT'
-          }
-        });
-        console.log(`Created new user: ${email}`);
-      }
-      usersMap.set(email, user);
-    }
+    if (!userId || !courseId) continue;
 
-    // Find course
-    if (productTitle) {
-      const courseId = coursesCache.get(productTitle.toLowerCase());
-      if (courseId) {
-        // Enroll user
-        await prisma.enrollment.upsert({
-          where: {
-            userId_courseId: {
-              userId: user.id,
-              courseId: courseId
-            }
-          },
-          update: {
-            status: 'ACTIVE'
-          },
-          create: {
-            userId: user.id,
-            courseId: courseId,
-            status: 'ACTIVE'
-          }
-        });
-      } else {
-        // Don't warn on every missing course to avoid noise, just the first time we see it
-        // Or we can just log a warning once per missing course
-      }
-    }
+    const key = `${userId}-${courseId}`;
+    if (enrollmentsSet.has(key) || processedEnrollments.has(key)) continue;
+
+    enrollmentsToCreate.push({
+      userId,
+      courseId,
+      status: 'ACTIVE'
+    });
+    processedEnrollments.add(key);
+  }
+
+  if (enrollmentsToCreate.length > 0) {
+    console.log(`Creating ${enrollmentsToCreate.length} new enrollments...`);
+    await prisma.enrollment.createMany({ data: enrollmentsToCreate, skipDuplicates: true });
+    console.log('Created new enrollments.');
+  } else {
+    console.log('No new enrollments to create.');
   }
 
   console.log("Import completed successfully!");
