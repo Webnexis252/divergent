@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== "SUPER_ADMIN") {
+    const user = await requireAuth(req, ["SUPER_ADMIN"]);
+    if (!user) {
       return new NextResponse("Unauthorized", { status: 403 });
     }
 
