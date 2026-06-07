@@ -44,6 +44,7 @@ const assets = {
 
 import { studentNavItems } from "../_components/nav-items";
 import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
+import { PaginatedCourses } from "./paginated-courses";
 
 const sidebarItems = studentNavItems.map(item => ({
   ...item,
@@ -366,68 +367,7 @@ export default async function DashboardCoursesPage() {
                       <h2 className="text-[clamp(1.9rem,3vw,2rem)] font-medium text-black">Courses</h2>
                     </div>
 
-                    {courses.length === 0 ? (
-                      <div className="rounded-[20px] bg-white px-6 py-8 shadow-[0_4px_10px_rgba(0,0,0,0.18)]">
-                        <p className="text-[1.15rem] font-semibold text-black">No courses available yet</p>
-                        <p className="mt-3 text-[14px] leading-7 text-black/58">
-                          Published courses will appear here as soon as the catalog is updated.
-                        </p>
-                      </div>
-                    ) : (
-                      <StaggerGrid className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        {courses.map((course) => (
-                          <AnimCard key={course.id}>
-                            <article className="overflow-hidden rounded-[20px] bg-white p-[10px] shadow-[0_4px_10px_rgba(0,0,0,0.25)]">
-                              <div className="overflow-hidden rounded-[16px] bg-[#d0d0d0]">
-                                <div
-                                  aria-hidden="true"
-                                  className="h-[184px] w-full bg-cover bg-center"
-                                  style={{
-                                    backgroundImage: course.thumbnail
-                                      ? `linear-gradient(180deg, rgba(8, 16, 24, 0.04), rgba(8, 16, 24, 0.18)), url("${course.thumbnail}")`
-                                      : `url("${assets.currentCourseFallback}")`,
-                                  }}
-                                />
-                              </div>
-
-                              <div className="space-y-3 px-1 pb-1 pt-4">
-                                <div className="space-y-1">
-                                  <h3 className="text-[16px] font-semibold leading-[1.15] text-black">
-                                    {course.title}
-                                  </h3>
-                                  <p className="text-[12px] text-[#959595]">
-                                    by {course.teachers?.[0]?.name ?? "Expert Mentors"}
-                                  </p>
-                                  <p className="text-[12px] font-medium text-black">
-                                    {formatStudentCount(course._count.enrollments)}
-                                  </p>
-                                </div>
-
-                                <div className="flex items-end justify-between gap-4">
-                                  <div className="space-y-1">
-                                    <p className="text-[12px] font-medium text-black">
-                                      {formatPrice(course.price)}
-                                    </p>
-                                    <p className="text-[12px] text-[#4caf50]">
-                                      {course.price > 0 ? "Available now" : "Open access"}
-                                    </p>
-                                  </div>
-
-                                  <Link
-                                    className={workspaceButtonStyles({
-                                      className: "h-[32px] px-4 text-[12px]",
-                                    })}
-                                    href={`/dashboard/courses/${course.slug}`}
-                                  >
-                                    {course.price > 0 ? "Enroll Now" : "Open Course"}
-                                  </Link>
-                                </div>
-                              </div>
-                            </article>
-                          </AnimCard>
-                        ))}
-                      </StaggerGrid>
-                    )}
+                    <PaginatedCourses courses={courses} />
                   </div>
                 </RevealSection>
               </div>
