@@ -8,6 +8,8 @@ import { apiSuccess, apiForbidden, apiServerError } from '@/lib/api-response';
  * List all students with optional search and course filter.
  * ADMIN + SUPER_ADMIN only.
  */
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req, ['ADMIN', 'SUPER_ADMIN']);
@@ -31,7 +33,7 @@ export async function GET(req: NextRequest) {
       ...(courseId && { enrollments: { some: { courseId } } }),
     };
 
-    const [students, total] = await Promise.all([
+    const [students, total, totalEnrollments, xpAgg] = await Promise.all([
       prisma.user.findMany({
         where,
         select: {
@@ -58,9 +60,14 @@ export async function GET(req: NextRequest) {
         take: limit,
       }),
       prisma.user.count({ where }),
+      prisma.enrollment.count({ where: { user: where } }),
+      prisma.user.aggregate({ where, _sum: { xpPoints: true } })
     ]);
 
-    return apiSuccess({ students, total, page, totalPages: Math.ceil(total / limit) });
+    const totalXp = xpAgg._sum.xpPoints || 0;
+    const avgXp = total > 0 ? Math.round(totalXp / total) : 0;
+
+    return apiSuccess({ students, total, page, totalPages: Math.ceil(total / limit), totalEnrollments, avgXp });
   } catch (err) {
     console.error('[ADMIN_STUDENTS_ERROR]', err);
     return apiServerError();

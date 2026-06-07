@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { GraduationCap, Search, Sparkles, Users, Download, UserPlus, UserCheck } from "lucide-react";
+import { GraduationCap, Search, Sparkles, Users, Download, UserPlus, UserCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import { MetricCard } from "@/components/ui/metric-card";
@@ -25,23 +25,34 @@ export default function AdminStudentsPage() {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [serverStats, setServerStats] = useState({ totalEnrollments: 0, avgXp: 0 });
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [setPassStudent, setSetPassStudent] = useState<{ id: string; name: string | null; email: string | null } | null>(null);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
 
-  async function fetchStudents(query = "") {
+  async function fetchStudents(query = "", pageNum = 1) {
     setLoading(true);
 
     try {
       const response = await fetch(
-        `/api/admin/students?search=${encodeURIComponent(query)}`,
+        `/api/admin/students?search=${encodeURIComponent(query)}&page=${pageNum}`,
       );
       const payload = await response.json();
 
       if (payload.success) {
         setStudents(payload.data.students);
+        setTotal(payload.data.total || 0);
+        setPage(payload.data.page || 1);
+        setTotalPages(payload.data.totalPages || 1);
+        setServerStats({
+          totalEnrollments: payload.data.totalEnrollments || 0,
+          avgXp: payload.data.avgXp || 0,
+        });
       }
     } catch (error) {
       console.error("Failed to load students", error);
@@ -67,7 +78,10 @@ export default function AdminStudentsPage() {
   }
 
   useEffect(() => {
-    void fetchStudents();
+    void fetchStudents(search, page);
+  }, [page]);
+
+  useEffect(() => {
     if (user) {
       void fetchExportStatus();
     }
@@ -86,7 +100,7 @@ export default function AdminStudentsPage() {
       } else {
         setToast({ msg: payload.message || "Enrollment status updated", ok: true });
         // Refresh list
-        void fetchStudents(search);
+        void fetchStudents(search, page);
       }
     } catch {
       setToast({ msg: "Network error", ok: false });
@@ -106,7 +120,7 @@ export default function AdminStudentsPage() {
         setToast({ msg: payload.error ?? "Failed to delete student", ok: false });
       } else {
         setToast({ msg: payload.message || "Student account deleted", ok: true });
-        void fetchStudents(search);
+        void fetchStudents(search, page);
       }
     } catch {
       setToast({ msg: "Network error", ok: false });
@@ -134,7 +148,7 @@ export default function AdminStudentsPage() {
               `${direction === "ADD" ? "Added" : "Removed"} ${amount} XP successfully`,
             ok: true,
           });
-          void fetchStudents(search);
+          void fetchStudents(search, page);
         }
       } catch {
         setToast({ msg: "Network error", ok: false });
@@ -194,23 +208,17 @@ export default function AdminStudentsPage() {
   };
 
   const stats = useMemo(() => {
-    const enrollmentCount = students.reduce(
-      (count, student) => count + student._count.enrollments,
-      0,
-    );
-    const totalXp = students.reduce((count, student) => count + student.xpPoints, 0);
-    const avgXp = students.length > 0 ? Math.round(totalXp / students.length) : 0;
-
     return {
-      avgXp,
-      enrollmentCount,
-      totalStudents: students.length,
+      avgXp: serverStats.avgXp,
+      enrollmentCount: serverStats.totalEnrollments,
+      totalStudents: total,
     };
-  }, [students]);
+  }, [serverStats, total]);
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void fetchStudents(search);
+    setPage(1);
+    void fetchStudents(search, 1);
   }
 
   return (
@@ -315,17 +323,43 @@ export default function AdminStudentsPage() {
               title="No students found"
             />
           ) : (
-            <StudentTable
-              canManageXp={user?.role === "SUPER_ADMIN"}
-              onXpAdjust={handleXpAdjust}
-              onStatusChange={handleStatusChange}
-              onDelete={handleDeleteStudent}
-              onSetPassword={(id) => {
-                const s = students.find((st) => st.id === id);
-                if (s) setSetPassStudent({ id, name: s.name, email: s.email });
-              }}
-              students={students}
-            />
+            <>
+              <StudentTable
+                canManageXp={user?.role === "SUPER_ADMIN"}
+                onXpAdjust={handleXpAdjust}
+                onStatusChange={handleStatusChange}
+                onDelete={handleDeleteStudent}
+                onSetPassword={(id) => {
+                  const s = students.find((st) => st.id === id);
+                  if (s) setSetPassStudent({ id, name: s.name, email: s.email });
+                }}
+                students={students}
+              />
+              <div className="mt-4 flex items-center justify-end gap-4 text-[13px] font-medium text-[#64748b]">
+                <span>
+                  {students.length > 0 ? (page - 1) * 20 + 1 : 0}–
+                  {Math.min(page * 20, total)} of {total}
+                </span>
+                <div className="flex gap-1">
+                  <button
+                    className="rounded p-1 transition hover:bg-[#f1f5f9] disabled:opacity-50 disabled:hover:bg-transparent"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    title="Previous page"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="rounded p-1 transition hover:bg-[#f1f5f9] disabled:opacity-50 disabled:hover:bg-transparent"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    title="Next page"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </RevealSection>
       </div>
@@ -352,7 +386,7 @@ export default function AdminStudentsPage() {
         isSuperAdmin={user?.role === "SUPER_ADMIN"}
         onSuccess={(msg) => {
           setToast({ msg, ok: true });
-          void fetchStudents(search);
+          void fetchStudents(search, page);
         }}
       />
 
