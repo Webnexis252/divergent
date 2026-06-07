@@ -60,13 +60,21 @@ export async function sendWhatsAppOtp(phone: string, otp: string): Promise<void>
   const normalized = phone.replace(/\s/g, '');
 
   // Extract country code and local number
-  // We support any format: +91XXXXXXXXXX, +1XXXXXXXXXX, etc.
-  const match = normalized.match(/^(\+\d{1,3})(\d{6,14})$/);
-  if (!match) {
+  // Ensure we strip the '+' sign as Interakt doesn't want it in countryCode
+  let countryCode = '';
+  let phoneNumber = '';
+  if (normalized.startsWith('+91')) {
+    countryCode = '91';
+    phoneNumber = normalized.substring(3); // e.g. "9876543210"
+  } else {
+    // Fallback: assume last 10 digits are the phone number
+    phoneNumber = normalized.slice(-10);
+    countryCode = normalized.slice(1, -10); // exclude '+' and the phone number
+  }
+
+  if (!countryCode || !phoneNumber) {
     throw new Error(`Invalid phone number format: ${normalized}`);
   }
-  const countryCode = match[1]; // e.g. "+91"
-  const phoneNumber = match[2]; // e.g. "9876543210"
 
   const payload: InteraktTemplatePayload = {
     countryCode,
@@ -79,6 +87,8 @@ export async function sendWhatsAppOtp(phone: string, otp: string): Promise<void>
     },
     callbackData: `otp_send_${Date.now()}`,
   };
+
+  console.log('Sending payload to Interakt:', JSON.stringify(payload, null, 2));
 
   const response = await fetch(INTERAKT_API_URL, {
     method: 'POST',
