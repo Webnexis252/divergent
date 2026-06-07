@@ -15,6 +15,9 @@ import {
   ShieldCheck,
   Sparkles,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Search,
 } from "lucide-react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
@@ -85,6 +88,9 @@ export default function AdminCoursesPage() {
   const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
   const [editingFaqIdx, setEditingFaqIdx] = useState<number | null>(null);
   const [editFaq, setEditFaq] = useState({ question: "", answer: "" });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   useEffect(() => {
     let cancelled = false;
@@ -262,6 +268,16 @@ export default function AdminCoursesPage() {
       : teachersError
         ? teachersError
         : "Pick the primary teacher responsible for this course.";
+
+  const filteredCourses = courses.filter(course =>
+    course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (course.description || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
+  const paginatedCourses = filteredCourses.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <PageTransition>
@@ -687,8 +703,18 @@ export default function AdminCoursesPage() {
         {/* Course table */}
         <RevealSection>
           <section className="rounded-[28px] border border-white/70 bg-white/95 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-            <div className="border-b border-[#eef0f3] px-6 py-5">
+            <div className="flex flex-col gap-4 border-b border-[#eef0f3] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-[#101828]">Course Library</h2>
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94a3b8]" />
+                <input
+                  type="text"
+                  placeholder="Search courses..."
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  className="w-full rounded-full border border-[#cbd5e1] pl-9 pr-4 py-2 text-sm outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]"
+                />
+              </div>
             </div>
             <div className="overflow-x-auto">
               {loading ? (
@@ -710,7 +736,7 @@ export default function AdminCoursesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {courses.map((course, i) => (
+                    {paginatedCourses.map((course, i) => (
                       <motion.tr
                         key={course.id}
                         initial={{ opacity: 0 }}
@@ -773,6 +799,36 @@ export default function AdminCoursesPage() {
                 </table>
               )}
             </div>
+            
+            {!loading && filteredCourses.length > 0 && (
+              <div className="flex items-center justify-end gap-4 border-t border-[#eef0f3] px-6 py-4 text-sm text-[#64748b]">
+                <div>
+                  {Math.min((currentPage - 1) * itemsPerPage + 1, filteredCourses.length)}–
+                  {Math.min(currentPage * itemsPerPage, filteredCourses.length)} of {filteredCourses.length}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="rounded p-1 hover:bg-[#f1f5f9] disabled:opacity-30 disabled:hover:bg-transparent"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className="rounded p-1 hover:bg-[#f1f5f9] disabled:opacity-30 disabled:hover:bg-transparent"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+            {!loading && filteredCourses.length === 0 && (
+              <div className="p-8 text-center text-sm text-[#64748b]">
+                No courses found matching "{searchQuery}"
+              </div>
+            )}
           </section>
         </RevealSection>
       </div>
