@@ -53,6 +53,6 @@ export async function POST(req: NextRequest) {
     return apiSuccess({ url: publicUrl }, 'File uploaded successfully');
   } catch (err) {
     console.error('[UPLOAD_ASSIGNMENT_FILE_ERROR]', err);
-    return apiServerError();
+    return apiError(err instanceof Error ? err.message : 'Unknown upload error', 500);
   }
 }
