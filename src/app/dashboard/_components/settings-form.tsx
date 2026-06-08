@@ -100,16 +100,22 @@ export function SettingsForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: newPhone.trim(), context: "SETTINGS" }),
       });
-      const json = await res.json();
+      let json: { success?: boolean; error?: string; message?: string };
+      try {
+        json = await res.json();
+      } catch {
+        setOtpError(`Server returned an error (${res.status}). Please try again.`);
+        return;
+      }
       if (!json.success) {
-        setOtpError(json.error ?? "Failed to send OTP. Please try again.");
+        setOtpError(json.error || json.message || "Failed to send OTP. Please try again.");
         return;
       }
       setPhoneOtpSent(true);
       startCooldown();
       setTimeout(() => otpInputRef.current?.focus(), 100);
     } catch {
-      setOtpError("Network error. Please try again.");
+      setOtpError("Network error. Please check your connection and try again.");
     } finally {
       setOtpSending(false);
     }
@@ -132,9 +138,15 @@ export function SettingsForm() {
           context: "SETTINGS",
         }),
       });
-      const json = await res.json();
+      let json: { success?: boolean; error?: string; message?: string };
+      try {
+        json = await res.json();
+      } catch {
+        setOtpError(`Server returned an error (${res.status}). Please try again.`);
+        return;
+      }
       if (!json.success) {
-        setOtpError(json.error ?? "Invalid OTP. Please try again.");
+        setOtpError(json.error || json.message || "Invalid OTP. Please try again.");
         return;
       }
       // Phone has been updated in the DB by the verify endpoint
@@ -146,7 +158,7 @@ export function SettingsForm() {
       setPhoneUpdateSuccess(true);
       setTimeout(() => setPhoneUpdateSuccess(false), 4000);
     } catch {
-      setOtpError("Network error. Please try again.");
+      setOtpError("Network error. Please check your connection and try again.");
     } finally {
       setOtpVerifying(false);
     }

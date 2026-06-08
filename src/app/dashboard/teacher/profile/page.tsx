@@ -214,11 +214,11 @@ export default function TeacherProfilePage() {
   return (
     <PageTransition>
       <main>
-        <div className="mx-auto max-w-[1920px] px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
+        <div className="mx-auto max-w-[1920px]">
           <div className="grid gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-12">
             <TeacherSidebar />
 
-            <div className="space-y-8">
+            <div className="space-y-8 px-3 py-5 sm:px-6 sm:py-8 lg:py-8 lg:pl-0 lg:pr-8">
               {authLoading || loading ? (
                 <ProfileSkeleton />
               ) : error ? (

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     if (typeof phone !== 'string' || !phone.trim()) {
       return apiBadRequest('Phone number is required');
     }
-    const normalizedPhone = phone.replace(/\s/g, '');
+    const normalizedPhone = phone.replace(/[\s\-()]/g, '');
 
     if (typeof otp !== 'string' || !/^\d{6}$/.test(otp)) {
       return apiBadRequest('OTP must be a 6-digit number');
@@ -65,7 +65,18 @@ export async function POST(req: NextRequest) {
     }
 
     // --- Cleanup: delete the used OTP record ---
-    await prisma.phoneOtp.delete({ where: { id: pendingOtp.id } }).catch(() => {});
+    await prisma.phoneOtp.delete({ where: { id: pendingOtp.id } }).catch((deleteErr) => {
+      // Non-critical: log but don't fail the verification
+      console.warn('[PHONE_OTP_VERIFY] Failed to delete used OTP record:', deleteErr);
+    });
+
+    // --- Also clean up any other expired OTP records for this phone ---
+    await prisma.phoneOtp.deleteMany({
+      where: {
+        phone: normalizedPhone,
+        expiresAt: { lt: new Date() },
+      },
+    }).catch(() => {});
 
     // --- Handle each context ---
     if (context === 'SIGNUP') {
@@ -81,6 +92,18 @@ export async function POST(req: NextRequest) {
       // Must be logged in
       const auth = await requireAuth(req);
       if (!auth) return apiUnauthorized();
+
+      // Check if another user already has this phone number
+      const existingOwner = await prisma.user.findUnique({
+        where: { phone: normalizedPhone },
+        select: { id: true },
+      });
+      if (existingOwner && existingOwner.id !== auth.userId) {
+        return apiError(
+          'This phone number is already in use by another account.',
+          409,
+        );
+      }
 
       // Update the user's phone in the DB
       await prisma.user.update({
