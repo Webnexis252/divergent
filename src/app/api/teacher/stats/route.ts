@@ -111,11 +111,11 @@ export async function GET(req: NextRequest) {
         },
       }),
 
-      // Open doubts in teacher's courses
+      // Open doubts in teacher's courses (DoubtTicket has no courseId, filter by mentor)
       prisma.doubtTicket.count({
         where: {
           status: 'OPEN',
-          courseId: { in: teacherCourseIds },
+          mentorId: auth.userId,
         },
       }),
 
@@ -127,11 +127,11 @@ export async function GET(req: NextRequest) {
         },
       }),
 
-      // Open doubt queue for teacher's courses
+      // Open doubt queue assigned to this teacher
       prisma.doubtTicket.findMany({
         where: {
           status: { in: ['OPEN', 'ASSIGNED'] },
-          courseId: { in: teacherCourseIds },
+          mentorId: auth.userId,
         },
         include: {
           student: { select: { name: true, image: true } },
