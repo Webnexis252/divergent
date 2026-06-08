@@ -349,18 +349,29 @@ export default function DoubtsPage() {
 
     try {
       let attachmentUrl = null;
+      let imageUploadWarning = "";
+
       if (imageFile) {
-        const formData = new FormData();
-        formData.append("file", imageFile);
-        const uploadRes = await fetch("/api/upload/image", {
-          method: "POST",
-          body: formData,
-        });
-        const uploadJson = await uploadRes.json();
-        if (uploadJson.success) {
-          attachmentUrl = uploadJson.data.url;
-        } else {
-          throw new Error(uploadJson.error || "Failed to upload image");
+        try {
+          const formData = new FormData();
+          formData.append("file", imageFile);
+          const uploadRes = await fetch("/api/upload/image", {
+            method: "POST",
+            body: formData,
+          });
+          const uploadJson = await uploadRes.json();
+          if (uploadJson.success) {
+            attachmentUrl = uploadJson.data.url;
+          } else {
+            // Upload failed — warn but don't block the doubt submission
+            imageUploadWarning = "Image could not be uploaded; submitting without it.";
+          }
+        } catch {
+          imageUploadWarning = "Image could not be uploaded; submitting without it.";
+        }
+
+        if (imageUploadWarning) {
+          setErrorMsg(imageUploadWarning);
         }
       }
 
