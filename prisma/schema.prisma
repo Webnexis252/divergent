@@ -178,6 +178,7 @@ model DoubtTicket {
   mentorId          String?
   subject           String
   body              String
+  attachmentUrl     String?
   priority          DoubtPriority @default(MEDIUM)
   status            DoubtStatus   @default(OPEN)
   aiConfidenceScore Float?
