@@ -63,50 +63,62 @@ function CurriculumSection({ courseId }: { courseId: string }) {
         <div className="grid h-8 w-8 place-items-center rounded-xl bg-[#38c1ff]/10 text-[#38c1ff]">
           <BookOpen className="h-4 w-4" />
         </div>
-        export default function EditCourseModal({
-          course,
-          teachers,
-          teachersLoading,
-          onClose,
-          onSaved,
+        <span className="flex-1 text-[14px] font-semibold text-[#0f172a]">Curriculum</span>
+        {open ? <ChevronUp className="h-4 w-4 text-[#64748b]" /> : <ChevronDown className="h-4 w-4 text-[#64748b]" />}
+      </button>
+      {open && (
+        <div className="border-t border-[#dde8f5] p-4">
+          <CurriculumManager courseId={courseId} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function EditCourseModal({
+  course,
+  teachers,
+  teachersLoading,
+  onClose,
+  onSaved,
 }: {
-          course: Course;
-        teachers: Teacher[];
-        teachersLoading: boolean;
+  course: Course;
+  teachers: Teacher[];
+  teachersLoading: boolean;
   onClose: () => void;
   onSaved: (updated: Course) => void;
 }) {
   const [form, setForm] = useState<EditForm>({
-          title: course.title,
-          subtitle: course.subtitle ?? "",
-          description: course.description ?? "",
-          overviewContent: course.overviewContent ?? "",
-          thumbnail: course.thumbnail ?? "",
-          price: String(course.price),
+    title: course.title,
+    subtitle: course.subtitle ?? "",
+    description: course.description ?? "",
+    overviewContent: course.overviewContent ?? "",
+    thumbnail: course.thumbnail ?? "",
+    price: String(course.price),
     teacherIds: course.teachers?.map((t) => t.id) ?? [],
-          isPublished: course.isPublished,
-          totalHours: course.totalHours !== null ? String(course.totalHours) : "",
-          lessonCount: course.lessonCount !== null ? String(course.lessonCount) : "",
-          courseRating: course.courseRating !== null ? String(course.courseRating) : "",
-          category: course.category ?? "",
-          courseLevel: course.courseLevel ?? "",
-          language: course.language ?? "",
-          originalPrice: course.originalPrice !== null ? String(course.originalPrice) : "",
-          emiPlans: Array.isArray(course.emiPlans)
-      ? course.emiPlans.map((p) => ({label: p.label, amount: String(p.amount), dueDays: String(p.dueDays) }))
-          : [],
+    isPublished: course.isPublished,
+    totalHours: course.totalHours !== null ? String(course.totalHours) : "",
+    lessonCount: course.lessonCount !== null ? String(course.lessonCount) : "",
+    courseRating: course.courseRating !== null ? String(course.courseRating) : "",
+    category: course.category ?? "",
+    courseLevel: course.courseLevel ?? "",
+    language: course.language ?? "",
+    originalPrice: course.originalPrice !== null ? String(course.originalPrice) : "",
+    emiPlans: Array.isArray(course.emiPlans)
+      ? course.emiPlans.map((p) => ({ label: p.label, amount: String(p.amount), dueDays: String(p.dueDays) }))
+      : [],
   });
-          const [saving, setSaving] = useState(false);
-          const [error, setError] = useState("");
-          const [successMsg, setSuccessMsg] = useState("");
-          const [thumbnailUploading, setThumbnailUploading] = useState(false);
-          const [thumbnailUploadError, setThumbnailUploadError] = useState("");
-          const thumbnailInputRef = useRef<HTMLInputElement>(null);
-            // Instalment editing state
-            const [editingIdx, setEditingIdx] = useState<number | null>(null);
-            const [showAddForm, setShowAddForm] = useState(false);
-            const [newInstalment, setNewInstalment] = useState<EmiInstalment>({label: "", amount: "", dueDays: "" });
-              const [editInstalment, setEditInstalment] = useState<EmiInstalment>({label: "", amount: "", dueDays: "" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [thumbnailUploadError, setThumbnailUploadError] = useState("");
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  // Instalment editing state
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newInstalment, setNewInstalment] = useState<EmiInstalment>({ label: "", amount: "", dueDays: "" });
+  const [editInstalment, setEditInstalment] = useState<EmiInstalment>({ label: "", amount: "", dueDays: "" });
 
                 async function handleThumbnailFileChange(file: File) {
                   setThumbnailUploading(true);

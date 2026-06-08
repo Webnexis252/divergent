@@ -840,6 +840,7 @@ export default function AdminCoursesPage() {
             key={editingCourse.id}
             course={editingCourse}
             teachers={teachers}
+            teachersLoading={teachersLoading}
             onClose={() => setEditingCourse(null)}
             onSaved={handleCourseSaved}
           />
