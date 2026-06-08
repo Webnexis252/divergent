@@ -180,6 +180,10 @@ export async function sendWhatsAppOtp(phone: string, otp: string): Promise<void>
       name: templateName,
       languageCode: 'en',
       bodyValues: [otp],
+      // The template has a "Copy Code" button at index 0 that requires
+      // the OTP as its variable value. Interakt requires this to be sent
+      // in buttonValues or it rejects the request with a 400.
+      buttonValues: { '0': [otp] },
     },
     callbackData: `otp_send_${Date.now()}`,
   };
