@@ -12,7 +12,7 @@ import {
 /**
  * GET /api/teacher/stats
  * Returns aggregate stats for the teacher dashboard.
- * Requires teacher-level access.
+ * All data is scoped to courses the authenticated teacher is assigned to.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -26,12 +26,64 @@ export async function GET(req: NextRequest) {
     const endOfToday = new Date(now);
     endOfToday.setHours(23, 59, 59, 999);
 
-    // Run all counts in parallel for speed
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    // ── Step 1: Find all courses this teacher is assigned to ────────────────
+    const teacherCourses = await prisma.course.findMany({
+      where: {
+        teachers: { some: { id: auth.userId } },
+      },
+      select: {
+        id: true,
+        title: true,
+        thumbnail: true,
+        price: true,
+        isPublished: true,
+        _count: { select: { enrollments: true } },
+      },
+    });
+
+    const teacherCourseIds = teacherCourses.map((c) => c.id);
+
+    // If teacher has no assigned courses, return zeroed stats
+    if (teacherCourseIds.length === 0) {
+      const todaysClasses = await getTodayTeacherClasses({
+        userId: auth.userId,
+        role: auth.role,
+      });
+
+      return apiSuccess({
+        stats: {
+          activeStudents: 0,
+          doubtsResolvedToday: 0,
+          openDoubtsCount: 0,
+          totalEnrollmentsThisWeek: 0,
+          avgResponseTime: '—',
+          studentSatisfaction: 0,
+        },
+        courses: [],
+        enrolledStudents: [],
+        todaysClasses,
+        doubtQueue: [],
+        recentActivity: [],
+        analyticsSnapshot: {
+          progressBars: [
+            "JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"
+          ].map((month) => ({ month, value: 10 })),
+          lowEngagementCount: 0,
+          missedAssignments: 0,
+          assignmentsOverview: { total: 0, pending: 0, late: 0 },
+        },
+      });
+    }
+
+    // ── Step 2: Run all scoped counts in parallel ────────────────────────────
     const [
       activeStudents,
       doubtsResolvedToday,
       openDoubtsCount,
-      totalEnrollments,
+      totalEnrollmentsThisWeek,
       openDoubtTickets,
       recentReplies,
       lowEngagement,
@@ -39,37 +91,48 @@ export async function GET(req: NextRequest) {
       totalAssignments,
       pendingGrading,
       lateAssignments,
+      enrolledStudents,
     ] = await Promise.all([
-      // Total unique active students
+      // Unique active students enrolled in teacher's courses
       prisma.enrollment.groupBy({
         by: ['userId'],
-        where: { status: 'ACTIVE' },
+        where: {
+          courseId: { in: teacherCourseIds },
+          status: 'ACTIVE',
+        },
       }).then((groups) => groups.length),
 
-      // Doubts resolved today (RESOLVED or CLOSED, updated today)
+      // Doubts resolved today by this teacher
       prisma.doubtTicket.count({
         where: {
-          mentorId: auth.role === 'MENTOR' ? auth.userId : undefined,
+          mentorId: auth.userId,
           status: { in: ['RESOLVED', 'CLOSED'] },
           updatedAt: { gte: startOfToday, lte: endOfToday },
         },
       }),
 
-      // Open doubts total
+      // Open doubts in teacher's courses (DoubtTicket has no courseId, filter by mentor)
       prisma.doubtTicket.count({
-        where: { status: 'OPEN' },
-      }),
-
-      // Total enrollments this week
-      prisma.enrollment.count({
         where: {
-          createdAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) },
+          status: 'OPEN',
+          mentorId: auth.userId,
         },
       }),
 
-      // Fetch open doubt tickets for the queue
+      // New enrollments this week in teacher's courses
+      prisma.enrollment.count({
+        where: {
+          courseId: { in: teacherCourseIds },
+          createdAt: { gte: oneWeekAgo },
+        },
+      }),
+
+      // Open doubt queue assigned to this teacher
       prisma.doubtTicket.findMany({
-        where: { status: { in: ['OPEN', 'ASSIGNED'] } },
+        where: {
+          status: { in: ['OPEN', 'ASSIGNED'] },
+          mentorId: auth.userId,
+        },
         include: {
           student: { select: { name: true, image: true } },
         },
@@ -77,7 +140,7 @@ export async function GET(req: NextRequest) {
         take: 10,
       }),
 
-      // Fetch Recent Activity (Doubt Replies by this teacher)
+      // Recent activity (doubt replies by this teacher)
       prisma.doubtReply.findMany({
         where: { authorId: auth.userId },
         include: { doubtTicket: { select: { subject: true } } },
@@ -85,37 +148,88 @@ export async function GET(req: NextRequest) {
         take: 4,
       }),
 
-      // Low Engagement (Students enrolled but no progress in last 7 days)
+      // Low engagement: students in teacher's courses with no progress in last 7 days
       prisma.user.count({
         where: {
           role: 'STUDENT',
-          enrollments: { some: { status: 'ACTIVE' } },
-          lessonProgress: { 
-            none: { updatedAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } } 
-          }
-        }
+          enrollments: {
+            some: {
+              courseId: { in: teacherCourseIds },
+              status: 'ACTIVE',
+            },
+          },
+          lessonProgress: {
+            none: { updatedAt: { gte: oneWeekAgo } },
+          },
+        },
       }),
 
-      // Enrollments this year (for the chart)
+      // Enrollments this year in teacher's courses (for chart)
       prisma.enrollment.findMany({
-        where: { createdAt: { gte: new Date(now.getFullYear(), 0, 1) } },
-        select: { createdAt: true }
+        where: {
+          courseId: { in: teacherCourseIds },
+          createdAt: { gte: startOfYear },
+        },
+        select: { createdAt: true },
       }),
 
-      // Total assignments
-      prisma.assignment.count(),
+      // Total assignments for teacher's courses
+      prisma.assignment.count({
+        where: { courseId: { in: teacherCourseIds } },
+      }),
 
-      // Pending grading (submissions without a score)
-      prisma.assignmentSubmission.count({ where: { score: null } }),
+      // Pending grading (submissions without a score, for teacher's courses)
+      prisma.assignmentSubmission.count({
+        where: {
+          assignment: { courseId: { in: teacherCourseIds } },
+          score: null,
+        },
+      }),
 
-      // Late assignments (past deadline, no submissions)
-      prisma.assignment.count({ where: { deadline: { lt: now }, submissions: { none: {} } } }),
+      // Late assignments (past deadline, no submissions, teacher's courses)
+      prisma.assignment.count({
+        where: {
+          courseId: { in: teacherCourseIds },
+          deadline: { lt: now },
+          submissions: { none: {} },
+        },
+      }),
+
+      // Enrolled students with course info — scoped to teacher's courses
+      prisma.enrollment.findMany({
+        where: {
+          courseId: { in: teacherCourseIds },
+          status: 'ACTIVE',
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              phone: true,
+            },
+          },
+          course: {
+            select: {
+              id: true,
+              title: true,
+              thumbnail: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      }),
     ]);
 
     const todaysClasses = await getTodayTeacherClasses({
       userId: auth.userId,
       role: auth.role,
     });
+
+    // ── Step 3: Format output ────────────────────────────────────────────────
 
     const doubtQueue = openDoubtTickets.map((dt) => ({
       id: dt.id,
@@ -127,32 +241,73 @@ export async function GET(req: NextRequest) {
       createdAt: dt.createdAt.toISOString(),
     }));
 
-    const recentActivity = recentReplies.map(r => ({
-      title: "Replied to a doubt",
+    const recentActivity = recentReplies.map((r) => ({
+      title: 'Replied to a doubt',
       detail: r.doubtTicket.subject,
       createdAt: r.createdAt.toISOString(),
     }));
 
-    // Calculate progress bars logic based on enrollments count to make it dynamic
-    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const monthNames = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     const monthCounts = new Array(12).fill(0);
-    enrollmentsThisYear.forEach(e => monthCounts[e.createdAt.getMonth()]++);
-    const maxCount = Math.max(...monthCounts, 1); // Avoid div by zero
-    // Normalize to 10-100 to make the UI look good if counts are small
+    enrollmentsThisYear.forEach((e) => monthCounts[e.createdAt.getMonth()]++);
+    const maxCount = Math.max(...monthCounts, 1);
     const progressBars = monthNames.map((month, idx) => ({
       month,
-      value: Math.max(10, Math.round((monthCounts[idx] / maxCount) * 100))
+      value: Math.max(10, Math.round((monthCounts[idx] / maxCount) * 100)),
     }));
+
+    // Deduplicate students (one student may be enrolled in multiple courses)
+    const studentMap = new Map<string, {
+      id: string;
+      name: string | null;
+      email: string | null;
+      image: string | null;
+      phone: string | null;
+      enrolledCourses: { id: string; title: string; thumbnail: string | null; enrolledAt: string }[];
+    }>();
+
+    for (const enrollment of enrolledStudents) {
+      const uid = enrollment.user.id;
+      if (!studentMap.has(uid)) {
+        studentMap.set(uid, {
+          id: uid,
+          name: enrollment.user.name,
+          email: enrollment.user.email,
+          image: enrollment.user.image,
+          phone: enrollment.user.phone ?? null,
+          enrolledCourses: [],
+        });
+      }
+      studentMap.get(uid)!.enrolledCourses.push({
+        id: enrollment.course.id,
+        title: enrollment.course.title,
+        thumbnail: enrollment.course.thumbnail,
+        enrolledAt: enrollment.createdAt.toISOString(),
+      });
+    }
+
+    const enrolledStudentsList = Array.from(studentMap.values());
 
     return apiSuccess({
       stats: {
         activeStudents,
         doubtsResolvedToday,
         openDoubtsCount,
-        totalEnrollmentsThisWeek: totalEnrollments,
+        totalEnrollmentsThisWeek,
         avgResponseTime: '—',
         studentSatisfaction: 0,
       },
+      // Teacher's assigned courses summary
+      courses: teacherCourses.map((c) => ({
+        id: c.id,
+        title: c.title,
+        thumbnail: c.thumbnail,
+        price: c.price,
+        isPublished: c.isPublished,
+        enrollmentCount: c._count.enrollments,
+      })),
+      // Students enrolled in teacher's courses (with course details)
+      enrolledStudents: enrolledStudentsList,
       todaysClasses,
       doubtQueue,
       recentActivity,
@@ -164,8 +319,8 @@ export async function GET(req: NextRequest) {
           total: totalAssignments,
           pending: pendingGrading,
           late: lateAssignments,
-        }
-      }
+        },
+      },
     });
   } catch (err) {
     console.error('[GET_TEACHER_STATS_ERROR]', err);

@@ -17,6 +17,8 @@ import {
   ChartNoAxesColumn,
   Award,
   UserCircle,
+  Image as ImageIcon,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -54,6 +56,7 @@ type Doubt = {
   mentor: { id: string; name: string | null } | null;
   replies?: DoubtReply[];  // not included by the list API; fetched lazily on expand
   _count: { replies: number };
+  attachmentUrl?: string | null;
 };
 
 const priorityMeta = {
@@ -158,6 +161,14 @@ function DoubtCard({
               <p className="max-w-[70ch] text-[14px] leading-7 text-(--text-muted)">
                 {doubt.body}
               </p>
+              {doubt.attachmentUrl && (
+                <div className="mt-3">
+                  <a href={doubt.attachmentUrl} target="_blank" rel="noreferrer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={doubt.attachmentUrl} alt="Doubt attachment" className="h-32 w-auto rounded-lg border object-cover shadow-sm transition-opacity hover:opacity-80" />
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
@@ -214,6 +225,21 @@ export default function DoubtsPage() {
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  }
+
+  function handleImageRemove() {
+    setImageFile(null);
+    setImagePreview(null);
+  }
 
   async function fetchDoubts(background = false) {
     if (!background) setLoading(true);
@@ -322,6 +348,33 @@ export default function DoubtsPage() {
     setErrorMsg("");
 
     try {
+      let attachmentUrl = null;
+      let imageUploadWarning = "";
+
+      if (imageFile) {
+        try {
+          const formData = new FormData();
+          formData.append("file", imageFile);
+          const uploadRes = await fetch("/api/upload/image", {
+            method: "POST",
+            body: formData,
+          });
+          const uploadJson = await uploadRes.json();
+          if (uploadJson.success) {
+            attachmentUrl = uploadJson.data.url;
+          } else {
+            // Upload failed — warn but don't block the doubt submission
+            imageUploadWarning = "Image could not be uploaded; submitting without it.";
+          }
+        } catch {
+          imageUploadWarning = "Image could not be uploaded; submitting without it.";
+        }
+
+        if (imageUploadWarning) {
+          setErrorMsg(imageUploadWarning);
+        }
+      }
+
       const response = await fetch("/api/doubts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -329,6 +382,7 @@ export default function DoubtsPage() {
           body,
           priority,
           subject,
+          attachmentUrl,
         }),
       });
       const json = await response.json();
@@ -337,6 +391,7 @@ export default function DoubtsPage() {
         setSubject("");
         setBody("");
         setPriority("MEDIUM");
+        handleImageRemove();
         setShowComposer(false);
         void fetchDoubts();
         return;
@@ -425,7 +480,7 @@ export default function DoubtsPage() {
                           Add the exact problem, what you already tried, and how urgent it is so mentors can respond with context instead of guesswork.
                         </p>
                         <p className="text-[13px] font-medium text-(--text-subtle)">
-                          Submitting a doubt uses 25 XP from your account.
+                          Submitting a doubt uses 25 XP from your account (50 XP with an attached image).
                         </p>
                       </div>
 
@@ -443,6 +498,39 @@ export default function DoubtsPage() {
                           placeholder="Describe the problem, what lesson or assignment it belongs to, and what you already tried."
                           value={body}
                         />
+
+                        <div className="space-y-3">
+                          <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-(--text-muted)">
+                            Attachment (Optional)
+                          </p>
+                          {imagePreview ? (
+                            <div className="relative inline-block">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={imagePreview} alt="Preview" className="h-32 w-auto rounded-lg border object-cover shadow-sm" />
+                              <button
+                                type="button"
+                                onClick={handleImageRemove}
+                                className="absolute -right-2 -top-2 rounded-full bg-white p-1 text-red-500 shadow-md hover:bg-red-50 hover:text-red-600"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div>
+                              <label className="flex w-max cursor-pointer items-center gap-2 rounded-lg border border-dashed border-(--line-strong) bg-white px-4 py-3 text-[14px] text-(--text-muted) transition-colors hover:bg-gray-50 hover:text-(--text-strong)">
+                                <ImageIcon className="h-4 w-4" />
+                                <span>Upload an image</span>
+                                <input
+                                  type="file"
+                                  accept="image/png, image/jpeg, image/webp, image/gif"
+                                  className="hidden"
+                                  onChange={handleImageSelect}
+                                />
+                              </label>
+                              <p className="mt-1 text-[12px] text-(--text-subtle)">Max 10MB. Formats: JPEG, PNG, WEBP, GIF.</p>
+                            </div>
+                          )}
+                        </div>
 
                         <div className="space-y-3">
                           <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-(--text-muted)">

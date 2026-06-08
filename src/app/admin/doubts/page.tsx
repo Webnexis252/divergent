@@ -16,6 +16,7 @@ type Doubt = {
   student: { id: string; name: string | null; email: string | null };
   mentor?: { id: string; name: string | null } | null;
   _count: { replies: number };
+  attachmentUrl?: string | null;
 };
 
 const priorityBadge = {
@@ -182,6 +183,13 @@ export default function AdminDoubtsPage() {
                         </span>
                       </div>
                     </div>
+                    {doubt.attachmentUrl && (
+                      <div className="mt-3">
+                        <a href={doubt.attachmentUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#7c3aed] hover:underline">
+                          View Attachment ↗
+                        </a>
+                      </div>
+                    )}
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-[#f1f5f9] pt-4">
                       <div className="flex items-center gap-4 text-[12px] text-[#94a3b8]">
                         <span>{doubt._count.replies} replies</span>

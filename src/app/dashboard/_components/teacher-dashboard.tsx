@@ -72,8 +72,13 @@ import { PanelHeader, TeacherClassRow, TeacherDoubtCard, TeacherBarChart } from 
 export function TeacherDashboard() {
   const { user, isLoading } = useAuth();
 
+  type EnrolledCourse = { id: string; title: string; thumbnail: string | null; enrolledAt: string };
+  type EnrolledStudent = { id: string; name: string | null; email: string | null; image: string | null; phone: string | null; enrolledCourses: EnrolledCourse[] };
+  type TeacherCourse = { id: string; title: string; thumbnail: string | null; price: number; isPublished: boolean; enrollmentCount: number };
   type TeacherStats = {
     stats: { activeStudents: number; doubtsResolvedToday: number; openDoubtsCount: number; totalEnrollmentsThisWeek: number; avgResponseTime: string; studentSatisfaction: number };
+    courses: TeacherCourse[];
+    enrolledStudents: EnrolledStudent[];
     todaysClasses: { id: string; title: string; courseTitle: string; startTime: string; duration: number; meetingUrl: string | null; attendeeCount: number }[];
     doubtQueue: { id: string; subject: string; priority: string; status: string; studentName: string | null; studentImage: string | null; createdAt: string }[];
     recentActivity: { title: string; detail: string; createdAt: string }[];
@@ -431,6 +436,87 @@ export function TeacherDashboard() {
                         </div>
                       </motion.article>
                     ))
+                  )}
+                </div>
+              </section>
+            </RevealSection>
+
+            {/* ── My Students ─────────────────────────────────────────────── */}
+            <RevealSection delay={0.22}>
+              <section
+                id="my-students"
+                className="overflow-hidden rounded-[24px] border border-[#e9e9e9] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]"
+              >
+                <PanelHeader
+                  icon={<AnalyticsIcon className="h-5 w-5 text-[#0284c7]" />}
+                  iconTone="bg-[#e0f2fe]"
+                  title="My Students"
+                  subtitle={`${data?.enrolledStudents?.length ?? 0} students enrolled in your courses`}
+                />
+
+                <div className="px-4 py-4 sm:px-5 sm:py-5">
+                  {statsLoading ? (
+                    <div className="flex items-center gap-2 py-4 text-[#8b8888]">
+                      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="h-5 w-5 rounded-full border-2 border-[#38c1ff] border-t-transparent" />
+                      Loading students...
+                    </div>
+                  ) : !data?.enrolledStudents?.length ? (
+                    <p className="py-6 text-center text-[13px] text-[#9ca3af]">No students enrolled in your courses yet.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[13px]">
+                        <thead>
+                          <tr className="border-b border-[#f1f5f9] text-[11px] font-semibold uppercase tracking-[0.10em] text-[#94a3b8]">
+                            <th className="pb-3 pl-1 pr-4 text-left">Student</th>
+                            <th className="pb-3 px-4 text-left">Email</th>
+                            <th className="pb-3 px-4 text-left">Enrolled Courses</th>
+                            <th className="pb-3 pl-4 pr-1 text-left">Joined</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.enrolledStudents.map((student, idx) => (
+                            <motion.tr
+                              key={student.id}
+                              className="border-b border-[#f8fafc] last:border-0 transition-colors hover:bg-[#fafcff]"
+                              initial={{ opacity: 0, y: 8 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              viewport={{ once: true }}
+                              transition={{ duration: 0.3, delay: idx * 0.03 }}
+                            >
+                              <td className="py-3 pl-1 pr-4">
+                                <div className="flex items-center gap-2.5">
+                                  {student.image ? (
+                                    <img src={student.image} alt={student.name ?? ''} className="h-8 w-8 rounded-full object-cover shrink-0" />
+                                  ) : (
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#38c1ff] to-[#6366f1] text-[12px] font-bold text-white">
+                                      {(student.name ?? 'S').charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <span className="font-semibold text-[#101828]">{student.name ?? '—'}</span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-[#64748b]">{student.email ?? '—'}</td>
+                              <td className="py-3 px-4">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {student.enrolledCourses.map((course) => (
+                                    <span
+                                      key={course.id}
+                                      className="inline-flex max-w-[180px] truncate items-center rounded-full bg-[#eff6ff] px-2.5 py-0.5 text-[11px] font-semibold text-[#2563eb] ring-1 ring-[#bfdbfe]"
+                                      title={course.title}
+                                    >
+                                      {course.title}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="py-3 pl-4 pr-1 text-[#94a3b8]">
+                                {new Date(student.enrolledCourses[0]?.enrolledAt ?? '').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </td>
+                            </motion.tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </section>

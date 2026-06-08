@@ -122,16 +122,22 @@ export function SignupForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: phone.trim(), context: "SIGNUP" }),
       });
-      const json = await res.json();
+      let json: { success?: boolean; error?: string; message?: string };
+      try {
+        json = await res.json();
+      } catch {
+        setOtpError(`Server returned an error (${res.status}). Please try again.`);
+        return;
+      }
       if (!json.success) {
-        setOtpError(json.error ?? "Failed to send OTP. Please try again.");
+        setOtpError(json.error || json.message || "Failed to send OTP. Please try again.");
         return;
       }
       setPhoneOtpSent(true);
       startCooldown();
       setTimeout(() => otpInputRef.current?.focus(), 100);
     } catch {
-      setOtpError("Network error. Please try again.");
+      setOtpError("Network error. Please check your connection and try again.");
     } finally {
       setOtpSending(false);
     }
@@ -151,17 +157,23 @@ export function SignupForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: phone.trim(), otp: otpValue, context: "SIGNUP" }),
       });
-      const json = await res.json();
+      let json: { success?: boolean; error?: string; message?: string; data?: { phoneVerifiedToken?: string } };
+      try {
+        json = await res.json();
+      } catch {
+        setOtpError(`Server returned an error (${res.status}). Please try again.`);
+        return;
+      }
       if (!json.success) {
-        setOtpError(json.error ?? "Invalid OTP. Please try again.");
+        setOtpError(json.error || json.message || "Invalid OTP. Please try again.");
         return;
       }
       setPhoneVerified(true);
-      setPhoneVerifiedToken(json.data.phoneVerifiedToken);
+      setPhoneVerifiedToken(json.data?.phoneVerifiedToken ?? null);
       setPhoneOtpSent(false);
       setOtpValue("");
     } catch {
-      setOtpError("Network error. Please try again.");
+      setOtpError("Network error. Please check your connection and try again.");
     } finally {
       setOtpVerifying(false);
     }

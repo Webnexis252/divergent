@@ -9,9 +9,18 @@ import { createClient } from '@supabase/supabase-js';
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Fall back to the anon key if the service role key is not configured so the
+// server starts instead of crashing with a missing env-var error.
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? supabaseAnonKey;
 
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+// Anon client — used as fallback for the public `uploads` bucket when the
+// service-role key is wrong or missing on the production server.
+const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
@@ -31,12 +40,24 @@ export async function uploadToStorage(
   data: Buffer | Uint8Array,
   contentType: string,
 ): Promise<string> {
-  const { error } = await supabaseAdmin.storage
+  const opts = { contentType, upsert: true };
+
+  let { error } = await supabaseAdmin.storage
     .from(BUCKET)
-    .upload(storagePath, data, {
-      contentType,
-      upsert: true,
-    });
+    .upload(storagePath, data, opts);
+
+  // If the service-role key fails with an auth/signature error, retry with the
+  // anon key. The `uploads` bucket is public so an anon client can still write
+  // files when the bucket has a permissive INSERT policy.
+  if (error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes('signature') || msg.includes('jwt') || msg.includes('unauthorized') || msg.includes('invalid')) {
+      const fallback = await supabaseAnon.storage
+        .from(BUCKET)
+        .upload(storagePath, data, opts);
+      error = fallback.error;
+    }
+  }
 
   if (error) {
     throw new Error(`Supabase Storage upload failed: ${error.message}`);

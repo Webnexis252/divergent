@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     return response;
   } catch (error) {
     console.error("[LIVE_CLASS_MESSAGES_GET_ERROR]", error);
-    return apiServerError();
+    return apiError(error instanceof Error ? error.message : 'Internal server error', 500);
   }
 }
 
@@ -95,6 +95,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     return apiCreated(message, "Message sent");
   } catch (error) {
     console.error("[LIVE_CLASS_MESSAGES_POST_ERROR]", error);
-    return apiServerError();
+    return apiError(error instanceof Error ? error.message : 'Internal server error', 500);
   }
 }

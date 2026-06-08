@@ -49,6 +49,6 @@ export async function POST(req: NextRequest) {
     return apiSuccess({ url: publicUrl }, 'Resource PDF uploaded successfully');
   } catch (err) {
     console.error('[UPLOAD_RESOURCE_ERROR]', err);
-    return apiServerError();
+    return apiError(err instanceof Error ? err.message : 'Unknown upload error', 500);
   }
 }

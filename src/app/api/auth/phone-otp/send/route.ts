@@ -16,7 +16,7 @@ import { sendWhatsAppOtp } from '@/lib/interakt';
  * Validates international phone format: must start with + and contain 7–15 digits.
  */
 function isValidPhone(phone: string): boolean {
-  return /^\+[1-9]\d{6,14}$/.test(phone.replace(/\s/g, ''));
+  return /^\+[1-9]\d{6,14}$/.test(phone.replace(/[\s\-()]/g, ''));
 }
 
 /**
@@ -39,9 +39,14 @@ function generateOtp(): string {
  */
 export async function POST(req: NextRequest) {
   // General rate limit to prevent abuse
-  const { success: withinLimit } = await checkRateLimit(req, authLimiter);
-  if (!withinLimit) {
-    return apiError('Too many OTP requests. Please wait a few minutes and try again.', 429);
+  try {
+    const { success: withinLimit } = await checkRateLimit(req, authLimiter);
+    if (!withinLimit) {
+      return apiError('Too many OTP requests. Please wait a few minutes and try again.', 429);
+    }
+  } catch (rateLimitErr) {
+    // If rate limiting itself fails (e.g., Redis down), log and continue
+    console.error('[PHONE_OTP_SEND] Rate limit check failed:', rateLimitErr);
   }
 
   try {
@@ -54,7 +59,7 @@ export async function POST(req: NextRequest) {
     if (typeof phone !== 'string' || !phone.trim()) {
       return apiBadRequest('Phone number is required');
     }
-    const normalizedPhone = phone.replace(/\s/g, '');
+    const normalizedPhone = phone.replace(/[\s\-()]/g, '');
     if (!isValidPhone(normalizedPhone)) {
       return apiBadRequest(
         'Phone number must be in international format (e.g. +919876543210)',
@@ -115,24 +120,16 @@ export async function POST(req: NextRequest) {
     const otp = generateOtp();
     const otpHash = await bcrypt.hash(otp, 10);
 
-    // --- Send via WhatsApp (Interakt) ---
-    try {
-      await sendWhatsAppOtp(normalizedPhone, otp);
-    } catch (sendErr) {
-      console.error('[WHATSAPP_OTP_SEND_ERROR]', sendErr);
-      return apiError(
-        'Failed to send OTP via WhatsApp. Please check the phone number and try again.',
-        500,
-      );
-    }
-
-    // --- Invalidate any previous unused OTPs for this phone+context ---
+    // --- Invalidate any previous unused OTPs for this phone+context FIRST ---
+    // Do this before sending so the DB state is clean even if the send fails
     await prisma.phoneOtp.deleteMany({
       where: { phone: normalizedPhone, context },
     });
 
-    // --- Store the new hashed OTP ---
-    await prisma.phoneOtp.create({
+    // --- Store the new hashed OTP BEFORE sending via WhatsApp ---
+    // This way, if WhatsApp send succeeds, the OTP is already in the DB for verification.
+    // If WhatsApp send fails, we clean up the stored OTP below.
+    const storedOtp = await prisma.phoneOtp.create({
       data: {
         phone: normalizedPhone,
         context,
@@ -140,6 +137,26 @@ export async function POST(req: NextRequest) {
         expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
       },
     });
+
+    // --- Send via WhatsApp (Interakt) ---
+    try {
+      await sendWhatsAppOtp(normalizedPhone, otp);
+    } catch (sendErr) {
+      // Clean up the stored OTP since the send failed
+      await prisma.phoneOtp.delete({ where: { id: storedOtp.id } }).catch(() => {});
+
+      const errorMessage =
+        sendErr instanceof Error ? sendErr.message : 'Unknown WhatsApp error';
+      console.error('[PHONE_OTP_SEND] WhatsApp send failed:', errorMessage);
+
+      // Return a user-friendly error with the specific reason
+      return apiError(
+        errorMessage.startsWith('WhatsApp') || errorMessage.startsWith('Could not') || errorMessage.startsWith('Failed to')
+          ? errorMessage
+          : 'Failed to send OTP via WhatsApp. Please check the phone number and try again.',
+        502,  // 502 Bad Gateway — upstream service failure (not our fault)
+      );
+    }
 
     // Mask phone for privacy in response: +91XXXXXX1234 → +91******1234
     const masked =

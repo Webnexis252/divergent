@@ -99,6 +99,7 @@ export const CreateDoubtSchema = z.object({
   subject: z.string().min(3, 'Subject is required'),
   body: z.string().min(1, 'Please describe your doubt in detail'),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH']).default('MEDIUM'),
+  attachmentUrl: z.string().url().optional().nullable(),
 });
 export const ReplyDoubtSchema = z.object({
   body: z.string().min(1, 'Reply cannot be empty'),
