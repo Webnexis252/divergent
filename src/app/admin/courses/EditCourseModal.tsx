@@ -631,10 +631,10 @@ export default function EditCourseModal({
                                       }));
                                     }}
                                     className={cx(
-                                      "flex w-full items-center justify-between rounded-[10px] border px-3 py-2.5 text-left transition-all duration-200",
+                                      "flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all hover:border-[#38c1ff] hover:bg-[#f6faff]",
                                       isSelected
-                                        ? "border-[#ff6b3d] bg-[#fff5f2]"
-                                        : "border-transparent bg-white shadow-sm hover:border-[#cbd5e1] hover:bg-[#f1f5f9]"
+                                        ? "border-[#38c1ff] bg-[#f0f9ff]"
+                                        : "border-[#e2e8f0] bg-white"
                                     )}
                                   >
                                     <div className="flex flex-col">
