@@ -62,21 +62,22 @@ export default async function AdminExamsPage() {
               </div>
             ) : (
               exams.map((exam) => (
-                <article
-                  key={exam.id}
-                  className="flex flex-wrap items-center justify-between gap-4 rounded-[18px] border border-[#eceef2] bg-[#fcfcfd] px-6 py-5 transition hover:shadow-sm"
-                >
-                  <div>
-                    <h3 className="font-semibold text-[#101828]">{exam.title}</h3>
-                    <p className="mt-1 text-[13px] text-[#667085]">
-                      {exam.course.title} · {exam.durationMins} mins · {exam._count.questions} questions
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4 text-[13px] text-[#94a3b8]">
-                    <span>{exam._count.attempts} attempts</span>
-                    <span>Created {formatShortDate(exam.createdAt)}</span>
-                  </div>
-                </article>
+                <Link key={exam.id} href={`/admin/courses/${exam.courseId}/exams/${exam.id}`}>
+                  <article
+                    className="flex flex-wrap items-center justify-between gap-4 rounded-[18px] border border-[#eceef2] bg-[#fcfcfd] px-6 py-5 transition hover:shadow-sm"
+                  >
+                    <div>
+                      <h3 className="font-semibold text-[#101828]">{exam.title}</h3>
+                      <p className="mt-1 text-[13px] text-[#667085]">
+                        {exam.course.title} · {exam.durationMins} mins · {exam._count.questions} questions
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4 text-[13px] text-[#94a3b8]">
+                      <span>{exam._count.attempts} attempts</span>
+                      <span>Created {formatShortDate(exam.createdAt)}</span>
+                    </div>
+                  </article>
+                </Link>
               ))
             )}
           </div>

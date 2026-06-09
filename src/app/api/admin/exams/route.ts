@@ -32,10 +32,10 @@ export async function POST(req: NextRequest) {
     if (!user) return apiForbidden('Unauthorized');
 
     const body = await req.json();
-    const { title, durationMins, courseId, questions, originalPdfUrl, availableFrom } = body;
+    const { title, durationMins, courseId, originalPdfUrl, availableFrom } = body;
 
-    if (!title || !courseId || !questions || !Array.isArray(questions)) {
-      return apiError('Missing required fields: title, courseId, and questions array', 400);
+    if (!title || !courseId) {
+      return apiError('Missing required fields: title, courseId', 400);
     }
 
     // Verify course exists
@@ -59,14 +59,6 @@ export async function POST(req: NextRequest) {
       return apiForbidden('You can only create exams for your own courses');
     }
 
-    const orderedQuestions = reindexQuestionsBySection(
-      questions.map((q: RawQuestion, i: number) => ({
-        ...q,
-        type: q.type ?? 'SCQ',
-        order: q.order ?? i,
-      }))
-    );
-
     const exam = await prisma.courseTest.create({
       data: {
         title,
@@ -77,24 +69,20 @@ export async function POST(req: NextRequest) {
         shuffleQuestions: false,
         originalPdfUrl,
         availableFrom: availableFrom ? new Date(availableFrom) : null,
-        questions: orderedQuestions.length
-          ? {
-              create: orderedQuestions.map((q: RawQuestion, i: number) => ({
-                prompt: q.prompt,
-                options: q.options || [],
-                correctAnswer: q.correctAnswer || [],
-                type: (q.type as QuestionType) || QuestionType.SCQ,
-                category: (q.category as QuestionCategory) || QuestionCategory.CONCEPT,
-                referenceImage: q.referenceImage ?? null,
-                imageUrl: q.imageUrl ?? null,
-                points: q.points ?? 1,
-                negativeMarks: q.negativeMarks ?? 0,
-                difficulty: q.difficulty ?? 'MEDIUM',
-                explanation: q.explanation ?? null,
-                order: q.order ?? i,
-              })),
+        parts: {
+          create: [{
+            title: "Part 1",
+            order: 0,
+            durationMins: durationMins || 60,
+            sections: {
+              create: [{
+                title: "Section 1",
+                questionType: "SCQ",
+                order: 0
+              }]
             }
-          : undefined,
+          }]
+        }
       },
     });
 
