@@ -243,14 +243,19 @@ export const CreateTestQuestionSchema = z.object({
     .default('CONCEPT'),
   prompt: z.string().min(5, 'Question prompt is required'),
   explanation: z.string().optional(),
+  explanationImageUrl: z.string().nullable().optional(),
   options: z.array(z.string()).default([]),              // SCQ/MCQ: options list; SKETCH/NUMERIC: empty
   correctAnswer: z.union([z.string(), z.array(z.string())]).default([]), // SCQ/NUMERIC: string; MCQ: string[]; SKETCH: []
   imageUrl: z.string().optional().nullable(),
   referenceImage: z.string().optional().nullable(),     // SKETCH only: teacher's reference sketch
   points: z.number().int().min(1).default(1),
   negativeMarks: z.number().min(0).default(0),
+  allowPartialMarking: z.boolean().default(false),
   order: z.number().int().default(0),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
+  partId: z.string().optional(),
+  sectionId: z.string().optional(),
+  groupId: z.string().optional(),
 }).superRefine((data, ctx) => {
   const options = data.options.map((option) => option.trim()).filter(Boolean);
   const correctAnswers = Array.isArray(data.correctAnswer)

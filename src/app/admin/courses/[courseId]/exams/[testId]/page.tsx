@@ -16,7 +16,7 @@ type QuestionCategory = "CONCEPT" | "VISUALIZATION" | "OBSERVATION" | "PRACTICAL
 
 type Question = {
   id: string; type: QuestionType; category: QuestionCategory; prompt: string;
-  explanation: string | null; options: string[]; correctAnswer: string[];
+  explanation: string | null; explanationImageUrl: string | null; options: string[]; correctAnswer: string[];
   imageUrl: string | null; points: number; negativeMarks: number; allowPartialMarking: boolean;
 };
 

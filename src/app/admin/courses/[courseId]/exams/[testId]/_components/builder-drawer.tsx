@@ -40,6 +40,7 @@ export function BuilderDrawer({
     category: "CONCEPT" as QuestionCategory,
     prompt: "",
     explanation: "",
+    explanationImageUrl: null as string | null,
     options: ["Option 1", "Option 2", "Option 3", "Option 4"],
     correctAnswer: ["0"],
     imageUrl: null as string | null,
@@ -132,7 +133,7 @@ export function BuilderDrawer({
       if (!res.ok || !payload.success) throw new Error(payload.error || "Failed to add question");
       
       setQForm({
-        category: "CONCEPT", prompt: "", explanation: "",
+        category: "CONCEPT", prompt: "", explanation: "", explanationImageUrl: null,
         options: ["Option 1", "Option 2", "Option 3", "Option 4"],
         correctAnswer: ["0"], imageUrl: null, points: 1, negativeMarks: 0, allowPartialMarking: false,
       });
@@ -295,6 +296,50 @@ export function BuilderDrawer({
                 <div className="border-t pt-4">
                   <label className="mb-1 block text-sm font-medium">Explanation (optional)</label>
                   <textarea value={qForm.explanation} onChange={e => setQForm({...qForm, explanation: e.target.value})} className="w-full rounded-md border p-2 text-sm text-gray-600" rows={2} />
+                  
+                  {qForm.explanationImageUrl ? (
+                    <div className="mt-3 overflow-hidden rounded-[14px] border border-[#e5e7eb] bg-gray-50/50">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={qForm.explanationImageUrl} alt="Explanation" className="max-h-[200px] w-full object-contain" />
+                      <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-t border-[#e5e7eb]">
+                        <span className="text-[12px] text-gray-600 font-medium">Explanation image uploaded ✓</span>
+                        <button type="button" onClick={() => setQForm({...qForm, explanationImageUrl: null})} className="text-[12px] text-red-500 hover:text-red-700 font-semibold">Remove</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('explImageUpload')?.click()}
+                      className="mt-2 flex w-fit items-center gap-2 rounded-lg border border-[#e5e7eb] px-3 py-1.5 text-[12px] font-medium text-gray-600 transition hover:bg-gray-50"
+                    >
+                      <ImagePlus className="h-3.5 w-3.5" /> Add Explanation Image (Optional)
+                    </button>
+                  )}
+                  <input
+                    id="explImageUpload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const img = new Image();
+                          img.onload = () => {
+                            const scale = Math.min(1, 1000 / Math.max(img.width, img.height));
+                            const canvas = document.createElement("canvas");
+                            canvas.width = Math.round(img.width * scale);
+                            canvas.height = Math.round(img.height * scale);
+                            canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            setQForm({...qForm, explanationImageUrl: canvas.toDataURL("image/jpeg", 0.85)});
+                          };
+                          img.src = ev.target!.result as string;
+                        };
+                        reader.readAsDataURL(f);
+                      }
+                    }}
+                  />
                 </div>
               </form>
             )}

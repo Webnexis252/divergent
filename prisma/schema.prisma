@@ -603,6 +603,7 @@ model TestQuestion {
   category            QuestionCategory @default(CONCEPT)
   prompt              String
   explanation         String?
+  explanationImageUrl String?
   options             Json
   correctAnswer       Json
   imageUrl            String?
