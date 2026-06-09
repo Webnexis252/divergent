@@ -82,7 +82,7 @@ export const CreateLessonSchema = z.object({
 
 export const CreateAssignmentSchema = z.object({
   courseId: z.string().cuid('Invalid course ID').optional().nullable(),
-  title: z.string().min(3, 'Title is required'),
+  title: z.string().min(3, 'Title must be at least 3 characters'),
   description: z.string().optional(),
   deadline: z
     .string()

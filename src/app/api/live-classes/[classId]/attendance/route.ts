@@ -74,7 +74,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       return apiCreated(attendance, 'Attendance tracking started');
     }
 
-    if (status === 'LEAVE') {
+    if (status === 'LEAVE' || status === 'UPDATE') {
       const result = await prisma.$transaction(async (tx) => {
         const attendance = await tx.attendance.findUnique({
           where: {
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest, { params }: Params) {
           };
         }
 
-        if (attendance.leaveAt) {
+        if (attendance.leaveAt && status === 'LEAVE') {
           return {
             attendance,
             watchTimeAddedSecs: 0,
@@ -98,10 +98,10 @@ export async function POST(req: NextRequest, { params }: Params) {
           };
         }
 
-        const leaveAt = new Date();
+        const now = new Date();
         const watchTimeAddedSecs = getLiveClassWatchTimeDeltaSeconds(
           attendance.joinedAt,
-          leaveAt,
+          now,
         );
         const totalWatchTimeSecs = attendance.watchTimeSecs + watchTimeAddedSecs;
         const nextIsCounted = qualifiesForLiveClassAttendance(totalWatchTimeSecs);
@@ -111,7 +111,8 @@ export async function POST(req: NextRequest, { params }: Params) {
             userId_liveClassId: { userId: user.userId, liveClassId: classId },
           },
           data: {
-            leaveAt,
+            leaveAt: status === 'LEAVE' ? now : null,
+            joinedAt: status === 'UPDATE' ? now : attendance.joinedAt,
             watchTimeSecs: totalWatchTimeSecs,
             isCounted: nextIsCounted,
           },
@@ -152,7 +153,7 @@ export async function POST(req: NextRequest, { params }: Params) {
           ? `Attendance counted. ${PERFECT_ATTENDANCE_STREAK_XP} XP awarded for your 7-day perfect attendance streak.`
           : result.attendance.isCounted
             ? 'Attendance counted'
-            : 'Watch time saved. Attendance requires at least 30 minutes in the live class.',
+            : 'Watch time saved.',
       );
     }
 

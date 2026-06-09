@@ -139,7 +139,12 @@ function CreateAssignmentModal({
           onClose();
         }, 1400);
       } else {
-        setError(json.error ?? "Failed to create assignment");
+        if (json.details?.fieldErrors) {
+          const firstError = Object.values(json.details.fieldErrors).flat()[0];
+          setError(typeof firstError === 'string' ? firstError : json.error);
+        } else {
+          setError(json.error ?? "Failed to create assignment");
+        }
       }
     } catch {
       setError("Network error — please try again");

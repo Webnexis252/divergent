@@ -8,11 +8,11 @@ import { createClient } from '@supabase/supabase-js';
  * to the browser.
  */
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.replace(/['"]/g, '').trim()!;
 // Fall back to the anon key if the service role key is not configured so the
 // server starts instead of crashing with a missing env-var error.
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? supabaseAnonKey;
+const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY?.replace(/['"]/g, '').trim() ?? supabaseAnonKey);
 
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { persistSession: false, autoRefreshToken: false },

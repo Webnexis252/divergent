@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -15,224 +14,145 @@ import {
   Radio,
   Users,
   Video,
-  House,
-  CircleHelp,
-  NotebookPen,
-  ChartNoAxesColumn,
-  Award,
-  CalendarDays,
-  UserCircle,
   FileText,
 } from "lucide-react";
-import { brand } from "@/lib/brand";
 import { cx } from "@/lib/cx";
 import { formatRelativeTime, formatShortDate } from "@/lib/date-format";
 import type { LiveClassData, LiveClassItem } from "@/lib/live-class-types";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { GlobalSearch } from "@/components/global-search";
-import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/context/auth-context";
 import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
-import {
-  AnimCard,
-  FloatPulse,
-  PageTransition,
-  RevealSection,
-  StaggerGrid,
-} from "./motion-wrappers";
-
-const assets = {
-  headerAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=021745ae-afe4-4dce-ad5c-2dd5ad2195e1",
-  heroIllustration: "/assets/dashboard/live-classes-hero.png",
-  todayStat: "/assets/dashboard/stat-upcoming.png",
-  weekStat: "/assets/dashboard/stat-past.png",
-  liveStat: "/assets/dashboard/stat-live.png",
-} as const;
+import { AnimCard, PageTransition, RevealSection, StaggerGrid } from "./motion-wrappers";
 
 const statusMeta = {
-  completed: {
-    badgeTone: "success" as const,
-    label: "Past Class",
-  },
-  live: {
-    badgeTone: "danger" as const,
-    label: "Live now",
-  },
-  upcoming: {
-    badgeTone: "brand" as const,
-    label: "Upcoming",
-  },
+  completed: { badgeTone: "success" as const, label: "Past Class" },
+  live: { badgeTone: "danger" as const, label: "Live Now" },
+  upcoming: { badgeTone: "brand" as const, label: "Upcoming" },
 } as const;
 
-export type LiveClassCardItem = LiveClassItem & {
-  status: keyof typeof statusMeta;
-};
-
-function actionButtonStyles(className?: string) {
-  return cx(
-    "inline-flex items-center justify-center rounded-[10px] font-semibold transition-transform duration-150 ease-out hover:-translate-y-0.5",
-    "bg-[#38c1ff] text-white shadow-[0_4px_12px_rgba(56,193,255,0.28)]",
-    className,
-  );
-}
+export type LiveClassCardItem = LiveClassItem & { status: keyof typeof statusMeta };
 
 function formatScheduleTime(startTime: string, duration: number) {
   const start = new Date(startTime);
   const end = new Date(start.getTime() + duration * 60 * 1000);
-
-  return `${start.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })} – ${end.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })}`;
+  return `${start.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 function getScheduleHref(item: LiveClassItem) {
   return `/dashboard/live-classes/${item.id}`;
 }
 
-function LiveStatCard({
-  title,
-  value,
-  image,
-  meta,
-  href,
-}: {
-  title: string;
-  value: string;
-  image: string;
-  meta: string;
-  href?: string;
-}) {
-  const content = (
-    <article className="relative flex h-full flex-col rounded-[28px] bg-[#72d3ff] p-5 text-white shadow-[0_10px_25px_-5px_rgba(56,193,255,0.3),0_8px_10px_-6px_rgba(56,193,255,0.3)] transition-all duration-300 hover:translate-y-[-4px] hover:bg-[#6ed0fc] hover:shadow-[0_20px_25px_-5px_rgba(56,193,255,0.4),0_10px_10px_-5px_rgba(56,193,255,0.4)] sm:p-6">
-      <div className="flex items-start justify-between gap-3 sm:gap-4">
-        <div className="w-[104px] shrink-0 sm:w-[8.75rem]">
-          <Image
-            alt=""
-            aria-hidden
-            className="h-auto w-full object-contain drop-shadow-xl"
-            height={140}
-            src={image}
-            width={140}
-          />
-        </div>
-        <p className="text-[2.6rem] font-bold leading-none text-[#fec600] sm:text-[clamp(2.6rem,5vw,3.5rem)]">
-          {value}
-        </p>
-      </div>
+// ─── LiveClassCard ─────────────────────────────────────────────────────────────
 
-      <div className="mt-3">
-        <p className="text-[1.1rem] font-bold leading-tight text-white sm:text-[1.25rem]">
-          {title}
-        </p>
-        <p className="mt-1 max-w-[18rem] text-[12px] leading-relaxed text-white/88 sm:text-[13px]">
-          {meta}
-        </p>
-      </div>
-    </article>
-  );
-
-  return (
-    <AnimCard className="h-full min-w-[200px] shrink-0 sm:min-w-0">
-      {href ? (
-        <Link className="block h-full" href={href}>
-          {content}
-        </Link>
-      ) : (
-        content
-      )}
-    </AnimCard>
-  );
-}
-
-function LiveClassCard({
-  item,
-}: {
-  item: LiveClassCardItem;
-}) {
+function LiveClassCard({ item }: { item: LiveClassCardItem }) {
   const href = getScheduleHref(item);
-  const actionLabel =
-    item.status === "live"
-      ? "Join now"
-      : item.status === "completed"
-        ? "Open replay"
-        : "Enter class";
+  const isLive = item.status === "live";
+  const isCompleted = item.status === "completed";
+  const actionLabel = isLive ? "Join Now" : isCompleted ? "Watch Replay" : "View Class";
 
   return (
     <AnimCard>
-      <article className="rounded-[24px] bg-white p-5 shadow-[0_4px_20px_rgba(15,23,42,0.04)] ring-1 ring-black/5 sm:rounded-[24px] sm:p-6 sm:shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2.5 sm:space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={statusMeta[item.status].badgeTone} className="text-[10px] sm:text-[12px] px-2.5 py-0.5">
-                {statusMeta[item.status].label}
-              </Badge>
-              <span className="rounded-full bg-[#f7f5f4] px-2.5 py-1 text-[11px] font-medium text-black/60 sm:text-[12px]">
-                {formatShortDate(item.startTime)}
-              </span>
-            </div>
+      <article
+        className={cx(
+          "group relative overflow-hidden rounded-2xl bg-white transition-all duration-300",
+          isLive
+            ? "shadow-[0_8px_32px_rgba(239,68,68,0.14)] ring-1 ring-red-200"
+            : "shadow-[0_4px_20px_rgba(15,23,42,0.06)] ring-1 ring-black/5",
+        )}
+      >
+        {/* Status accent bar */}
+        <div
+          className={cx(
+            "h-[3px] w-full",
+            isLive
+              ? "bg-gradient-to-r from-red-500 to-orange-400"
+              : isCompleted
+                ? "bg-gradient-to-r from-emerald-400 to-teal-500"
+                : "bg-gradient-to-r from-[#38c1ff] to-[#0097e6]",
+          )}
+        />
 
-            <div>
-              <h3 className="text-[1.15rem] font-semibold leading-[1.2] text-black sm:text-[clamp(1.25rem,2vw,1.55rem)]">
+        <div className="p-5 sm:p-6">
+          {/* Top row */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {isLive ? (
+                  <span className="flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-red-600 ring-1 ring-red-100">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                    </span>
+                    Live Now
+                  </span>
+                ) : (
+                  <Badge tone={statusMeta[item.status].badgeTone} className="text-[11px]">
+                    {statusMeta[item.status].label}
+                  </Badge>
+                )}
+                <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-500">
+                  {formatShortDate(item.startTime)}
+                </span>
+              </div>
+              <h3 className="text-[1.05rem] font-bold leading-tight text-gray-900 sm:text-[1.15rem]">
                 {item.title}
               </h3>
-              <p className="mt-1 text-[13px] text-[#8b8888] sm:text-[14px]">{item.courseTitle}</p>
+              <p className="text-[13px] text-gray-500">{item.courseTitle}</p>
+            </div>
+            <div
+              className={cx(
+                "grid h-12 w-12 shrink-0 place-items-center rounded-2xl",
+                isLive ? "bg-red-50 text-red-500" : isCompleted ? "bg-emerald-50 text-emerald-600" : "bg-[#38c1ff]/10 text-[#38c1ff]",
+              )}
+            >
+              {isCompleted ? <PlayCircle className="h-5 w-5" /> : <Video className="h-5 w-5" />}
             </div>
           </div>
 
-          <div className="grid h-[50px] w-[50px] shrink-0 place-items-center rounded-[16px] bg-[#38c1ff]/10 text-[#38c1ff] sm:h-[60px] sm:w-[60px] sm:rounded-[18px]">
-            {item.status === "completed" ? (
-              <CalendarClock className="h-5 w-5 sm:h-6 sm:w-6" />
-            ) : (
-              <Video className="h-5 w-5 sm:h-6 sm:w-6" />
-            )}
+          {/* Info chips */}
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-gray-50 px-3 py-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+                <Clock3 className="h-3 w-3 text-gray-400" />
+                <span className="truncate">{formatScheduleTime(item.startTime, item.duration)}</span>
+              </div>
+            </div>
+            <div className="rounded-xl bg-gray-50 px-3 py-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+                <CalendarClock className="h-3 w-3 text-gray-400" />
+                <span className="truncate">
+                  {item.status === "live" ? "In progress" : formatRelativeTime(item.startTime)}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-          <div className="rounded-[12px] bg-[#f7f5f4] px-3 py-2.5 sm:rounded-[14px] sm:px-4 sm:py-3">
-            <div className="flex items-center gap-2 text-[12px] font-medium text-black/60 sm:text-[13px]">
-              <Clock3 className="h-3.5 w-3.5 text-black/40" />
-              <span className="truncate">{formatScheduleTime(item.startTime, item.duration)}</span>
-            </div>
+          {/* CTA */}
+          <div className="mt-4 border-t border-gray-100 pt-4">
+            <Link
+              href={href}
+              className={cx(
+                "flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-[14px] font-semibold transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.98]",
+                isLive
+                  ? "bg-red-500 text-white shadow-[0_4px_14px_rgba(239,68,68,0.35)] hover:bg-red-600 hover:shadow-[0_6px_20px_rgba(239,68,68,0.42)]"
+                  : isCompleted
+                    ? "bg-emerald-500 text-white shadow-[0_4px_14px_rgba(16,185,129,0.28)] hover:bg-emerald-600"
+                    : "bg-[#38c1ff] text-white shadow-[0_4px_14px_rgba(56,193,255,0.35)] hover:bg-[#22b5f7]",
+              )}
+            >
+              {actionLabel}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <div className="rounded-[12px] bg-[#f7f5f4] px-3 py-2.5 sm:rounded-[14px] sm:px-4 sm:py-3">
-            <div className="flex items-center gap-2 text-[12px] font-medium text-black/60 sm:text-[13px]">
-              <Users className="h-3.5 w-3.5 text-black/40" />
-              <span className="truncate">{item.attendeeCount} joined</span>
-            </div>
-          </div>
-          <div className="col-span-2 rounded-[12px] bg-[#f7f5f4] px-3 py-2.5 sm:col-span-1 sm:rounded-[14px] sm:px-4 sm:py-3">
-            <div className="flex items-center gap-2 text-[12px] font-medium text-black/60 sm:text-[13px]">
-              <CalendarClock className="h-3.5 w-3.5 text-black/40" />
-              <span className="truncate">
-                {item.status === "live"
-                  ? "Already started"
-                  : formatRelativeTime(item.startTime)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-col gap-3 border-t border-black/5 pt-4 sm:mt-6 sm:gap-4 sm:pt-5">
-          <p className="max-w-[32rem] text-[13px] leading-relaxed text-black/50">
-            {item.status === "completed"
-              ? "Revisit the session details and any follow-up material from your class history."
-              : "Jump straight into the live classroom experience without leaving the dashboard."}
-          </p>
-          <Link className={actionButtonStyles("h-[40px] w-full px-4 text-[13px] sm:h-[42px] sm:w-auto")} href={href}>
-            {actionLabel}
-          </Link>
         </div>
       </article>
     </AnimCard>
   );
 }
+
+// ─── ScheduleSection ──────────────────────────────────────────────────────────
 
 function ScheduleSection({
   accent,
@@ -248,25 +168,24 @@ function ScheduleSection({
   title: string;
 }) {
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+    <div className="space-y-4 sm:space-y-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-[1.75rem] font-bold tracking-tight text-black sm:text-[clamp(2.2rem,4vw,2.5rem)]">{title}</h2>
-          <p className="mt-2.5 max-w-[42rem] text-[15px] leading-relaxed text-black/50 sm:text-[17px]">
-            {description}
-          </p>
+          <h2 className="text-[1.55rem] font-bold tracking-tight text-gray-900 sm:text-[1.8rem]">
+            {title}
+          </h2>
+          <p className="mt-1 text-[14px] text-gray-500">{description}</p>
         </div>
-        <div className="shrink-0 self-start sm:self-auto mt-1 sm:mt-0">{accent}</div>
+        <div className="shrink-0 self-start sm:self-auto">{accent}</div>
       </div>
-
       {items.length > 0 ? (
-        <StaggerGrid className="grid gap-3 sm:gap-5 xl:grid-cols-2">
+        <StaggerGrid className="grid gap-4 xl:grid-cols-2">
           {items.map((item) => (
             <LiveClassCard item={item} key={item.id} />
           ))}
         </StaggerGrid>
       ) : (
-        <div className="rounded-[20px] bg-white px-5 py-10 text-center text-[14px] text-black/40 ring-1 ring-black/5 sm:px-6 sm:py-12 sm:text-[15px] sm:shadow-[0_4px_10px_rgba(0,0,0,0.04)]">
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center text-[14px] text-gray-400">
           {emptyDescription}
         </div>
       )}
@@ -274,77 +193,102 @@ function ScheduleSection({
   );
 }
 
-function NextRoomCard({
-  item,
-}: {
-  item: LiveClassCardItem | null;
-}) {
+// ─── NextRoomCard ─────────────────────────────────────────────────────────────
+
+function NextRoomCard({ item }: { item: LiveClassCardItem | null }) {
   if (!item) {
     return (
       <AnimCard>
-        <aside className="rounded-[32px] bg-white px-6 py-8 shadow-[0_14px_40px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
-          <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-black/40">
-            Next Room
-          </p>
-          <p className="mt-5 text-[1.4rem] font-bold text-black">Nothing scheduled yet</p>
-          <p className="mt-3 text-[14px] leading-relaxed text-black/50">
-            When a new live session is published for one of your enrolled courses,
-            it will appear here with the fastest route into class.
+        <aside className="rounded-2xl bg-white p-6 ring-1 ring-black/5 shadow-[0_4px_20px_rgba(15,23,42,0.07)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">Next Room</p>
+          <div className="mt-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
+            <Video className="h-6 w-6 text-gray-400" />
+          </div>
+          <p className="mt-4 text-[1.15rem] font-bold text-gray-900">Nothing scheduled yet</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-gray-500">
+            When a new live session is published for your enrolled courses, it will appear here.
           </p>
           <Link
-            className={actionButtonStyles("mt-7 h-[44px] px-6 text-[14px] w-full")}
             href="/dashboard/courses"
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#38c1ff] py-2.5 text-[14px] font-semibold text-white shadow-[0_4px_14px_rgba(56,193,255,0.3)] transition-all hover:-translate-y-0.5"
           >
             Browse Courses
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </aside>
       </AnimCard>
     );
   }
 
+  const isLive = item.status === "live";
+
   return (
     <AnimCard>
-      <aside className="rounded-[32px] bg-white px-6 py-8 shadow-[0_14px_40px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
-        <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-black/40">
-          {item.status === "completed" ? "Latest Replay" : "Next Room"}
-        </p>
-        <div className="mt-5 space-y-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <Badge tone={statusMeta[item.status].badgeTone} className="px-3 py-1 text-[12px]">
-              {statusMeta[item.status].label}
-            </Badge>
-            <span className="rounded-full bg-[#f7f5f4] px-3 py-1.5 text-[12px] font-medium text-black/60">
+      <aside
+        className={cx(
+          "overflow-hidden rounded-2xl",
+          isLive
+            ? "bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#312e81] text-white shadow-[0_12px_40px_rgba(49,46,129,0.28)]"
+            : "bg-white ring-1 ring-black/5 shadow-[0_4px_20px_rgba(15,23,42,0.07)]",
+        )}
+      >
+        {isLive && (
+          <div className="h-[2px] w-full bg-gradient-to-r from-red-500 via-orange-400 to-red-500" />
+        )}
+        <div className="p-6">
+          <p className={cx("text-[11px] font-bold uppercase tracking-[0.2em]", isLive ? "text-white/50" : "text-gray-400")}>
+            {item.status === "completed" ? "Latest Replay" : "Next Room"}
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {isLive ? (
+              <span className="flex items-center gap-1.5 rounded-full bg-red-500/20 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-red-300 ring-1 ring-red-500/30">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-400" />
+                </span>
+                Live Now
+              </span>
+            ) : (
+              <Badge tone={statusMeta[item.status].badgeTone}>{statusMeta[item.status].label}</Badge>
+            )}
+            <span
+              className={cx(
+                "rounded-full px-2.5 py-0.5 text-[11px] font-medium",
+                isLive ? "bg-white/10 text-white/60" : "bg-gray-100 text-gray-500",
+              )}
+            >
               {formatShortDate(item.startTime)}
             </span>
           </div>
-          <div>
-            <h3 className="text-[1.65rem] font-bold leading-tight text-black">
-              {item.title}
-            </h3>
-            <p className="mt-1.5 text-[15px] text-[#8b8888]">{item.courseTitle}</p>
-          </div>
-          <div className="rounded-[20px] bg-[#f7f5f4] p-5">
-            <div className="flex items-center gap-3 text-[14px] font-medium text-black/60">
-              <Clock3 className="h-4.5 w-4.5 shrink-0 text-black/40" />
+
+          <h3 className={cx("mt-3 text-[1.4rem] font-bold leading-tight", isLive ? "text-white" : "text-gray-900")}>
+            {item.title}
+          </h3>
+          <p className={cx("mt-1 text-[13px]", isLive ? "text-white/55" : "text-gray-500")}>{item.courseTitle}</p>
+
+          <div className={cx("mt-4 space-y-2 rounded-xl p-4", isLive ? "bg-white/8" : "bg-gray-50")}>
+            <div className={cx("flex items-center gap-2 text-[13px]", isLive ? "text-white/75" : "text-gray-600")}>
+              <Clock3 className="h-4 w-4 shrink-0" />
               <span>{formatScheduleTime(item.startTime, item.duration)}</span>
             </div>
-            <div className="mt-3 flex items-center gap-3 text-[14px] font-medium text-black/60">
-              <CalendarClock className="h-4.5 w-4.5 shrink-0 text-black/40" />
-              <span>
-                {item.status === "live" ? "Already started" : formatRelativeTime(item.startTime)}
-              </span>
+            <div className={cx("flex items-center gap-2 text-[13px]", isLive ? "text-white/75" : "text-gray-600")}>
+              <CalendarClock className="h-4 w-4 shrink-0" />
+              <span>{isLive ? "Already started" : formatRelativeTime(item.startTime)}</span>
             </div>
           </div>
+
           <Link
-            className={actionButtonStyles("h-[48px] w-full gap-3 text-[15px]")}
             href={getScheduleHref(item)}
+            className={cx(
+              "mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-semibold transition-all hover:-translate-y-0.5",
+              isLive
+                ? "bg-white text-[#312e81] shadow-[0_4px_14px_rgba(0,0,0,0.25)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.3)]"
+                : "bg-[#38c1ff] text-white shadow-[0_4px_14px_rgba(56,193,255,0.3)]",
+            )}
           >
-            {item.status === "live"
-              ? "Join Live Room"
-              : item.status === "completed"
-                ? "Open Replay"
-                : "Open Classroom"}
-            <ArrowRight className="h-4.5 w-4.5" />
+            {isLive ? "Join Live Room" : item.status === "completed" ? "Watch Replay" : "Open Classroom"}
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </aside>
@@ -352,90 +296,63 @@ function NextRoomCard({
   );
 }
 
-function QuickRouteCard({
-  description,
-  href,
-  icon: Icon,
-  title,
-}: {
-  description: string;
-  href: string;
-  icon: typeof Calendar;
-  title: string;
-}) {
+// ─── QuickRouteCard ───────────────────────────────────────────────────────────
+
+function QuickRouteCard({ description, href, icon: Icon, title }: { description: string; href: string; icon: typeof Calendar; title: string }) {
   return (
     <AnimCard>
       <Link
-        className="flex items-start gap-3.5 rounded-[20px] bg-white px-4 py-4 shadow-[0_4px_16px_rgba(15,23,42,0.04)] ring-1 ring-black/5 transition-transform active:scale-[0.98] sm:rounded-[20px] sm:shadow-[0_4px_10px_rgba(0,0,0,0.06)]"
         href={href}
+        className="flex items-start gap-3 rounded-xl bg-white px-4 py-3.5 ring-1 ring-black/5 shadow-[0_2px_10px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(15,23,42,0.08)] active:scale-[0.98]"
       >
-        <div className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[14px] bg-[#38c1ff]/10 text-[#38c1ff] sm:h-11 sm:w-11">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#38c1ff]/10 text-[#38c1ff]">
           <Icon className="h-5 w-5" />
         </div>
-        <div className="space-y-0.5 sm:space-y-1">
-          <p className="text-[14px] font-bold text-black sm:text-[15px]">{title}</p>
-          <p className="text-[12px] leading-relaxed text-black/50 sm:text-[13px] sm:leading-6">{description}</p>
+        <div>
+          <p className="text-[14px] font-semibold text-gray-900">{title}</p>
+          <p className="text-[12px] leading-relaxed text-gray-500">{description}</p>
         </div>
       </Link>
     </AnimCard>
   );
 }
 
-// ─── Past Classes: grouped accordion by course ────────────────────────────────
+// ─── Past Classes ─────────────────────────────────────────────────────────────
 
-type CourseGroup = {
-  courseTitle: string;
-  courseSlug: string;
-  classes: LiveClassCardItem[];
-};
+type CourseGroup = { courseTitle: string; courseSlug: string; classes: LiveClassCardItem[] };
 
 function PastClassRow({ item }: { item: LiveClassCardItem }) {
   const replayHref = `/dashboard/live-classes/${item.id}/recording`;
   const date = new Date(item.startTime);
   const dateStr = date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-  const timeStr = date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="flex flex-col border-t border-black/5 transition-colors hover:bg-[#38c1ff]/4">
-      <div className="flex items-center justify-between gap-4 px-5 py-3.5">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[12px] bg-[#38c1ff]/10 text-[#38c1ff]">
-            <PlayCircle className="h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-[14px] font-semibold text-black">{item.title}</p>
-            <p className="flex items-center gap-2 text-[12px] text-black/45">
-              <Clock3 className="h-3 w-3 shrink-0" />
-              {dateStr} · {timeStr}
-            </p>
-          </div>
+    <div className="flex items-center justify-between gap-4 border-t border-gray-100 px-5 py-3.5 transition-colors hover:bg-gray-50/60">
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#38c1ff]/10 text-[#38c1ff]">
+          <PlayCircle className="h-4 w-4" />
         </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="hidden rounded-full bg-[#f0f9ff] px-2.5 py-1 text-[11px] font-medium text-[#38c1ff] sm:inline">
-            <Users className="mr-1 inline h-3 w-3" />
-            {item.attendeeCount} joined
-          </span>
-          {item.resources && item.resources.map((res) => (
-            <a
-              key={res.id}
-              href={res.fileUrl}
-              target="_blank"
-              rel="noreferrer"
-              title={res.title}
-              className="inline-flex h-[34px] max-w-[160px] items-center gap-1.5 rounded-[10px] bg-white border border-black/10 px-3.5 text-[12px] font-semibold text-black/70 shadow-sm transition-all hover:-translate-y-0.5 hover:border-black/20 hover:bg-black/[0.02]"
-            >
-              <FileText className="h-3.5 w-3.5 shrink-0 text-black/40" />
-              <span className="truncate">{res.title}</span>
-            </a>
-          ))}
-          <Link
-            href={replayHref}
-            className="inline-flex h-[34px] items-center gap-1.5 rounded-[10px] bg-[#38c1ff] px-3.5 text-[12px] font-semibold text-white shadow-[0_4px_10px_rgba(56,193,255,0.25)] transition-transform hover:-translate-y-0.5"
-          >
-            Open Replay
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+        <div className="min-w-0">
+          <p className="truncate text-[14px] font-semibold text-gray-900">{item.title}</p>
+          <p className="flex items-center gap-1.5 text-[12px] text-gray-400">
+            <Clock3 className="h-3 w-3" /> {dateStr}
+          </p>
         </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {item.resources?.map((res) => (
+          <a key={res.id} href={res.fileUrl} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 text-[12px] font-semibold text-gray-600 transition hover:bg-gray-50">
+            <FileText className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{res.title}</span>
+          </a>
+        ))}
+        <Link
+          href={replayHref}
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#38c1ff] px-3 text-[12px] font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+        >
+          Replay
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </div>
   );
@@ -444,40 +361,26 @@ function PastClassRow({ item }: { item: LiveClassCardItem }) {
 function PastCourseAccordion({ group }: { group: CourseGroup }) {
   const [open, setOpen] = useState(false);
   const count = group.classes.length;
-
   return (
-    <div className="overflow-hidden rounded-[20px] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-      {/* Course header row – clickable */}
+    <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-[#f9fafb]"
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50"
         aria-expanded={open}
       >
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-[#38c1ff]/12 text-[#38c1ff]">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
             <Video className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[15px] font-bold text-black">{group.courseTitle}</p>
-            <p className="text-[12px] text-black/45">
-              {count} past {count === 1 ? "session" : "sessions"}
+            <p className="text-[15px] font-bold text-gray-900">{group.courseTitle}</p>
+            <p className="text-[12px] text-gray-400">
+              {count} recorded {count === 1 ? "session" : "sessions"}
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="hidden rounded-full bg-[#f7f5f4] px-3 py-1 text-[12px] font-semibold text-black/55 sm:inline">
-            {count} recorded
-          </span>
-          <ChevronDown
-            className={cx(
-              "h-5 w-5 text-black/35 transition-transform duration-200",
-              open && "rotate-180",
-            )}
-          />
-        </div>
+        <ChevronDown className={cx("h-5 w-5 text-gray-400 transition-transform duration-200", open && "rotate-180")} />
       </button>
-
-      {/* Expandable class list */}
       {open && (
         <div>
           {group.classes.map((cls) => (
@@ -489,45 +392,44 @@ function PastCourseAccordion({ group }: { group: CourseGroup }) {
   );
 }
 
-export function PastClassesSection({ items, title = "Past Classes", description = "Browse replays by course — click any course to reveal its recorded sessions." }: { items: LiveClassCardItem[], title?: string, description?: string }) {
-  // Group by course
+export function PastClassesSection({
+  items,
+  title = "Past Classes",
+  description = "Browse replays by course — click any course to reveal its recorded sessions.",
+}: {
+  items: LiveClassCardItem[];
+  title?: string;
+  description?: string;
+}) {
   const groups = useMemo<CourseGroup[]>(() => {
     const map = new Map<string, CourseGroup>();
     for (const item of items) {
       const key = item.courseSlug || item.courseTitle || "unknown";
-      if (!map.has(key)) {
-        map.set(key, { courseTitle: item.courseTitle || "Unknown Course", courseSlug: key, classes: [] });
-      }
+      if (!map.has(key)) map.set(key, { courseTitle: item.courseTitle || "Unknown Course", courseSlug: key, classes: [] });
       map.get(key)!.classes.push(item);
     }
     return Array.from(map.values());
   }, [items]);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Section header */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+    <div className="space-y-4 sm:space-y-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-[1.75rem] font-bold tracking-tight text-black sm:text-[clamp(2.2rem,4vw,2.5rem)]">
-            {title}
-          </h2>
-          <p className="mt-2.5 max-w-[42rem] text-[15px] leading-relaxed text-black/50 sm:text-[17px]">
-            {description}
-          </p>
+          <h2 className="text-[1.55rem] font-bold tracking-tight text-gray-900 sm:text-[1.8rem]">{title}</h2>
+          <p className="mt-1 text-[14px] text-gray-500">{description}</p>
         </div>
-        <span className="shrink-0 self-start rounded-full bg-black/5 px-3 py-1 text-sm font-semibold text-black/52 sm:self-auto">
+        <span className="shrink-0 self-start rounded-full bg-gray-100 px-3 py-1 text-[12px] font-semibold text-gray-500 sm:self-auto">
           {items.length} saved
         </span>
       </div>
-
       {groups.length === 0 ? (
-        <div className="rounded-[20px] bg-white px-5 py-10 text-center text-[14px] text-black/40 ring-1 ring-black/5 sm:px-6 sm:py-12 sm:text-[15px]">
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center text-[14px] text-gray-400">
           No completed live classes are available yet.
         </div>
       ) : (
         <div className="space-y-3">
-          {groups.map((group, index) => (
-            <PastCourseAccordion key={group.courseSlug || index} group={group} />
+          {groups.map((group, i) => (
+            <PastCourseAccordion key={group.courseSlug || i} group={group} />
           ))}
         </div>
       )}
@@ -535,7 +437,7 @@ export function PastClassesSection({ items, title = "Past Classes", description 
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export function StudentLiveClassSchedule() {
   const { user } = useAuth();
@@ -544,221 +446,158 @@ export function StudentLiveClassSchedule() {
 
   useEffect(() => {
     let active = true;
-
     fetch("/api/live-classes")
-      .then((response) => response.json())
-      .then((json) => {
-        if (active && json.success) {
-          setData(json.data);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to load class schedule", error);
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
+      .then((r) => r.json())
+      .then((json) => { if (active && json.success) setData(json.data); })
+      .catch((e) => console.error("Failed to load class schedule", e))
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  const displayName = user?.name?.trim() || "Student";
-  const liveItems = useMemo<LiveClassCardItem[]>(
-    () => data?.live.map((item) => ({ ...item, status: "live" })) ?? [],
-    [data],
-  );
-  const upcomingItems = useMemo<LiveClassCardItem[]>(
-    () => data?.upcoming.map((item) => ({ ...item, status: "upcoming" })) ?? [],
-    [data],
-  );
-  const completedItems = useMemo<LiveClassCardItem[]>(
-    () => data?.completed.map((item) => ({ ...item, status: "completed" })) ?? [],
-    [data],
-  );
-  const nextRoom = useMemo(() => {
-    return liveItems[0] ?? upcomingItems[0] ?? completedItems[0] ?? null;
-  }, [completedItems, liveItems, upcomingItems]);
+  const liveItems = useMemo<LiveClassCardItem[]>(() => data?.live.map((i) => ({ ...i, status: "live" })) ?? [], [data]);
+  const upcomingItems = useMemo<LiveClassCardItem[]>(() => data?.upcoming.map((i) => ({ ...i, status: "upcoming" })) ?? [], [data]);
+  const completedItems = useMemo<LiveClassCardItem[]>(() => data?.completed.map((i) => ({ ...i, status: "completed" })) ?? [], [data]);
+  const nextRoom = useMemo(() => liveItems[0] ?? upcomingItems[0] ?? completedItems[0] ?? null, [liveItems, upcomingItems, completedItems]);
   const liveNowCount = data?.summary.live ?? 0;
-  const windowLabel = data
-    ? "Across your enrolled live classes"
-    : "Loading classrooms...";
-  const upcomingHref = upcomingItems[0]
-    ? getScheduleHref(upcomingItems[0])
-    : "/dashboard/live-classes";
-  const completedHref = completedItems[0]
-    ? getScheduleHref(completedItems[0])
-    : "/dashboard/live-classes";
-  const liveHref = liveItems[0]
-    ? getScheduleHref(liveItems[0])
-    : "/dashboard/live-classes";
 
   return (
     <PageTransition>
-      <main className="min-h-screen overflow-x-hidden bg-[#f9fafb] pb-24 sm:bg-[#f7f5f4] sm:pb-0">
-
-
+      <main className="min-h-screen bg-[#f5f6fa] pb-24 sm:pb-0">
         <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-0 xl:py-8">
           <div className="grid gap-4 sm:gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
             <DashboardSidebar />
 
-            <section className="min-w-0 px-0 xl:pr-10">
-              <div className="mx-auto max-w-[1160px] space-y-6 sm:space-y-10">
-                <RevealSection>
-                  <div className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(145deg,#38c1ff_0%,#00a7fa_100%)] px-5 py-8 text-white shadow-[0_12px_32px_rgba(56,193,255,0.25)] sm:rounded-[32px] sm:px-10 sm:py-10 sm:shadow-[0_18px_44px_rgba(56,193,255,0.24)]">
-                    <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[42%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.22),transparent_70%)] sm:block" />
-                    <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl sm:hidden" />
-                    <div className="relative z-10 grid gap-6 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] xl:items-center">
-                      <div className="max-w-[42rem] space-y-4 sm:space-y-6">
-                        <div>
-                          <div className="mb-3 inline-flex rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md sm:px-4 sm:py-1.5 sm:text-[11px]">
-                            Live Classes
-                          </div>
-                          <h1 className="text-[1.85rem] font-bold leading-[1.08] tracking-tight sm:max-w-none sm:text-[clamp(1.95rem,4vw,2.55rem)] sm:leading-[1.02] sm:tracking-[-0.05em]">
-                            Jump into every live session from one polished workspace.
-                          </h1>
-                          <p className="mt-3 text-[14px] leading-relaxed text-white/90 sm:max-w-[30rem] sm:text-[16px] sm:leading-7 sm:text-white/92">
-                            Your live classes, next sessions, and quick routes now sit in the same
-                            student-dashboard language as the rest of the learning flow.
-                          </p>
-                        </div>
+            <section className="min-w-0 xl:pr-10">
+              <div className="mx-auto max-w-[1160px] space-y-8">
 
-                        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                          <span className="rounded-full bg-black/10 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur sm:px-4 sm:text-[14px]">
-                            {windowLabel}
-                          </span>
-                          {liveNowCount > 0 ? (
-                            <span className="flex items-center gap-1.5 rounded-full bg-[#ff3d00] px-3 py-1.5 text-[12px] font-bold text-white shadow-[0_2px_10px_rgba(255,61,0,0.4)] sm:gap-2 sm:px-4 sm:text-[14px]">
-                              <Radio className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              {liveNowCount} live now
-                            </span>
-                          ) : null}
+                {/* ── Hero Banner ── */}
+                <RevealSection>
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f4fc5] px-6 py-8 text-white shadow-[0_16px_48px_rgba(15,23,42,0.22)] sm:rounded-3xl sm:px-10 sm:py-10">
+                    {/* Ambient glow */}
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(56,193,255,0.18),transparent_55%)]" />
+                    <div className="pointer-events-none absolute -bottom-12 -left-12 h-56 w-56 rounded-full bg-[#38c1ff]/12 blur-3xl" />
+
+                    <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] backdrop-blur-md">
+                          <Radio className="h-3.5 w-3.5" />
+                          Live Classes
                         </div>
+                        <h1 className="text-[1.85rem] font-extrabold leading-tight tracking-tight sm:text-[2.3rem]">
+                          Your Live Classroom Hub
+                        </h1>
+                        <p className="mt-2.5 max-w-md text-[14px] leading-relaxed text-white/65 sm:text-[15px]">
+                          Join live sessions, watch replays, and track your schedule — all from one workspace.
+                        </p>
                       </div>
 
-                      <FloatPulse className="hidden sm:mx-auto sm:block xl:mx-0 xl:justify-self-end">
-                        <Image
-                          alt=""
-                          aria-hidden
-                          className="h-auto w-[220px] object-contain opacity-95 drop-shadow-[0_18px_40px_rgba(0,0,0,0.12)] sm:w-[320px] xl:w-[360px]"
-                          height={852}
-                          src={assets.heroIllustration}
-                          width={1561}
-                        />
-                      </FloatPulse>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {liveNowCount > 0 && (
+                          <div className="flex items-center gap-2 rounded-xl bg-red-500/20 px-4 py-2.5 ring-1 ring-red-400/25">
+                            <span className="relative flex h-2.5 w-2.5">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-400" />
+                            </span>
+                            <span className="text-[14px] font-bold text-red-300">{liveNowCount} Live Now</span>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <div className="rounded-xl bg-white/10 px-4 py-2.5 text-center">
+                            <div className="text-[1.3rem] font-bold">{loading ? "–" : String(data?.summary.upcoming ?? 0)}</div>
+                            <div className="text-[10px] text-white/55 uppercase tracking-wider">Upcoming</div>
+                          </div>
+                          <div className="rounded-xl bg-white/10 px-4 py-2.5 text-center">
+                            <div className="text-[1.3rem] font-bold">{loading ? "–" : String(data?.summary.completed ?? 0)}</div>
+                            <div className="text-[10px] text-white/55 uppercase tracking-wider">Completed</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </RevealSection>
 
-                <RevealSection delay={0.04}>
-                  <div className="scrollbar-none -mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-3 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0">
-                    <LiveStatCard
-                      image={assets.todayStat}
-                      meta="Classes waiting for their start time."
-                      title="Upcoming Classes"
-                      value={loading ? "…" : String(data?.summary.upcoming ?? 0)}
-                      href={upcomingHref}
-                    />
-                    <LiveStatCard
-                      image={assets.weekStat}
-                      meta="Completed sessions ready to revisit."
-                      title="Past Classes"
-                      value={loading ? "…" : String(data?.summary.completed ?? 0)}
-                      href={completedHref}
-                    />
-                    <LiveStatCard
-                      image={assets.liveStat}
-                      meta="Rooms that can be joined immediately."
-                      title="Ongoing Classes"
-                      value={loading ? "…" : String(data?.summary.live ?? 0)}
-                      href={liveHref}
-                    />
-                  </div>
-                </RevealSection>
-
+                {/* ── Content ── */}
                 {loading ? (
-                  <RevealSection delay={0.06}>
-                    <div className="flex min-h-[16rem] items-center justify-center rounded-[24px] bg-white text-black/50 shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
+                  <RevealSection delay={0.04}>
+                    <div className="flex min-h-[12rem] items-center justify-center rounded-2xl bg-white text-gray-400 shadow-sm ring-1 ring-black/5">
                       <div className="flex items-center gap-3">
-                        <Spinner className="h-6 w-6 border-[#38c1ff] text-[#38c1ff]" />
+                        <Spinner className="h-5 w-5 border-[#38c1ff] text-[#38c1ff]" />
                         Loading your live-class schedule...
                       </div>
                     </div>
                   </RevealSection>
                 ) : !data ? (
-                  <RevealSection delay={0.08}>
+                  <RevealSection delay={0.06}>
                     <EmptyState
-                      description="We could not load the live-class schedule right now. Refresh the page and try again."
+                      description="We could not load the live-class schedule right now. Refresh and try again."
                       icon={<CalendarClock className="h-6 w-6" />}
                       title="Schedule unavailable"
                     />
                   </RevealSection>
                 ) : (
-                  <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+                  <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start">
+                    {/* Left column – sections */}
                     <div className="space-y-10">
-                      {liveItems.length > 0 ? (
-                        <RevealSection delay={0.08}>
+                      {liveItems.length > 0 && (
+                        <RevealSection delay={0.06}>
                           <ScheduleSection
                             accent={
-                              <span className="rounded-full bg-[#ffebe5] px-3 py-1 text-sm font-semibold text-[#ff5e2f]">
+                              <span className="rounded-full bg-red-50 px-3 py-1 text-[12px] font-bold text-red-500 ring-1 ring-red-100">
                                 {liveItems.length} active
                               </span>
                             }
-                            description="Live classrooms are surfaced first so you can jump straight in without hunting through the rest of the schedule."
+                            description="These classrooms are live right now — join immediately."
                             emptyDescription="No sessions are currently live."
                             items={liveItems}
                             title="Ongoing Classes"
                           />
                         </RevealSection>
-                      ) : null}
+                      )}
 
-                      <RevealSection delay={0.1}>
+                      <RevealSection delay={0.08}>
                         <ScheduleSection
                           accent={
-                            <span className="rounded-full bg-[#38c1ff]/10 px-3 py-1 text-sm font-semibold text-[#38c1ff]">
+                            <span className="rounded-full bg-[#38c1ff]/10 px-3 py-1 text-[12px] font-bold text-[#38c1ff]">
                               {upcomingItems.length} sessions
                             </span>
                           }
-                          description="Every upcoming classroom now routes into the dedicated upcoming-class detail screen instead of the old day-based flow."
-                          emptyDescription="No upcoming classes are scheduled right now."
+                          description="Your upcoming sessions — be ready when the room opens."
+                          emptyDescription="No upcoming classes scheduled right now."
                           items={upcomingItems}
                           title="Upcoming Classes"
                         />
                       </RevealSection>
 
-                      <RevealSection delay={0.12}>
+                      <RevealSection delay={0.1}>
                         <PastClassesSection items={completedItems} />
                       </RevealSection>
                     </div>
 
-                    <div className="order-first space-y-4 sm:space-y-6 xl:order-none xl:sticky xl:top-6">
-                      <RevealSection delay={0.08}>
+                    {/* Right column – sidebar */}
+                    <div className="order-first space-y-4 xl:order-none xl:sticky xl:top-6">
+                      <RevealSection delay={0.06}>
                         <NextRoomCard item={nextRoom} />
                       </RevealSection>
 
-                      <RevealSection delay={0.12}>
-                        <div className="space-y-4">
-                          <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-black/45">
+                      <RevealSection delay={0.1}>
+                        <div className="space-y-3">
+                          <p className="px-1 text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">
                             Quick Routes
                           </p>
-
                           <QuickRouteCard
-                            description="Check your broader calendar view and everything else coming up."
+                            description="See everything coming up on your schedule."
                             href="/dashboard/upcoming"
                             icon={Calendar}
                             title="Open Calendar"
                           />
                           <QuickRouteCard
-                            description="Jump back to your course library before a session begins."
+                            description="Browse and continue your enrolled courses."
                             href="/dashboard/courses"
                             icon={BookOpen}
                             title="Browse Courses"
                           />
                           <QuickRouteCard
-                            description="Head into the student community for follow-up questions and discussion."
+                            description="Join the student community discussion."
                             href="/dashboard/community"
                             icon={MessageSquareText}
                             title="Open Community"
