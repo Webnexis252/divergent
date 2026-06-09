@@ -159,6 +159,31 @@ export default function AdminStudentsPage() {
     [search],
   );
 
+  const handleBulkXpAdjust = useCallback(
+    async (studentIds: string[] | "ALL", direction: "ADD" | "REMOVE", amount: number, note?: string) => {
+      try {
+        const res = await fetch(`/api/admin/students/bulk-xp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ studentIds, direction, amount, note }),
+        });
+        const payload = await res.json();
+
+        if (!res.ok || !payload.success) {
+          setToast({ msg: payload.error ?? "Failed to bulk update XP", ok: false });
+        } else {
+          setToast({ msg: payload.message ?? "Bulk XP updated successfully", ok: true });
+          void fetchStudents(search, page);
+        }
+      } catch {
+        setToast({ msg: "Network error", ok: false });
+      } finally {
+        setTimeout(() => setToast(null), 3500);
+      }
+    },
+    [search, page]
+  );
+
   const handleExportToExcel = useCallback(async () => {
     if (!students || students.length === 0) {
       setToast({ msg: "No students to export", ok: false });
@@ -357,8 +382,9 @@ export default function AdminStudentsPage() {
           ) : (
             <>
               <StudentTable
-                canManageXp={user?.role === "SUPER_ADMIN"}
+                canManageXp={user?.role === "ADMIN" || user?.role === "SUPER_ADMIN"}
                 onXpAdjust={handleXpAdjust}
+                onBulkXpAdjust={handleBulkXpAdjust}
                 onStatusChange={handleStatusChange}
                 onDelete={handleDeleteStudent}
                 onSetPassword={(id) => {
@@ -366,6 +392,7 @@ export default function AdminStudentsPage() {
                   if (s) setSetPassStudent({ id, name: s.name, email: s.email });
                 }}
                 students={students}
+                totalStudents={total}
               />
               <div className="mt-4 flex items-center justify-end gap-4 text-[13px] font-medium text-[#64748b]">
                 <span>

@@ -16,8 +16,8 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const auth = await requireAuth(req, ['SUPER_ADMIN']);
-    if (!auth) return apiForbidden('Only super admins can adjust student XP');
+    const auth = await requireAuth(req, ['ADMIN', 'SUPER_ADMIN']);
+    if (!auth) return apiForbidden('Only admins can adjust student XP');
 
     const { id } = await params;
     const body = await req.json();

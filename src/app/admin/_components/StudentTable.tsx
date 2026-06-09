@@ -6,6 +6,7 @@ import { MoreVerticalIcon, PauseCircleIcon } from "./admin-icons";
 import { formatShortDate } from "@/lib/date-format";
 import { Target, Trash2, Lock } from "lucide-react";
 import { AssignGoalModal } from "../students/_components/AssignGoalModal";
+import { BulkXpModal } from "../students/_components/BulkXpModal";
 
 import type { StudentRecord } from "../students/_types";
 
@@ -13,14 +14,18 @@ import type { StudentRecord } from "../students/_types";
 export function StudentTable({
   canManageXp = false,
   onXpAdjust,
+  onBulkXpAdjust,
   students,
+  totalStudents = 0,
   onStatusChange,
   onDelete,
   onSetPassword,
 }: {
   canManageXp?: boolean;
   onXpAdjust?: (id: string, direction: "ADD" | "REMOVE", amount: number) => Promise<void> | void;
+  onBulkXpAdjust?: (studentIds: string[] | "ALL", direction: "ADD" | "REMOVE", amount: number, note?: string) => Promise<void> | void;
   students: StudentRecord[];
+  totalStudents?: number;
   onStatusChange: (id: string, status: string) => void;
   onDelete?: (id: string) => void;
   onSetPassword?: (id: string) => void;
@@ -29,6 +34,52 @@ export function StudentTable({
   const [xpDrafts, setXpDrafts] = useState<Record<string, string>>({});
   const [adjustingStudentId, setAdjustingStudentId] = useState<string | null>(null);
   const [assignGoalStudent, setAssignGoalStudent] = useState<{ id: string; name: string } | null>(null);
+
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectAllMode, setSelectAllMode] = useState<"NONE" | "PAGE" | "ALL">("NONE");
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+
+  const toggleSelection = (id: string, event?: React.MouseEvent) => {
+    if (event) event.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        if (selectAllMode !== "NONE") setSelectAllMode("NONE");
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAllOnPage = () => {
+    if (selectAllMode === "PAGE" || selectAllMode === "ALL") {
+      setSelectedIds(new Set());
+      setSelectAllMode("NONE");
+    } else {
+      setSelectedIds(new Set(students.map(s => s.id)));
+      setSelectAllMode("PAGE");
+    }
+  };
+
+  const handleSelectAllMatched = () => {
+    setSelectAllMode("ALL");
+  };
+
+  const handleBulkXpSubmit = async (direction: "ADD" | "REMOVE", amount: number, note?: string) => {
+    if (!onBulkXpAdjust) return;
+    const target = selectAllMode === "ALL" ? "ALL" : Array.from(selectedIds);
+    await onBulkXpAdjust(target, direction, amount, note);
+    setSelectedIds(new Set());
+    setSelectAllMode("NONE");
+  };
+
+  const getSelectedCountDisplay = () => {
+    if (selectAllMode === "ALL") return totalStudents;
+    return selectedIds.size;
+  };
 
   async function handleXpAction(studentId: string, direction: "ADD" | "REMOVE") {
     if (!onXpAdjust) return;
@@ -66,6 +117,16 @@ export function StudentTable({
                 onClick={() => setExpandedRow(isExpanded ? null : student.id)}
                 type="button"
               >
+                {canManageXp && (
+                  <div className="pt-2" onClick={(e) => toggleSelection(student.id, e)}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(student.id) || selectAllMode === "ALL"}
+                      onChange={() => {}}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
                 <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,#38c1ff_0%,#0ea5e9_100%)] text-sm font-bold text-white shadow-[0_10px_24px_rgba(56,193,255,0.28)]">
                   {student.name?.[0]?.toUpperCase() || "S"}
                 </div>
@@ -248,6 +309,16 @@ export function StudentTable({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-[#e8eef5] bg-[#f8fbff]">
+              {canManageXp && (
+                <th className="px-6 py-4 w-12">
+                  <input
+                    type="checkbox"
+                    checked={selectAllMode === "PAGE" || selectAllMode === "ALL"}
+                    onChange={handleSelectAllOnPage}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
+              )}
               <th className="px-6 py-4 text-sm font-semibold text-[#64748b]">Student Name</th>
               <th className="px-6 py-4 text-sm font-semibold text-[#64748b]">Joined</th>
               <th className="px-6 py-4 text-sm font-semibold text-[#64748b]">Total XP</th>
@@ -275,6 +346,16 @@ export function StudentTable({
                     role="button"
                     tabIndex={0}
                   >
+                    {canManageXp && (
+                      <td className="px-6 py-4 w-12" onClick={(e) => toggleSelection(student.id, e)}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(student.id) || selectAllMode === "ALL"}
+                          onChange={() => {}}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
+                        />
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="grid h-11 w-11 place-items-center rounded-full bg-[linear-gradient(135deg,#38c1ff_0%,#0ea5e9_100%)] text-sm font-bold text-white shadow-[0_10px_24px_rgba(56,193,255,0.3)]">
@@ -313,7 +394,7 @@ export function StudentTable({
                   <AnimatePresence>
                     {isExpanded && (
                       <tr>
-                        <td colSpan={5} className="border-b border-[#eef2f7] bg-[#fcfdff] p-0">
+                        <td colSpan={canManageXp ? 6 : 5} className="border-b border-[#eef2f7] bg-[#fcfdff] p-0">
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
@@ -494,6 +575,54 @@ export function StudentTable({
         studentId={assignGoalStudent?.id ?? ""}
         studentName={assignGoalStudent?.name ?? ""}
       />
+
+      <BulkXpModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        selectedCount={selectAllMode === "ALL" ? "ALL" : selectedIds.size}
+        onSubmit={handleBulkXpSubmit}
+      />
+
+      <AnimatePresence>
+        {(selectedIds.size > 0 || selectAllMode === "ALL") && canManageXp && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 rounded-2xl bg-slate-900 px-6 py-4 shadow-2xl flex flex-col md:flex-row items-center gap-4 border border-slate-700/50"
+          >
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <span className="text-sm font-medium text-white whitespace-nowrap">
+                {getSelectedCountDisplay()} student{getSelectedCountDisplay() !== 1 ? 's' : ''} selected
+              </span>
+              
+              {selectAllMode === "PAGE" && totalStudents > students.length && (
+                <button 
+                  onClick={handleSelectAllMatched}
+                  className="text-xs text-[#38c1ff] hover:text-white transition whitespace-nowrap"
+                >
+                  Select all {totalStudents} matched students
+                </button>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsBulkModalOpen(true)}
+                className="rounded-xl bg-[#38c1ff] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#0ea5e9] shadow-[0_4px_14px_rgba(56,193,255,0.3)] whitespace-nowrap"
+              >
+                Manage XP
+              </button>
+              <button
+                onClick={() => { setSelectedIds(new Set()); setSelectAllMode("NONE"); }}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              >
+                Clear
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
