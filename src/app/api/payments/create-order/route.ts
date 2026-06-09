@@ -21,39 +21,71 @@ export async function POST(req: NextRequest) {
     if (!auth) return apiError("Unauthorized", 401);
 
     const body = await req.json();
-    const { courseId } = body;
+    const { courseId, bundleId } = body;
 
-    if (!courseId) {
-      return apiError("Course ID is required", 400);
+    if (!courseId && !bundleId) {
+      return apiError('Course ID or Bundle ID is required', 400);
+    }
+    if (courseId && bundleId) {
+      return apiError('Provide either courseId or bundleId, not both', 400);
     }
 
-    // Fetch the course to get pricing
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
-      select: { id: true, price: true, title: true },
-    });
+    let orderAmount: number;
+    let orderNote: string;
+    let paymentData: { userId: string; courseId?: string; bundleId?: string; amount: number; currency: string; status: 'PENDING'; cashfreeOrderId: string };
 
-    if (!course) {
-      return apiError("Course not found", 404);
-    }
-
-    if (course.price <= 0) {
-      return apiError("Course is free, use normal enrollment", 400);
-    }
-
-    // Check if already enrolled
-    const existingEnrollment = await prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId: auth.userId, courseId } },
-    });
-
-    if (existingEnrollment) {
-      return apiError("Already enrolled", 409);
+    if (bundleId) {
+      // --- Bundle purchase flow ---
+      const bundle = await (prisma as any).bundle.findUnique({
+        where: { id: bundleId },
+        select: { id: true, price: true, title: true, isPublished: true },
+      });
+      if (!bundle || !bundle.isPublished) {
+        return apiError('Bundle not found or not available', 404);
+      }
+      if (bundle.price <= 0) {
+        return apiError('Bundle is free, use direct enrollment', 400);
+      }
+      orderAmount = bundle.price;
+      orderNote = `Bundle purchase: ${bundle.title}`;
+      paymentData = { userId: auth.userId, bundleId, amount: bundle.price, currency: 'INR', status: 'PENDING', cashfreeOrderId: '' };
+    } else {
+      // --- Single course purchase flow ---
+      const course = await prisma.course.findUnique({
+        where: { id: courseId },
+        select: { id: true, price: true, title: true },
+      });
+      if (!course) {
+        return apiError('Course not found', 404);
+      }
+      if (course.price <= 0) {
+        return apiError('Course is free, use normal enrollment', 400);
+      }
+      // Check if already enrolled
+      const existingEnrollment = await prisma.enrollment.findUnique({
+        where: { userId_courseId: { userId: auth.userId, courseId } },
+      });
+      if (existingEnrollment) {
+        return apiError('Already enrolled', 409);
+      }
+      orderAmount = course.price;
+      orderNote = `Enrollment for: ${course.title}`;
+      paymentData = { userId: auth.userId, courseId, amount: course.price, currency: 'INR', status: 'PENDING', cashfreeOrderId: '' };
     }
 
     // Check if payment is bypassed globally
     const settings = await prisma.instituteSettings.findFirst();
     if (settings && settings.requirePayment === false) {
-      await ensureActiveEnrollmentWithXp(auth.userId, courseId);
+      if (bundleId) {
+        // Enroll student in all courses of the bundle
+        const bundleCourses = await (prisma as any).bundleCourse.findMany({
+          where: { bundleId },
+          select: { courseId: true },
+        });
+        await Promise.all(bundleCourses.map((bc: { courseId: string }) => ensureActiveEnrollmentWithXp(auth.userId, bc.courseId)));
+      } else {
+        await ensureActiveEnrollmentWithXp(auth.userId, courseId);
+      }
       return apiSuccess({ bypassPayment: true });
     }
 
@@ -72,20 +104,20 @@ export async function POST(req: NextRequest) {
 
     // Create Cashfree order
     const orderRequest = {
-      order_amount: course.price,
-      order_currency: "INR",
+      order_amount: orderAmount,
+      order_currency: 'INR',
       order_id: orderId,
       customer_details: {
         customer_id: auth.userId,
-        customer_name: user.name || "Student",
-        customer_email: user.email || "student@divergentclasses.in",
-        customer_phone: user.phone || "9999999999",
+        customer_name: user.name || 'Student',
+        customer_email: user.email || 'student@divergentclasses.in',
+        customer_phone: user.phone || '9999999999',
       },
       order_meta: {
-        return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/payments/callback?order_id={order_id}`,
-        notify_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/payments/webhook`,
+        return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payments/callback?order_id={order_id}`,
+        notify_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payments/webhook`,
       },
-      order_note: `Enrollment for: ${course.title}`,
+      order_note: orderNote,
     };
 
     const response = await cashfree.PGCreateOrder(orderRequest);
@@ -105,11 +137,7 @@ export async function POST(req: NextRequest) {
     // Create a pending payment record
     await prisma.payment.create({
       data: {
-        userId: auth.userId,
-        courseId,
-        amount: course.price,
-        currency: "INR",
-        status: "PENDING",
+        ...paymentData,
         cashfreeOrderId: cfOrder.order_id || orderId,
       },
     });

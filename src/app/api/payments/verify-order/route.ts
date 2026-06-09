@@ -11,10 +11,10 @@ export async function POST(req: NextRequest) {
     if (!auth) return apiError("Unauthorized", 401);
 
     const body = await req.json();
-    const { order_id, courseId } = body;
+    const { order_id, courseId, bundleId } = body;
 
-    if (!order_id || !courseId) {
-      return apiError("Missing required payment details", 400);
+    if (!order_id || (!courseId && !bundleId)) {
+      return apiError('Missing required payment details', 400);
     }
 
     // Verify order status with Cashfree server
@@ -44,14 +44,23 @@ export async function POST(req: NextRequest) {
     await prisma.payment.updateMany({
       where: { cashfreeOrderId: order_id, userId: auth.userId },
       data: {
-        status: "SUCCESS",
-        cashfreePaymentId: String(successfulPayment.cf_payment_id || ""),
+        status: 'SUCCESS',
+        cashfreePaymentId: String(successfulPayment.cf_payment_id || ''),
       },
     });
 
-    // Enroll user in the course
-    const { enrollment } = await ensureActiveEnrollmentWithXp(auth.userId, courseId);
+    if (bundleId) {
+      // Enroll user in ALL courses inside the bundle
+      const bundleCourses = await (prisma as any).bundleCourse.findMany({
+        where: { bundleId },
+        select: { courseId: true },
+      });
+      await Promise.all(bundleCourses.map((bc: { courseId: string }) => ensureActiveEnrollmentWithXp(auth.userId, bc.courseId)));
+      return apiSuccess({ enrolled: true, type: 'bundle', courseCount: bundleCourses.length });
+    }
 
+    // Single course enrollment
+    const { enrollment } = await ensureActiveEnrollmentWithXp(auth.userId, courseId);
     return apiSuccess({ enrolled: true, enrollment });
   } catch (error: unknown) {
     console.error("VERIFY ORDER ERROR:", error);

@@ -81,6 +81,7 @@ model Course {
   payments     Payment[]
   teachers     User[]            @relation("CourseTeachers")
   teacherResources TeacherResource[]
+  bundleCourses    BundleCourse[]
 
   subtitle           String?
   overviewContent    String?
@@ -102,6 +103,32 @@ model Course {
   publishDate        DateTime?
   originalPrice      Float?
   emiPlans           Json?     // [{label, amount, dueDays}]
+}
+
+model Bundle {
+  id          String         @id @default(cuid())
+  title       String
+  slug        String         @unique
+  description String?
+  thumbnail   String?
+  price       Float          @default(0.0)
+  isPublished Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  courses     BundleCourse[]
+  payments    Payment[]
+}
+
+model BundleCourse {
+  id       String @id @default(cuid())
+  bundleId String
+  courseId String
+  bundle   Bundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleId, courseId])
+  @@index([bundleId])
+  @@index([courseId])
 }
 
 model Chapter {
@@ -424,6 +451,7 @@ model Payment {
   id                String        @id @default(cuid())
   userId            String
   courseId          String?
+  bundleId          String?
   amount            Float
   currency          String        @default("INR")
   status            PaymentStatus @default(PENDING)
@@ -435,12 +463,14 @@ model Payment {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   course            Course?       @relation(fields: [courseId], references: [id])
+  bundle            Bundle?       @relation(fields: [bundleId], references: [id])
   // onDelete: Restrict prevents financial record loss when a user account is deleted.
   // Payments must be retained for legal/compliance purposes.
   user              User          @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@index([userId])
   @@index([courseId])
+  @@index([bundleId])
   @@index([status])
 }
 
