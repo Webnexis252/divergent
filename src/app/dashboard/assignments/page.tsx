@@ -48,6 +48,7 @@ type Assignment = {
   description: string | null;
   deadline: string | null;
   points: number;
+  attachmentUrl: string | null;
   courseTitle: string;
   courseSlug: string | null;
   submission: {
@@ -266,7 +267,14 @@ function AssignmentCard({
 
   return (
     <AnimCard className="h-full">
-      <article className="flex h-full flex-col rounded-[22px] bg-white px-4 py-4 shadow-[0_4px_10px_rgba(0,0,0,0.08)] sm:px-5 sm:py-4">
+      <article 
+        className="flex h-full cursor-pointer flex-col rounded-[22px] bg-white px-4 py-4 shadow-[0_4px_10px_rgba(0,0,0,0.08)] transition-all hover:shadow-[0_8px_20px_rgba(0,0,0,0.12)] sm:px-5 sm:py-4"
+        onClick={() => {
+          if (assignment.attachmentUrl) {
+            window.open(assignment.attachmentUrl, "_blank");
+          }
+        }}
+      >
         <div className="space-y-4">
           <span className="inline-flex rounded-full bg-[#f3f3f3] px-3 py-1 text-[10px] font-medium text-[#8b8888]">
             {assignment.courseTitle}
@@ -301,11 +309,12 @@ function AssignmentCard({
 
           <button
             className="inline-flex h-[40px] items-center justify-center rounded-[10px] bg-[#38c1ff] px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(56,193,255,0.24)] transition-transform duration-150 ease-out hover:-translate-y-0.5"
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
               assignment.state === "submitted"
                 ? onOpenDetails(assignment)
                 : onOpenSubmit(assignment)
-            }
+            }}
             type="button"
           >
             {meta.buttonLabel}

@@ -52,6 +52,7 @@ export async function GET(req: NextRequest) {
         description: a.description,
         deadline: a.deadline?.toISOString() ?? null,
         points: a.points,
+        attachmentUrl: a.attachmentUrl,
         courseTitle: a.course?.title ?? 'General',
         courseSlug: a.course?.slug ?? null,
         submission: submission
