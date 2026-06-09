@@ -25,6 +25,11 @@ const toneStyles = {
     glow: "bg-[#f1f5f9] text-[#475569]",
     trend: "bg-[#f8fafc] text-[#475569]",
   },
+  rose: {
+    border: "from-[#fb7185] via-[#f43f5e] to-[#e11d48]",
+    glow: "bg-[#fff1f2] text-[#be123c]",
+    trend: "bg-[#ffe4e6] text-[#be123c]",
+  },
 } as const;
 
 export function AdminStatCard({

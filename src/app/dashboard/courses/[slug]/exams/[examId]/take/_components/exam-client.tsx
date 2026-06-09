@@ -15,11 +15,11 @@ import { buildCategoryPerformanceBreakdown } from "@/lib/test-category-performan
 type QuestionStatus = "NOT_VISITED" | "NOT_ANSWERED" | "ANSWERED" | "MARKED_FOR_REVIEW" | "ANSWERED_AND_MARKED";
 
 type Question = {
-  id: string; type: string; category: string; prompt: string; options: any;
+  id: string; type: any; category: any; prompt: string; options: any;
   correctAnswer: any; imageUrl: string | null; points: number; negativeMarks: number;
   allowPartialMarking: boolean; explanation: string | null; groupId: string | null;
 };
-type Group = { id: string; title: string | null; content: string | null; imageUrl: string | null; };
+type Group = { id: string; title: string | null; content: string | null; imageUrl: string | null; questions?: Question[]; };
 type Section = { id: string; title: string; questionType: string; groups: Group[]; questions: Question[]; };
 type Part = { id: string; title: string; durationMins: number | null; sections: Section[]; };
 

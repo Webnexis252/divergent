@@ -41,9 +41,10 @@ export async function POST(req: NextRequest, { params }: Params) {
         title,
         passingScore,
         questions: {
-          create: questions?.map((q, idx) => ({
+          create: questions?.map((q: any, idx: number) => ({
             ...q,
-            order: q.order || idx,
+            options: q.options ?? [],
+            order: q.order ?? idx,
           })) || []
         }
       },
