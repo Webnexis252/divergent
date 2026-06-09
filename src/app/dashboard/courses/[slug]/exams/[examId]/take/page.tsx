@@ -24,7 +24,18 @@ export default async function ExamTakePage({ params }: Params) {
     where: { id: examId },
     include: {
       course: { select: { title: true, slug: true } },
-      questions: { orderBy: { order: 'asc' } },
+      parts: {
+        orderBy: { order: 'asc' },
+        include: {
+          sections: {
+            orderBy: { order: 'asc' },
+            include: {
+              groups: { orderBy: { order: 'asc' } },
+              questions: { orderBy: { order: 'asc' } },
+            }
+          }
+        }
+      }
     },
   });
 
@@ -42,16 +53,7 @@ export default async function ExamTakePage({ params }: Params) {
         courseTitle: exam.course.title,
         courseId: exam.courseId,
       }}
-      questions={exam.questions.map((q) => ({
-        id: q.id,
-        type: q.type as "SCQ" | "MCQ" | "SKETCH" | "NUMERIC",
-        category: q.category,
-        prompt: q.prompt,
-        options: (q.options as string[]) ?? [],
-        imageUrl: q.imageUrl,
-        referenceImage: q.referenceImage,
-        points: q.points,
-      }))}
+      parts={exam.parts}
       studentName={student?.name?.trim() || auth.email.split("@")[0] || "Student"}
       studentEmail={student?.email || auth.email}
       studentPhone={student?.phone || "Phone not provided"}

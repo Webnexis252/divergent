@@ -2,6 +2,7 @@ type TestQuestionForGrading = {
   type: string;
   points: number;
   negativeMarks?: number;
+  allowPartialMarking?: boolean;
   correctAnswer: unknown;
   explanation?: string | null;
 };
@@ -74,14 +75,36 @@ export function gradeQuestionAnswer(
   }
 
   if (question.type === "MCQ") {
-    const sortedCorrect = toTrimmedStringArray(question.correctAnswer).sort().join("|||");
-    const sortedSelected = toTrimmedStringArray(studentAnswer).sort().join("|||");
-    const isCorrect = sortedSelected !== "" && sortedSelected === sortedCorrect;
-    const isAttempted = sortedSelected !== "";
+    const correctArr = toTrimmedStringArray(question.correctAnswer);
+    const selectedArr = toTrimmedStringArray(studentAnswer);
+    const isAttempted = selectedArr.length > 0;
+    
+    let isCorrect = false;
+    let pointsAwarded = 0;
+
+    if (isAttempted) {
+      const correctSet = new Set(correctArr);
+      const selectedSet = new Set(selectedArr);
+      
+      const hasIncorrectSelection = selectedArr.some(s => !correctSet.has(s));
+      const hasAllCorrect = correctArr.every(c => selectedSet.has(c));
+      
+      if (!hasIncorrectSelection && hasAllCorrect && selectedArr.length === correctArr.length) {
+        isCorrect = true;
+        pointsAwarded = question.points;
+      } else if (question.allowPartialMarking && !hasIncorrectSelection && selectedArr.length > 0) {
+        isCorrect = false; // Partially correct
+        pointsAwarded = (selectedArr.length / correctArr.length) * question.points;
+      } else {
+        isCorrect = false;
+        pointsAwarded = -(question.negativeMarks ?? 0);
+      }
+    }
+
     return {
       ...baseResult,
       isCorrect,
-      pointsAwarded: isCorrect ? question.points : (isAttempted ? -(question.negativeMarks ?? 0) : 0),
+      pointsAwarded,
     };
   }
 

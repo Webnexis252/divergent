@@ -76,6 +76,8 @@ export async function POST(
         {
           type: q.type,
           points: q.points,
+          negativeMarks: q.negativeMarks,
+          allowPartialMarking: q.allowPartialMarking,
           correctAnswer: q.correctAnswer,
           explanation: q.explanation,
         },

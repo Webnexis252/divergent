@@ -75,11 +75,11 @@ export default function AdminLiveClassesPage() {
       .then((p) => {
         if (!cancelled && p.success) {
           setCourses(
-            p.data.map((c: { id: string; title: string; slug: string; teacher?: { name: string | null; email: string | null } | null }) => ({
+            p.data.map((c: { id: string; title: string; slug: string; teachers?: { id: string; name: string | null; email: string | null }[] }) => ({
               id: c.id,
               title: c.title,
               slug: c.slug,
-              teacher: c.teacher ?? null,
+              teachers: c.teachers ?? [],
             })),
           );
         }

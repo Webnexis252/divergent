@@ -25,6 +25,7 @@ type ScheduleForm = {
   startTime: string;
   duration: string;
   meetingUrl: string;
+  teacherId: string;
 };
 
 const defaultForm: ScheduleForm = {
@@ -34,6 +35,7 @@ const defaultForm: ScheduleForm = {
   startTime: "",
   duration: "60",
   meetingUrl: "",
+  teacherId: "",
 };
 
 export default function ScheduleClassModal({
@@ -66,6 +68,15 @@ export default function ScheduleClassModal({
   const selectedCourse = courses.find((c) => c.id === form.courseId) ?? null;
   const durationNum = parseInt(form.duration, 10) || 0;
 
+  // Auto-select teacher if only one is available for the course
+  useEffect(() => {
+    if (selectedCourse?.teachers && selectedCourse.teachers.length === 1) {
+      setForm((p) => ({ ...p, teacherId: selectedCourse.teachers[0].id }));
+    } else if (!selectedCourse) {
+      setForm((p) => ({ ...p, teacherId: "" }));
+    }
+  }, [selectedCourse]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -75,6 +86,10 @@ export default function ScheduleClassModal({
     // Client-side guards before hitting the server
     if (!form.courseId) {
       setError("Please select a course.");
+      return;
+    }
+    if (!form.teacherId && selectedCourse?.teachers && selectedCourse.teachers.length > 0) {
+      setError("Please select a teacher for this class.");
       return;
     }
     if (!form.title || form.title.trim().length < 3) {
@@ -108,6 +123,7 @@ export default function ScheduleClassModal({
           startTime: parsedDate.toISOString(),
           duration: durationNum,
           meetingUrl: form.meetingUrl || undefined,
+          teacherId: form.teacherId || undefined,
         }),
       });
 
@@ -124,11 +140,13 @@ export default function ScheduleClassModal({
 
       setSuccessMsg("Live class scheduled!");
 
+      const selectedTeacher = selectedCourse?.teachers?.find(t => t.id === form.teacherId) || null;
+
       // Augment with course info for the table
       const created: AdminLiveClass = {
         ...payload.data,
         course: selectedCourse
-          ? { id: selectedCourse.id, title: selectedCourse.title, slug: selectedCourse.slug, teacher: selectedCourse.teacher }
+          ? { id: selectedCourse.id, title: selectedCourse.title, slug: selectedCourse.slug, teacher: selectedTeacher }
           : { id: form.courseId, title: "Unknown", slug: "", teacher: null },
         _count: { attendances: 0 },
       };
@@ -210,10 +228,40 @@ export default function ScheduleClassModal({
             {courses.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title}
-                {c.teacher?.name ? ` — ${c.teacher.name}` : ""}
               </option>
             ))}
           </SelectField>
+
+          {/* Teacher selector */}
+          <AnimatePresence>
+            {selectedCourse && selectedCourse.teachers && selectedCourse.teachers.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-2">
+                  <SelectField
+                    label="Assigned Teacher"
+                    hint="Only the assigned teacher will see and manage this live class."
+                    value={form.teacherId}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, teacherId: e.target.value }))
+                    }
+                    required
+                  >
+                    <option value="">Select a teacher</option>
+                    {selectedCourse.teachers.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name ?? t.email}
+                      </option>
+                    ))}
+                  </SelectField>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Title & Duration */}
           <div className="grid gap-4 sm:grid-cols-[1.2fr_0.8fr]">
@@ -342,9 +390,9 @@ export default function ScheduleClassModal({
                 </div>
               </div>
             </div>
-            {selectedCourse?.teacher && (
+            {form.teacherId && (
               <p className="mt-3 text-[13px] text-[#64748b]">
-                Teacher: <strong>{selectedCourse.teacher.name ?? selectedCourse.teacher.email}</strong> — will see this class in their Class Control dashboard.
+                Teacher: <strong>{selectedCourse?.teachers?.find(t => t.id === form.teacherId)?.name ?? selectedCourse?.teachers?.find(t => t.id === form.teacherId)?.email}</strong> — will see this class in their Class Control dashboard.
               </p>
             )}
           </Surface>

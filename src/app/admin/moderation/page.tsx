@@ -18,6 +18,15 @@ type FlaggedPost = {
   _count: { likes: number; replies: number };
 };
 
+type OverdueReview = {
+  attemptId: string;
+  studentName: string;
+  courseTitle: string;
+  examTitle: string;
+  submittedAt: string;
+  assignedTeachers: string[];
+};
+
 function ModerationPostCard({
   post,
   deletingId,
@@ -114,20 +123,25 @@ function ModerationPostCard({
 
 export default function AdminModerationPage() {
   const [posts, setPosts] = useState<FlaggedPost[]>([]);
+  const [overdueReviews, setOverdueReviews] = useState<OverdueReview[]>([]);
   const [totalPosts, setTotalPosts] = useState(0);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const flagged = posts.filter((post) => post.isFlagged);
 
   const load = () => {
-    fetch("/api/admin/moderation")
-      .then(r => r.json())
-      .then(json => {
-        if (json.success) {
-          setPosts(json.data.posts);
-          setTotalPosts(json.data.totalPosts);
-        }
-      }).catch(() => {}).finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/admin/moderation").then(r => r.json()),
+      fetch("/api/admin/moderation/overdue-reviews").then(r => r.json())
+    ]).then(([postsJson, overdueJson]) => {
+      if (postsJson.success) {
+        setPosts(postsJson.data.posts);
+        setTotalPosts(postsJson.data.totalPosts);
+      }
+      if (overdueJson.success) {
+        setOverdueReviews(overdueJson.data.overdueReviews);
+      }
+    }).catch(() => {}).finally(() => setLoading(false));
   };
   useEffect(() => { load(); }, []);
 
@@ -173,11 +187,49 @@ export default function AdminModerationPage() {
           </div>
         </RevealSection>
 
-        <StaggerGrid className="grid grid-cols-2 gap-5 md:grid-cols-3">
+        <StaggerGrid className="grid grid-cols-2 gap-5 md:grid-cols-4">
           <AdminStatCard index={0} title="Total Posts" value={loading ? "…" : totalPosts} caption="Community posts." tone="sky" />
           <AdminStatCard index={1} title="Flagged" value={loading ? "…" : flagged.length} caption="Awaiting review." tone="amber" />
           <AdminStatCard index={2} title="Flag Rate" value={loading ? "…" : totalPosts > 0 ? `${((flagged.length / totalPosts) * 100).toFixed(1)}%` : "0%"} caption="Of all posts." tone="slate" />
+          <AdminStatCard index={3} title="Overdue Reviews" value={loading ? "…" : overdueReviews.length} caption=">24h SLA breached." tone="rose" />
         </StaggerGrid>
+
+        {overdueReviews.length > 0 && (
+          <div className="rounded-[28px] bg-red-50 border border-red-200 shadow-[0px_4px_20px_rgba(220,38,38,0.06)] overflow-hidden">
+            <div className="border-b border-red-200 px-6 py-5 bg-white flex items-center justify-between">
+              <div>
+                <h2 className="text-[18px] font-bold text-red-700 flex items-center gap-2">
+                  <span className="animate-pulse">🚨</span> SLA Breaches: Overdue Sketch Evaluations
+                </h2>
+                <p className="text-[13px] text-red-600/80 mt-1">Teachers have not evaluated these sketch questions for over 24 hours.</p>
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              {overdueReviews.map((review) => {
+                const hoursOverdue = Math.floor((Date.now() - new Date(review.submittedAt).getTime()) / (1000 * 60 * 60));
+                return (
+                  <div key={review.attemptId} className="bg-white p-4 rounded-[16px] shadow-sm border border-red-100 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-[15px] font-bold text-gray-900">{review.examTitle}</h4>
+                      <div className="text-[13px] text-gray-600 flex items-center gap-2 mt-1">
+                        <span>Course: <strong>{review.courseTitle}</strong></span>
+                        <span>•</span>
+                        <span>Student: <strong>{review.studentName}</strong></span>
+                      </div>
+                      <div className="mt-2 text-[12px] font-medium text-red-600 bg-red-100/50 w-fit px-2 py-1 rounded">
+                        Assigned Teachers: {review.assignedTeachers.length > 0 ? review.assignedTeachers.join(", ") : "None"}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-black text-red-600">{hoursOverdue}h</div>
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-red-400">Overdue</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="rounded-[28px] bg-white shadow-[0px_4px_20px_rgba(0,0,0,0.06)]">
           <div className="border-b px-6 py-5">

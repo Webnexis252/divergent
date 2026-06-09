@@ -9,100 +9,100 @@ datasource db {
 }
 
 model User {
-  id                    String                 @id @default(cuid())
-  name                  String?
-  email                 String?                @unique
-  emailVerified         DateTime?
-  image                 String?
-  phone                 String?                @unique
-  passwordHash          String?
-  role                  UserRole               @default(STUDENT)
-  streakCount           Int                    @default(0)
-  attendanceRewardBlocks Int                   @default(0)
-  totalStudyTime        Int                    @default(0)
-  xpPoints              Int                    @default(0)
-  lastDailyLoginXpAt    DateTime?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  deletedAt             DateTime?              // soft-delete support
-  mentorOtp             String?
-  mentorOtpExpiry       DateTime?
-  mentorStatus          String?
-  createdAnnouncements  Announcement[]         @relation("AnnouncementAuthor")
-  assignmentSubmissions AssignmentSubmission[]
-  attendances           Attendance[]
-  auditLogs             AuditLog[]
-  certificates          Certificate[]
-  cohortStudents        CohortStudent[]
-  doubtReplies          DoubtReply[]
-  managedDoubts         DoubtTicket[]          @relation("MentorDoubts")
-  createdDoubts         DoubtTicket[]          @relation("StudentDoubts")
-  enrollments           Enrollment[]
-  lessonProgress        LessonProgress[]
-  mentorGoals           MentorGoal[]           @relation("MentorGoals")
-  mentorSkills          MentorSkill[]          @relation("MentorSkills")
-  studentGoals          StudentGoal[]          @relation("StudentGoals")
-  assignedStudentGoals  StudentGoal[]          @relation("TeacherAssignedGoals")
-  messages              Message[]
-  notifications         Notification[]
-  payments              Payment[]
-  posts                 Post[]                 @relation("PostAuthor")
-  postLikes             PostLike[]
-  postReplies           PostReply[]            @relation("PostReplyAuthor")
-  quizAttempts          QuizAttempt[]
-  teacherResources      TeacherResource[]
-  testAttempts          TestAttempt[]
-  pushTokens            PushToken[]
-  achievements          UserAchievement[]
-  teachingCourses       Course[]               @relation("CourseTeachers")
+  id                      String                   @id @default(cuid())
+  name                    String?
+  email                   String?                  @unique
+  emailVerified           DateTime?
+  image                   String?
+  phone                   String?                  @unique
+  passwordHash            String?
+  role                    UserRole                 @default(STUDENT)
+  streakCount             Int                      @default(0)
+  attendanceRewardBlocks  Int                      @default(0)
+  totalStudyTime          Int                      @default(0)
+  xpPoints                Int                      @default(0)
+  lastDailyLoginXpAt      DateTime?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  deletedAt               DateTime? // soft-delete support
+  mentorOtp               String?
+  mentorOtpExpiry         DateTime?
+  mentorStatus            String?
+  createdAnnouncements    Announcement[]           @relation("AnnouncementAuthor")
+  assignmentSubmissions   AssignmentSubmission[]
+  attendances             Attendance[]
+  auditLogs               AuditLog[]
+  certificates            Certificate[]
+  cohortStudents          CohortStudent[]
+  doubtReplies            DoubtReply[]
+  managedDoubts           DoubtTicket[]            @relation("MentorDoubts")
+  createdDoubts           DoubtTicket[]            @relation("StudentDoubts")
+  enrollments             Enrollment[]
+  lessonProgress          LessonProgress[]
+  mentorGoals             MentorGoal[]             @relation("MentorGoals")
+  mentorSkills            MentorSkill[]            @relation("MentorSkills")
+  studentGoals            StudentGoal[]            @relation("StudentGoals")
+  assignedStudentGoals    StudentGoal[]            @relation("TeacherAssignedGoals")
+  messages                Message[]
+  notifications           Notification[]
+  payments                Payment[]
+  posts                   Post[]                   @relation("PostAuthor")
+  postLikes               PostLike[]
+  postReplies             PostReply[]              @relation("PostReplyAuthor")
+  quizAttempts            QuizAttempt[]
+  teacherResources        TeacherResource[]
+  testAttempts            TestAttempt[]
+  pushTokens              PushToken[]
+  achievements            UserAchievement[]
+  teachingCourses         Course[]                 @relation("CourseTeachers")
   studentApprovalRequests StudentApprovalRequest[] @relation("AdminStudentRequests")
   teacherApprovalRequests TeacherApprovalRequest[] @relation("AdminTeacherRequests")
-  announcementRecipients AnnouncementRecipient[]
-  dataExportRequests   DataExportRequest[] @relation("AdminExportRequests")
+  announcementRecipients  AnnouncementRecipient[]
+  dataExportRequests      DataExportRequest[]      @relation("AdminExportRequests")
 }
 
 model Course {
-  id           String        @id @default(cuid())
-  title        String
-  slug         String        @unique
-  description  String?
-  thumbnail    String?
-  price        Float         @default(0.0)
-  isPublished  Boolean       @default(false)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  assignments  Assignment[]
-  certificates Certificate[]
-  chapters     Chapter[]
-  cohorts      Cohort[]
-  tests        CourseTest[]
-  enrollments  Enrollment[]
-  liveClasses  LiveClass[]
-  payments     Payment[]
-  teachers     User[]            @relation("CourseTeachers")
+  id               String            @id @default(cuid())
+  title            String
+  slug             String            @unique
+  description      String?
+  thumbnail        String?
+  price            Float             @default(0.0)
+  isPublished      Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  assignments      Assignment[]
+  certificates     Certificate[]
+  chapters         Chapter[]
+  cohorts          Cohort[]
+  tests            CourseTest[]
+  enrollments      Enrollment[]
+  liveClasses      LiveClass[]
+  payments         Payment[]
+  teachers         User[]            @relation("CourseTeachers")
   teacherResources TeacherResource[]
   bundleCourses    BundleCourse[]
 
-  subtitle           String?
-  overviewContent    String?
-  totalHours         Float?
-  lessonCount        Int?
-  courseRating       Float?
-  autoCalculateRating Boolean @default(true)
-  enrolledStudents   Int?
-  autoUpdateEnrolled Boolean @default(true)
-  learningOutcomes   Json?
-  features           Json?
-  testimonials       Json?
-  faqs               Json?
-  category           String?
-  courseLevel        String?
-  language           String?
-  visibility         String    @default("PUBLIC")
-  pricingType        String    @default("PAID")
-  publishDate        DateTime?
-  originalPrice      Float?
-  emiPlans           Json?     // [{label, amount, dueDays}]
+  subtitle            String?
+  overviewContent     String?
+  totalHours          Float?
+  lessonCount         Int?
+  courseRating        Float?
+  autoCalculateRating Boolean   @default(true)
+  enrolledStudents    Int?
+  autoUpdateEnrolled  Boolean   @default(true)
+  learningOutcomes    Json?
+  features            Json?
+  testimonials        Json?
+  faqs                Json?
+  category            String?
+  courseLevel         String?
+  language            String?
+  visibility          String    @default("PUBLIC")
+  pricingType         String    @default("PAID")
+  publishDate         DateTime?
+  originalPrice       Float?
+  emiPlans            Json? // [{label, amount, dueDays}]
 }
 
 model Bundle {
@@ -278,9 +278,9 @@ model Post {
   replies    PostReply[]
 
   // self-relation for nested replies
-  replyToId  String?
-  replyTo    Post?       @relation("PostReplies", fields: [replyToId], references: [id], onDelete: SetNull)
-  repliedBy  Post[]      @relation("PostReplies")
+  replyToId String?
+  replyTo   Post?   @relation("PostReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  repliedBy Post[]  @relation("PostReplies")
 
   @@index([authorId])
   @@index([channelId])
@@ -388,20 +388,20 @@ model AssignmentSubmission {
 }
 
 model LiveClass {
-  id           String       @id @default(cuid())
-  courseId     String
-  title        String
-  description  String?
-  startTime    DateTime
-  duration     Int
-  meetingUrl   String?
-  recordingUrl String?
-  createdAt    DateTime     @default(now())
-  endedAt      DateTime?
-  isEnded      Boolean      @default(false)
-  attendances  Attendance[]
+  id               String            @id @default(cuid())
+  courseId         String
+  title            String
+  description      String?
+  startTime        DateTime
+  duration         Int
+  meetingUrl       String?
+  recordingUrl     String?
+  createdAt        DateTime          @default(now())
+  endedAt          DateTime?
+  isEnded          Boolean           @default(false)
+  attendances      Attendance[]
   teacherResources TeacherResource[]
-  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course           Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
   // Composite index for the (courseId, startTime < now) range scan in profile-stats
@@ -409,15 +409,15 @@ model LiveClass {
 }
 
 model Attendance {
-  id          String    @id @default(cuid())
-  liveClassId String
-  userId      String
-  joinedAt    DateTime
-  leaveAt     DateTime?
-  watchTimeSecs Int     @default(0)
-  isCounted   Boolean   @default(false)
-  liveClass   LiveClass @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  liveClassId   String
+  userId        String
+  joinedAt      DateTime
+  leaveAt       DateTime?
+  watchTimeSecs Int       @default(0)
+  isCounted     Boolean   @default(false)
+  liveClass     LiveClass @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, liveClassId])
   // Composite index for the isCounted filter used in profile-stats
@@ -488,15 +488,15 @@ model Coupon {
 }
 
 model Announcement {
-  id             String   @id @default(cuid())
+  id             String                  @id @default(cuid())
   title          String
   body           String
   targetRole     String?
   targetCourseId String?
-  isPinned       Boolean  @default(false)
+  isPinned       Boolean                 @default(false)
   authorId       String
-  createdAt      DateTime @default(now())
-  author         User     @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt      DateTime                @default(now())
+  author         User                    @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   recipients     AnnouncementRecipient[]
 
   @@index([authorId])
@@ -551,29 +551,80 @@ model CourseTest {
   course           Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   attempts         TestAttempt[]
   questions        TestQuestion[]
+  parts            TestPart[]
 
   @@index([courseId])
   @@index([chapterId])
 }
 
-model TestQuestion {
-  id             String       @id @default(cuid())
-  testId         String
-  type           QuestionType @default(SCQ)
-  category       QuestionCategory @default(CONCEPT)
-  prompt         String
-  explanation    String?
-  options        Json
-  correctAnswer  Json
-  imageUrl       String?
-  referenceImage String?
-  points         Int          @default(1)
-  negativeMarks  Float        @default(0)
-  order          Int          @default(0)
-  difficulty     String?
-  test           CourseTest   @relation(fields: [testId], references: [id], onDelete: Cascade)
+model TestPart {
+  id           String         @id @default(cuid())
+  testId       String
+  title        String
+  durationMins Int?
+  order        Int            @default(0)
+  test         CourseTest     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  sections     TestSection[]
+  questions    TestQuestion[]
 
   @@index([testId])
+}
+
+model TestSection {
+  id           String              @id @default(cuid())
+  partId       String
+  title        String
+  questionType QuestionType        @default(SCQ)
+  order        Int                 @default(0)
+  part         TestPart            @relation(fields: [partId], references: [id], onDelete: Cascade)
+  groups       TestQuestionGroup[]
+  questions    TestQuestion[]
+
+  @@index([partId])
+}
+
+model TestQuestionGroup {
+  id        String         @id @default(cuid())
+  sectionId String
+  title     String?
+  content   String?
+  imageUrl  String?
+  order     Int            @default(0)
+  section   TestSection    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  questions TestQuestion[]
+
+  @@index([sectionId])
+}
+
+model TestQuestion {
+  id                  String           @id @default(cuid())
+  testId              String
+  type                QuestionType     @default(SCQ)
+  category            QuestionCategory @default(CONCEPT)
+  prompt              String
+  explanation         String?
+  options             Json
+  correctAnswer       Json
+  imageUrl            String?
+  referenceImage      String?
+  points              Int              @default(1)
+  negativeMarks       Float            @default(0)
+  allowPartialMarking Boolean          @default(false)
+  order               Int              @default(0)
+  difficulty          String?
+  test                CourseTest       @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  partId    String?
+  part      TestPart?          @relation(fields: [partId], references: [id], onDelete: SetNull)
+  sectionId String?
+  section   TestSection?       @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  groupId   String?
+  group     TestQuestionGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  @@index([testId])
+  @@index([partId])
+  @@index([sectionId])
+  @@index([groupId])
 }
 
 model TestAttempt {
@@ -586,6 +637,7 @@ model TestAttempt {
   isPassed      Boolean    @default(false)
   answers       Json
   questionOrder Json?
+  partProgress  Json?
   gradingStatus String     @default("AUTO_GRADED")
   sketchGrades  Json?
   startedAt     DateTime   @default(now())
@@ -604,16 +656,16 @@ model TestAttempt {
 }
 
 model InstituteSettings {
-  id           String   @id @default(cuid())
-  name         String   @default("Divergent Classes")
-  logoUrl      String?
-  primaryColor String   @default("#38c1ff")
-  contactEmail String?
-  contactPhone String?
-  address      String?
-  gstNumber    String?
+  id             String   @id @default(cuid())
+  name           String   @default("Divergent Classes")
+  logoUrl        String?
+  primaryColor   String   @default("#38c1ff")
+  contactEmail   String?
+  contactPhone   String?
+  address        String?
+  gstNumber      String?
   requirePayment Boolean  @default(true)
-  updatedAt    DateTime @updatedAt
+  updatedAt      DateTime @updatedAt
 }
 
 model MentorGoal {
@@ -658,17 +710,17 @@ model Certificate {
 }
 
 model TeacherResource {
-  id        String   @id @default(cuid())
-  teacherId String
-  courseId  String?
+  id          String     @id @default(cuid())
+  teacherId   String
+  courseId    String?
   liveClassId String?
-  title     String
-  fileUrl   String
-  type      String   @default("PDF")
-  createdAt DateTime @default(now())
-  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  course    Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  liveClass LiveClass? @relation(fields: [liveClassId], references: [id], onDelete: SetNull)
+  title       String
+  fileUrl     String
+  type        String     @default("PDF")
+  createdAt   DateTime   @default(now())
+  teacher     User       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  course      Course?    @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  liveClass   LiveClass? @relation(fields: [liveClassId], references: [id], onDelete: SetNull)
 
   @@index([teacherId])
   @@index([courseId])
@@ -815,18 +867,18 @@ model PushToken {
 }
 
 model StudentApprovalRequest {
-  id             String              @id @default(cuid())
-  type           ApprovalRequestType @default(CREATE)
-  targetUserId   String?             // The user being suspended (if type is SUSPEND)
-  name           String
-  email          String
-  phone          String?
-  passwordHash   String?
-  requestedBy    String
-  courseId       String?             // Optional: course to enroll student in (for offline/cash payments)
-  status         ApprovalStatus      @default(PENDING)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  id           String              @id @default(cuid())
+  type         ApprovalRequestType @default(CREATE)
+  targetUserId String? // The user being suspended (if type is SUSPEND)
+  name         String
+  email        String
+  phone        String?
+  passwordHash String?
+  requestedBy  String
+  courseId     String? // Optional: course to enroll student in (for offline/cash payments)
+  status       ApprovalStatus      @default(PENDING)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   admin User @relation("AdminStudentRequests", fields: [requestedBy], references: [id], onDelete: Cascade)
 
@@ -834,16 +886,16 @@ model StudentApprovalRequest {
 }
 
 model TeacherApprovalRequest {
-  id             String              @id @default(cuid())
-  type           ApprovalRequestType @default(CREATE)
-  targetUserId   String?             // The user being suspended/deleted
-  name           String
-  email          String
-  phone          String?
-  requestedBy    String
-  status         ApprovalStatus      @default(PENDING)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  id           String              @id @default(cuid())
+  type         ApprovalRequestType @default(CREATE)
+  targetUserId String? // The user being suspended/deleted
+  name         String
+  email        String
+  phone        String?
+  requestedBy  String
+  status       ApprovalStatus      @default(PENDING)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   admin User @relation("AdminTeacherRequests", fields: [requestedBy], references: [id], onDelete: Cascade)
 
@@ -864,13 +916,13 @@ enum ApprovalStatus {
 }
 
 model DataExportRequest {
-  id          String         @id @default(cuid())
-  adminId     String
-  status      ApprovalStatus @default(PENDING)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id        String         @id @default(cuid())
+  adminId   String
+  status    ApprovalStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
-  admin       User           @relation("AdminExportRequests", fields: [adminId], references: [id], onDelete: Cascade)
+  admin User @relation("AdminExportRequests", fields: [adminId], references: [id], onDelete: Cascade)
 
   @@index([adminId])
 }
@@ -888,7 +940,7 @@ model StudentGoal {
   weekStart   DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   @@index([studentId, weekStart])
 }
 
@@ -896,11 +948,10 @@ model StudentGoal {
 model PhoneOtp {
   id        String   @id @default(cuid())
   phone     String
-  context   String   // "SIGNUP" | "SETTINGS"
-  otpHash   String   // bcrypt hash of the 6-digit OTP
+  context   String // "SIGNUP" | "SETTINGS"
+  otpHash   String // bcrypt hash of the 6-digit OTP
   expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([phone])
 }
-

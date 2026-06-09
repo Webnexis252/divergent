@@ -25,7 +25,7 @@ export type CourseSummary = {
   id: string;
   title: string;
   slug: string;
-  teacher: { id: string; name: string | null; email: string | null } | null;
+  teachers: { id: string; name: string | null; email: string | null }[];
 };
 
 export function getLiveClassStatus(startTime: string, duration: number): "live" | "upcoming" | "completed" {

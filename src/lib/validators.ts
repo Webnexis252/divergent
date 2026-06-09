@@ -30,11 +30,13 @@ export const LoginSchema = z.object({
 // ─── Courses ─────────────────────────────────────────────────────────────────
 export const CreateCourseSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters'),
-  subtitle: z.string().optional().nullable(),
+  subtitle: z.string().optional(),
   description: z.string().optional(),
-  overviewContent: z.string().optional().nullable(),
-  thumbnail: z.string().url('Thumbnail must be a valid URL').optional().or(z.literal('')),
-  price: z.number().min(0, 'Price cannot be negative').default(0),
+  overviewContent: z.string().optional(),
+  thumbnail: z.string().optional(),
+  price: z.number().min(0).optional(),
+  originalPrice: z.number().min(0).optional(),
+  pricingType: z.enum(['PAID', 'FREE']).default('FREE'),
   teacherIds: z.array(z.string().cuid('Invalid teacher ID')).optional(),
   totalHours: z.number().min(0).optional().nullable(),
   lessonCount: z.number().min(0).optional().nullable(),
@@ -50,9 +52,7 @@ export const CreateCourseSchema = z.object({
   courseLevel: z.string().optional().nullable(),
   language: z.string().optional().nullable(),
   visibility: z.string().default('PUBLIC'),
-  pricingType: z.string().default('PAID'),
   publishDate: z.string().optional().nullable().refine((val) => !val || !isNaN(Date.parse(val)), { message: 'Invalid ISO date' }),
-  originalPrice: z.number().min(0).optional().nullable(),
   emiPlans: z.array(
     z.object({
       label: z.string().min(1),
@@ -123,21 +123,26 @@ export const CreateMessageSchema = z.object({
 
 // ─── Assessment System ───────────────────────────────────────────────────────
 
-
-
 export const CreateQuestionSchema = z.object({
-  type: z
-    .enum(['SCQ', 'MCQ', 'MULTIPLE_RESPONSE', 'SKETCH', 'NUMERIC'])
-    .default('SCQ'),
-  prompt: z.string().min(5, 'Question prompt required'),
-  options: z.array(z.string()).default([]),
-  correctAnswer: z.union([z.string(), z.array(z.string())]).default([]),
-  imageUrl: z.string().url().optional(),
-  order: z.number().int().default(0),
+  type: z.enum(['SCQ', 'MCQ', 'MULTIPLE_RESPONSE', 'SKETCH', 'NUMERIC']),
+  category: z.enum(['CONCEPT', 'VISUALIZATION', 'OBSERVATION', 'PRACTICAL']),
+  prompt: z.string().min(1, 'Prompt is required'),
+  explanation: z.string().optional(),
+  options: z.any().optional(),
+  correctAnswer: z.any(),
+  imageUrl: z.string().optional(),
+  referenceImage: z.string().optional(),
+  points: z.number().int().min(0),
+  negativeMarks: z.number().min(0).default(0),
+  allowPartialMarking: z.boolean().default(false),
+  difficulty: z.string().optional(),
+  partId: z.string().optional(),
+  sectionId: z.string().optional(),
+  groupId: z.string().optional(),
 }).superRefine((data, ctx) => {
   const choiceTypes = ['SCQ', 'MCQ', 'MULTIPLE_RESPONSE'];
   if (choiceTypes.includes(data.type)) {
-    const opts = data.options.map((o) => o.trim()).filter(Boolean);
+    const opts = data.options.map((o: string) => o.trim()).filter(Boolean);
     if (opts.length < 2) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -155,7 +160,6 @@ export const CreateQuizSchema = z.object({
 });
 
 export const SubmitQuizSchema = z.object({
-  // Each answer is either a string (single) or array of strings (multi-select)
   answers: z.record(
     z.string(),
     z.union([z.string(), z.array(z.string())]),
@@ -163,6 +167,35 @@ export const SubmitQuizSchema = z.object({
 });
 
 // ─── Course Tests / Exams ────────────────────────────────────────────────────
+export const CreateTestSchema = z.object({
+  title: z.string().min(3, 'Title must be at least 3 characters'),
+  description: z.string().optional(),
+  type: z.enum(['COURSE_EXAM', 'MOCK_TEST']).default('COURSE_EXAM'),
+  durationMins: z.number().int().min(1, 'Duration must be at least 1 minute'),
+  passingScore: z.number().int().min(0, 'Passing score must be non-negative'),
+  maxAttempts: z.number().int().min(1, 'Max attempts must be at least 1'),
+  chapterId: z.string().optional(),
+});
+
+export const CreateTestPartSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  durationMins: z.number().int().min(1).optional(),
+  order: z.number().int().optional(),
+});
+
+export const CreateTestSectionSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  questionType: z.enum(['SCQ', 'MCQ', 'MULTIPLE_RESPONSE', 'SKETCH', 'NUMERIC']),
+  order: z.number().int().optional(),
+});
+
+export const CreateTestQuestionGroupSchema = z.object({
+  title: z.string().optional(),
+  content: z.string().optional(),
+  imageUrl: z.string().optional(),
+  order: z.number().int().optional(),
+});
+
 export const CreateCourseTestSchema = z.object({
   courseId: z.string().cuid('Invalid course ID'),
   chapterId: z.string().cuid('Invalid chapter ID').optional().nullable(),
@@ -309,6 +342,7 @@ export const CreateLiveClassSchema = z.object({
       message: 'Invalid start time — please provide a valid ISO date string',
     }),
   duration: z.number().int().min(5, 'Duration must be at least 5 minutes'),
+  teacherId: z.string().optional(),
   // Accept empty string as "no URL provided" to avoid spurious url() failures
   meetingUrl: z
     .string()

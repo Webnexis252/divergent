@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const parsed = CreateLiveClassSchema.safeParse({ ...body, courseId });
     if (!parsed.success) return apiError('Validation failed', 400, parsed.error.flatten());
 
-    const { title, description, startTime, duration, meetingUrl } = parsed.data;
+    const { title, description, startTime, duration, meetingUrl, teacherId } = parsed.data;
 
     // Auto-create a Daily.co room if API key is configured
     let finalMeetingUrl = meetingUrl ?? null;
@@ -67,6 +67,12 @@ export async function POST(req: NextRequest, { params }: Params) {
       await assignLiveClassToMentors({
         liveClassId: liveClass.id,
         mentorIds: [user.userId],
+        assignedById: user.userId,
+      });
+    } else if (teacherId) {
+      await assignLiveClassToMentors({
+        liveClassId: liveClass.id,
+        mentorIds: [teacherId],
         assignedById: user.userId,
       });
     }

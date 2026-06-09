@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { apiSuccess, apiForbidden, apiServerError } from '@/lib/api-response';
+import { getLiveClassTeacherAssignmentMap } from '@/lib/live-class-teacher-assignments';
 
 /**
  * GET /api/admin/live-classes
@@ -40,7 +41,25 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return apiSuccess(liveClasses);
+    const assignmentMap = await getLiveClassTeacherAssignmentMap();
+
+    const mappedClasses = liveClasses.map(lc => {
+      const assignment = assignmentMap.get(lc.id);
+      const assignedTeacherId = assignment?.mentorIds?.[0] || null;
+      const assignedTeacher = assignedTeacherId 
+        ? lc.course.teachers.find(t => t.id === assignedTeacherId) 
+        : null;
+
+      return {
+        ...lc,
+        course: {
+          ...lc.course,
+          teacher: assignedTeacher || null,
+        }
+      };
+    });
+
+    return apiSuccess(mappedClasses);
   } catch (err) {
     console.error('[ADMIN_GET_LIVE_CLASSES_ERROR]', err);
     return apiServerError();
