@@ -21,7 +21,7 @@ function canModerate(role: string) {
  */
 export async function PATCH(
   req: NextRequest,
-  ctx: RouteContext<"/api/community/posts/[postId]">,
+  ctx: { params: Promise<{ postId: string }> }
 ) {
   try {
     const auth = await requireAuth(req);
@@ -164,7 +164,7 @@ export async function PATCH(
  */
 export async function DELETE(
   req: NextRequest,
-  ctx: RouteContext<"/api/community/posts/[postId]">,
+  ctx: { params: Promise<{ postId: string }> }
 ) {
   try {
     const auth = await requireAuth(req);

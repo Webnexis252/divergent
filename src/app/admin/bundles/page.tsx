@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "@/app/admin/_components/AdminStatCard";
-import { Package, Pencil, Trash2, X, CheckCircle, EyeOff, Eye } from "lucide-react";
+import { Package, Pencil, Trash2, X, CheckCircle, EyeOff, Eye, ChevronDown } from "lucide-react";
 
 type Course = { id: string; title: string; price: number; thumbnail?: string | null };
 type BundleCourse = { id: string; course: Course };
@@ -35,6 +35,7 @@ export default function AdminBundlesPage() {
   const [price, setPrice] = useState("");
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
   const showToast = (msg: string, ok = true) => {
@@ -46,7 +47,7 @@ export default function AdminBundlesPage() {
     setLoading(true);
     Promise.all([
       fetch("/api/admin/bundles").then((r) => r.json()),
-      fetch("/api/admin/courses").then((r) => r.json()),
+      fetch("/api/courses").then((r) => r.json()),
     ])
       .then(([bundlesRes, coursesRes]) => {
         if (bundlesRes.success) setBundles(bundlesRes.data);
@@ -242,30 +243,53 @@ export default function AdminBundlesPage() {
                       <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                         Select Courses ({selectedCourseIds.length} selected — minimum 2)
                       </label>
-                      <div className="max-h-60 overflow-y-auto rounded-[14px] border border-gray-200 p-3 space-y-2">
-                        {allCourses.map((course) => {
-                          const selected = selectedCourseIds.includes(course.id);
-                          return (
-                            <label
-                              key={course.id}
-                              className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 transition ${
-                                selected ? "bg-purple-50 border border-purple-200" : "hover:bg-gray-50 border border-transparent"
-                              }`}
+                      <div className="relative">
+                        <div 
+                          className="flex w-full cursor-pointer items-center justify-between rounded-[12px] border border-gray-200 bg-white px-4 py-2.5 text-sm transition hover:border-[#7c3aed]"
+                          onClick={() => setDropdownOpen(!dropdownOpen)}
+                        >
+                          <span className={selectedCourseIds.length > 0 ? "font-medium text-[#101828]" : "text-gray-400"}>
+                            {selectedCourseIds.length > 0 
+                              ? `${selectedCourseIds.length} course${selectedCourseIds.length > 1 ? 's' : ''} selected` 
+                              : "Click to select courses..."}
+                          </span>
+                          <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                        </div>
+
+                        <AnimatePresence>
+                          {dropdownOpen && (
+                            <motion.div 
+                              initial={{ opacity: 0, y: -5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              className="absolute z-20 mt-2 max-h-60 w-full space-y-1 overflow-y-auto rounded-[14px] border border-gray-200 bg-white p-2 shadow-xl"
                             >
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={() => toggleCourse(course.id)}
-                                className="h-4 w-4 rounded accent-[#7c3aed]"
-                              />
-                              <span className="flex-1 text-sm font-medium text-[#101828]">{course.title}</span>
-                              <span className="text-xs text-gray-400">₹{course.price.toLocaleString("en-IN")}</span>
-                            </label>
-                          );
-                        })}
-                        {allCourses.length === 0 && (
-                          <p className="py-4 text-center text-sm text-gray-400">No courses found. Create some courses first.</p>
-                        )}
+                              {allCourses.map((course) => {
+                                const selected = selectedCourseIds.includes(course.id);
+                                return (
+                                  <label
+                                    key={course.id}
+                                    className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 transition ${
+                                      selected ? "bg-purple-50 border border-purple-200" : "border border-transparent hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={selected}
+                                      onChange={() => toggleCourse(course.id)}
+                                      className="h-4 w-4 rounded accent-[#7c3aed]"
+                                    />
+                                    <span className="flex-1 text-sm font-medium text-[#101828]">{course.title}</span>
+                                    <span className="text-xs text-gray-400">₹{course.price.toLocaleString("en-IN")}</span>
+                                  </label>
+                                );
+                              })}
+                              {allCourses.length === 0 && (
+                                <p className="py-4 text-center text-sm text-gray-400">No courses found.</p>
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                       {selectedCourseIds.length >= 2 && (
                         <p className="text-xs text-emerald-600">
