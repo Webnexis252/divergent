@@ -106,6 +106,21 @@ export default function AdminCourseExamsPage({ params }: { params: Promise<{ cou
     }
   }
 
+  async function handleDelete(testId: string) {
+    if (!confirm("Are you sure you want to delete this exam? This action cannot be undone and will delete all associated questions and attempts.")) return;
+    
+    try {
+      const res = await fetch(`/api/courses/${courseId}/tests/${testId}`, {
+        method: "DELETE"
+      });
+      if (!res.ok) throw new Error("Failed to delete exam");
+      
+      setTests(tests.filter(t => t.id !== testId));
+    } catch (err) {
+      alert("Error deleting exam");
+    }
+  }
+
   return (
     <PageTransition>
       <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
@@ -250,9 +265,15 @@ export default function AdminCourseExamsPage({ params }: { params: Promise<{ cou
                   <div className="flex gap-2">
                     <button 
                       onClick={() => router.push(`/admin/courses/${courseId}/exams/${test.id}`)}
-                      className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                      className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
                     >
                       Manage Questions
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(test.id)}
+                      className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors"
+                    >
+                      Delete
                     </button>
                   </div>
                 </div>
