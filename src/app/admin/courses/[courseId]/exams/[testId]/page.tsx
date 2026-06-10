@@ -97,6 +97,7 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
   const [test, setTest] = useState<{ title: string; status: string } | null>(null);
   const [parts, setParts] = useState<Part[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Modals State
   const [addDrawerOpen, setAddDrawerOpen] = useState(false);
@@ -149,6 +150,26 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
     setPartTitle("");
     setPartDuration("");
     fetchExamData();
+  }
+
+  async function handleTogglePublish() {
+    if (!test) return;
+    setIsPublishing(true);
+    const newStatus = test.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+    try {
+      const res = await fetch(`/api/courses/${courseId}/tests/${testId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        setTest({ ...test, status: newStatus });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPublishing(false);
+    }
   }
 
   async function handleAddSectionSubmit(e: React.FormEvent) {
@@ -264,11 +285,31 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
               <button onClick={() => router.push(`/admin/courses/${courseId}/exams`)} className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-blue-600 hover:text-blue-800 transition-colors">
                 &larr; Back to Exams
               </button>
-              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Exam Builder</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
+                Exam Builder
+                {test && (
+                  <span className={`text-[12px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider ${test.status === 'PUBLISHED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {test.status}
+                  </span>
+                )}
+              </h1>
               <p className="mt-1 text-[15px] font-medium text-slate-500">{test ? test.title : "Loading workspace..."}</p>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {test && (
+                <button 
+                  onClick={handleTogglePublish}
+                  disabled={isPublishing}
+                  className={`flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold shadow-sm transition-all duration-200 active:scale-[0.98] ${
+                    test.status === "PUBLISHED" 
+                      ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200" 
+                      : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-[0_4px_14px_rgba(5,150,105,0.3)]"
+                  } disabled:opacity-50`}
+                >
+                  {isPublishing ? "Saving..." : test.status === "PUBLISHED" ? "Unpublish Exam" : "Publish Exam"}
+                </button>
+              )}
               <button 
                 onClick={() => setPartModalOpen(true)} 
                 className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-[14px] font-bold text-white shadow-[0_4px_14px_rgba(37,99,235,0.3)] hover:bg-blue-700 hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)] hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
