@@ -19,7 +19,7 @@ import {
   ChevronRight,
   Search,
 } from "lucide-react";
-import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
+import { AnimCard, PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
 import { formatShortDate } from "@/lib/date-format";
 import { Field, TextAreaField } from "@/components/ui/field";
@@ -722,81 +722,64 @@ export default function AdminCoursesPage() {
                   {[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-[18px] bg-[#f3f4f6]" />)}
                 </div>
               ) : (
-                <table className="w-full text-left text-[14px]">
-                  <thead>
-                    <tr className="border-b border-[#eef0f3] text-[12px] font-semibold uppercase tracking-[0.12em] text-[#94a3b8]">
-                      <th className="px-6 py-4">Course</th>
-                      <th className="px-6 py-4">Teacher</th>
-                      <th className="px-6 py-4">Price</th>
-                      <th className="px-6 py-4">Chapters</th>
-                      <th className="px-6 py-4">Enrolled</th>
-                      <th className="px-6 py-4">Status</th>
-                      <th className="px-6 py-4">Created</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedCourses.map((course, i) => (
-                      <motion.tr
-                        key={course.id}
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        transition={{ delay: i * 0.03 }}
-                        className="border-b border-[#f1f5f9] last:border-none hover:bg-[#f8fafc]"
+                <StaggerGrid className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-6">
+                  {paginatedCourses.map((course) => (
+                    <AnimCard key={course.id}>
+                      <article 
+                        className="cursor-pointer overflow-hidden rounded-[20px] bg-white p-[10px] shadow-[0_4px_10px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-1"
+                        onClick={() => setEditingCourse(course)}
                       >
-                        <td className="px-6 py-4">
-                          <p className="font-semibold text-[#101828]">{course.title}</p>
-                          {course.description && <p className="mt-0.5 line-clamp-1 text-[12px] text-[#94a3b8]">{course.description}</p>}
-                        </td>
-                        <td className="px-6 py-4">
-                          {course.teachers && course.teachers.length > 0 ? (
-                            <div className="space-y-2">
-                              {course.teachers.map((t) => (
-                                <div key={t.id}>
-                                  <p className="font-semibold text-[#101828]">
-                                    {getTeacherDisplayName(t)}
-                                  </p>
-                                  <p className="mt-0.5 text-[12px] text-[#94a3b8]">
-                                    {teacherRoleLabel[t.role]}
-                                  </p>
-                                </div>
-                              ))}
+                        <div className="overflow-hidden rounded-[16px] bg-[#d0d0d0]">
+                          <div
+                            aria-hidden="true"
+                            className="h-[184px] w-full bg-cover bg-center"
+                            style={{
+                              backgroundImage: course.thumbnail
+                                ? `linear-gradient(180deg, rgba(8, 16, 24, 0.04), rgba(8, 16, 24, 0.18)), url("${course.thumbnail}")`
+                                : `url("https://api.dicebear.com/9.x/shapes/svg?seed=973b6412-1165-4257-8071-b30234e453cb")`,
+                            }}
+                          />
+                        </div>
+
+                        <div className="space-y-3 px-1 pb-1 pt-4">
+                          <div className="space-y-1">
+                            <h3 className="text-[16px] font-semibold leading-[1.15] text-black">
+                              {course.title}
+                            </h3>
+                            <p className="text-[12px] text-[#959595]">
+                              by {course.teachers?.[0]?.name ?? "Expert Mentors"}
+                            </p>
+                            <p className="text-[12px] font-medium text-black">
+                              {course._count?.enrollments ?? 0} student{(course._count?.enrollments ?? 0) === 1 ? "" : "s"}
+                            </p>
+                          </div>
+
+                          <div className="flex items-end justify-between gap-4">
+                            <div className="space-y-1">
+                              <p className="text-[12px] font-medium text-black">
+                                {course.price > 0 ? `₹${course.price.toLocaleString("en-IN")}` : "Free"}
+                              </p>
+                              <p className={cx("text-[12px]", course.isPublished ? "text-[#4caf50]" : "text-[#94a3b8]")}>
+                                {course.isPublished ? "Published" : "Draft"}
+                              </p>
                             </div>
-                          ) : (
-                            <span className="text-[13px] text-[#94a3b8]">Not assigned</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-[#101828]">
-                          {course.price === 0 ? "Free" : `₹${course.price.toLocaleString("en-IN")}`}
-                        </td>
-                        <td className="px-6 py-4 text-[#64748b]">{course._count?.chapters ?? 0}</td>
-                        <td className="px-6 py-4 font-semibold text-[#101828]">{course._count?.enrollments ?? 0}</td>
-                        <td className="px-6 py-4">
-                          <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${course.isPublished ? "bg-[#ecfdf5] text-[#15803d]" : "bg-[#f1f5f9] text-[#64748b]"}`}>
-                            {course.isPublished ? "Published" : "Draft"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-[#94a3b8]">{formatShortDate(course.createdAt)}</td>
-                        <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                          <button
-                            onClick={() => setEditingCourse(course)}
-                            className="inline-flex items-center gap-1.5 rounded-[14px] border border-[#e2e8f0] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#475569] shadow-[0_2px_6px_rgba(15,23,42,0.04)] transition-all hover:border-[#0284c7] hover:bg-[#f0f9ff] hover:text-[#0284c7] hover:shadow-[0_4px_12px_rgba(2,132,199,0.12)]"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCourse(course.id)}
-                            className="inline-flex items-center gap-1.5 rounded-[14px] border border-[#e2e8f0] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#ef4444] shadow-[0_2px_6px_rgba(15,23,42,0.04)] transition-all hover:border-[#ef4444] hover:bg-[#fef2f2] hover:shadow-[0_4px_12px_rgba(239,68,68,0.12)]"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Delete
-                          </button>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </tbody>
-                </table>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteCourse(course.id);
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-[10px] bg-red-50 px-3 py-1.5 text-[12px] font-semibold text-red-600 transition-colors hover:bg-red-100"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    </AnimCard>
+                  ))}
+                </StaggerGrid>
               )}
             </div>
             

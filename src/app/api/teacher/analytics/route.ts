@@ -12,6 +12,9 @@ import {
  * Returns aggregated class analytics for MENTOR/ADMIN users.
  * Supports optional ?courseId= and ?days= query params.
  */
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   try {
     const user = await requireAuth(req, ['MENTOR', 'ADMIN', 'SUPER_ADMIN']);
@@ -101,19 +104,10 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: 'asc' },
       }),
 
-      // Top students by XP in window
-      prisma.user.findMany({
-        where: {
-          role: 'STUDENT',
-          xpPoints: { gt: 0 },
-          ...(cohortUserIds ? { id: { in: cohortUserIds } } : {}),
-        },
-        orderBy: { xpPoints: 'desc' },
-        take: 5,
-        select: { id: true, name: true, xpPoints: true, streakCount: true },
-      }),
+      // Top students query removed as we calculate this via performance score now
+      Promise.resolve([]),
 
-      // Students with low activity (for "needs attention")
+      // All enrollments to compute performance scores
       prisma.enrollment.findMany({
         where: {
           status: 'ACTIVE',
@@ -121,10 +115,9 @@ export async function GET(req: NextRequest) {
           ...(cohortUserIds ? { userId: { in: cohortUserIds } } : {}),
         },
         include: {
-          user: { select: { id: true, name: true, totalStudyTime: true, streakCount: true } },
-          course: { select: { title: true } },
+          user: { select: { id: true, name: true, totalStudyTime: true, streakCount: true, xpPoints: true } },
+          course: { select: { id: true, title: true } },
         },
-        take: 50,
       }),
     ]);
 
@@ -158,18 +151,170 @@ export async function GET(req: NextRequest) {
       trendData.push({ label, value });
     }
 
-    // Needs attention: low study time enrollees
-    const needsAttention = allEnrollments
-      .filter((e) => e.user.totalStudyTime < 1800) // < 30 min
-      .slice(0, 5)
-      .map((e) => ({
-        id: e.user.id,
-        name: e.user.name ?? 'Unknown',
-        detail: e.user.totalStudyTime === 0
-          ? 'No study activity recorded'
-          : `${Math.round(e.user.totalStudyTime / 60)} min total study time`,
-        streakCount: e.user.streakCount,
+    // ── Performance Score Calculation ───────────────────────────────────────
+    
+    const activeStudentIdsList = Array.from(new Set(allEnrollments.map((e) => e.userId)));
+    const activeCourseIdsList = Array.from(new Set(allEnrollments.map((e) => e.courseId)));
+
+    // Fetch aggregates for performance calculation
+    const [
+      testAttempts,
+      attendances,
+      submissions,
+      totalClassesByCourse,
+      totalAssignmentsByCourse,
+    ] = await Promise.all([
+      prisma.testAttempt.groupBy({
+        by: ['userId'],
+        where: { userId: { in: activeStudentIdsList } },
+        _sum: { pointsEarned: true, totalPoints: true },
+      }),
+      prisma.attendance.groupBy({
+        by: ['userId'],
+        where: { userId: { in: activeStudentIdsList }, isCounted: true },
+        _count: { id: true },
+      }),
+      prisma.assignmentSubmission.groupBy({
+        by: ['studentId'],
+        where: { studentId: { in: activeStudentIdsList } },
+        _count: { id: true },
+      }),
+      prisma.liveClass.groupBy({
+        by: ['courseId'],
+        where: { courseId: { in: activeCourseIdsList }, startTime: { lte: now } },
+        _count: { id: true },
+      }),
+      prisma.assignment.groupBy({
+        by: ['courseId'],
+        where: { courseId: { in: activeCourseIdsList } },
+        _count: { id: true },
+      }),
+    ]);
+
+    // Map course totals
+    const classCountMap = new Map<string, number>(totalClassesByCourse.map((c) => [c.courseId as string, Number(c._count.id)]));
+    const assignmentCountMap = new Map<string, number>(totalAssignmentsByCourse.map((a) => [a.courseId as string, Number(a._count.id)]));
+
+    // Map student metrics
+    const testMap = new Map<string, { pointsEarned: number | null, totalPoints: number | null }>(testAttempts.map((t) => [t.userId as string, t._sum as any]));
+    const attendanceMap = new Map<string, number>(attendances.map((a) => [a.userId as string, Number(a._count.id)]));
+    const submissionMap = new Map<string, number>(submissions.map((s) => [s.studentId as string, Number(s._count.id)]));
+
+    // Group enrollments by student to calculate their total expectations
+    const studentsPerfMap = new Map<string, {
+      user: { id: string, name: string, streakCount: number },
+      courses: { id: string, title: string }[],
+      expectedClasses: number,
+      expectedAssignments: number,
+      attendedClasses: number,
+      submittedAssignments: number,
+      pointsEarned: number,
+      totalPoints: number,
+      perfScore: number,
+    }>();
+
+    for (const e of allEnrollments) {
+      if (!studentsPerfMap.has(e.userId)) {
+        studentsPerfMap.set(e.userId, {
+          user: { id: e.user.id, name: e.user.name ?? 'Unknown', streakCount: e.user.streakCount },
+          courses: [],
+          expectedClasses: 0,
+          expectedAssignments: 0,
+          attendedClasses: attendanceMap.get(e.userId) ?? 0,
+          submittedAssignments: submissionMap.get(e.userId) ?? 0,
+          pointsEarned: testMap.get(e.userId)?.pointsEarned ?? 0,
+          totalPoints: testMap.get(e.userId)?.totalPoints ?? 0,
+          perfScore: 0,
+        });
+      }
+      const s = studentsPerfMap.get(e.userId)!;
+      s.courses.push({ id: e.courseId, title: e.course.title });
+      s.expectedClasses += classCountMap.get(e.courseId) ?? 0;
+      s.expectedAssignments += assignmentCountMap.get(e.courseId) ?? 0;
+    }
+
+    // Calculate the Performance Score
+    // Formula: 40% Exams + 30% Attendance + 30% Assignments
+    const studentsPerfList = Array.from(studentsPerfMap.values()).map((s) => {
+      const examRatio = s.totalPoints > 0 ? (s.pointsEarned / s.totalPoints) : 0;
+      const attendanceRatio = s.expectedClasses > 0 ? Math.min(1, s.attendedClasses / s.expectedClasses) : 0;
+      const assignmentRatio = s.expectedAssignments > 0 ? Math.min(1, s.submittedAssignments / s.expectedAssignments) : 0;
+
+      // Base it out of 100
+      const examScore = examRatio * 100 * 0.40;
+      const attScore = attendanceRatio * 100 * 0.30;
+      const assScore = assignmentRatio * 100 * 0.30;
+
+      // If a student has no expected classes or assignments, the weights might be skewed.
+      // But for simplicity, we stick to the rigid formula. If they have none, they get 0 for that section.
+      let perfScore = examScore + attScore + assScore;
+
+      // Special case: if there are no expectations across the board, default to 0.
+      if (s.totalPoints === 0 && s.expectedClasses === 0 && s.expectedAssignments === 0) {
+        perfScore = 0;
+      }
+
+      return {
+        ...s,
+        perfScore: Math.round(perfScore),
+      };
+    });
+
+    // ── Filter Needs Attention ──────────────────────────────────────────────
+    // All students below 40% threshold
+    const needsAttentionList = studentsPerfList
+      .filter((s) => s.perfScore < 40)
+      .sort((a, b) => a.perfScore - b.perfScore)
+      .map((s) => ({
+        id: s.user.id,
+        name: s.user.name,
+        detail: `Performance: ${s.perfScore}%`,
+        streakCount: s.user.streakCount,
       }));
+
+    // ── Filter Top Performers ───────────────────────────────────────────────
+    // Top 5 of each course.
+    const topPerformersList: { id: string, name: string, detail: string, streakCount: number }[] = [];
+    const processedTopStudents = new Set<string>();
+
+    // If a specific course is selected via filter, we only have one course.
+    // If "All Courses" is selected, we group by course, pick top 5 for each course.
+    const courseGroupedStudents = new Map<string, typeof studentsPerfList>();
+    
+    for (const s of studentsPerfList) {
+      for (const c of s.courses) {
+        if (!courseGroupedStudents.has(c.id)) {
+          courseGroupedStudents.set(c.id, []);
+        }
+        courseGroupedStudents.get(c.id)!.push(s);
+      }
+    }
+
+    for (const [cId, courseStudents] of Array.from(courseGroupedStudents.entries())) {
+      // Filter out students who are in the 'needs attention' category
+      const validStudents = courseStudents.filter((s) => s.perfScore >= 40);
+      // Sort desc by perfScore
+      validStudents.sort((a, b) => b.perfScore - a.perfScore);
+      // Take top 5
+      const top5 = validStudents.slice(0, 5);
+      for (const s of top5) {
+        if (!processedTopStudents.has(s.user.id)) {
+          processedTopStudents.add(s.user.id);
+          const cName = s.courses.find(c => c.id === cId)?.title ?? '';
+          topPerformersList.push({
+            id: s.user.id,
+            name: s.user.name,
+            detail: `${s.perfScore}% in ${cName} · ${s.user.streakCount}🔥 streak`,
+            streakCount: s.user.streakCount,
+          });
+        }
+      }
+    }
+
+    // Limit top performers to avoid massive lists if many courses are active, 
+    // or sort them globally among the chosen ones.
+    topPerformersList.sort((a, b) => parseInt(b.detail) - parseInt(a.detail));
+
 
     return apiSuccess({
       metrics: {
@@ -181,12 +326,8 @@ export async function GET(req: NextRequest) {
         dropOffRate,
       },
       trendData,
-      topStudents: topStudents.map((s) => ({
-        id: s.id,
-        name: s.name ?? 'Unknown',
-        detail: `${s.xpPoints.toLocaleString()} XP · ${s.streakCount}🔥 streak`,
-      })),
-      needsAttention,
+      topStudents: topPerformersList.slice(0, 15), // Hard cap to avoid UI overflow
+      needsAttention: needsAttentionList,
     });
   } catch (err) {
     console.error('[GET_TEACHER_ANALYTICS_ERROR]', err);

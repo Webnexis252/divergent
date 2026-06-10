@@ -237,8 +237,7 @@ export default function EditCourseModal({
                             {course.title}
                           </h2>
                           <p className="mt-1 text-[13px] text-[#64748b]">
-                            Created {formatShortDate(course.createdAt)} · {course._count.chapters} chapter
-                            {course._count.chapters !== 1 ? "s" : ""} · {course._count.enrollments} enrolled
+                            Created {formatShortDate(course.createdAt)} · {course._count.chapters} chapter{course._count.chapters !== 1 ? "s" : ""} · {course._count.enrollments} student{course._count.enrollments !== 1 ? "s" : ""} enrolled · {course.teachers?.length ?? 0} teacher{course.teachers?.length !== 1 ? "s" : ""}
                           </p>
                         </div>
                         <button

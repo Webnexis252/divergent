@@ -319,8 +319,14 @@ function StudentStatusPanel({
   tone: "attention" | "top";
   students: { id: string; name: string; detail: string }[];
 }) {
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
+  const totalPages = Math.ceil(students.length / pageSize);
+
   const panelTone = tone === "attention" ? "border-[#fecaca] bg-[#fff7f7]" : "border-[#bbf7d0] bg-[#f5fff8]";
   const badgeTone = tone === "attention" ? "bg-[#fee2e2] text-[#dc2626]" : "bg-[#dcfce7] text-[#15803d]";
+
+  const paginatedStudents = students.slice(page * pageSize, (page + 1) * pageSize);
 
   return (
     <div className={`rounded-[24px] border ${panelTone} px-5 py-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]`}>
@@ -340,9 +346,9 @@ function StudentStatusPanel({
             {tone === "attention" ? "All students are on track 🎉" : "No top performers yet — data will appear as students earn XP."}
           </p>
         ) : (
-          students.map((student, index) => (
+          paginatedStudents.map((student, index) => (
             <motion.article
-              key={student.id}
+              key={`${student.id}-${page}-${index}`}
               className="flex items-center justify-between gap-4 rounded-[18px] border border-white/70 bg-white/80 px-4 py-3"
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -371,7 +377,140 @@ function StudentStatusPanel({
             </motion.article>
           ))
         )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t border-black/5">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                page === 0 ? "text-black/20" : "text-black/60 hover:bg-black/5"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <span className="text-[12px] font-medium text-black/40">
+              Page {page + 1} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page === totalPages - 1}
+              className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                page === totalPages - 1 ? "text-black/20" : "text-black/60 hover:bg-black/5"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+// ─── Exam Leaderboard ────────────────────────────────────────────────────────
+
+type LeaderboardData = {
+  id: string;
+  title: string;
+  courseTitle: string;
+  topStudents: {
+    id: string;
+    name: string;
+    image: string | null;
+    score: number;
+    totalPoints: number;
+  }[];
+};
+
+function ExamLeaderboard() {
+  const [leaderboards, setLeaderboards] = useState<LeaderboardData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedExamId, setSelectedExamId] = useState<string>("all");
+
+  useEffect(() => {
+    fetch("/api/teacher/analytics/leaderboard")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success) setLeaderboards(json.data);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const examOptions = [
+    { id: "all", label: "Select an exam..." },
+    ...leaderboards.map((l) => ({ id: l.id, label: `${l.title} (${l.courseTitle})` }))
+  ];
+
+  const activeLeaderboard = leaderboards.find((l) => l.id === selectedExamId) || leaderboards[0];
+
+  return (
+    <div className="rounded-[24px] border border-[#edf0f5] bg-white px-5 py-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div>
+          <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-[#111827]">Exam League Board</h2>
+          <p className="mt-1 text-[14px] text-[#6b7280]">Top 10 scorers for each exam</p>
+        </div>
+        <div className="w-full sm:w-64">
+          <FilterDropdown
+            label="Filter by Exam"
+            value={selectedExamId === "all" && activeLeaderboard ? activeLeaderboard.id : selectedExamId}
+            options={examOptions.filter(o => o.id !== "all")}
+            onChange={setSelectedExamId}
+          />
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="py-12 text-center text-[14px] text-[#8b8888]">Loading leaderboards...</div>
+      ) : leaderboards.length === 0 ? (
+        <div className="py-12 text-center text-[14px] text-[#8b8888]">No exams found.</div>
+      ) : activeLeaderboard ? (
+        <div className="space-y-3">
+          {activeLeaderboard.topStudents.length === 0 ? (
+            <p className="py-6 text-center text-[14px] text-[#9ca3af]">No attempts for this exam yet.</p>
+          ) : (
+            activeLeaderboard.topStudents.map((student, idx) => (
+              <motion.article
+                key={`${student.id}-${idx}`}
+                className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f1f5f9] bg-[#f8fafc] px-4 py-3"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-8 w-8 items-center justify-center font-bold text-[#64748b]">
+                    #{idx + 1}
+                  </div>
+                  <div className="h-10 w-10 overflow-hidden rounded-full bg-white border border-[#e2e8f0]">
+                    {student.image ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={student.image} alt="" className="h-full w-full object-cover" />
+                      </>
+                    ) : (
+                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#38c1ff] to-[#1b77ff] text-[12px] font-bold text-white">
+                        {student.name.substring(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[15px] font-semibold text-[#111827]">{student.name}</p>
+                    <p className="text-[13px] text-[#64748b]">
+                      {student.score} / {student.totalPoints} points
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="inline-flex items-center justify-center rounded-full bg-[#fef3c7] px-3 py-1 text-[13px] font-bold text-[#d97706]">
+                    {Math.round((student.score / Math.max(student.totalPoints, 1)) * 100)}%
+                  </div>
+                </div>
+              </motion.article>
+            ))
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -671,17 +810,21 @@ export function SharedAnalyticsDashboard({
               <div className="grid gap-5 xl:grid-cols-2">
                 <StudentStatusPanel
                   title="Need Attention"
-                  subtitle="Students with low study activity"
+                  subtitle="Students below 40% overall performance"
                   tone="attention"
                   students={analytics?.needsAttention ?? []}
                 />
                 <StudentStatusPanel
                   title="Top Performers"
-                  subtitle="Highest XP earners overall"
+                  subtitle="Top scorers per course"
                   tone="top"
                   students={analytics?.topStudents ?? []}
                 />
               </div>
+            </RevealSection>
+
+            <RevealSection delay={0.14}>
+              <ExamLeaderboard />
             </RevealSection>
           </motion.div>
         )}

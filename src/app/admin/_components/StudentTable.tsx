@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { MoreVerticalIcon, PauseCircleIcon } from "./admin-icons";
 import { formatShortDate } from "@/lib/date-format";
 import { Target, Trash2, Lock } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { AssignGoalModal } from "../students/_components/AssignGoalModal";
 import { BulkXpModal } from "../students/_components/BulkXpModal";
 
@@ -30,6 +31,7 @@ export function StudentTable({
   onDelete?: (id: string) => void;
   onSetPassword?: (id: string) => void;
 }) {
+  const router = useRouter();
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [xpDrafts, setXpDrafts] = useState<Record<string, string>>({});
   const [adjustingStudentId, setAdjustingStudentId] = useState<string | null>(null);
@@ -112,11 +114,12 @@ export function StudentTable({
               key={student.id}
               className="rounded-[22px] border border-[#edf2f7] bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
             >
-              <button
-                className="flex w-full items-start gap-3 text-left"
-                onClick={() => setExpandedRow(isExpanded ? null : student.id)}
-                type="button"
-              >
+              <div className="relative w-full">
+                <button
+                  className="flex w-full items-start gap-3 text-left pr-8"
+                  onClick={() => router.push(`/admin/students/${student.id}`)}
+                  type="button"
+                >
                 {canManageXp && (
                   <div className="pt-2" onClick={(e) => toggleSelection(student.id, e)}>
                     <input
@@ -148,6 +151,17 @@ export function StudentTable({
                   </div>
                 </div>
               </button>
+              <button 
+                className="absolute right-0 top-0 p-2 text-[#64748b] z-10" 
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setExpandedRow(isExpanded ? null : student.id);
+                }}
+                type="button"
+              >
+                <MoreVerticalIcon className="h-5 w-5" />
+              </button>
+            </div>
 
               <AnimatePresence initial={false}>
                 {isExpanded && (
@@ -336,11 +350,11 @@ export function StudentTable({
                 <Fragment key={student.id}>
                   <tr
                     className="cursor-pointer border-b border-[#eef2f7] transition-colors hover:bg-[#fbfdff]"
-                    onClick={() => setExpandedRow(isExpanded ? null : student.id)}
+                    onClick={() => router.push(`/admin/students/${student.id}`)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        setExpandedRow(isExpanded ? null : student.id);
+                        router.push(`/admin/students/${student.id}`);
                       }
                     }}
                     role="button"
