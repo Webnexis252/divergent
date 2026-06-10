@@ -9,6 +9,7 @@ import {
   X, Check, AlertCircle, CircleDot, CheckSquare, Hash, Palette, MoreVertical
 } from "lucide-react";
 import { BuilderDrawer } from "./_components/builder-drawer";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 // Types
 type QuestionType = "SCQ" | "MCQ" | "SKETCH" | "NUMERIC";
@@ -110,6 +111,8 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
   const [sectionTitle, setSectionTitle] = useState("");
   const [sectionType, setSectionType] = useState<QuestionType>("SCQ");
 
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; type: "PART" | "SECTION" | "GROUP" | "QUESTION"; id: string } | null>(null);
 
   useEffect(() => {
@@ -186,6 +189,14 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
     fetchExamData();
   }
 
+  function toggleSection(sectionId: string) {
+    setExpandedSections(prev => {
+      // By default, if undefined, we assume it's expanded, so clicking it sets it to false.
+      const isCurrentlyExpanded = prev[sectionId] ?? true;
+      return { ...prev, [sectionId]: !isCurrentlyExpanded };
+    });
+  }
+
   function renderQuestion(q: Question, index: number) {
     return (
       <div key={q.id} className="relative rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] group hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:border-blue-100 transition-all">
@@ -210,7 +221,7 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
             <p className="text-[15px] text-slate-800 font-medium leading-relaxed">{q.prompt}</p>
             {q.imageUrl && <img src={q.imageUrl} alt="Question" className="mt-4 max-h-48 rounded-xl border border-slate-200 shadow-sm" />}
             
-            {q.options && q.options.length > 0 && (
+            {q.options && q.options.length > 0 && (q.type === "SCQ" || q.type === "MCQ") && (
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {q.options.map((opt, i) => {
                   const isCorrect = q.correctAnswer.includes(String(i));
@@ -294,9 +305,9 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
           <div className="space-y-12">
             {parts.map((part, index) => (
               <RevealSection key={part.id} delay={index * 0.1}>
-                <div className="relative rounded-[28px] border border-slate-200/80 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden transition-all hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)]">
+                <div className="relative rounded-[28px] border border-slate-200/80 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)]">
                   {/* Premium Part Header */}
-                  <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="sticky top-[80px] z-30 bg-white/95 backdrop-blur-xl px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-t-[28px] shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)]">
                     <div className="flex flex-col">
                       <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-1">Part {index + 1}</span>
                       <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">{part.title}</h2>
@@ -328,10 +339,16 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
                         <p className="text-[14px] font-medium text-slate-500">No sections in this part.</p>
                       </div>
                     ) : (
-                      part.sections.map(section => (
-                        <div key={section.id} className="rounded-[20px] border border-blue-100/60 bg-white shadow-sm overflow-hidden">
+                      part.sections.map(section => {
+                        const isExpanded = expandedSections[section.id] ?? true;
+                        
+                        return (
+                        <div key={section.id} className="rounded-[20px] border border-blue-100/60 bg-white shadow-sm transition-all">
                           {/* Section Header */}
-                          <div className="bg-gradient-to-r from-blue-50/80 to-slate-50/50 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-blue-100/60">
+                          <div 
+                            onClick={() => toggleSection(section.id)}
+                            className="sticky top-[168px] z-20 bg-white/95 backdrop-blur-xl px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-blue-100/60 cursor-pointer hover:bg-blue-50/50 transition-colors shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] rounded-t-[20px]"
+                          >
                             <div className="flex items-center gap-3">
                               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600 shadow-inner">
                                 {QUESTION_ICONS[section.questionType]}
@@ -340,71 +357,106 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
                               <span className="rounded-lg bg-white border border-blue-200/60 px-2.5 py-1 text-[11px] font-black text-blue-700 tracking-wider shadow-sm">
                                 {section.questionType}
                               </span>
+                              <div className="ml-2 text-slate-400">
+                                {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <button onClick={() => openDrawer({ type: "GROUP", partId: part.id, sectionId: section.id, fixedQuestionType: section.questionType })} className="text-[12px] font-bold text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+                              <button onClick={(e) => { e.stopPropagation(); openDrawer({ type: "GROUP", partId: part.id, sectionId: section.id, fixedQuestionType: section.questionType }); }} className="text-[12px] font-bold text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
                                 Add Group
                               </button>
                               <span className="text-blue-200">|</span>
-                              <button onClick={() => openDrawer({ type: "QUESTION", partId: part.id, sectionId: section.id, fixedQuestionType: section.questionType })} className="text-[12px] font-bold text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+                              <button onClick={(e) => { e.stopPropagation(); openDrawer({ type: "QUESTION", partId: part.id, sectionId: section.id, fixedQuestionType: section.questionType }); }} className="text-[12px] font-bold text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
                                 Add Question
                               </button>
-                              <button onClick={() => confirmDelete("SECTION", section.id)} className="ml-2 text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                              <button onClick={(e) => { e.stopPropagation(); confirmDelete("SECTION", section.id); }} className="ml-2 text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
                                 <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
                           </div>
 
-                          <div className="p-6 space-y-8 bg-white">
-                             {/* Direct Questions */}
-                             {section.questions?.length > 0 && (
-                               <div className="space-y-4">
-                                 {section.questions.map((q, i) => renderQuestion(q, i))}
-                               </div>
-                             )}
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div 
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="p-6 space-y-8 bg-white border-t border-slate-100">
+                                   {/* Direct Questions */}
+                                   {section.questions?.length > 0 && (
+                                     <div className="space-y-4">
+                                       {section.questions.map((q, i) => renderQuestion(q, i))}
+                                     </div>
+                                   )}
 
-                             {/* Groups */}
-                             {section.groups?.length > 0 && (
-                               <div className="space-y-6">
-                                 {section.groups.map(group => (
-                                   <div key={group.id} className="rounded-[20px] border border-indigo-100 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] overflow-hidden relative group/group">
-                                     <div className="bg-indigo-50/60 px-6 py-4 border-b border-indigo-100 flex items-start justify-between">
-                                       <div>
-                                          <div className="flex items-center gap-2.5 mb-1.5">
-                                            <Users className="h-4 w-4 text-indigo-600" />
-                                            <h4 className="font-bold text-indigo-950 text-[15px]">{group.title || "Question Group"}</h4>
-                                          </div>
-                                          {group.content && <p className="text-[13px] text-indigo-900/70 font-medium leading-relaxed">{group.content}</p>}
-                                       </div>
-                                       <div className="flex items-center gap-3">
-                                          <button onClick={() => openDrawer({ type: "QUESTION", partId: part.id, sectionId: section.id, groupId: group.id, fixedQuestionType: section.questionType })} className="text-[12px] font-bold text-indigo-700 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-indigo-200/60 hover:bg-indigo-50 transition-colors">
-                                            + Add Question
-                                          </button>
-                                          <button onClick={() => confirmDelete("GROUP", group.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg opacity-0 group-hover/group:opacity-100 transition-all">
-                                            <Trash2 className="h-4 w-4" />
-                                          </button>
-                                       </div>
+                                   {/* Groups */}
+                                   {section.groups?.length > 0 && (
+                                     <div className="space-y-6">
+                                       {section.groups.map(group => (
+                                         <div key={group.id} className="rounded-[20px] border border-indigo-100 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] overflow-hidden relative group/group">
+                                           <div className="bg-indigo-50/60 px-6 py-4 border-b border-indigo-100 flex items-start justify-between">
+                                             <div>
+                                                <div className="flex items-center gap-2.5 mb-1.5">
+                                                  <Users className="h-4 w-4 text-indigo-600" />
+                                                  <h4 className="font-bold text-indigo-950 text-[15px]">{group.title || "Question Group"}</h4>
+                                                </div>
+                                                {group.content && <p className="text-[13px] text-indigo-900/70 font-medium leading-relaxed">{group.content}</p>}
+                                             </div>
+                                             <div className="flex items-center gap-3">
+                                                <button onClick={() => openDrawer({ type: "QUESTION", partId: part.id, sectionId: section.id, groupId: group.id, fixedQuestionType: section.questionType })} className="text-[12px] font-bold text-indigo-700 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-indigo-200/60 hover:bg-indigo-50 transition-colors">
+                                                  + Add Question
+                                                </button>
+                                                <button onClick={() => confirmDelete("GROUP", group.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg opacity-0 group-hover/group:opacity-100 transition-all">
+                                                  <Trash2 className="h-4 w-4" />
+                                                </button>
+                                             </div>
+                                           </div>
+                                           <div className="p-5 bg-slate-50/30 space-y-4">
+                                             {group.questions?.length > 0 ? (
+                                               group.questions.map((q, i) => renderQuestion(q, i))
+                                             ) : (
+                                               <p className="text-[13px] text-slate-400 font-medium text-center py-4">No questions added to this group yet.</p>
+                                             )}
+                                           </div>
+                                         </div>
+                                       ))}
                                      </div>
-                                     <div className="p-5 bg-slate-50/30 space-y-4">
-                                       {group.questions?.length > 0 ? (
-                                         group.questions.map((q, i) => renderQuestion(q, i))
-                                       ) : (
-                                         <p className="text-[13px] text-slate-400 font-medium text-center py-4">No questions added to this group yet.</p>
-                                       )}
+                                   )}
+
+                                   {(section.questions?.length === 0 && section.groups?.length === 0) && (
+                                     <div className="py-8 text-center rounded-xl border border-dashed border-slate-300 bg-slate-50/50 mb-6">
+                                        <p className="text-[14px] font-medium text-slate-500">This section is empty. Start adding questions or groups.</p>
                                      </div>
+                                   )}
+
+                                   <div className="flex items-center justify-center gap-4 mt-6 pt-6 border-t border-slate-100">
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); openDrawer({ type: "QUESTION", partId: part.id, sectionId: section.id, fixedQuestionType: section.questionType }); }} 
+                                        className="flex items-center gap-1.5 rounded-lg bg-blue-50/50 border border-blue-100 px-4 py-2 text-[13px] font-bold text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-all shadow-sm active:scale-95"
+                                      >
+                                        <Plus className="h-4 w-4" /> Add Another Question
+                                      </button>
                                    </div>
-                                 ))}
-                               </div>
-                             )}
-
-                             {(section.questions?.length === 0 && section.groups?.length === 0) && (
-                               <div className="py-8 text-center rounded-xl border border-dashed border-slate-300 bg-slate-50/50">
-                                  <p className="text-[14px] font-medium text-slate-500">This section is empty. Start adding questions or groups.</p>
-                               </div>
-                             )}
-                          </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
-                      ))
+                        );
+                      })
+                    )}
+
+                    {part.sections.length > 0 && (
+                      <div className="mt-8 flex justify-center">
+                        <button 
+                          onClick={() => { setTargetPartId(part.id); setSectionModalOpen(true); }} 
+                          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-[13px] font-bold text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-95"
+                        >
+                          <Plus className="h-4 w-4" /> Add Another Section
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

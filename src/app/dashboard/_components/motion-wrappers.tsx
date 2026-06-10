@@ -8,17 +8,17 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 export const fadeUp = {
   hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0 },
+  show: { opacity: 1, y: 0, transitionEnd: { transform: "none" } },
 };
 
 export const fadeLeft = {
   hidden: { opacity: 0, x: -16 },
-  show: { opacity: 1, x: 0 },
+  show: { opacity: 1, x: 0, transitionEnd: { transform: "none" } },
 };
 
 export const fadeRight = {
   hidden: { opacity: 0, x: 16 },
-  show: { opacity: 1, x: 0 },
+  show: { opacity: 1, x: 0, transitionEnd: { transform: "none" } },
 };
 
 export const scaleIn = {
@@ -39,7 +39,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
 
   return (
     <motion.div
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: 1, y: 0, transitionEnd: { transform: "none" } }}
       initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.28, ease }}
     >
