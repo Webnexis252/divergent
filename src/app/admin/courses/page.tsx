@@ -27,6 +27,7 @@ import { Button, buttonStyles } from "@/components/ui/button";
 import { Surface } from "@/components/ui/surface";
 import { Badge } from "@/components/ui/badge";
 import { cx } from "@/lib/cx";
+import Link from "next/link";
 
 import type { Course, Teacher } from "./_types";
 import { teacherRoleLabel, getTeacherDisplayName } from "./_types";
@@ -725,58 +726,72 @@ export default function AdminCoursesPage() {
                 <StaggerGrid className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-6">
                   {paginatedCourses.map((course) => (
                     <AnimCard key={course.id}>
-                      <article 
-                        className="cursor-pointer overflow-hidden rounded-[20px] bg-white p-[10px] shadow-[0_4px_10px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-1"
-                        onClick={() => setEditingCourse(course)}
-                      >
-                        <div className="overflow-hidden rounded-[16px] bg-[#d0d0d0]">
-                          <div
-                            aria-hidden="true"
-                            className="h-[184px] w-full bg-cover bg-center"
-                            style={{
-                              backgroundImage: course.thumbnail
-                                ? `linear-gradient(180deg, rgba(8, 16, 24, 0.04), rgba(8, 16, 24, 0.18)), url("${course.thumbnail}")`
-                                : `url("https://api.dicebear.com/9.x/shapes/svg?seed=973b6412-1165-4257-8071-b30234e453cb")`,
-                            }}
-                          />
-                        </div>
-
-                        <div className="space-y-3 px-1 pb-1 pt-4">
-                          <div className="space-y-1">
-                            <h3 className="text-[16px] font-semibold leading-[1.15] text-black">
-                              {course.title}
-                            </h3>
-                            <p className="text-[12px] text-[#959595]">
-                              by {course.teachers?.[0]?.name ?? "Expert Mentors"}
-                            </p>
-                            <p className="text-[12px] font-medium text-black">
-                              {course._count?.enrollments ?? 0} student{(course._count?.enrollments ?? 0) === 1 ? "" : "s"}
-                            </p>
+                      <div className="group relative overflow-hidden rounded-[20px] bg-white p-[10px] shadow-[0_4px_10px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-1">
+                        <Link href={`/admin/courses/${course.id}`} className="absolute inset-0 z-0" />
+                        <article className="relative z-10 pointer-events-none">
+                          <div className="overflow-hidden rounded-[16px] bg-[#d0d0d0]">
+                            <div
+                              aria-hidden="true"
+                              className="h-[184px] w-full bg-cover bg-center"
+                              style={{
+                                backgroundImage: course.thumbnail
+                                  ? `linear-gradient(180deg, rgba(8, 16, 24, 0.04), rgba(8, 16, 24, 0.18)), url("${course.thumbnail}")`
+                                  : `url("https://api.dicebear.com/9.x/shapes/svg?seed=973b6412-1165-4257-8071-b30234e453cb")`,
+                              }}
+                            />
                           </div>
 
-                          <div className="flex items-end justify-between gap-4">
+                          <div className="space-y-3 px-1 pb-1 pt-4">
                             <div className="space-y-1">
-                              <p className="text-[12px] font-medium text-black">
-                                {course.price > 0 ? `₹${course.price.toLocaleString("en-IN")}` : "Free"}
+                              <h3 className="text-[16px] font-semibold leading-[1.15] text-black group-hover:text-blue-600 transition-colors">
+                                {course.title}
+                              </h3>
+                              <p className="text-[12px] text-[#959595]">
+                                by {course.teachers?.[0]?.name ?? "Expert Mentors"}
                               </p>
-                              <p className={cx("text-[12px]", course.isPublished ? "text-[#4caf50]" : "text-[#94a3b8]")}>
-                                {course.isPublished ? "Published" : "Draft"}
+                              <p className="text-[12px] font-medium text-black">
+                                {course._count?.enrollments ?? 0} student{(course._count?.enrollments ?? 0) === 1 ? "" : "s"}
                               </p>
                             </div>
 
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteCourse(course.id);
-                              }}
-                              className="inline-flex items-center gap-1.5 rounded-[10px] bg-red-50 px-3 py-1.5 text-[12px] font-semibold text-red-600 transition-colors hover:bg-red-100"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              Delete
-                            </button>
+                            <div className="flex items-end justify-between gap-4 pointer-events-auto">
+                              <div className="space-y-1 pointer-events-none">
+                                <p className="text-[12px] font-medium text-black">
+                                  {course.price > 0 ? `₹${course.price.toLocaleString("en-IN")}` : "Free"}
+                                </p>
+                                <p className={cx("text-[12px]", course.isPublished ? "text-[#4caf50]" : "text-[#94a3b8]")}>
+                                  {course.isPublished ? "Published" : "Draft"}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setEditingCourse(course);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-blue-200 bg-blue-50 px-3 py-1.5 text-[12px] font-semibold text-blue-600 transition-colors hover:bg-blue-100"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDeleteCourse(course.id);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 rounded-[10px] bg-red-50 px-3 py-1.5 text-[12px] font-semibold text-red-600 transition-colors hover:bg-red-100"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </article>
+                        </article>
+                      </div>
                     </AnimCard>
                   ))}
                 </StaggerGrid>
