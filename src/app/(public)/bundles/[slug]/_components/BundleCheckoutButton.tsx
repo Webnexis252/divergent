@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { load } from "@cashfreepayments/cashfree-js";
 import { Loader2 } from "lucide-react";
 
-export function BundleCheckoutButton({ bundleId, userId }: { bundleId: string; userId?: string }) {
+import { cx } from "@/lib/cx";
+
+export function BundleCheckoutButton({ bundleId, userId, className }: { bundleId: string; userId?: string; className?: string }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -59,7 +61,10 @@ export function BundleCheckoutButton({ bundleId, userId }: { bundleId: string; u
     <button
       onClick={handleCheckout}
       disabled={loading}
-      className="w-full flex items-center justify-center gap-2 rounded-[14px] bg-[#7c3aed] py-3.5 text-[15px] font-bold text-white transition hover:bg-[#6d28d9] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:hover:-translate-y-0"
+      className={cx(
+        "w-full flex items-center justify-center gap-2 rounded-[14px] bg-[#7c3aed] py-3.5 text-[15px] font-bold text-white transition hover:bg-[#6d28d9] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:hover:-translate-y-0",
+        className
+      )}
     >
       {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Enroll Now"}
     </button>

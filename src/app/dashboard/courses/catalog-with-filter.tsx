@@ -159,28 +159,32 @@ export function CatalogWithFilter({
               return (
                 <AnimCard key={`bundle-${bundle.id}`}>
                   <article className="flex h-full flex-col overflow-hidden rounded-[20px] border border-blue-100 bg-blue-50/20 p-[10px] shadow-[0_4px_10px_rgba(56,193,255,0.1)] transition hover:shadow-[0_8px_20px_rgba(56,193,255,0.2)]">
-                    <div className="overflow-hidden rounded-[16px] bg-[#d0d0d0]">
-                      <div
-                        aria-hidden="true"
-                        className="h-[184px] w-full bg-cover bg-center"
-                        style={{
-                          backgroundImage: bundle.thumbnail
-                            ? `linear-gradient(180deg, rgba(8, 16, 24, 0.04), rgba(8, 16, 24, 0.18)), url("${bundle.thumbnail}")`
-                            : `linear-gradient(135deg, #bae6fd, #38c1ff)`,
-                        }}
-                      />
-                    </div>
+                    <Link href={`/dashboard/bundles/${bundle.slug}`} className="group/link block">
+                      <div className="overflow-hidden rounded-[16px] bg-[#d0d0d0]">
+                        <div
+                          aria-hidden="true"
+                          className="h-[184px] w-full bg-cover bg-center transition-transform duration-500 group-hover/link:scale-105"
+                          style={{
+                            backgroundImage: bundle.thumbnail
+                              ? `linear-gradient(180deg, rgba(8, 16, 24, 0.04), rgba(8, 16, 24, 0.18)), url("${bundle.thumbnail}")`
+                              : `linear-gradient(135deg, #bae6fd, #38c1ff)`,
+                          }}
+                        />
+                      </div>
+                    </Link>
 
                     <div className="flex flex-1 flex-col px-1 pb-1 pt-4">
                       <div className="space-y-1 mb-4">
                         <div className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 mb-1 tracking-wider uppercase">
                           Bundle
                         </div>
-                        <h3 className="text-[16px] font-bold leading-[1.15] text-[#101828]">
-                          {bundle.title}
-                        </h3>
+                        <Link href={`/dashboard/bundles/${bundle.slug}`} className="block group/title">
+                          <h3 className="text-[16px] font-semibold leading-[1.15] text-black group-hover/title:text-blue-600 transition-colors">
+                            {bundle.title}
+                          </h3>
+                        </Link>
                         {bundle.description && (
-                          <p className="line-clamp-2 text-[13px] text-gray-600 mt-1">
+                          <p className="line-clamp-2 text-[12px] text-[#959595]">
                             {bundle.description}
                           </p>
                         )}
@@ -193,13 +197,23 @@ export function CatalogWithFilter({
                         </div>
                       </div>
 
-                      <div className="mt-auto pt-4 border-t border-blue-100/50">
-                        <div className="flex items-end justify-between gap-4 mb-3">
-                          <p className="text-[18px] font-bold text-[#38c1ff]">
-                            ₹{bundle.price.toLocaleString("en-IN")}
+                      <div className="mt-auto flex items-end justify-between gap-4">
+                        <div className="space-y-1">
+                          <p className="text-[12px] font-medium text-black">
+                            {formatPrice(bundle.price)}
+                          </p>
+                          <p className="text-[12px] text-[#4caf50]">
+                            Available now
                           </p>
                         </div>
-                        <BundleCheckoutButton bundleId={bundle.id} userId={userId} />
+
+                        <BundleCheckoutButton 
+                          bundleId={bundle.id} 
+                          userId={userId} 
+                          className={workspaceButtonStyles({
+                            className: "h-[32px] w-auto px-4 py-0 text-[12px] !rounded-[10px]",
+                          })}
+                        />
                       </div>
                     </div>
                   </article>
