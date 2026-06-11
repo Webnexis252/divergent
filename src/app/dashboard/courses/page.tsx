@@ -44,8 +44,7 @@ const assets = {
 
 import { studentNavItems } from "../_components/nav-items";
 import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
-import { PaginatedCourses } from "./paginated-courses";
-import { AvailableBundles } from "./available-bundles";
+import { CatalogWithFilter } from "./catalog-with-filter";
 
 const sidebarItems = studentNavItems.map(item => ({
   ...item,
@@ -376,21 +375,9 @@ export default async function DashboardCoursesPage() {
                   </RevealSection>
                 </div>
 
-                {bundles.length > 0 && (
-                  <RevealSection delay={0.06}>
-                    <div className="mb-10" id="bundles">
-                      <AvailableBundles bundles={bundles} userId={auth?.userId ?? ""} />
-                    </div>
-                  </RevealSection>
-                )}
-
-                <RevealSection delay={0.08}>
-                  <div className="space-y-6" id="course-catalog">
-                    <div>
-                      <h2 className="text-[clamp(1.9rem,3vw,2rem)] font-medium text-black">Courses</h2>
-                    </div>
-
-                    <PaginatedCourses courses={courses} />
+                <RevealSection delay={0.06}>
+                  <div className="space-y-6" id="catalog">
+                    <CatalogWithFilter courses={courses} bundles={bundles} userId={auth?.userId ?? ""} />
                   </div>
                 </RevealSection>
               </div>
