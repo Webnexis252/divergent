@@ -62,8 +62,11 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Enroll the user in the course
-      if (payment.courseId) {
+      // Enroll the user in the course/bundle
+      if (payment.bundleId) {
+        const bundleCourses = await (prisma as any).bundleCourse.findMany({ where: { bundleId: payment.bundleId }, select: { courseId: true } });
+        await Promise.all(bundleCourses.map((bc: { courseId: string }) => ensureActiveEnrollmentWithXp(payment.userId, bc.courseId, 'ACTIVE', true, payment.bundleId!)));
+      } else if (payment.courseId) {
         await ensureActiveEnrollmentWithXp(payment.userId, payment.courseId);
         console.log(
           `[CASHFREE_WEBHOOK] Enrolled user ${payment.userId} in course ${payment.courseId}`,

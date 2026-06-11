@@ -45,6 +45,7 @@ const assets = {
 import { studentNavItems } from "../_components/nav-items";
 import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
 import { PaginatedCourses } from "./paginated-courses";
+import { AvailableBundles } from "./available-bundles";
 
 const sidebarItems = studentNavItems.map(item => ({
   ...item,
@@ -149,10 +150,11 @@ export default async function DashboardCoursesPage() {
   let viewer = null;
   let activeEnrollments: Awaited<ReturnType<typeof getRecentStudentEnrollments>> = [];
   let courses: Array<{ id: string; title: string; slug: string; description: string | null; thumbnail: string | null; price: number; teachers: { name: string | null }[]; _count: { enrollments: number } }> = [];
+  let bundles: any[] = [];
   let dbError = false;
 
   try {
-    [viewer, activeEnrollments, courses] = await Promise.all([
+    [viewer, activeEnrollments, courses, bundles] = await Promise.all([
       auth?.userId
         ? prisma.user.findUnique({
             where: { id: auth.userId },
@@ -182,6 +184,19 @@ export default async function DashboardCoursesPage() {
         },
         orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
       }),
+      prisma.bundle.findMany({
+        where: { isPublished: true },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          thumbnail: true,
+          price: true,
+          courses: { select: { course: { select: { title: true } } } }
+        },
+        orderBy: { createdAt: "desc" }
+      })
     ]);
   } catch (err) {
     console.error('[CoursesPage] DB error:', err);
@@ -360,6 +375,14 @@ export default async function DashboardCoursesPage() {
                     </div>
                   </RevealSection>
                 </div>
+
+                {bundles.length > 0 && (
+                  <RevealSection delay={0.06}>
+                    <div className="mb-10" id="bundles">
+                      <AvailableBundles bundles={bundles} userId={auth?.userId ?? ""} />
+                    </div>
+                  </RevealSection>
+                )}
 
                 <RevealSection delay={0.08}>
                   <div className="space-y-6" id="course-catalog">

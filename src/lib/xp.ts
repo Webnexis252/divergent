@@ -281,18 +281,25 @@ export async function ensureActiveEnrollmentWithXp(
   courseId: string,
   status: EnrollmentStatus = 'ACTIVE',
   reactivateExisting = true,
+  bundleId?: string,
 ) {
   return prisma.$transaction(async (tx) => {
+    const data: any = { userId, courseId, status };
+    if (bundleId) data.bundleId = bundleId;
+
     const created = await tx.enrollment.createMany({
-      data: [{ userId, courseId, status }],
+      data: [data],
       skipDuplicates: true,
     });
 
     if (created.count === 0) {
+      const updateData: any = { status };
+      if (bundleId) updateData.bundleId = bundleId;
+
       const enrollment = reactivateExisting
         ? await tx.enrollment.update({
             where: { userId_courseId: { userId, courseId } },
-            data: { status },
+            data: updateData,
           })
         : await tx.enrollment.findUnique({
             where: { userId_courseId: { userId, courseId } },

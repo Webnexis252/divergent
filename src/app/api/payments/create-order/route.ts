@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
           where: { bundleId },
           select: { courseId: true },
         });
-        await Promise.all(bundleCourses.map((bc: { courseId: string }) => ensureActiveEnrollmentWithXp(auth.userId, bc.courseId)));
+        await Promise.all(bundleCourses.map((bc: { courseId: string }) => ensureActiveEnrollmentWithXp(auth.userId, bc.courseId, 'ACTIVE', true, bundleId)));
       } else {
         await ensureActiveEnrollmentWithXp(auth.userId, courseId);
       }

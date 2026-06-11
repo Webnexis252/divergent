@@ -55,6 +55,7 @@ model User {
   pushTokens              PushToken[]
   achievements            UserAchievement[]
   teachingCourses         Course[]                 @relation("CourseTeachers")
+  teachingBundleCourses   BundleCourse[]           @relation("BundleCourseTeachers")
   studentApprovalRequests StudentApprovalRequest[] @relation("AdminStudentRequests")
   teacherApprovalRequests TeacherApprovalRequest[] @relation("AdminTeacherRequests")
   announcementRecipients  AnnouncementRecipient[]
@@ -117,6 +118,7 @@ model Bundle {
   updatedAt   DateTime       @updatedAt
   courses     BundleCourse[]
   payments    Payment[]
+  enrollments Enrollment[]
 }
 
 model BundleCourse {
@@ -125,6 +127,7 @@ model BundleCourse {
   courseId String
   bundle   Bundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teachers User[] @relation("BundleCourseTeachers")
 
   @@unique([bundleId, courseId])
   @@index([bundleId])
@@ -170,16 +173,19 @@ model Enrollment {
   id              String           @id @default(cuid())
   userId          String
   courseId        String
+  bundleId        String?
   status          EnrollmentStatus @default(ACTIVE)
   progressPercent Float            @default(0.0)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bundle          Bundle?          @relation(fields: [bundleId], references: [id], onDelete: SetNull)
 
   @@unique([userId, courseId])
   @@index([userId])
   @@index([courseId])
+  @@index([bundleId])
 }
 
 model LessonProgress {

@@ -18,13 +18,14 @@ type Bundle = {
   price: number;
   isPublished: boolean;
   createdAt: string;
-  courses: BundleCourse[];
+  courses: (BundleCourse & { teachers?: {id: string, name: string}[] })[];
   _count: { payments: number };
 };
 
 export default function AdminBundlesPage() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [allCourses, setAllCourses] = useState<Course[]>([]);
+  const [allTeachers, setAllTeachers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editBundle, setEditBundle] = useState<Bundle | null>(null);
@@ -34,6 +35,7 @@ export default function AdminBundlesPage() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const [teacherAssignments, setTeacherAssignments] = useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -48,10 +50,16 @@ export default function AdminBundlesPage() {
     Promise.all([
       fetch("/api/admin/bundles").then((r) => r.json()),
       fetch("/api/courses").then((r) => r.json()),
+      fetch("/api/admin/mentors").then((r) => r.json()),
     ])
-      .then(([bundlesRes, coursesRes]) => {
+      .then(([bundlesRes, coursesRes, mentorsRes]) => {
         if (bundlesRes.success) setBundles(bundlesRes.data);
         if (coursesRes.success) setAllCourses(coursesRes.data);
+        if (mentorsRes.success) {
+           const active = mentorsRes.data.active || [];
+           active.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+           setAllTeachers(active);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -65,6 +73,7 @@ export default function AdminBundlesPage() {
     setDescription("");
     setPrice("");
     setSelectedCourseIds([]);
+    setTeacherAssignments({});
     setShowForm(true);
   };
 
@@ -74,6 +83,13 @@ export default function AdminBundlesPage() {
     setDescription(bundle.description ?? "");
     setPrice(String(bundle.price));
     setSelectedCourseIds(bundle.courses.map((bc) => bc.course.id));
+    const assignments: Record<string, string[]> = {};
+    bundle.courses.forEach(bc => {
+      if (bc.teachers && bc.teachers.length > 0) {
+         assignments[bc.course.id] = bc.teachers.map(t => t.id);
+      }
+    });
+    setTeacherAssignments(assignments);
     setShowForm(true);
   };
 
@@ -101,7 +117,12 @@ export default function AdminBundlesPage() {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, price: numPrice, courseIds: selectedCourseIds }),
+        body: JSON.stringify({ 
+          title, 
+          description, 
+          price: numPrice, 
+          courses: selectedCourseIds.map(id => ({ courseId: id, teacherIds: teacherAssignments[id] || [] }))
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -302,6 +323,79 @@ export default function AdminBundlesPage() {
                         </p>
                       )}
                     </div>
+                    
+                    {/* Course Teacher Assignments */}
+                    {selectedCourseIds.length > 0 && (
+                      <div className="space-y-3 mt-4 border-t pt-4">
+                        <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Teacher Assignments</label>
+                        {selectedCourseIds.map(courseId => {
+                          const course = allCourses.find(c => c.id === courseId);
+                          if (!course) return null;
+                          const assignedIds = teacherAssignments[courseId] || [];
+                          // Note: we consider an override active if the key exists in teacherAssignments
+                          // It could be an empty array if they selected override but chose no one (or cleared it).
+                          // To keep it simple, if it's undefined, it's "original", otherwise "new".
+                          const hasOverride = typeof teacherAssignments[courseId] !== "undefined";
+                          
+                          return (
+                            <div key={courseId} className="rounded-xl border border-gray-200 p-4 bg-gray-50/50 space-y-3">
+                              <p className="text-sm font-semibold text-[#101828]">{course.title}</p>
+                              <div className="flex items-center gap-6 text-[13px] text-gray-700">
+                                <label className="flex items-center gap-2 cursor-pointer hover:text-purple-600 transition">
+                                  <input 
+                                    type="radio" 
+                                    name={`override-${courseId}`} 
+                                    className="accent-[#7c3aed]"
+                                    checked={!hasOverride} 
+                                    onChange={() => {
+                                      setTeacherAssignments(prev => { const next = {...prev}; delete next[courseId]; return next; });
+                                    }} 
+                                  />
+                                  Use Original Teachers
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer hover:text-purple-600 transition">
+                                  <input 
+                                    type="radio" 
+                                    name={`override-${courseId}`} 
+                                    className="accent-[#7c3aed]"
+                                    checked={hasOverride} 
+                                    onChange={() => {
+                                      setTeacherAssignments(prev => ({ ...prev, [courseId]: prev[courseId] || [] }));
+                                    }} 
+                                  />
+                                  Assign New Teachers
+                                </label>
+                              </div>
+                              {hasOverride && (
+                                <div className="mt-2 animate-in slide-in-from-top-1 fade-in duration-200">
+                                  <select 
+                                    multiple 
+                                    className="w-full rounded-[10px] border border-gray-300 bg-white px-3 py-2 text-[13px] text-gray-700 outline-none focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed]"
+                                    value={assignedIds}
+                                    onChange={(e) => {
+                                      const opts = Array.from(e.target.selectedOptions).map(o => o.value);
+                                      setTeacherAssignments(prev => ({...prev, [courseId]: opts}));
+                                    }}
+                                    style={{ minHeight: "120px" }}
+                                  >
+                                    {allTeachers.map(t => (
+                                      <option key={t.id} value={t.id} className="py-1 px-1">
+                                        {t.name} ({t.email})
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <p className="text-[11px] text-gray-500 mt-1.5 flex items-center gap-1">
+                                    <span>Hold</span>
+                                    <kbd className="rounded border bg-white px-1 font-mono text-[9px]">Cmd/Ctrl</kbd>
+                                    <span>to select multiple teachers</span>
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     <motion.button
                       whileHover={{ scale: 1.02 }}

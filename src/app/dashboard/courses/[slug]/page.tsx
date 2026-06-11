@@ -174,6 +174,7 @@ async function getCourseEnrollment(userId: string, courseId: string) {
         id: true,
         status: true,
         progressPercent: true,
+        bundleId: true,
       },
     });
   } catch {
@@ -187,6 +188,7 @@ async function getCourseEnrollment(userId: string, courseId: string) {
       select: {
         id: true,
         progressPercent: true,
+        bundleId: true,
       },
     });
   }
@@ -334,7 +336,18 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     rows.forEach((r) => completedLessonIds.add(r.lessonId));
   }
 
-  const teacherName = course.teachers?.[0]?.name ?? "Expert Mentors";
+  let displayTeachers = course.teachers;
+  if (enrollment && 'bundleId' in enrollment && enrollment.bundleId) {
+    const override = await prisma.bundleCourse.findFirst({
+      where: { bundleId: enrollment.bundleId, courseId: course.id },
+      include: { teachers: { select: { name: true, image: true } } }
+    });
+    if (override?.teachers && override.teachers.length > 0) {
+      displayTeachers = override.teachers;
+    }
+  }
+
+  const teacherName = displayTeachers?.[0]?.name ?? "Expert Mentors";
   const totalLessons = countLessons(course.chapters);
   const totalDuration = countDuration(course.chapters);
   const previewCount = course.chapters.reduce(
@@ -384,7 +397,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         totalLessons > 0
           ? `Guides the ${pluralize(totalLessons, "lesson")} pathway and helps students turn concepts into confident outputs.`
           : "Guides the learning path and helps students turn concepts into confident outputs.",
-      image: course.teachers?.[0]?.image ?? assets.mentorAvatar,
+      image: displayTeachers?.[0]?.image ?? assets.mentorAvatar,
     },
     {
       name: "Mentor Support Team",

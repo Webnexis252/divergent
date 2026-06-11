@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req, ['ADMIN', 'SUPER_ADMIN']);
     if (!auth) return apiForbidden('Admin access required');
 
-    const bundles = await (prisma as any).bundle.findMany({
+    const bundles = await prisma.bundle.findMany({
       include: {
         courses: {
           include: {
@@ -51,7 +51,9 @@ export async function POST(req: NextRequest) {
     const { title, description, thumbnail, price, courseIds, isPublished } = body;
 
     if (!title?.trim()) return apiBadRequest('title is required');
-    if (!Array.isArray(courseIds) || courseIds.length < 2)
+    const hasCoursesArray = Array.isArray(body.courses) && body.courses.length >= 2;
+    const hasCourseIds = Array.isArray(courseIds) && courseIds.length >= 2;
+    if (!hasCoursesArray && !hasCourseIds)
       return apiBadRequest('A bundle must include at least 2 courses');
     if (typeof price !== 'number' || price < 0)
       return apiBadRequest('price must be a non-negative number');
@@ -66,7 +68,24 @@ export async function POST(req: NextRequest) {
       '-' +
       Date.now();
 
-    const bundle = await (prisma as any).bundle.create({
+    // Build the courses create array using proper relational syntax
+    const coursesToCreate = courseIds
+      ? courseIds.map((cId: string) => ({
+          course: { connect: { id: cId } },
+        }))
+      : body.courses.map((c: any) => {
+          const entry: any = {
+            course: { connect: { id: c.courseId } },
+          };
+          if (Array.isArray(c.teacherIds) && c.teacherIds.length > 0) {
+            entry.teachers = {
+              connect: c.teacherIds.map((tId: string) => ({ id: tId })),
+            };
+          }
+          return entry;
+        });
+
+    const bundle = await prisma.bundle.create({
       data: {
         title: title.trim(),
         slug,
@@ -75,7 +94,7 @@ export async function POST(req: NextRequest) {
         price,
         isPublished: isPublished ?? false,
         courses: {
-          create: courseIds.map((courseId: string) => ({ courseId })),
+          create: coursesToCreate,
         },
       },
       include: {
@@ -89,3 +108,4 @@ export async function POST(req: NextRequest) {
     return apiServerError();
   }
 }
+

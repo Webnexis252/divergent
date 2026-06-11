@@ -321,6 +321,25 @@ function QuickRouteCard({ description, href, icon: Icon, title }: { description:
 
 type CourseGroup = { courseTitle: string; courseSlug: string; classes: LiveClassCardItem[] };
 
+function groupByMonth<T>(items: T[], dateExtractor: (item: T) => Date) {
+  const groups: Record<string, T[]> = {};
+  items.forEach(item => {
+    const d = new Date(dateExtractor(item));
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
+  });
+  
+  return Object.keys(groups)
+    .sort((a, b) => b.localeCompare(a))
+    .map(key => {
+      const [year, month] = key.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      return { key, label, items: groups[key] };
+    });
+}
+
 function PastClassRow({ item }: { item: LiveClassCardItem }) {
   const replayHref = `/dashboard/live-classes/${item.id}/recording`;
   const date = new Date(item.startTime);
@@ -358,9 +377,37 @@ function PastClassRow({ item }: { item: LiveClassCardItem }) {
   );
 }
 
+function PastMonthAccordion({ group }: { group: { key: string; label: string; items: LiveClassCardItem[] } }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-t border-gray-100 first:border-t-0">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between bg-gray-50/50 px-5 py-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-100"
+        aria-expanded={open}
+      >
+        <span>{group.label} ({group.items.length})</span>
+        <ChevronDown className={cx("h-4 w-4 text-gray-400 transition-transform duration-200", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="divide-y divide-gray-100">
+          {group.items.map((cls) => (
+            <PastClassRow key={cls.id} item={cls} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PastCourseAccordion({ group }: { group: CourseGroup }) {
   const [open, setOpen] = useState(false);
   const count = group.classes.length;
+  
+  const monthGroups = useMemo(() => {
+    return groupByMonth(group.classes, (item) => new Date(item.startTime));
+  }, [group.classes]);
+
   return (
     <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-black/5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
       <button
@@ -382,9 +429,9 @@ function PastCourseAccordion({ group }: { group: CourseGroup }) {
         <ChevronDown className={cx("h-5 w-5 text-gray-400 transition-transform duration-200", open && "rotate-180")} />
       </button>
       {open && (
-        <div>
-          {group.classes.map((cls) => (
-            <PastClassRow key={cls.id} item={cls} />
+        <div className="border-t border-gray-100">
+          {monthGroups.map((monthGroup) => (
+            <PastMonthAccordion key={monthGroup.key} group={monthGroup} />
           ))}
         </div>
       )}
