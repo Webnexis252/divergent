@@ -46,6 +46,7 @@ export default function AdminLiveClassesPage() {
   const [recordingUrl, setRecordingUrl] = useState("");
   const [recordingFile, setRecordingFile] = useState<File | null>(null);
   const [recordingSaving, setRecordingSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [recordingError, setRecordingError] = useState("");
   const [recordingSuccess, setRecordingSuccess] = useState("");
 
@@ -156,20 +157,52 @@ export default function AdminLiveClassesPage() {
       let finalUrl = recordingUrl.trim();
 
       if (recordingTab === "upload" && recordingFile) {
-        const formData = new FormData();
-        formData.append("file", recordingFile);
-
-        const uploadRes = await fetch("/api/upload/video", {
-          method: "POST",
-          body: formData,
-        });
-        const uploadPayload = await uploadRes.json();
+        setUploadProgress(0);
         
-        if (!uploadRes.ok || !uploadPayload.success) {
-          throw new Error(uploadPayload.error ?? "Failed to upload video file");
+        // 1. Get signed URL to upload directly to Supabase
+        const signRes = await fetch("/api/upload/video/sign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: recordingFile.name })
+        });
+        const signPayload = await signRes.json();
+        
+        if (!signRes.ok || !signPayload.success) {
+          throw new Error(signPayload.error ?? "Failed to initialize upload");
         }
         
-        finalUrl = uploadPayload.data.url;
+        const { signedUrl, token, publicUrl } = signPayload.data;
+
+        // 2. Upload file directly to Supabase via XMLHttpRequest for true progress
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", signedUrl);
+          xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+          xhr.setRequestHeader("Content-Type", recordingFile.type);
+          // Supabase prefers the cache control to be explicit if possible, but it's optional.
+          
+          xhr.upload.addEventListener("progress", (e) => {
+            if (e.lengthComputable) {
+              const percent = Math.round((e.loaded / e.total) * 100);
+              setUploadProgress(percent);
+            }
+          });
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+            } else {
+              reject(new Error("Failed to upload to storage"));
+            }
+          };
+          
+          xhr.onerror = () => reject(new Error("Network error during upload"));
+          
+          // Send raw file body (not FormData) for signed URL
+          xhr.send(recordingFile);
+        });
+        
+        finalUrl = publicUrl;
       }
 
       await handleSaveRecordingUrl(finalUrl);
@@ -188,9 +221,11 @@ export default function AdminLiveClassesPage() {
         setRecordingUrl("");
         setRecordingFile(null);
         setRecordingSuccess("");
+        setUploadProgress(0);
       }, 1500);
     } catch (err: unknown) {
       setRecordingError(err instanceof Error ? err.message : "Network error — please try again.");
+      setUploadProgress(0);
     } finally {
       setRecordingSaving(false);
     }
@@ -735,8 +770,8 @@ export default function AdminLiveClassesPage() {
                           accept="video/mp4,video/webm,video/ogg,video/quicktime"
                           onChange={(e) => {
                             const file = e.target.files?.[0] || null;
-                            if (file && file.size > 500 * 1024 * 1024) {
-                              setRecordingError("File is too large. Max size is 500 MB.");
+                            if (file && file.size > 10 * 1024 * 1024 * 1024) {
+                              setRecordingError("File is too large. Max size is 10 GB.");
                               setRecordingFile(null);
                               e.target.value = ''; // clear input
                             } else {
@@ -748,7 +783,7 @@ export default function AdminLiveClassesPage() {
                         />
                       </div>
                       <p className="mt-2 text-[12px] text-[#94a3b8]">
-                        Upload a local video file (MP4, WEBM, OGG, MOV). Max size: 500 MB.
+                        Upload a local video file (MP4, WEBM, OGG, MOV). Max size: 10 GB.
                       </p>
                     </div>
                   )}
@@ -768,6 +803,21 @@ export default function AdminLiveClassesPage() {
                     <Check className="h-3.5 w-3.5" />
                     {recordingSuccess}
                   </motion.p>
+                )}
+
+                {recordingSaving && recordingTab === "upload" && (
+                  <div className="mt-4">
+                    <div className="flex justify-between text-xs mb-1 font-medium text-[#475569]">
+                      <span>{uploadProgress === 100 ? "Processing video..." : "Uploading..."}</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-[#e2e8f0] rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-[#2563eb] h-full rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
 

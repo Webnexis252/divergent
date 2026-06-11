@@ -10,12 +10,12 @@ const ALLOWED_TYPES: Record<string, string> = {
   'video/quicktime': 'mov',
 };
 
-const MAX_SIZE = 500 * 1024 * 1024; // 500 MB
+const MAX_SIZE = 10 * 1024 * 1024 * 1024; // 10 GB
 
 /**
  * POST /api/upload/video
  * Accepts multipart/form-data with a single "file" field.
- * Allowed types: MP4, WEBM, OGG, MOV — up to 500 MB.
+ * Allowed types: MP4, WEBM, OGG, MOV — up to 10 GB.
  * Uploads to Supabase Storage bucket `uploads` under `videos/`.
  * Returns { url: "<public URL>" }
  */
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (file.size > MAX_SIZE) {
-      return apiError('Video size must be under 500 MB', 400);
+      return apiError('Video size must be under 10 GB', 400);
     }
 
     const bytes = await file.arrayBuffer();
