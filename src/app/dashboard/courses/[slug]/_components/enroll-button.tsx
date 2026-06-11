@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { load } from "@cashfreepayments/cashfree-js";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle2, Loader2, Sparkles, AlertCircle, ShieldCheck } from "lucide-react";
+import { PaymentGatewayModal } from "@/app/_components/payment-gateway-modal";
 
 type EnrollmentStatus = "idle" | "loading" | "enrolled" | "error";
 
@@ -24,91 +24,36 @@ export function EnrollButton({
     initialEnrolled ? "enrolled" : "idle",
   );
   const [errorMessage, setErrorMessage] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   async function handleEnroll() {
     if (status === "loading" || status === "enrolled") return;
+    
+    if (price > 0) {
+      setIsModalOpen(true);
+      return;
+    }
+
     setStatus("loading");
     setErrorMessage("");
 
     try {
-      if (price > 0) {
-        // 1. Create order
-        const response = await fetch("/api/payments/create-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ courseId }),
-        });
-        const json = await response.json();
+      // Free enrollment logic
+      const response = await fetch(`/api/courses/${courseId}/enroll`, {
+        method: "POST",
+      });
+      const json = await response.json();
 
-        if (!response.ok || !json.success) {
-          if (json.error === "Already enrolled") {
-            setStatus("enrolled");
-            return;
-          }
-          setErrorMessage(json.error ?? "Could not initiate payment.");
-          setStatus("error");
-          return;
-        }
-
-        if (json.data?.bypassPayment) {
+      if (!response.ok || !json.success) {
+        if (response.status === 409) {
           setStatus("enrolled");
           return;
         }
-
-        const { payment_session_id, cashfree_environment } = json.data;
-
-        // 2. Load Cashfree SDK using the environment returned by the server.
-        // This avoids relying on NEXT_PUBLIC_ build-time variables which can
-        // cause a sandbox/production mismatch if not set before the build.
-        const mode = cashfree_environment === "production" ? "production" : "sandbox";
-        const cashfree = await load({ mode });
-
-        const result = await cashfree.checkout({
-          paymentSessionId: payment_session_id,
-          redirectTarget: "_modal", // Open Cashfree in a popup modal
-        });
-
-        if (result?.error) {
-          console.error("Cashfree checkout error:", result.error);
-          setErrorMessage(result.error.message ?? "Payment failed or cancelled.");
-          setStatus("error");
-          return;
-        }
-        
-        // Modal closed or payment completed. Verify with backend.
-        const verifyRes = await fetch("/api/payments/verify-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ order_id: json.data.order_id, courseId }),
-        });
-        const verifyJson = await verifyRes.json();
-        
-        if (verifyRes.ok && verifyJson.success) {
-          setStatus("enrolled");
-          // Optionally, redirect to course page
-          window.location.href = `/dashboard/courses/${courseId}`;
-        } else {
-          setErrorMessage(verifyJson.error ?? "Payment verification failed.");
-          setStatus("error");
-        }
-      } else {
-        // Free enrollment logic
-        const response = await fetch(`/api/courses/${courseId}/enroll`, {
-          method: "POST",
-        });
-        const json = await response.json();
-
-        if (!response.ok || !json.success) {
-          if (response.status === 409) {
-            setStatus("enrolled");
-            return;
-          }
-          setErrorMessage(json.error ?? "Could not enroll. Please try again.");
-          setStatus("error");
-          return;
-        }
-        setStatus("enrolled");
+        setErrorMessage(json.error ?? "Could not enroll. Please try again.");
+        setStatus("error");
+        return;
       }
+      setStatus("enrolled");
     } catch {
       setErrorMessage("Something went wrong. Please try again.");
       setStatus("error");
@@ -205,6 +150,22 @@ export function EnrollButton({
           <p className="text-[13px] leading-5 text-red-700">{errorMessage}</p>
         </motion.div>
       )}
+
+      <PaymentGatewayModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        courseId={courseId}
+        onSuccess={() => {
+          setIsModalOpen(false);
+          setStatus("enrolled");
+          window.location.href = `/dashboard/courses/${courseId}`;
+        }}
+        onError={(msg) => {
+          setIsModalOpen(false);
+          setErrorMessage(msg);
+          setStatus("error");
+        }}
+      />
     </div>
   );
 }

@@ -461,8 +461,11 @@ model Payment {
   amount            Float
   currency          String        @default("INR")
   status            PaymentStatus @default(PENDING)
+  paymentGateway    String        @default("CASHFREE")
   cashfreeOrderId   String?
   cashfreePaymentId String?
+  razorpayOrderId   String?
+  razorpayPaymentId String?
   couponCode        String?
   discountAmount    Float         @default(0)
   invoiceUrl        String?
