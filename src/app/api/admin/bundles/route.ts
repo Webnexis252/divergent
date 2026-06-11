@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
         courses: {
           include: {
             course: { select: { id: true, title: true, thumbnail: true, price: true } },
+            teachers: { select: { id: true, name: true, image: true } },
           },
         },
         _count: { select: { payments: true } },
