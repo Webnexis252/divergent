@@ -187,6 +187,7 @@ async function getCourseEnrollment(userId: string, courseId: string) {
       },
       select: {
         id: true,
+        status: true,
         progressPercent: true,
         bundleId: true,
       },
@@ -307,7 +308,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       ? enrollment.status === EnrollmentStatus.ACTIVE ||
         enrollment.status === EnrollmentStatus.COMPLETED ||
         enrollment.status === EnrollmentStatus.PAUSED
-      : Boolean(enrollment?.id);
+      : false; // Never treat an enrollment without a known ACTIVE status as enrolled
 
   // Fetch real completed lesson count from LessonProgress
   const allCourseLessonIds = course.chapters.flatMap((ch) => ch.lessons.map((l) => l.id));
