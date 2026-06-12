@@ -36,9 +36,9 @@ export default async function AdminExamsPage() {
 
             <Link
               href="/admin/exams/create"
-              className="shrink-0 rounded-[16px] bg-white px-6 py-3 text-[14px] font-semibold text-[#2563eb] shadow-[0_8px_24px_rgba(0,0,0,0.14)] transition hover:scale-105 hover:shadow-[0_12px_28px_rgba(0,0,0,0.18)]"
+              className="shrink-0 rounded-[16px] bg-white px-6 py-3 text-[14px] font-semibold text-blue-600 shadow-[0_8px_24px_rgba(0,0,0,0.14)] transition hover:scale-105 hover:shadow-[0_12px_28px_rgba(0,0,0,0.18)]"
             >
-              Create test
+              <span className="text-blue-600">Create test</span>
             </Link>
           </div>
         </section>
