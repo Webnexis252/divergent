@@ -9,12 +9,14 @@ type EnrollmentStatus = "idle" | "loading" | "enrolled" | "error";
 
 export function EnrollButton({
   courseId,
+  courseSlug,
   courseTitle,
   price = 0,
   initialEnrolled,
   variant = "default",
 }: {
   courseId: string;
+  courseSlug: string;
   courseTitle: string;
   price?: number;
   initialEnrolled: boolean;
@@ -155,10 +157,10 @@ export function EnrollButton({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         courseId={courseId}
-        onSuccess={() => {
+        onSuccess={(redirectUrl) => {
           setIsModalOpen(false);
           setStatus("enrolled");
-          window.location.href = `/dashboard/courses/${courseId}`;
+          window.location.href = redirectUrl ?? `/dashboard/courses/${courseSlug}`;
         }}
         onError={(msg) => {
           setIsModalOpen(false);

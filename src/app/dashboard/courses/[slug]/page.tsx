@@ -1036,6 +1036,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                             <div className="pt-2">
                               <EnrollButton
                                 courseId={course.id}
+                                courseSlug={course.slug}
                                 courseTitle={course.title}
                                 initialEnrolled={false}
                                 price={course.price}

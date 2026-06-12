@@ -56,12 +56,23 @@ export async function POST(req: NextRequest) {
         select: { courseId: true },
       });
       await Promise.all(bundleCourses.map((bc: { courseId: string }) => ensureActiveEnrollmentWithXp(auth.userId, bc.courseId, 'ACTIVE', true, bundleId)));
-      return apiSuccess({ enrolled: true, type: 'bundle', courseCount: bundleCourses.length });
+
+      const bundle = await (prisma as any).bundle.findUnique({
+        where: { id: bundleId },
+        select: { slug: true },
+      });
+      const redirectUrl = bundle ? `/dashboard/bundles/${bundle.slug}?success=true` : '/dashboard/courses';
+      return apiSuccess({ enrolled: true, type: 'bundle', courseCount: bundleCourses.length, redirectUrl });
     }
 
     // Single course enrollment
     const { enrollment } = await ensureActiveEnrollmentWithXp(auth.userId, courseId);
-    return apiSuccess({ enrolled: true, enrollment });
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { slug: true },
+    });
+    const redirectUrl = course ? `/dashboard/courses/${course.slug}?success=true` : '/dashboard/courses';
+    return apiSuccess({ enrolled: true, enrollment, redirectUrl });
   } catch (error: unknown) {
     console.error("VERIFY ORDER ERROR:", error);
     return apiServerError(error instanceof Error ? error.message : "Could not verify payment");

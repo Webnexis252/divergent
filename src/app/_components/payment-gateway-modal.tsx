@@ -8,7 +8,7 @@ import { load } from "@cashfreepayments/cashfree-js";
 export type PaymentGatewayModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (redirectUrl?: string) => void;
   onError: (msg: string) => void;
   courseId?: string;
   bundleId?: string;
@@ -89,7 +89,7 @@ export function PaymentGatewayModal({
         const verifyJson = await verifyRes.json();
         if (verifyRes.ok && verifyJson.success) {
           setIsLoading(false);
-          onSuccess();
+          onSuccess(verifyJson.data?.redirectUrl);
         } else {
           throw new Error(verifyJson.error ?? "Payment verification failed.");
         }
@@ -123,7 +123,7 @@ export function PaymentGatewayModal({
               });
               const verifyJson = await verifyRes.json();
               if (verifyRes.ok && verifyJson.success) {
-                onSuccess();
+                onSuccess(verifyJson.data?.redirectUrl);
               } else {
                 throw new Error(verifyJson.error ?? "Payment verification failed.");
               }
