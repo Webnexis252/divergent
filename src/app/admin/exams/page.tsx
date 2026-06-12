@@ -27,10 +27,10 @@ export default async function AdminExamsPage() {
                 Exam Management
               </p>
               <h1 className="mt-4 text-[clamp(2rem,4vw,3.2rem)] font-semibold leading-[0.95] tracking-[-0.05em]">
-                AI-Powered Exams
+                Interactive Exams
               </h1>
               <p className="mt-4 max-w-[520px] text-[15px] leading-7 text-white/88">
-                Upload PDF question papers to automatically extract questions and generate interactive exam modules for your students.
+                Create and manage interactive exam modules for your students to test their knowledge and track their progress.
               </p>
             </div>
 
