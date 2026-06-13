@@ -82,6 +82,12 @@ export function BuilderDrawer({
 
     const type = target!.fixedQuestionType;
 
+    if (!qForm.imageUrl) {
+      setError("Question Image is required");
+      setSaving(false);
+      return;
+    }
+
     const trimmedOptions = qForm.options.map((option) => option.trim()).filter(Boolean);
     if ((type === "SCQ" || type === "MCQ") && trimmedOptions.length < 2) {
       setError("Choice questions need at least 2 options");
@@ -185,8 +191,8 @@ export function BuilderDrawer({
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Question Prompt *</label>
-                  <textarea required value={qForm.prompt} onChange={e => setQForm({...qForm, prompt: e.target.value})} className="w-full rounded-md border p-2" rows={3} />
+                  <label className="mb-1 block text-sm font-medium">Question Prompt (Optional)</label>
+                  <textarea value={qForm.prompt} onChange={e => setQForm({...qForm, prompt: e.target.value})} className="w-full rounded-md border p-2" rows={3} />
                   
                   {qForm.imageUrl ? (
                       <div className="mt-3 overflow-hidden rounded-[14px] border border-[#e5e7eb] bg-gray-50/50">
@@ -203,7 +209,7 @@ export function BuilderDrawer({
                         onClick={() => document.getElementById('qImageUpload2')?.click()}
                         className="mt-2 flex w-fit items-center gap-2 rounded-lg border border-[#e5e7eb] px-3 py-1.5 text-[12px] font-medium text-gray-600 transition hover:bg-gray-50"
                       >
-                        <ImagePlus className="h-3.5 w-3.5" /> Add Question Image (Optional)
+                        <ImagePlus className="h-3.5 w-3.5" /> Add Question Image *
                       </button>
                     )}
                     <input

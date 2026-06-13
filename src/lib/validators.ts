@@ -241,12 +241,12 @@ export const CreateTestQuestionSchema = z.object({
   category: z
     .enum(QUESTION_CATEGORY_OPTIONS)
     .default('CONCEPT'),
-  prompt: z.string().min(5, 'Question prompt is required'),
+  prompt: z.string().optional().default(''),
   explanation: z.string().optional(),
   explanationImageUrl: z.string().nullable().optional(),
   options: z.array(z.string()).default([]),              // SCQ/MCQ: options list; SKETCH/NUMERIC: empty
   correctAnswer: z.union([z.string(), z.array(z.string())]).default([]), // SCQ/NUMERIC: string; MCQ: string[]; SKETCH: []
-  imageUrl: z.string().optional().nullable(),
+  imageUrl: z.string().min(1, 'Question Image is required'),
   referenceImage: z.string().optional().nullable(),     // SKETCH only: teacher's reference sketch
   points: z.number().int().min(1).default(1),
   negativeMarks: z.number().min(0).default(0),
