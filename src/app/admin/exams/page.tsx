@@ -5,7 +5,6 @@ import prisma from "@/lib/prisma";
 import { DeleteExamButton } from "./_components/delete-exam-button";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
 import { cx } from "@/lib/cx";
-import { buttonStyles } from "@/components/ui/button";
 
 export default async function AdminExamsPage() {
   const auth = await requirePageAuth(["ADMIN", "SUPER_ADMIN"]);
@@ -40,14 +39,7 @@ export default async function AdminExamsPage() {
               </div>
               <Link
                 href="/admin/exams/create"
-                className={cx(
-                  buttonStyles({
-                    variant: "secondary",
-                    size: "md",
-                    className:
-                      "shrink-0 rounded-[18px] border-white/70 bg-white/94 text-[#0284c7] hover:bg-white",
-                  }),
-                )}
+                className="shrink-0 inline-flex items-center justify-center gap-2 rounded-full border border-white/70 bg-white/95 px-6 py-3 text-[15px] font-semibold text-[#0284c7] transition hover:bg-white hover:scale-105"
               >
                 + Create test
               </Link>
