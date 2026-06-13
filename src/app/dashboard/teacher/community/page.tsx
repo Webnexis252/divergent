@@ -415,6 +415,8 @@ export default function TeacherCommunityPage() {
       .catch(() => {});
   }, []);
 
+  const inflightLikesRef = useRef<Set<string>>(new Set());
+
   const loadPosts = (chanId = selectedChannelId) => {
     const url = chanId
       ? `/api/community/posts?channelId=${chanId}`
@@ -423,7 +425,17 @@ export default function TeacherCommunityPage() {
       .then((r) => r.json())
       .then((json) => {
         if (json.success) {
-          setPosts(json.data.posts);
+          setPosts(prev => {
+            return json.data.posts.map((newPost: Post) => {
+              if (inflightLikesRef.current.has(newPost.id)) {
+                const existing = prev.find(p => p.id === newPost.id);
+                if (existing) {
+                  return { ...newPost, likedByMe: existing.likedByMe, likeCount: existing.likeCount };
+                }
+              }
+              return newPost;
+            });
+          });
           setChannels(json.data.channels);
         }
       })
@@ -568,6 +580,7 @@ export default function TeacherCommunityPage() {
   };
 
   const handleToggleLike = async (postId: string) => {
+    inflightLikesRef.current.add(postId);
     // Optimistic update
     setPosts((prev) =>
       prev.map((p) => {
@@ -587,6 +600,8 @@ export default function TeacherCommunityPage() {
       await fetch(`/api/community/posts/${postId}/like`, { method: "POST" });
     } catch {
       loadPosts(); // Revert
+    } finally {
+      setTimeout(() => inflightLikesRef.current.delete(postId), 2000);
     }
   };
 
