@@ -14,9 +14,15 @@ function describeSectorPath(
   startAngle: number,
   endAngle: number
 ) {
+  const angleDiff = endAngle - startAngle;
+  if (angleDiff >= Math.PI * 2 - 0.0001) {
+    return `M ${center} ${center - radius} A ${radius} ${radius} 0 1 1 ${center} ${center + radius} A ${radius} ${radius} 0 1 1 ${center} ${center - radius} Z`;
+  }
+
   const start = toPolarPoint(center, radius, startAngle);
   const end = toPolarPoint(center, radius, endAngle);
-  return `M ${center} ${center} L ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y} Z`;
+  const largeArcFlag = angleDiff > Math.PI ? 1 : 0;
+  return `M ${center} ${center} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
 }
 
 export function CategoryPerformancePanel({
