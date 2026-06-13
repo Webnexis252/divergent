@@ -508,7 +508,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
             <section className="relative px-0 sm:px-4 xl:pr-10">
               <div className="mx-auto max-w-[1368px]">
                 <RevealSection>
-                  <div className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(135deg,#38c1ff_0%,#2db4f0_40%,#45caff_100%)] px-6 pb-12 pt-10 sm:px-10 lg:px-14 xl:min-h-[436px] xl:px-[70px] xl:pb-20 xl:pt-[52px]">
+                  <div className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(135deg,#38c1ff_0%,#2db4f0_40%,#45caff_100%)] px-6 pb-12 pt-10 sm:px-10 lg:px-14 xl:px-[70px] xl:pb-[52px] xl:pt-[52px]">
                     {/* Decorative shapes */}
                     <div className="pointer-events-none absolute right-[170px] top-0 h-[34px] w-[220px] rounded-b-[25px] bg-white/15" />
                     <div className="pointer-events-none absolute right-[116px] top-0 h-[93px] w-[117px] rounded-bl-[20px] rounded-tr-[40px] bg-white/12" />
@@ -898,7 +898,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     </RevealSection>
                   </div>
 
-                  <div className="relative z-20 space-y-4 xl:-mt-[226px]">
+                  <div className="relative z-20 space-y-4">
                     <RevealSection delay={0.08}>
                       <aside className="rounded-[24px] bg-white px-[24px] pb-[24px] pt-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.03]">
                         <div className="space-y-5">
