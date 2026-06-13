@@ -34,6 +34,7 @@ type LiveClass = {
   duration: number;
   meetingUrl: string | null;
   recordingUrl: string | null;
+  teacherId?: string | null;
   isEnded: boolean;
   createdAt: Date;
 };
@@ -106,8 +107,10 @@ function statusBadge(status: string) {
 
 export default function AdminCourseDashboardUI({
   initialCourse,
+  availableTeachers = [],
 }: {
   initialCourse: CourseDetails;
+  availableTeachers?: { id: string; name: string | null; email: string | null }[];
 }) {
   const router = useRouter();
   const [course, setCourse] = useState<CourseDetails>(initialCourse);
@@ -203,6 +206,7 @@ export default function AdminCourseDashboardUI({
     startTime: "",
     duration: 60,
     meetingUrl: "",
+    teacherId: "",
   });
 
   const handleCreateLiveClass = async (e: React.FormEvent) => {
@@ -226,7 +230,7 @@ export default function AdminCourseDashboardUI({
         liveClasses: [payload.data, ...prev.liveClasses],
       }));
       setShowLiveClassForm(false);
-      setLiveClassForm({ title: "", description: "", startTime: "", duration: 60, meetingUrl: "" });
+      setLiveClassForm({ title: "", description: "", startTime: "", duration: 60, meetingUrl: "", teacherId: "" });
     } catch (err) {
       setLiveClassError(err instanceof Error ? err.message : "Network error");
     } finally {
@@ -730,6 +734,25 @@ export default function AdminCourseDashboardUI({
                           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                         />
                       </div>
+                      <div className="sm:col-span-1 lg:col-span-1">
+                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                          Assign Teacher (optional)
+                        </label>
+                        <select
+                          value={liveClassForm.teacherId}
+                          onChange={(e) =>
+                            setLiveClassForm({ ...liveClassForm, teacherId: e.target.value })
+                          }
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                        >
+                          <option value="">No Teacher Assigned</option>
+                          {availableTeachers.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name || t.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     <div className="mt-4 flex justify-end">
                       <button
@@ -792,6 +815,16 @@ export default function AdminCourseDashboardUI({
                                       </span>
                                       <span>·</span>
                                       <span>{cls.duration}m</span>
+                                      {cls.teacherId && (
+                                        <>
+                                          <span>·</span>
+                                          <span>
+                                            Teacher:{" "}
+                                            {availableTeachers.find((t) => t.id === cls.teacherId)
+                                              ?.name || "Assigned"}
+                                          </span>
+                                        </>
+                                      )}
                                       {cls.isEnded && (
                                         <>
                                           <span>·</span>

@@ -60,6 +60,7 @@ model User {
   teacherApprovalRequests TeacherApprovalRequest[] @relation("AdminTeacherRequests")
   announcementRecipients  AnnouncementRecipient[]
   dataExportRequests      DataExportRequest[]      @relation("AdminExportRequests")
+  teachingLiveClasses     LiveClass[]              @relation("LiveClassTeacher")
 }
 
 model Course {
@@ -408,6 +409,8 @@ model LiveClass {
   attendances      Attendance[]
   teacherResources TeacherResource[]
   course           Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacherId        String?
+  teacher          User?             @relation("LiveClassTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
 
   @@index([courseId])
   // Composite index for the (courseId, startTime < now) range scan in profile-stats

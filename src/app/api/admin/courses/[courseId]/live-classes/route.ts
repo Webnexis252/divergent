@@ -40,6 +40,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         duration: true,
         meetingUrl: true,
         recordingUrl: true,
+        teacherId: true,
         isEnded: true,
         createdAt: true,
       },
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (!course) return apiNotFound('Course');
 
     const body = await req.json();
-    const { title, description, startTime, duration, meetingUrl } = body;
+    const { title, description, startTime, duration, meetingUrl, teacherId } = body;
 
     if (!title?.trim()) return apiError('Title is required', 400);
     if (!startTime) return apiError('Start time is required', 400);
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         startTime: new Date(startTime),
         duration: Number(duration),
         meetingUrl: meetingUrl?.trim() || null,
+        teacherId: teacherId?.trim() || null,
       },
       select: {
         id: true,
@@ -93,6 +95,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         duration: true,
         meetingUrl: true,
         recordingUrl: true,
+        teacherId: true,
         isEnded: true,
         createdAt: true,
       },

@@ -65,5 +65,15 @@ export default async function AdminCourseDetailsPage({ params }: { params: Promi
     return notFound();
   }
 
-  return <AdminCourseDashboardUI initialCourse={course} />;
+  const availableTeachers = await prisma.user.findMany({
+    where: {
+      role: {
+        in: ["MENTOR", "ADMIN", "SUPER_ADMIN"],
+      },
+    },
+    select: { id: true, name: true, email: true },
+    orderBy: { name: "asc" },
+  });
+
+  return <AdminCourseDashboardUI initialCourse={course} availableTeachers={availableTeachers} />;
 }
