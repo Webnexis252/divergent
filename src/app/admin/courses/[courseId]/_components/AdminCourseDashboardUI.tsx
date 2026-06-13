@@ -293,6 +293,8 @@ export default function AdminCourseDashboardUI({
   // ─────────────────────────────────────────────────────────────────────────
   const [showAssignmentForm, setShowAssignmentForm] = useState(false);
   const [savingAssignment, setSavingAssignment] = useState(false);
+  const [uploadingAssignment, setUploadingAssignment] = useState(false);
+  const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
   const [assignmentError, setAssignmentError] = useState("");
   const [assignmentForm, setAssignmentForm] = useState({
     title: "",
@@ -307,10 +309,28 @@ export default function AdminCourseDashboardUI({
     setSavingAssignment(true);
     setAssignmentError("");
     try {
+      let uploadedUrl = assignmentForm.attachmentUrl;
+
+      if (assignmentFile) {
+        setUploadingAssignment(true);
+        const formData = new FormData();
+        formData.append("file", assignmentFile);
+        
+        const uploadRes = await fetch("/api/upload/assignments", {
+          method: "POST",
+          body: formData,
+        });
+        const uploadPayload = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(uploadPayload.error || "Failed to upload file");
+        
+        uploadedUrl = uploadPayload.data.url;
+        setUploadingAssignment(false);
+      }
+
       const res = await fetch(`/api/admin/courses/${course.id}/assignments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(assignmentForm),
+        body: JSON.stringify({ ...assignmentForm, attachmentUrl: uploadedUrl }),
       });
       const payload = await res.json();
       if (!res.ok) throw new Error(payload.error || "Failed to create assignment");
@@ -321,8 +341,10 @@ export default function AdminCourseDashboardUI({
       }));
       setShowAssignmentForm(false);
       setAssignmentForm({ title: "", description: "", deadline: "", points: 0, attachmentUrl: "" });
+      setAssignmentFile(null);
     } catch (err) {
       setAssignmentError(err instanceof Error ? err.message : "Network error");
+      setUploadingAssignment(false);
     } finally {
       setSavingAssignment(false);
     }
@@ -1096,17 +1118,47 @@ export default function AdminCourseDashboardUI({
                       </div>
                       <div className="sm:col-span-2">
                         <label className="mb-1 block text-xs font-medium text-gray-600">
-                          Attachment URL (optional)
+                          Attachment (File or URL)
                         </label>
-                        <input
-                          type="url"
-                          value={assignmentForm.attachmentUrl}
-                          onChange={(e) =>
-                            setAssignmentForm({ ...assignmentForm, attachmentUrl: e.target.value })
-                          }
-                          placeholder="https://..."
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx,.zip"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                setAssignmentFile(e.target.files[0]);
+                                setAssignmentForm({ ...assignmentForm, attachmentUrl: "" });
+                              }
+                            }}
+                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none file:mr-4 file:rounded-full file:border-0 file:bg-amber-50 file:px-4 file:py-1 file:text-sm file:font-semibold file:text-amber-700 hover:file:bg-amber-100 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                          />
+                          <span className="text-sm font-medium text-gray-500">OR</span>
+                          <input
+                            type="url"
+                            disabled={!!assignmentFile}
+                            value={assignmentForm.attachmentUrl}
+                            onChange={(e) =>
+                              setAssignmentForm({ ...assignmentForm, attachmentUrl: e.target.value })
+                            }
+                            placeholder="https://..."
+                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 disabled:opacity-50 disabled:bg-gray-50"
+                          />
+                        </div>
+                        {assignmentFile && (
+                          <div className="mt-2 flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                            <div className="flex items-center gap-2 truncate">
+                              <FileText className="h-4 w-4 shrink-0 text-amber-600" />
+                              <span className="truncate font-medium">{assignmentFile.name}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setAssignmentFile(null)}
+                              className="ml-2 rounded-full p-1 hover:bg-amber-100"
+                            >
+                              <X className="h-3.5 w-3.5 text-amber-600" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="mt-4 flex justify-end">
@@ -1116,7 +1168,7 @@ export default function AdminCourseDashboardUI({
                         className="flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
                       >
                         {savingAssignment && <Loader2 className="h-4 w-4 animate-spin" />}
-                        {savingAssignment ? "Creating..." : "Create Assignment"}
+                        {savingAssignment || uploadingAssignment ? "Creating..." : "Create Assignment"}
                       </button>
                     </div>
                   </form>
