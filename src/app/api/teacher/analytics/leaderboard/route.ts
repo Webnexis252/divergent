@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         title: true,
         course: { select: { title: true } },
         attempts: {
-          where: { isPassed: true },
+          where: { submittedAt: { not: null } },
           orderBy: { score: 'desc' },
           take: 10,
           select: {
