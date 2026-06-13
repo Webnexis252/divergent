@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Clock,
   CheckCircle2,
+  Check,
 } from "lucide-react";
 import { PageTransition } from "@/app/dashboard/_components/motion-wrappers";
 import { formatShortDate } from "@/lib/date-format";
@@ -208,6 +209,19 @@ export default function AdminCourseDashboardUI({
     meetingUrl: "",
     teacherId: "",
   });
+
+  const [isTeacherDropdownOpen, setIsTeacherDropdownOpen] = useState(false);
+  const teacherDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (teacherDropdownRef.current && !teacherDropdownRef.current.contains(event.target as Node)) {
+        setIsTeacherDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleCreateLiveClass = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -734,24 +748,65 @@ export default function AdminCourseDashboardUI({
                           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                         />
                       </div>
-                      <div className="sm:col-span-1 lg:col-span-1">
+                      <div className="sm:col-span-1 lg:col-span-1 relative" ref={teacherDropdownRef}>
                         <label className="mb-1 block text-xs font-medium text-gray-600">
                           Assign Teacher (optional)
                         </label>
-                        <select
-                          value={liveClassForm.teacherId}
-                          onChange={(e) =>
-                            setLiveClassForm({ ...liveClassForm, teacherId: e.target.value })
-                          }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                        <button
+                          type="button"
+                          onClick={() => setIsTeacherDropdownOpen(!isTeacherDropdownOpen)}
+                          className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-50 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                         >
-                          <option value="">No Teacher Assigned</option>
-                          {availableTeachers.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.name || t.email}
-                            </option>
-                          ))}
-                        </select>
+                          <span className="truncate">
+                            {liveClassForm.teacherId
+                              ? availableTeachers.find((t) => t.id === liveClassForm.teacherId)?.name ||
+                                availableTeachers.find((t) => t.id === liveClassForm.teacherId)?.email
+                              : "No Teacher Assigned"}
+                          </span>
+                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                        </button>
+
+                        <AnimatePresence>
+                          {isTeacherDropdownOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-100 bg-white py-1 shadow-lg ring-1 ring-black/5"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setLiveClassForm({ ...liveClassForm, teacherId: "" });
+                                  setIsTeacherDropdownOpen(false);
+                                }}
+                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-purple-50"
+                              >
+                                <span className={!liveClassForm.teacherId ? "font-medium text-purple-600" : "text-gray-700"}>
+                                  No Teacher Assigned
+                                </span>
+                                {!liveClassForm.teacherId && <Check className="h-4 w-4 text-purple-600" />}
+                              </button>
+                              {availableTeachers.map((t) => (
+                                <button
+                                  key={t.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setLiveClassForm({ ...liveClassForm, teacherId: t.id });
+                                    setIsTeacherDropdownOpen(false);
+                                  }}
+                                  className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-purple-50"
+                                >
+                                  <span className={liveClassForm.teacherId === t.id ? "font-medium text-purple-600" : "text-gray-700"}>
+                                    {t.name || t.email}
+                                  </span>
+                                  {liveClassForm.teacherId === t.id && <Check className="h-4 w-4 text-purple-600" />}
+                                </button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
                     <div className="mt-4 flex justify-end">
