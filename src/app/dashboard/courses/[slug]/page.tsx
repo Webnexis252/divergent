@@ -897,7 +897,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                     </RevealSection>
                   </div>
 
-                  <div className="space-y-4 xl:-mt-[226px]">
+                  <div className="relative z-20 space-y-4 xl:-mt-[226px]">
                     <RevealSection delay={0.08}>
                       <aside className="rounded-[24px] bg-white px-[24px] pb-[24px] pt-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.03]">
                         <div className="space-y-5">
