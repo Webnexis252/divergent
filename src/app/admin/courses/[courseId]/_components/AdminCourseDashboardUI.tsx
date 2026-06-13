@@ -263,23 +263,9 @@ export default function AdminCourseDashboardUI({
       const payload = await res.json();
       if (!res.ok) throw new Error(payload.error || "Failed to create exam");
 
-      setCourse((prev) => ({
-        ...prev,
-        tests: [payload.data, ...prev.tests],
-      }));
-      setShowExamForm(false);
-      setExamForm({
-        title: "",
-        description: "",
-        type: "COURSE_EXAM",
-        durationMins: 60,
-        passingScore: 50,
-        maxAttempts: 1,
-        availableFrom: "",
-      });
+      router.push(`/admin/courses/${course.id}/exams/${payload.data.id}`);
     } catch (err) {
       setExamError(err instanceof Error ? err.message : "Network error");
-    } finally {
       setSavingExam(false);
     }
   };
