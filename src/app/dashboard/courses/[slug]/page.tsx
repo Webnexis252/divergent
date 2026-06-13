@@ -546,8 +546,13 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                       </FloatPulse>
                     </div>
 
-                    <div className="relative z-10 mt-10 xl:mt-[86px] xl:max-w-[calc(100%_-_423px)] 2xl:max-w-[877px]">
-                      <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.06)]">
+                  </div>
+                </RevealSection>
+
+                <div className="mt-6 grid gap-8 xl:grid-cols-[minmax(0,876px)_391px] xl:items-start">
+                  <div className="space-y-8">
+                    <RevealSection delay={0.04}>
+                      <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)]">
                         <div className="flex flex-col sm:flex-row">
                           <div className="flex min-h-[148px] w-full sm:w-[153px] shrink-0 flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,#ffc107_0%,#ffab00_100%)] px-6 py-7 text-center text-white">
                             <div className="relative rounded-full rounded-bl-sm border border-white/40 bg-white/10 p-2.5 backdrop-blur-sm">
@@ -585,12 +590,8 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </RevealSection>
+                    </RevealSection>
 
-                <div className="mt-6 grid gap-8 xl:grid-cols-[minmax(0,876px)_391px] xl:items-start">
-                  <div className="space-y-8">
                     <RevealSection delay={0.05}>
                       <section className="rounded-[18px] bg-white px-6 py-8 shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] sm:px-10 xl:px-11 xl:py-[42px]">
                         <div id="what-youll-learn" className="space-y-6">
