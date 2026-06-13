@@ -202,31 +202,19 @@ export default async function DashboardCoursesPage() {
     dbError = true;
   }
 
-  const currentEnrollment =
-    activeEnrollments.find((enrollment) => enrollment.course.isPublished) ?? null;
-  const displayName = viewer?.name?.trim() || "Student";
-  const activeCourse = currentEnrollment?.course ?? null;
-  const activeCourseLessonCount = activeCourse ? countLessons(activeCourse.chapters) : 0;
+  const publishedEnrollments = activeEnrollments.filter(e => e.course.isPublished);
 
-  // Fetch real completed lesson count for the active course
-  const activeCourseAllLessonIds = activeCourse
-    ? activeCourse.chapters.flatMap((ch) => ch.lessons.map((l) => l.id))
-    : [];
-  let activeCourseCompletedCount = 0;
-  if (auth?.userId && activeCourseAllLessonIds.length > 0) {
-    activeCourseCompletedCount = await prisma.lessonProgress.count({
+  let completedLessonIds = new Set<string>();
+  if (auth?.userId) {
+    const userCompletedLessons = await prisma.lessonProgress.findMany({
       where: {
         userId: auth.userId,
         isCompleted: true,
-        lessonId: { in: activeCourseAllLessonIds },
       },
+      select: { lessonId: true },
     });
+    completedLessonIds = new Set(userCompletedLessons.map(l => l.lessonId));
   }
-
-  const activeCourseProgress =
-    activeCourseLessonCount > 0
-      ? Math.round((activeCourseCompletedCount / activeCourseLessonCount) * 100)
-      : Math.max(0, Math.min(100, Math.round(currentEnrollment?.progressPercent ?? 0)));
 
   const exploreLinks = {
     currentCourse: "/dashboard/modules",
@@ -262,69 +250,83 @@ export default async function DashboardCoursesPage() {
                   <RevealSection className="space-y-6">
                     <div id="current-course">
                       <h1 className="text-[clamp(1.9rem,3vw,2rem)] font-medium text-black">
-                        Currently logged in course
+                        {publishedEnrollments.length > 1 ? "Currently logged in courses" : "Currently logged in course"}
                       </h1>
                     </div>
 
-                    {activeCourse ? (
-                      <AnimCard>
-                        <article className="max-w-[420px] overflow-hidden rounded-[20px] bg-white p-[12px] shadow-[0_4px_10px_rgba(0,0,0,0.25)]">
-                          <div className="relative overflow-hidden rounded-[18px] bg-[#dcdcdc]">
-                            <div
-                              aria-hidden="true"
-                              className="h-[160px] w-full bg-cover bg-center"
-                              style={{
-                                backgroundImage: activeCourse.thumbnail
-                                  ? `linear-gradient(180deg, rgba(8, 16, 24, 0.05), rgba(8, 16, 24, 0.2)), url("${activeCourse.thumbnail}")`
-                                  : `url("${assets.currentCourseFallback}")`,
-                              }}
-                            />
-                            <div className="pointer-events-none absolute inset-x-3 top-3 flex items-center justify-between gap-3">
-                              <span className="rounded-full bg-white px-2 py-1 text-[8px] font-semibold text-[#ff5e2f]">
-                                {activeCourseProgress}% Completed
-                              </span>
-                              <span className="rounded-full bg-white px-2 py-1 text-[8px] font-semibold text-black/72">
-                                {activeCourse._count.chapters} Modules
-                              </span>
-                            </div>
-                          </div>
+                    {publishedEnrollments.length > 0 ? (
+                      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {publishedEnrollments.map((enrollment) => {
+                          const course = enrollment.course;
+                          const lessonCount = countLessons(course.chapters);
+                          const courseLessonIds = course.chapters.flatMap((ch) => ch.lessons.map((l) => l.id));
+                          const completedCount = courseLessonIds.filter(id => completedLessonIds.has(id)).length;
+                          const progress = lessonCount > 0
+                            ? Math.round((completedCount / lessonCount) * 100)
+                            : Math.max(0, Math.min(100, Math.round(enrollment.progressPercent ?? 0)));
 
-                          <div className="pt-3">
-                            <h2 className="max-w-[18rem] text-[clamp(1.2rem,2vw,1.35rem)] font-medium leading-[1.08] text-black">
-                              {activeCourse.title}
-                            </h2>
-                            <p className="mt-1 text-[11px] text-[#8b8888]">
-                              by {activeCourse.teachers?.[0]?.name ?? "Expert Mentors"}
-                            </p>
-                            <p className="mt-1 text-[11px] font-medium text-[#4caf50]">
-                              {activeCourseCompletedCount} / {activeCourseLessonCount} lessons completed
-                              {activeCourse._count.tests > 0 ? ` • ${activeCourse._count.tests} tests` : ""}
-                            </p>
+                          return (
+                            <AnimCard key={enrollment.course.id}>
+                              <article className="h-full overflow-hidden rounded-[20px] bg-white p-[12px] shadow-[0_4px_10px_rgba(0,0,0,0.25)] flex flex-col">
+                                <div className="relative overflow-hidden rounded-[18px] bg-[#dcdcdc] shrink-0">
+                                  <div
+                                    aria-hidden="true"
+                                    className="h-[160px] w-full bg-cover bg-center"
+                                    style={{
+                                      backgroundImage: course.thumbnail
+                                        ? `linear-gradient(180deg, rgba(8, 16, 24, 0.05), rgba(8, 16, 24, 0.2)), url("${course.thumbnail}")`
+                                        : `url("${assets.currentCourseFallback}")`,
+                                    }}
+                                  />
+                                  <div className="pointer-events-none absolute inset-x-3 top-3 flex items-center justify-between gap-3">
+                                    <span className="rounded-full bg-white px-2 py-1 text-[8px] font-semibold text-[#ff5e2f]">
+                                      {progress}% Completed
+                                    </span>
+                                    <span className="rounded-full bg-white px-2 py-1 text-[8px] font-semibold text-black/72">
+                                      {course._count.chapters} Modules
+                                    </span>
+                                  </div>
+                                </div>
 
-                            <div className="mt-4 flex items-center justify-between gap-3">
-                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/8">
-                                <div
-                                  className="h-full rounded-full bg-[linear-gradient(90deg,#4caf50,#38c1ff)]"
-                                  style={{ width: `${activeCourseProgress}%` }}
-                                />
-                              </div>
+                                <div className="pt-3 flex flex-col flex-1">
+                                  <h2 className="max-w-[18rem] text-[clamp(1.1rem,1.5vw,1.25rem)] font-medium leading-[1.08] text-black">
+                                    {course.title}
+                                  </h2>
+                                  <p className="mt-1 text-[11px] text-[#8b8888]">
+                                    by {course.teachers?.[0]?.name ?? "Expert Mentors"}
+                                  </p>
+                                  <p className="mt-1 text-[11px] font-medium text-[#4caf50]">
+                                    {completedCount} / {lessonCount} lessons completed
+                                    {course._count.tests > 0 ? ` • ${course._count.tests} tests` : ""}
+                                  </p>
 
-                              <Link
-                                className={workspaceButtonStyles({
-                                  className: "h-[34px] px-4 text-[13px]",
-                                })}
-                                href="/dashboard/live-classes"
-                              >
-                                Continue Learning
-                              </Link>
-                            </div>
-                          </div>
-                        </article>
-                      </AnimCard>
+                                  <div className="mt-auto pt-4 flex items-center justify-between gap-3">
+                                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/8">
+                                      <div
+                                        className="h-full rounded-full bg-[linear-gradient(90deg,#4caf50,#38c1ff)]"
+                                        style={{ width: `${progress}%` }}
+                                      />
+                                    </div>
+
+                                    <Link
+                                      className={workspaceButtonStyles({
+                                        className: "h-[34px] px-4 text-[13px] shrink-0",
+                                      })}
+                                      href={`/dashboard/courses/${course.slug}`}
+                                    >
+                                      Continue
+                                    </Link>
+                                  </div>
+                                </div>
+                              </article>
+                            </AnimCard>
+                          );
+                        })}
+                      </div>
                     ) : (
                       <AnimCard>
                         <article className="max-w-[420px] rounded-[20px] bg-white px-6 py-7 shadow-[0_4px_10px_rgba(0,0,0,0.18)]">
-                          <p className="text-[1.15rem] font-semibold text-black">No active course yet</p>
+                          <p className="text-[1.15rem] font-semibold text-black">No active courses yet</p>
                           <p className="mt-3 text-[14px] leading-7 text-black/58">
                             As soon as you enroll in a program, it will appear here with your progress
                             and the fastest route back into the lessons.
@@ -333,7 +335,7 @@ export default async function DashboardCoursesPage() {
                             className={workspaceButtonStyles({
                               className: "mt-5 h-[38px] px-4 text-[13px]",
                             })}
-                            href="#course-catalog"
+                            href="#catalog"
                           >
                             Browse Courses
                           </Link>
