@@ -546,43 +546,41 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                       </FloatPulse>
                     </div>
 
-                    <div className="relative z-10 mt-10 xl:mt-[86px]">
-                      <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.06)] xl:max-w-[calc(100%-423px)] 2xl:max-w-[877px]">
-                        <div className="grid gap-5 sm:grid-cols-[153px_minmax(0,1fr)]">
-                          <div className="flex min-h-[148px] flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,#ffc107_0%,#ffab00_100%)] px-6 py-7 text-center text-white">
+                    <div className="relative z-10 mt-10 xl:mt-[86px] xl:max-w-[calc(100%_-_423px)] 2xl:max-w-[877px]">
+                      <div className="overflow-hidden rounded-[16px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.06)]">
+                        <div className="flex flex-col sm:flex-row">
+                          <div className="flex min-h-[148px] w-full sm:w-[153px] shrink-0 flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,#ffc107_0%,#ffab00_100%)] px-6 py-7 text-center text-white">
                             <div className="relative rounded-full rounded-bl-sm border border-white/40 bg-white/10 p-2.5 backdrop-blur-sm">
                               <Award className="h-6 w-6 text-white drop-shadow-sm" />
                             </div>
                             <p className="text-[20px] font-bold tracking-wide">Premium</p>
                           </div>
 
-                          <div className="grid gap-5 px-5 py-5 sm:grid-cols-[minmax(0,1fr)_1px_88px_1px_94px] sm:items-center sm:px-8 sm:py-0">
-                            <p className="text-[15px] leading-7 text-[#888] sm:max-w-[241px]">
+                          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-6 px-5 py-6 sm:px-8 sm:py-4 flex-1">
+                            <p className="text-[15px] leading-6 text-[#888] sm:max-w-[241px] min-w-[160px] flex-1 text-center sm:text-left">
                               The early explorers get 7 days exclusives
                             </p>
 
-                            <div className="hidden justify-center sm:flex">
-                              <div className="h-[90px] w-px bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
-                            </div>
+                            <div className="hidden h-[60px] w-px bg-gradient-to-b from-transparent via-gray-200 to-transparent xl:hidden 2xl:block sm:block" />
 
-                            <div className="flex flex-col items-center gap-2 text-center text-black">
-                              <Users className="h-8 w-8 text-[#38c1ff]/70" />
-                              <p className="text-[13px] font-semibold tabular-nums">{formatCompactCount(course._count.enrollments)}</p>
-                              <p className="text-[15px] font-bold">Learners</p>
-                            </div>
-
-                            <div className="hidden justify-center sm:flex">
-                              <div className="h-[90px] w-px bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
-                            </div>
-
-                            <div className="flex flex-col items-center gap-1.5 text-center text-black">
-                              <p className="text-[34px] font-extrabold leading-none tabular-nums">{course.courseRating || "4.7"}</p>
-                              <div className="flex items-center gap-0.5">
-                                {[1, 2, 3, 4, 5].map((i) => (
-                                  <Star key={i} className={cx("h-3.5 w-3.5", i <= Math.round(course.courseRating || 4.7) ? "fill-[#ffc107] text-[#ffc107]" : "fill-transparent text-[#ffc107]")} />
-                                ))}
+                            <div className="flex items-center gap-6">
+                              <div className="flex flex-col items-center gap-1.5 text-center text-black shrink-0">
+                                <Users className="h-7 w-7 text-[#38c1ff]/70" />
+                                <p className="text-[13px] font-semibold tabular-nums">{formatCompactCount(course._count.enrollments)}</p>
+                                <p className="text-[14px] font-bold">Learners</p>
                               </div>
-                              <p className="text-[12px] text-[#999]">{Math.max(course._count.enrollments, 1259).toLocaleString("en-IN")} ratings</p>
+
+                              <div className="h-[60px] w-px bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
+
+                              <div className="flex flex-col items-center gap-1 text-center text-black shrink-0">
+                                <p className="text-[30px] font-extrabold leading-none tabular-nums">{course.courseRating || "4.7"}</p>
+                                <div className="flex items-center gap-0.5">
+                                  {[1, 2, 3, 4, 5].map((i) => (
+                                    <Star key={i} className={cx("h-3.5 w-3.5", i <= Math.round(course.courseRating || 4.7) ? "fill-[#ffc107] text-[#ffc107]" : "fill-transparent text-[#ffc107]")} />
+                                  ))}
+                                </div>
+                                <p className="text-[11px] text-[#999]">{Math.max(course._count.enrollments, 1259).toLocaleString("en-IN")} ratings</p>
+                              </div>
                             </div>
                           </div>
                         </div>
