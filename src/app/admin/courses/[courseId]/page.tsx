@@ -23,8 +23,13 @@ export default async function AdminCourseDetailsPage({ params }: { params: Promi
         select: {
           id: true,
           title: true,
+          description: true,
           startTime: true,
+          duration: true,
+          meetingUrl: true,
           recordingUrl: true,
+          isEnded: true,
+          createdAt: true,
         },
       },
       assignments: {
@@ -32,6 +37,10 @@ export default async function AdminCourseDetailsPage({ params }: { params: Promi
         select: {
           id: true,
           title: true,
+          description: true,
+          deadline: true,
+          points: true,
+          status: true,
           createdAt: true,
         },
       },
@@ -40,8 +49,13 @@ export default async function AdminCourseDetailsPage({ params }: { params: Promi
         select: {
           id: true,
           title: true,
+          description: true,
+          type: true,
           status: true,
+          durationMins: true,
+          passingScore: true,
           createdAt: true,
+          _count: { select: { questions: true, attempts: true } },
         },
       },
     },
