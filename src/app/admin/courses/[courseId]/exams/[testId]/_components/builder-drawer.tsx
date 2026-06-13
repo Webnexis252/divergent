@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ImagePlus } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -23,7 +23,7 @@ export function BuilderDrawer({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  target: { type: "GROUP" | "QUESTION", partId: string, sectionId: string, groupId?: string, fixedQuestionType: QuestionType } | null;
+  target: { type: "GROUP" | "QUESTION" | "EDIT_QUESTION", partId: string, sectionId: string, groupId?: string, fixedQuestionType: QuestionType, initialQuestion?: any } | null;
   courseId: string;
   testId: string;
   onSuccess: () => void;
@@ -48,6 +48,48 @@ export function BuilderDrawer({
     negativeMarks: 0,
     allowPartialMarking: false,
   });
+
+  useEffect(() => {
+    if (target?.type === "EDIT_QUESTION" && target.initialQuestion) {
+      const q = target.initialQuestion;
+      
+      let initialCorrectAnswers = ["0"];
+      if (q.type === "SCQ" || q.type === "MCQ") {
+        initialCorrectAnswers = q.correctAnswer?.map((ans: string) => {
+          const idx = q.options?.indexOf(ans);
+          return idx !== -1 ? String(idx) : "0";
+        }) || ["0"];
+      } else {
+        initialCorrectAnswers = q.correctAnswer || ["0"];
+      }
+
+      setQForm({
+        category: q.category || "CONCEPT",
+        prompt: q.prompt || "",
+        explanation: q.explanation || "",
+        explanationImageUrl: q.explanationImageUrl || null,
+        options: q.options?.length ? q.options : ["Option 1", "Option 2", "Option 3", "Option 4"],
+        correctAnswer: initialCorrectAnswers,
+        imageUrl: q.imageUrl || null,
+        points: q.points || 1,
+        negativeMarks: q.negativeMarks || 0,
+        allowPartialMarking: q.allowPartialMarking || false,
+      });
+    } else {
+      setQForm({
+        category: "CONCEPT" as QuestionCategory,
+        prompt: "",
+        explanation: "",
+        explanationImageUrl: null,
+        options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+        correctAnswer: ["0"],
+        imageUrl: null,
+        points: 1,
+        negativeMarks: 0,
+        allowPartialMarking: false,
+      });
+    }
+  }, [target]);
 
   if (!isOpen || !target) return null;
 
@@ -119,8 +161,12 @@ export function BuilderDrawer({
     }
 
     try {
-      const res = await fetch(`/api/courses/${courseId}/tests/${testId}/questions`, {
-        method: "POST",
+      const url = target!.type === "EDIT_QUESTION"
+        ? `/api/courses/${courseId}/tests/${testId}/questions/${target!.initialQuestion.id}`
+        : `/api/courses/${courseId}/tests/${testId}/questions`;
+        
+      const res = await fetch(url, {
+        method: target!.type === "EDIT_QUESTION" ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...qForm,
@@ -130,13 +176,18 @@ export function BuilderDrawer({
           groupId: target!.groupId || undefined,
           options: qForm.options.filter((o) => o.trim()),
           correctAnswer: (type === "SCQ" || type === "MCQ")
-            ? qForm.correctAnswer.map((idx) => qForm.options[parseInt(idx, 10)]).filter((o) => o?.trim())
+            ? qForm.correctAnswer.map((idx) => {
+                // If it's an edit, we might be editing existing choices or adding new. We use the index selected by the user.
+                const val = parseInt(idx, 10);
+                if (isNaN(val)) return idx; // handle if correctAnswer already contained string value from initialQuestion
+                return qForm.options[val];
+              }).filter((o) => o?.trim())
             : qForm.correctAnswer,
         }),
       });
       
       const payload = await res.json();
-      if (!res.ok || !payload.success) throw new Error(payload.error || "Failed to add question");
+      if (!res.ok || !payload.success) throw new Error(payload.error || `Failed to ${target!.type === "EDIT_QUESTION" ? "update" : "add"} question`);
       
       setQForm({
         category: "CONCEPT", prompt: "", explanation: "", explanationImageUrl: null,
@@ -156,16 +207,16 @@ export function BuilderDrawer({
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[300] bg-black/20 backdrop-blur-sm flex justify-end"
+        className="fixed inset-0 z-[300] bg-black/40 backdrop-blur-sm flex justify-center items-center p-4 sm:p-6"
       >
         <motion.div
-          initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+          initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
           transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col"
+          className="w-full max-w-2xl bg-white max-h-[90vh] h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         >
           <div className="flex items-center justify-between border-b px-6 py-4">
             <h2 className="text-xl font-bold text-gray-900">
-              {target.type === "GROUP" ? "New Group" : "New Question"}
+              {target.type === "GROUP" ? "New Group" : target.type === "EDIT_QUESTION" ? "Edit Question" : "New Question"}
             </h2>
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full"><X className="h-5 w-5" /></button>
           </div>

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
 import { 
   Plus, Trash2, Clock, Target, Users, GripVertical,
-  X, Check, AlertCircle, CircleDot, CheckSquare, Hash, Palette, MoreVertical
+  X, Check, AlertCircle, CircleDot, CheckSquare, Hash, Palette, MoreVertical, Pencil
 } from "lucide-react";
 import { BuilderDrawer } from "./_components/builder-drawer";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -26,11 +26,12 @@ type Section = { id: string; title: string; questionType: QuestionType; groups: 
 type Part = { id: string; title: string; durationMins: number | null; sections: Section[] };
 
 type DrawerTarget = {
-  type: "GROUP" | "QUESTION";
+  type: "GROUP" | "QUESTION" | "EDIT_QUESTION";
   partId: string;
   sectionId: string;
   groupId?: string;
   fixedQuestionType: QuestionType;
+  initialQuestion?: any;
 };
 
 // Reusable Modal Component
@@ -218,10 +219,13 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
     });
   }
 
-  function renderQuestion(q: Question, index: number) {
+  function renderQuestion(q: Question, index: number, partId: string, sectionId: string, groupId?: string) {
     return (
       <div key={q.id} className="relative rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] group hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:border-blue-100 transition-all">
-        <div className="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100 flex items-center gap-1">
+          <button onClick={() => openDrawer({ type: "EDIT_QUESTION", partId, sectionId, groupId, fixedQuestionType: q.type, initialQuestion: q })} className="text-slate-400 hover:text-blue-500 hover:bg-blue-50 p-2 rounded-xl transition-colors">
+            <Pencil className="h-4 w-4" />
+          </button>
           <button onClick={() => confirmDelete("QUESTION", q.id)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors">
             <Trash2 className="h-4 w-4" />
           </button>
@@ -245,7 +249,7 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
             {q.options && q.options.length > 0 && (q.type === "SCQ" || q.type === "MCQ") && (
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {q.options.map((opt, i) => {
-                  const isCorrect = q.correctAnswer.includes(String(i));
+                  const isCorrect = q.correctAnswer.includes(opt) || q.correctAnswer.includes(String(i));
                   return (
                     <div key={i} className={`flex items-center gap-3 rounded-xl border p-3 text-[14px] transition-colors ${isCorrect ? "border-emerald-300 bg-emerald-50/50 text-emerald-900 font-semibold" : "border-slate-200 bg-slate-50/50 text-slate-700"}`}>
                       <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold ${isCorrect ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 bg-white text-slate-400"}`}>
@@ -428,7 +432,7 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
                                    {/* Direct Questions */}
                                    {section.questions?.length > 0 && (
                                      <div className="space-y-4">
-                                       {section.questions.map((q, i) => renderQuestion(q, i))}
+                                       {section.questions.map((q, i) => renderQuestion(q, i, part.id, section.id))}
                                      </div>
                                    )}
 
@@ -456,7 +460,7 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
                                            </div>
                                            <div className="p-5 bg-slate-50/30 space-y-4">
                                              {group.questions?.length > 0 ? (
-                                               group.questions.map((q, i) => renderQuestion(q, i))
+                                               group.questions.map((q, i) => renderQuestion(q, i, part.id, section.id, group.id))
                                              ) : (
                                                <p className="text-[13px] text-slate-400 font-medium text-center py-4">No questions added to this group yet.</p>
                                              )}
