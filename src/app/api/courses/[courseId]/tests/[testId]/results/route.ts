@@ -82,6 +82,7 @@ export async function GET(
       // Always build the grading breakdown so summary analytics stay accurate.
       let questionBreakdown = null;
       if (attempt.submittedAt) {
+        const sketchGrades = (attempt.sketchGrades as Record<string, { points: number; feedback?: string }>) || {};
         questionBreakdown = questionOrder
           .map((qId) => {
             const q = test.questions.find((tq) => tq.id === qId);
@@ -97,6 +98,15 @@ export async function GET(
               userAnswer,
               { includeAnswerKey: test.showResults }
             );
+
+            let isCorrect = gradedResult.isCorrect;
+            let pointsAwarded = gradedResult.pointsAwarded;
+
+            if (q.type === 'SKETCH' && sketchGrades[q.id] !== undefined) {
+              pointsAwarded = sketchGrades[q.id].points;
+              isCorrect = pointsAwarded > 0;
+            }
+
             return {
               id: q.id,
               prompt: q.prompt,
@@ -105,10 +115,10 @@ export async function GET(
               options: q.options,
               correctAnswer: gradedResult.correctAnswer,
               userAnswer,
-              isCorrect: gradedResult.isCorrect,
+              isCorrect,
               explanation: gradedResult.explanation,
               points: q.points,
-              pointsAwarded: gradedResult.pointsAwarded,
+              pointsAwarded,
               difficulty: q.difficulty,
             };
           })

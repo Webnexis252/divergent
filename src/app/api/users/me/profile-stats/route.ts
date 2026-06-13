@@ -220,13 +220,15 @@ export async function GET(req: NextRequest) {
 
         return attempt.test.questions.map((question) => {
           if (question.type === "SKETCH") {
+            const pointsAwarded =
+              attempt.gradingStatus === "FULLY_GRADED"
+                ? sketchGrades[question.id]?.points ?? 0
+                : 0;
             return {
               category: question.category,
               points: question.points,
-              pointsAwarded:
-                attempt.gradingStatus === "FULLY_GRADED"
-                  ? sketchGrades[question.id]?.points ?? 0
-                  : 0,
+              pointsAwarded,
+              isCorrect: attempt.gradingStatus === "FULLY_GRADED" ? pointsAwarded > 0 : null,
             };
           }
 

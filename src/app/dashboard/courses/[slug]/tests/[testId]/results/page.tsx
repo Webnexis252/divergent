@@ -104,6 +104,7 @@ export default async function TestResultsPage({
       // Always build the grading breakdown so summary analytics stay accurate.
       let questionBreakdown = null;
       if (attempt.submittedAt) {
+        const sketchGrades = (attempt.sketchGrades as Record<string, { points: number; feedback?: string }>) || {};
         questionBreakdown = questionOrder.reduce<QuestionBreakdown[]>((items, qId) => {
             const q = test.questions.find((tq) => tq.id === qId);
             if (!q) return items;
@@ -118,6 +119,15 @@ export default async function TestResultsPage({
               userAnswer,
               { includeAnswerKey: test.showResults }
             );
+
+            let isCorrect = gradedResult.isCorrect;
+            let pointsAwarded = gradedResult.pointsAwarded;
+
+            if (q.type === "SKETCH" && sketchGrades[q.id] !== undefined) {
+              pointsAwarded = sketchGrades[q.id].points;
+              isCorrect = pointsAwarded > 0;
+            }
+
             items.push({
               id: q.id,
               prompt: q.prompt,
@@ -126,10 +136,10 @@ export default async function TestResultsPage({
               options: q.options as string[],
               correctAnswer: gradedResult.correctAnswer,
               userAnswer,
-              isCorrect: gradedResult.isCorrect,
+              isCorrect,
               explanation: gradedResult.explanation ?? null,
               points: q.points,
-              pointsAwarded: gradedResult.pointsAwarded,
+              pointsAwarded,
               difficulty: q.difficulty,
             });
             return items;
