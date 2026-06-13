@@ -284,6 +284,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         select: {
           id: true,
           title: true,
+          durationMins: true,
         },
       },
       _count: {
@@ -810,7 +811,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                                         <div key={test.id} className="flex items-center gap-3 rounded-[10px] border border-[#e9e9e9] bg-white px-[13px] py-[11px] text-[14px]">
                                           <FileText className="h-4 w-4 text-[#bbb]" />
                                           <span className="font-medium text-black">{test.title}</span>
-                                          {test.duration > 0 && <span className="ml-auto text-[12px] text-[#bbb]">{test.duration} mins</span>}
+                                          {test.durationMins > 0 && <span className="ml-auto text-[12px] text-[#bbb]">{test.durationMins} mins</span>}
                                         </div>
                                       ))}
                                     </div>
