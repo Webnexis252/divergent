@@ -156,7 +156,7 @@ export function BuilderDrawer({
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm flex justify-end"
+        className="fixed inset-0 z-[300] bg-black/20 backdrop-blur-sm flex justify-end"
       >
         <motion.div
           initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
@@ -351,7 +351,10 @@ export function BuilderDrawer({
             )}
           </div>
 
-          <div className="border-t p-6 bg-gray-50 flex justify-end gap-3">
+          <div 
+            className="border-t p-6 bg-gray-50 flex justify-end gap-3"
+            style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+          >
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">Cancel</button>
             <button type="submit" form="drawer-form" disabled={saving} className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
               {saving ? "Saving..." : "Save"}
