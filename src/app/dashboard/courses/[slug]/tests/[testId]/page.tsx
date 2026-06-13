@@ -29,6 +29,7 @@ type TestInfo = {
   durationMins: number;
   remainingSecs: number;
   totalQuestions: number;
+  parts?: Array<{ id: string; title: string; durationMins: number | null; order: number }>;
 };
 
 type TestPreview = {
@@ -150,18 +151,36 @@ export default function TakeTestPage() {
 
       const totalSecs = data.data.test.remainingSecs; 
       const durationTotalSecs = data.data.test.durationMins * 60;
-      const partBTotal = Math.floor(durationTotalSecs / 3);
+      
+      const parts = data.data.test.parts || [];
+      const partA = parts.find((p: any) => p.order === 0) || parts[0];
+      const partB = parts.find((p: any) => p.order === 1) || parts[1];
+
+      let partATotal = 0;
+      let partBTotal = 0;
+
+      if (partA && partA.durationMins) {
+        partATotal = partA.durationMins * 60;
+        partBTotal = Math.max(0, durationTotalSecs - partATotal);
+      } else if (partB && partB.durationMins) {
+        partBTotal = partB.durationMins * 60;
+        partATotal = Math.max(0, durationTotalSecs - partBTotal);
+      } else {
+        partBTotal = Math.floor(durationTotalSecs / 3);
+        partATotal = Math.max(0, durationTotalSecs - partBTotal);
+      }
       
       const hasPartB = fetchedQuestions.some((q: QuestionData) => q.type === "SKETCH");
       if (hasPartB) {
-        if (totalSecs > partBTotal) {
+        const spentSecs = durationTotalSecs - totalSecs;
+        if (spentSecs < partATotal) {
           setCurrentPart("A");
-          setPartATimeLeft(totalSecs - partBTotal);
+          setPartATimeLeft(partATotal - spentSecs);
           setPartBTimeLeft(partBTotal);
         } else {
           setCurrentPart("B");
           setPartATimeLeft(0);
-          setPartBTimeLeft(totalSecs);
+          setPartBTimeLeft(durationTotalSecs - spentSecs);
           const firstBIndex = fetchedQuestions.findIndex((q: QuestionData) => q.type === "SKETCH");
           if (firstBIndex !== -1) setCurrentIndex(firstBIndex);
         }

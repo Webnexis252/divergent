@@ -37,6 +37,7 @@ export async function POST(
       },
       include: {
         questions: { orderBy: { order: 'asc' } },
+        parts: { orderBy: { order: 'asc' } },
       },
     });
     if (!test) return apiNotFound('Test');
@@ -102,6 +103,7 @@ export async function POST(
           durationMins: test.durationMins,
           remainingSecs,
           totalQuestions: orderedQuestions.length,
+          parts: test.parts,
         },
         questions: orderedQuestions,
       });
@@ -163,6 +165,7 @@ export async function POST(
         durationMins: test.durationMins,
         remainingSecs: test.durationMins * 60,
         totalQuestions: orderedQuestions.length,
+        parts: test.parts,
       },
       questions: orderedQuestions,
     });
