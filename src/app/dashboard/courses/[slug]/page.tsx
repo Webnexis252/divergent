@@ -15,6 +15,7 @@ import {
   StaggerGrid,
 } from "../../_components/motion-wrappers";
 import { EnrollButton } from "./_components/enroll-button";
+import { CourseCurriculumSection } from "./_components/course-curriculum-section";
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -276,6 +277,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         select: {
           id: true,
           title: true,
+          createdAt: true,
         },
       },
       tests: {
@@ -285,6 +287,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
           id: true,
           title: true,
           durationMins: true,
+          createdAt: true,
         },
       },
       _count: {
@@ -667,216 +670,15 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
                     <RevealSection delay={0.1}>
                       <section className="rounded-[18px] bg-white px-6 py-8 shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] sm:px-10 xl:px-[38px] xl:py-10">
-                        <div id="curriculum" className="space-y-6">
-                          {/* Curriculum header with total progress (enrolled only) */}
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#38c1ff]/10">
-                                <ClipboardList className="h-[18px] w-[18px] text-[#38c1ff]" />
-                              </div>
-                              <h2 className="text-[24px] font-bold text-black">Course Curriculum</h2>
-                            </div>
-                            {isEnrolled && totalLessons > 0 && (
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-[13px] font-medium text-[#4caf50]">
-                                <CheckCircle2 className="h-4 w-4" />
-                                {completedLessonCount} / {totalLessons} completed ({progressPercent}%)
-                              </span>
-                            )}
-                          </div>
-
-                          {course.chapters.length > 0 || course.tests.length > 0 || course.liveClasses.length > 0 || course.assignments.length > 0 ? (
-                            <div className="space-y-6">
-                              {/* Modules / Chapters */}
-                              {course.chapters.length > 0 && (
-                                <details className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm" open>
-                                  <summary className="flex cursor-pointer items-center justify-between bg-gray-50 px-6 py-4 list-none transition-colors hover:opacity-80 [&::-webkit-details-marker]:hidden">
-                                    <div className="flex flex-1 items-center gap-3">
-                                      <BookOpen className="h-5 w-5 text-indigo-500" />
-                                      <h2 className="text-lg font-semibold text-gray-900">
-                                        Course Modules ({course.chapters.length})
-                                      </h2>
-                                    </div>
-                                    <ChevronDown className="ml-auto h-5 w-5 text-gray-400 group-open:hidden" />
-                                    <ChevronUp className="ml-auto h-5 w-5 text-gray-400 hidden group-open:block" />
-                                  </summary>
-                                  <div className="border-t border-gray-100 bg-white px-6 py-5">
-                                    <div className="space-y-5">
-                                      {course.chapters.map((chapter, index) => {
-                                        const chapterCompletedCount = isEnrolled
-                                          ? chapter.lessons.filter((l) => completedLessonIds.has(l.id)).length
-                                          : 0;
-                                        const chapterTotal = chapter.lessons.length;
-                                        const chapterPercent =
-                                          isEnrolled && chapterTotal > 0
-                                            ? Math.round((chapterCompletedCount / chapterTotal) * 100)
-                                            : 0;
-
-                                        return (
-                                          <div key={chapter.id} className="space-y-3">
-                                            {/* Chapter header */}
-                                            <div className="flex items-center justify-between gap-3">
-                                              <p className="text-[17px] font-semibold text-black">
-                                                <span className="mr-2 text-[#38c1ff]">Module {index + 1}:</span>
-                                                {chapter.title}
-                                              </p>
-                                              {isEnrolled && chapterTotal > 0 && (
-                                                <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[12px] font-medium text-[#777]">
-                                                  {chapterCompletedCount}/{chapterTotal}
-                                                </span>
-                                              )}
-                                            </div>
-
-                                            {/* Chapter progress bar (enrolled only) */}
-                                            {isEnrolled && chapterTotal > 0 && (
-                                              <div className="h-1 w-full overflow-hidden rounded-full bg-black/6">
-                                                <div
-                                                  className="h-full rounded-full bg-[linear-gradient(90deg,#4caf50,#38c1ff)] transition-all duration-500"
-                                                  style={{ width: `${chapterPercent}%` }}
-                                                />
-                                              </div>
-                                            )}
-
-                                            {/* Lesson rows */}
-                                            {chapterTotal > 0 ? (
-                                              <div className="space-y-1.5 pt-1">
-                                                {chapter.lessons.map((lesson, li) => {
-                                                  const done = isEnrolled && completedLessonIds.has(lesson.id);
-                                                  return (
-                                                    <div
-                                                      key={lesson.id}
-                                                      className={`flex min-h-[44px] items-center justify-between gap-3 rounded-[10px] border px-[13px] py-[11px] text-[14px] transition-colors ${
-                                                        done
-                                                          ? "border-green-200 bg-green-50/60 text-green-800"
-                                                          : "border-[#e9e9e9] bg-white text-black"
-                                                      }`}
-                                                    >
-                                                      <div className="flex items-center gap-2.5 min-w-0">
-                                                        {/* Lesson number */}
-                                                        <span className={`shrink-0 text-[11px] font-semibold w-5 text-right ${done ? "text-green-500" : "text-[#bbb]"}`}>
-                                                          {li + 1}
-                                                        </span>
-                                                        <span className="truncate">{lesson.title}</span>
-                                                      </div>
-                                                      <div className="flex shrink-0 items-center gap-2">
-                                                        {lesson.durationMins > 0 && (
-                                                          <span className="text-[11px] text-[#bbb]">
-                                                            {lesson.durationMins}m
-                                                          </span>
-                                                        )}
-                                                        {lesson.isFreePreview && (
-                                                          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-600">
-                                                            Preview
-                                                          </span>
-                                                        )}
-                                                        {/* Completion tick */}
-                                                        {done ? (
-                                                          <span className="text-green-500 text-[16px]" aria-label="Completed">✓</span>
-                                                        ) : (
-                                                          <span className="h-4 w-4 rounded-full border-2 border-[#ddd]" aria-hidden />
-                                                        )}
-                                                      </div>
-                                                    </div>
-                                                  );
-                                                })}
-                                              </div>
-                                            ) : (
-                                              <div className="flex min-h-[44px] items-center rounded-[10px] border border-[#e9e9e9] px-[13px] py-[11px] text-[15px] text-[#8b8888]">
-                                                Lessons will appear here soon.
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                </details>
-                              )}
-
-                              {/* Exams */}
-                              {course.tests.length > 0 && (
-                                <details className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm" open>
-                                  <summary className="flex cursor-pointer items-center justify-between bg-gray-50 px-6 py-4 list-none transition-colors hover:opacity-80 [&::-webkit-details-marker]:hidden">
-                                    <div className="flex flex-1 items-center gap-3">
-                                      <FileText className="h-5 w-5 text-blue-500" />
-                                      <h2 className="text-lg font-semibold text-gray-900">
-                                        Exams ({course.tests.length})
-                                      </h2>
-                                    </div>
-                                    <ChevronDown className="ml-auto h-5 w-5 text-gray-400 group-open:hidden" />
-                                    <ChevronUp className="ml-auto h-5 w-5 text-gray-400 hidden group-open:block" />
-                                  </summary>
-                                  <div className="border-t border-gray-100 bg-white px-6 py-5">
-                                    <div className="space-y-2">
-                                      {course.tests.map((test) => (
-                                        <div key={test.id} className="flex items-center gap-3 rounded-[10px] border border-[#e9e9e9] bg-white px-[13px] py-[11px] text-[14px]">
-                                          <FileText className="h-4 w-4 text-[#bbb]" />
-                                          <span className="font-medium text-black">{test.title}</span>
-                                          {test.durationMins > 0 && <span className="ml-auto text-[12px] text-[#bbb]">{test.durationMins} mins</span>}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </details>
-                              )}
-
-                              {/* Live Classes */}
-                              {course.liveClasses.length > 0 && (
-                                <details className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm" open>
-                                  <summary className="flex cursor-pointer items-center justify-between bg-gray-50 px-6 py-4 list-none transition-colors hover:opacity-80 [&::-webkit-details-marker]:hidden">
-                                    <div className="flex flex-1 items-center gap-3">
-                                      <Video className="h-5 w-5 text-purple-500" />
-                                      <h2 className="text-lg font-semibold text-gray-900">
-                                        Live Classes ({course.liveClasses.length})
-                                      </h2>
-                                    </div>
-                                    <ChevronDown className="ml-auto h-5 w-5 text-gray-400 group-open:hidden" />
-                                    <ChevronUp className="ml-auto h-5 w-5 text-gray-400 hidden group-open:block" />
-                                  </summary>
-                                  <div className="border-t border-gray-100 bg-white px-6 py-5">
-                                    <div className="space-y-2">
-                                      {course.liveClasses.map((lc) => (
-                                        <div key={lc.id} className="flex items-center gap-3 rounded-[10px] border border-[#e9e9e9] bg-white px-[13px] py-[11px] text-[14px]">
-                                          <Video className="h-4 w-4 text-[#bbb]" />
-                                          <span className="font-medium text-black">{lc.title}</span>
-                                          <span className="ml-auto text-[12px] text-[#bbb]">{new Date(lc.startTime).toLocaleDateString()}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </details>
-                              )}
-
-                              {/* Assignments */}
-                              {course.assignments.length > 0 && (
-                                <details className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm" open>
-                                  <summary className="flex cursor-pointer items-center justify-between bg-gray-50 px-6 py-4 list-none transition-colors hover:opacity-80 [&::-webkit-details-marker]:hidden">
-                                    <div className="flex flex-1 items-center gap-3">
-                                      <PenBox className="h-5 w-5 text-amber-500" />
-                                      <h2 className="text-lg font-semibold text-gray-900">
-                                        Assignments ({course.assignments.length})
-                                      </h2>
-                                    </div>
-                                    <ChevronDown className="ml-auto h-5 w-5 text-gray-400 group-open:hidden" />
-                                    <ChevronUp className="ml-auto h-5 w-5 text-gray-400 hidden group-open:block" />
-                                  </summary>
-                                  <div className="border-t border-gray-100 bg-white px-6 py-5">
-                                    <div className="space-y-2">
-                                      {course.assignments.map((assignment) => (
-                                        <div key={assignment.id} className="flex items-center gap-3 rounded-[10px] border border-[#e9e9e9] bg-white px-[13px] py-[11px] text-[14px]">
-                                          <PenBox className="h-4 w-4 text-[#bbb]" />
-                                          <span className="font-medium text-black">{assignment.title}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </details>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="rounded-[10px] border border-dashed border-[#e9e9e9] px-5 py-10 text-center text-[15px] text-[#8b8888]">
-                              Curriculum will appear here as soon as lessons are published.
-                            </div>
-                          )}
+                        <div id="curriculum">
+                          <CourseCurriculumSection
+                            chapters={course.chapters}
+                            liveClasses={course.liveClasses}
+                            assignments={course.assignments}
+                            tests={course.tests}
+                            isEnrolled={isEnrolled}
+                            completedLessonIds={Array.from(completedLessonIds)}
+                          />
                         </div>
                       </section>
                     </RevealSection>
