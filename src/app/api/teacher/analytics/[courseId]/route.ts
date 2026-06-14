@@ -38,6 +38,13 @@ export async function GET(
               where: { assignment: { courseId } },
               select: { score: true, gradedAt: true, submittedAt: true },
             },
+            testAttempts: {
+              where: {
+                test: { courseId },
+                submittedAt: { not: null }
+              },
+              select: { score: true, pointsEarned: true, totalPoints: true }
+            }
           },
         },
       },
@@ -61,6 +68,11 @@ export async function GET(
       const submissions = e.user.assignmentSubmissions;
       const submittedCount = submissions.filter(s => s.submittedAt).length;
 
+      const testAttempts = e.user.testAttempts;
+      const examScore = testAttempts.length > 0
+        ? testAttempts.reduce((sum, t) => sum + (t.totalPoints > 0 ? (t.pointsEarned / t.totalPoints) * 100 : t.score), 0) / testAttempts.length
+        : null;
+
       return {
         id: e.user.id,
         name: e.user.name,
@@ -70,6 +82,7 @@ export async function GET(
         lastActive,
         passRate,
         submittedCount,
+        examScore,
         isAtRisk: isInactive || hasLowQuizScore,
         riskReasons: [
           ...(isInactive ? ['Inactive 7+ days'] : []),

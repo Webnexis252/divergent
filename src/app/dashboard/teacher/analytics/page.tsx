@@ -15,6 +15,7 @@ type Student = {
   lastActive: string;
   passRate: number | null;
   submittedCount: number;
+  examScore: number | null;
   isAtRisk: boolean;
   riskReasons: string[];
 };
@@ -162,6 +163,10 @@ export default function TeacherAnalyticsPage() {
                             <div className="text-center">
                               <div className="font-bold text-[#101828]">{s.passRate !== null ? `${Math.round(s.passRate)}%` : "—"}</div>
                               <div className="text-[#94a3b8]">Quiz Rate</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-[#101828]">{s.examScore !== null ? `${Math.round(s.examScore)}%` : "—"}</div>
+                              <div className="text-[#94a3b8]">Exam Score</div>
                             </div>
                             <div className="text-center">
                               <div className="font-bold text-[#101828]">{s.submittedCount}</div>
