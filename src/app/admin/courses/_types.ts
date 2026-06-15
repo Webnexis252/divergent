@@ -35,6 +35,7 @@ export type Course = {
   pricingType: string;
   publishDate: string | null;
   originalPrice: number | null;
+  isInstallmentBased: boolean;
   emiPlans: any[] | null;
   createdAt: string;
   teachers: Pick<Teacher, "id" | "name" | "email" | "role">[];
