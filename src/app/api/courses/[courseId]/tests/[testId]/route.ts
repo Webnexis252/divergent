@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { requireAuth, verifyToken } from '@/lib/auth';
 import { UpdateCourseTestSchema } from '@/lib/validators';
@@ -128,6 +129,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         chapter: { select: { id: true, title: true } },
       },
     });
+
+    revalidatePath("/dashboard/courses/[slug]", "page");
 
     return apiSuccess(updated, 'Test updated successfully');
   } catch (err) {

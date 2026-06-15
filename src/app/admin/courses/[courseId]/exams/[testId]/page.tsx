@@ -229,9 +229,92 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
     setDeleteModal({ isOpen: true, type, id });
   }
 
+  function handleOptimisticSave(data: any, action: "ADD_QUESTION" | "EDIT_QUESTION" | "ADD_GROUP") {
+    setParts((prevParts) => {
+      const newParts = [...prevParts];
+      const partIndex = newParts.findIndex(p => p.id === drawerTarget?.partId);
+      if (partIndex === -1) return prevParts;
+
+      const part = { ...newParts[partIndex] };
+      const sectionIndex = part.sections.findIndex(s => s.id === drawerTarget?.sectionId);
+      if (sectionIndex === -1) return prevParts;
+
+      const section = { ...part.sections[sectionIndex] };
+
+      if (action === "ADD_GROUP") {
+        section.groups = [...(section.groups || []), { ...data, questions: [] }];
+      } else if (action === "ADD_QUESTION") {
+        if (drawerTarget?.groupId) {
+          const groupIndex = section.groups.findIndex(g => g.id === drawerTarget.groupId);
+          if (groupIndex !== -1) {
+            const group = { ...section.groups[groupIndex] };
+            group.questions = [...(group.questions || []), data];
+            section.groups[groupIndex] = group;
+          }
+        } else {
+          section.questions = [...(section.questions || []), data];
+        }
+      } else if (action === "EDIT_QUESTION") {
+        if (drawerTarget?.groupId) {
+          const groupIndex = section.groups.findIndex(g => g.id === drawerTarget.groupId);
+          if (groupIndex !== -1) {
+            const group = { ...section.groups[groupIndex] };
+            const qIndex = group.questions.findIndex(q => q.id === data.id);
+            if (qIndex !== -1) {
+              group.questions[qIndex] = { ...group.questions[qIndex], ...data };
+              section.groups[groupIndex] = group;
+            }
+          }
+        } else {
+          const qIndex = section.questions.findIndex(q => q.id === data.id);
+          if (qIndex !== -1) {
+            section.questions[qIndex] = { ...section.questions[qIndex], ...data };
+          }
+        }
+      }
+
+      part.sections[sectionIndex] = section;
+      newParts[partIndex] = part;
+      return newParts;
+    });
+  }
+
   async function handleDeleteConfirm() {
     if (!deleteModal) return;
     const { type, id } = deleteModal;
+
+    // Optimistic Delete
+    setParts(prev => {
+      const newParts = [...prev];
+      if (type === "PART") {
+        return newParts.filter(p => p.id !== id);
+      }
+      
+      return newParts.map(part => {
+        if (type === "SECTION") {
+          return { ...part, sections: part.sections.filter(s => s.id !== id) };
+        }
+        
+        return {
+          ...part,
+          sections: part.sections.map(sec => {
+            if (type === "GROUP") {
+              return { ...sec, groups: sec.groups.filter(g => g.id !== id) };
+            }
+            if (type === "QUESTION") {
+              return {
+                ...sec,
+                questions: sec.questions.filter(q => q.id !== id),
+                groups: sec.groups.map(g => ({ ...g, questions: g.questions.filter(q => q.id !== id) }))
+              };
+            }
+            return sec;
+          })
+        };
+      });
+    });
+
+    setDeleteModal(null);
     
     let url = "";
     if (type === "PART") url = `/api/tests/parts/${id}`;
@@ -239,9 +322,13 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
     if (type === "GROUP") url = `/api/tests/groups/${id}`;
     if (type === "QUESTION") url = `/api/courses/${courseId}/tests/${testId}/questions/${id}`;
 
-    await fetch(url, { method: "DELETE" });
-    setDeleteModal(null);
-    fetchExamData();
+    try {
+      await fetch(url, { method: "DELETE" });
+    } catch {
+      // Revert on failure
+    } finally {
+      fetchExamData();
+    }
   }
 
   function toggleSection(sectionId: string) {
@@ -562,6 +649,7 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
         courseId={courseId} 
         testId={testId} 
         onSuccess={fetchExamData} 
+        onOptimisticSave={handleOptimisticSave}
       />
 
       {/* Add Part Modal */}

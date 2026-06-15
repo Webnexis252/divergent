@@ -100,6 +100,7 @@ function NavSection({
                     : "border border-transparent text-(--text-muted) hover:bg-white/72 hover:text-(--text-strong)",
                 )}
                 href={item.href}
+                prefetch={true}
               >
                 <Icon className="h-4.5 w-4.5" />
                 <span>{item.label}</span>

@@ -105,6 +105,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       },
     });
 
+    import('next/cache').then(({ revalidateTag, revalidatePath }) => {
+      // @ts-ignore
+      revalidateTag('courses');
+      // @ts-ignore
+      revalidateTag(`course-${courseId}`);
+      revalidatePath('/dashboard/courses', 'page');
+      revalidatePath(`/dashboard/courses/${course.slug}`, 'page');
+    });
+
     return apiSuccess(course, 'Course updated successfully');
   } catch (err: unknown) {
     console.error('[UPDATE_COURSE_ERROR]', err);
@@ -123,6 +132,14 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
     const { courseId } = await params;
     await prisma.course.delete({ where: { id: courseId } });
+
+    import('next/cache').then(({ revalidateTag, revalidatePath }) => {
+      // @ts-ignore
+      revalidateTag('courses');
+      // @ts-ignore
+      revalidateTag(`course-${courseId}`);
+      revalidatePath('/dashboard/courses', 'page');
+    });
 
     return apiSuccess(null, 'Course deleted successfully');
   } catch (err) {

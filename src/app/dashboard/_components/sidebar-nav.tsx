@@ -36,6 +36,7 @@ export function DashboardSidebar() {
                     : "hover:bg-white/46 lg:hover:bg-white/20",
                 )}
                 href={item.href}
+                prefetch={true}
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 <span>{item.label}</span>

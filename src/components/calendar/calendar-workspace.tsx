@@ -320,10 +320,10 @@ function CalendarGrid({
             <button
               key={cell.date.toISOString()}
               className={cx(
-                "group min-h-[108px] border-b border-r border-(--line-soft) px-2 py-3 text-left transition-[background-color,border-color] duration-150 ease-out focus-visible:outline-none",
-                isActiveDate ? "bg-white" : "bg-transparent",
+                "group relative min-h-[108px] border-b border-r border-(--line-soft) px-2 py-3 text-left transition-all duration-200 ease-out focus-visible:outline-none",
+                isActiveDate ? "bg-white z-10 shadow-sm" : "bg-transparent",
                 cell.isCurrentMonth ? "text-(--text-strong)" : "bg-black/[0.02] text-(--text-subtle)",
-                cellEvents.length > 0 && "hover:bg-white",
+                "hover:bg-sky-50 hover:ring-2 hover:ring-sky-200 hover:z-20",
               )}
               onClick={() => {
                 onSelectDateKey(key);

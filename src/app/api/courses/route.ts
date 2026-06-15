@@ -149,6 +149,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    import('next/cache').then(({ revalidateTag, revalidatePath }) => {
+      // @ts-ignore
+      revalidateTag('courses');
+      revalidatePath('/dashboard/courses', 'page');
+    });
+
     return apiCreated(course, 'Course created successfully');
   } catch (err) {
     console.error('[CREATE_COURSE_ERROR]', err);

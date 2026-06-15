@@ -19,7 +19,8 @@ export function BuilderDrawer({
   target,
   courseId,
   testId,
-  onSuccess
+  onSuccess,
+  onOptimisticSave
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -27,6 +28,7 @@ export function BuilderDrawer({
   courseId: string;
   testId: string;
   onSuccess: () => void;
+  onOptimisticSave?: (data: any, action: "ADD_QUESTION" | "EDIT_QUESTION" | "ADD_GROUP") => void;
 }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -99,19 +101,31 @@ export function BuilderDrawer({
     setError("");
 
     try {
+      const payload = { title: groupTitle, content: groupContent };
+      
+      if (onOptimisticSave) {
+        onOptimisticSave({ id: "temp-group-" + Date.now(), ...payload, questions: [] }, "ADD_GROUP");
+        setGroupTitle("");
+        setGroupContent("");
+        onClose();
+      }
+
       const res = await fetch(`/api/tests/sections/${target!.sectionId}/groups`, {
         method: "POST",
-        body: JSON.stringify({ title: groupTitle, content: groupContent }),
+        body: JSON.stringify(payload),
         headers: { "Content-Type": "application/json" }
       });
       if (!res.ok) throw new Error("Failed to create group");
       
-      setGroupTitle("");
-      setGroupContent("");
+      if (!onOptimisticSave) {
+        setGroupTitle("");
+        setGroupContent("");
+        onClose();
+      }
       onSuccess();
-      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error saving");
+      if (onOptimisticSave) onSuccess(); // revert via refetch
     } finally {
       setSaving(false);
     }
@@ -161,14 +175,7 @@ export function BuilderDrawer({
     }
 
     try {
-      const url = target!.type === "EDIT_QUESTION"
-        ? `/api/courses/${courseId}/tests/${testId}/questions/${target!.initialQuestion.id}`
-        : `/api/courses/${courseId}/tests/${testId}/questions`;
-        
-      const res = await fetch(url, {
-        method: target!.type === "EDIT_QUESTION" ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const payloadData = {
           ...qForm,
           points: Number(qForm.points) || 1,
           negativeMarks: Number(qForm.negativeMarks) || 0,
@@ -181,27 +188,49 @@ export function BuilderDrawer({
           options: qForm.options.filter((o) => o.trim()),
           correctAnswer: (type === "SCQ" || type === "MCQ")
             ? qForm.correctAnswer.map((idx) => {
-                // If it's an edit, we might be editing existing choices or adding new. We use the index selected by the user.
                 const val = parseInt(idx, 10);
-                if (isNaN(val)) return idx; // handle if correctAnswer already contained string value from initialQuestion
+                if (isNaN(val)) return idx;
                 return qForm.options[val];
               }).filter((o) => o?.trim())
             : qForm.correctAnswer,
-        }),
+      };
+
+      if (onOptimisticSave) {
+        const optimisticId = target!.type === "EDIT_QUESTION" ? target!.initialQuestion.id : "temp-q-" + Date.now();
+        onOptimisticSave({ id: optimisticId, ...payloadData }, target!.type === "EDIT_QUESTION" ? "EDIT_QUESTION" : "ADD_QUESTION");
+        setQForm({
+          category: "CONCEPT", prompt: "", explanation: "", explanationImageUrl: null,
+          options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+          correctAnswer: ["0"], imageUrl: null, points: 1, negativeMarks: 0, allowPartialMarking: false,
+        });
+        onClose();
+      }
+
+      const url = target!.type === "EDIT_QUESTION"
+        ? `/api/courses/${courseId}/tests/${testId}/questions/${target!.initialQuestion.id}`
+        : `/api/courses/${courseId}/tests/${testId}/questions`;
+        
+      const res = await fetch(url, {
+        method: target!.type === "EDIT_QUESTION" ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadData),
       });
       
       const payload = await res.json();
       if (!res.ok || !payload.success) throw new Error(payload.error || `Failed to ${target!.type === "EDIT_QUESTION" ? "update" : "add"} question`);
       
-      setQForm({
-        category: "CONCEPT", prompt: "", explanation: "", explanationImageUrl: null,
-        options: ["Option 1", "Option 2", "Option 3", "Option 4"],
-        correctAnswer: ["0"], imageUrl: null, points: 1, negativeMarks: 0, allowPartialMarking: false,
-      });
+      if (!onOptimisticSave) {
+        setQForm({
+          category: "CONCEPT", prompt: "", explanation: "", explanationImageUrl: null,
+          options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+          correctAnswer: ["0"], imageUrl: null, points: 1, negativeMarks: 0, allowPartialMarking: false,
+        });
+        onClose();
+      }
       onSuccess();
-      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Network error");
+      if (onOptimisticSave) onSuccess(); // revert via refetch
     } finally {
       setSaving(false);
     }
