@@ -385,9 +385,19 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     course.price > 0 && originalPrice > course.price
       ? Math.max(1, Math.round((1 - course.price / originalPrice) * 100))
       : 0;
-  const emiPlans = Array.isArray(course.emiPlans) && (course.emiPlans as Array<{ label: string; amount: number; dueDays: number }>).length > 0
-    ? (course.emiPlans as Array<{ label: string; amount: number; dueDays: number }>)
-    : null;
+  const rawEmiPlans = Array.isArray(course.emiPlans) ? course.emiPlans : [];
+  let emiPlans: any[] | null = null;
+  if (rawEmiPlans.length > 0) {
+    if (rawEmiPlans[0]?.installments) {
+      emiPlans = rawEmiPlans;
+    } else {
+      emiPlans = [{
+        id: "legacy",
+        name: "Installment Plan",
+        installments: rawEmiPlans
+      }];
+    }
+  }
   const courseHours = totalDuration > 0 ? Math.max(1, Math.round(totalDuration / 60)) : 0;
   const learningItems = Array.isArray(course.learningOutcomes) && course.learningOutcomes.length > 0
     ? (course.learningOutcomes as string[])
@@ -899,7 +909,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                                   </div>
                                   <p className="text-[13px] font-semibold text-black">Pay in Instalments</p>
                                   <span className="ml-auto rounded bg-purple-100 px-1.5 py-0.5 text-[9px] font-bold text-purple-700">
-                                    CUSTOM EMI
+                                    {emiPlans.length > 1 ? "MULTIPLE PLANS" : "CUSTOM EMI"}
                                   </span>
                                 </div>
                                 <table className="w-full text-[12px]">
@@ -911,17 +921,18 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {emiPlans.map((plan, i) => (
+                                    {emiPlans[0]?.installments.map((inst: any, i: number) => (
                                       <tr key={i} className="border-b border-gray-50 last:border-0">
-                                        <td className="py-1.5 pr-2 font-medium text-[#475569]">{plan.label || `${i + 1}.`}</td>
-                                        <td className="py-1.5 pr-2 font-bold text-black">₹{plan.amount.toLocaleString("en-IN")}</td>
-                                        <td className="py-1.5 text-[#64748b]">{plan.dueDays === 0 ? 'On enrollment' : `${plan.dueDays} days`}</td>
+                                        <td className="py-1.5 pr-2 font-medium text-[#475569]">{inst.label || `${i + 1}.`}</td>
+                                        <td className="py-1.5 pr-2 font-bold text-black">₹{Number(inst.amount).toLocaleString("en-IN")}</td>
+                                        <td className="py-1.5 text-[#64748b]">{inst.dueDays === 0 || inst.dueDays === "0" ? 'On enrollment' : `${inst.dueDays} days`}</td>
                                       </tr>
                                     ))}
                                   </tbody>
                                 </table>
                                 <p className="text-[11px] text-[#94a3b8]">
-                                  Total: ₹{emiPlans.reduce((s, p) => s + p.amount, 0).toLocaleString("en-IN")} over {emiPlans.length} instalment{emiPlans.length !== 1 ? 's' : ''}
+                                  {emiPlans.length > 1 && <span className="font-semibold text-purple-600 block mb-1">+{emiPlans.length - 1} other installment options available at checkout</span>}
+                                  Total: ₹{emiPlans[0]?.installments.reduce((s: any, p: any) => s + Number(p.amount), 0).toLocaleString("en-IN")} over {emiPlans[0]?.installments.length} instalment{emiPlans[0]?.installments.length !== 1 ? 's' : ''}
                                 </p>
                               </div>
                             </div>

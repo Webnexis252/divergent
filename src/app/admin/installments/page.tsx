@@ -32,7 +32,7 @@ export default async function AdminInstallmentsPage() {
   }
 
   // Raw SQL queries to avoid IDE Prisma type cache issues
-  const enrollments = await prisma.$queryRaw<RawEnrollment[]>`
+  const enrollments = await prisma.$queryRaw<any[]>`
     SELECT 
       e.id,
       e."userId",
@@ -45,7 +45,13 @@ export default async function AdminInstallmentsPage() {
       u.email as "userEmail",
       u.phone as "userPhone",
       c.title as "courseTitle",
-      c."emiPlans"::text as "emiPlans"
+      c."emiPlans"::text as "emiPlans",
+      (
+        SELECT notes FROM "Payment" p 
+        WHERE p."userId" = e."userId" AND p."courseId" = e."courseId" AND p.status = 'SUCCESS'
+        ORDER BY p."createdAt" ASC
+        LIMIT 1
+      ) as "paymentNotes"
     FROM "Enrollment" e
     JOIN "User" u ON u.id = e."userId"
     JOIN "Course" c ON c.id = e."courseId"
@@ -66,13 +72,33 @@ export default async function AdminInstallmentsPage() {
   );
 
   const formattedData = enrollments.map((enr) => {
-    let emiPlans: { label: string; amount: number; dueDays: number }[] = [];
+    let parsedPlans: any[] = [];
     try {
       if (enr.emiPlans) {
-        emiPlans = JSON.parse(enr.emiPlans);
+        parsedPlans = JSON.parse(enr.emiPlans);
       }
     } catch {
-      emiPlans = [];
+      parsedPlans = [];
+    }
+
+    let planId = "legacy";
+    try {
+      if (enr.paymentNotes) {
+        const notesObj = JSON.parse(enr.paymentNotes);
+        if (notesObj.planId) planId = notesObj.planId;
+      }
+    } catch (e) {}
+
+    let emiPlans: any[] = [];
+    if (parsedPlans.length > 0) {
+      if (parsedPlans[0]?.installments) {
+        // new PricingPlan structure
+        const selectedPlan = parsedPlans.find((p: any) => p.id === planId) || parsedPlans[0];
+        emiPlans = selectedPlan.installments;
+      } else {
+        // legacy structure
+        emiPlans = parsedPlans;
+      }
     }
 
     const totalInstallments = emiPlans.length;
@@ -81,7 +107,7 @@ export default async function AdminInstallmentsPage() {
       enr.currentInstallment < totalInstallments
         ? emiPlans[enr.currentInstallment]
         : null;
-    const nextAmount = nextPlan ? nextPlan.amount : 0;
+    const nextAmount = nextPlan ? Number(nextPlan.amount) : 0;
 
     return {
       id: enr.id,
@@ -94,7 +120,7 @@ export default async function AdminInstallmentsPage() {
       currentInstallment: enr.currentInstallment,
       totalInstallments,
       nextAmount,
-      validUntil: enr.validUntil ? enr.validUntil.toISOString() : null,
+      validUntil: enr.validUntil ? new Date(enr.validUntil).toISOString() : null,
       isExpired,
       hasPendingRequest: pendingSet.has(`${enr.userId}-${enr.courseId}`),
     };

@@ -113,8 +113,30 @@ export async function POST(req: NextRequest) {
         where: { code: couponCode.toUpperCase() },
       });
 
-      if (coupon && coupon.isActive && (!coupon.validUntil || new Date(coupon.validUntil) >= new Date()) && coupon.usedCount < coupon.maxUses) {
-        appliedCouponDiscount = Number(((orderAmount * coupon.discountPercent) / 100).toFixed(2));
+      if (coupon && coupon.isActive && (!coupon.validUntil || new Date(coupon.validUntil) >= new Date()) && (!coupon.startDate || new Date(coupon.startDate) <= new Date()) && coupon.usedCount < coupon.maxUses) {
+        if (coupon.minPurchase && orderAmount < coupon.minPurchase) {
+          return apiError(`Minimum purchase amount for this coupon is ${coupon.minPurchase}`, 400);
+        }
+
+        if (coupon.limitPerLearner) {
+          const userUsageCount = await prisma.payment.count({
+            where: {
+              userId: auth.userId,
+              couponCode: coupon.code,
+              status: 'SUCCESS'
+            }
+          });
+          if (userUsageCount >= coupon.limitPerLearner) {
+            return apiError(`You have already reached the usage limit for this coupon (${coupon.limitPerLearner})`, 400);
+          }
+        }
+
+        if (coupon.discountType === "PERCENTAGE") {
+          appliedCouponDiscount = Number(((orderAmount * coupon.discountValue) / 100).toFixed(2));
+        } else {
+          appliedCouponDiscount = Number(coupon.discountValue);
+        }
+
         orderAmount = Math.max(0, orderAmount - appliedCouponDiscount);
         appliedCouponCode = coupon.code;
         

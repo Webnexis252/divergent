@@ -500,10 +500,15 @@ model Payment {
 model Coupon {
   id              String    @id @default(cuid())
   code            String    @unique
-  discountPercent Float
+  name            String?
+  discountType    String    @default("PERCENTAGE") // "PERCENTAGE" or "FIXED"
+  discountValue   Float     @default(0)
   maxUses         Int       @default(100)
   usedCount       Int       @default(0)
+  startDate       DateTime?
   validUntil      DateTime?
+  minPurchase     Float?
+  limitPerLearner Int       @default(1)
   isActive        Boolean   @default(true)
   description     String?
   createdAt       DateTime  @default(now())

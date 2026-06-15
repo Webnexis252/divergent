@@ -428,7 +428,8 @@ export function AdminInstallmentsClient({
   };
 
   const filteredData = data.filter((d) =>
-    d.studentName.toLowerCase().includes(searchQuery.toLowerCase()),
+    d.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    d.courseTitle.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const expiredInstallments = filteredData.filter((d) => d.isExpired);

@@ -89,21 +89,38 @@ export async function POST(req: NextRequest) {
           select: { emiPlans: true }
         });
         
-        const emiPlans = course?.emiPlans as any[] | null;
+        const rawEmiPlans = course?.emiPlans as any[] | null;
+        let emiPlans: any[] | null = null;
+        if (rawEmiPlans && rawEmiPlans.length > 0) {
+          if (rawEmiPlans[0]?.installments) {
+            emiPlans = rawEmiPlans;
+          } else {
+            emiPlans = [{ id: "legacy", name: "Installment Plan", installments: rawEmiPlans }];
+          }
+        }
+
         if (emiPlans && emiPlans.length > 0) {
           const index = payment.installmentIndex;
-          const plan = emiPlans[index];
+          let planId = "legacy";
+          try {
+            if (payment.notes) {
+              const notesObj = JSON.parse(payment.notes);
+              if (notesObj.planId) planId = notesObj.planId;
+            }
+          } catch (e) {}
+
+          const plan = emiPlans.find(p => p.id === planId) || emiPlans[0];
           
           const existingEnrollment = await prisma.enrollment.findUnique({
             where: { userId_courseId: { userId: payment.userId, courseId: payment.courseId } }
           });
 
-          const isLastInstallment = index === emiPlans.length - 1;
+          const isLastInstallment = index === plan.installments.length - 1;
           let newValidUntil: Date | null = null;
           
           if (!isLastInstallment) {
             const baseDate = existingEnrollment?.validUntil ? new Date(existingEnrollment.validUntil) : new Date();
-            newValidUntil = new Date(baseDate.getTime() + (plan.dueDays * 24 * 60 * 60 * 1000));
+            newValidUntil = new Date(baseDate.getTime() + (Number(plan.installments[index].dueDays) * 24 * 60 * 60 * 1000));
           }
 
           installmentOptions = {

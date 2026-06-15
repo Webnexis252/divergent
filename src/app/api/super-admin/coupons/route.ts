@@ -5,12 +5,17 @@ import { apiSuccess, apiCreated, apiForbidden, apiServerError, apiError } from '
 import { z } from 'zod';
 
 const CouponSchema = z.object({
-  code: z.string().min(3).toUpperCase(),
-  discountPercent: z.number().min(1).max(100),
-  maxUses: z.number().int().min(1).default(100),
-  validUntil: z.string().optional(),
-  description: z.string().optional(),
+  code: z.string().min(1).max(15).regex(/^[A-Z0-9]+$/, "Code can only contain uppercase letters and numbers"),
+  name: z.string().max(60).optional(),
+  discountType: z.enum(["PERCENTAGE", "FIXED"]),
+  discountValue: z.number().min(0),
+  maxUses: z.number().int().min(1).optional().default(100),
+  startDate: z.string().optional().nullable(),
+  validUntil: z.string().optional().nullable(),
+  minPurchase: z.number().optional().nullable(),
+  limitPerLearner: z.number().int().min(1).optional().default(1),
   isActive: z.boolean().default(true),
+  description: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -41,6 +46,7 @@ export async function POST(req: NextRequest) {
     const coupon = await prisma.coupon.create({
       data: {
         ...parsed.data,
+        startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,
         validUntil: parsed.data.validUntil ? new Date(parsed.data.validUntil) : null,
       },
     });
@@ -65,6 +71,7 @@ export async function PATCH(req: NextRequest) {
       where: { id },
       data: {
         ...data,
+        ...(data.startDate && { startDate: new Date(data.startDate) }),
         ...(data.validUntil && { validUntil: new Date(data.validUntil) }),
       },
     });

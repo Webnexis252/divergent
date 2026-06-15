@@ -55,13 +55,7 @@ export const CreateCourseSchema = z.object({
   language: z.string().optional().nullable(),
   visibility: z.string().default('PUBLIC'),
   publishDate: z.string().optional().nullable().refine((val) => !val || !isNaN(Date.parse(val)), { message: 'Invalid ISO date' }),
-  emiPlans: z.array(
-    z.object({
-      label: z.string().min(1),
-      amount: z.number().min(0),
-      dueDays: z.number().int().min(0),
-    })
-  ).optional().nullable(),
+  emiPlans: z.array(z.any()).optional().nullable(),
 });
 export const UpdateCourseSchema = CreateCourseSchema.partial().extend({
   isPublished: z.boolean().optional(),

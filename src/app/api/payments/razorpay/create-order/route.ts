@@ -60,11 +60,27 @@ export async function POST(req: NextRequest) {
         return apiError('Course not found', 404);
       }
 
-      const emiPlans = course.emiPlans as any[] | null;
-      const isInstallment = typeof installmentIndex === 'number' && emiPlans && emiPlans.length > 0;
+      const rawEmiPlans = course.emiPlans as any[] | null;
+      let emiPlans: any[] | null = null;
+      if (rawEmiPlans && rawEmiPlans.length > 0) {
+        if (rawEmiPlans[0]?.installments) {
+          emiPlans = rawEmiPlans;
+        } else {
+          emiPlans = [{ id: "legacy", name: "Installment Plan", installments: rawEmiPlans }];
+        }
+      }
 
-      if (isInstallment && (installmentIndex < 0 || installmentIndex >= emiPlans!.length)) {
-        return apiError('Invalid installment index', 400);
+      const isInstallment = typeof installmentIndex === 'number' && emiPlans && emiPlans.length > 0;
+      let selectedPlan: any = null;
+
+      if (isInstallment) {
+        selectedPlan = body.planId ? emiPlans!.find(p => p.id === body.planId) : emiPlans![0];
+        if (!selectedPlan) {
+          return apiError('Invalid plan selected', 400);
+        }
+        if (installmentIndex < 0 || installmentIndex >= selectedPlan.installments.length) {
+          return apiError('Invalid installment index', 400);
+        }
       }
 
       // Check if already enrolled
@@ -82,9 +98,11 @@ export async function POST(req: NextRequest) {
       }
 
       if (isInstallment) {
-        const plan = emiPlans![installmentIndex];
-        orderAmount = plan.amount;
-        paymentData = { userId: auth.userId, courseId, amount: plan.amount, currency: 'INR', status: 'PENDING', paymentGateway: 'RAZORPAY', installmentIndex };
+        const plan = selectedPlan;
+        orderAmount = Number(plan.installments[installmentIndex].amount);
+        paymentData = { userId: auth.userId, courseId, amount: orderAmount, currency: 'INR', status: 'PENDING', paymentGateway: 'RAZORPAY', installmentIndex };
+        // Store planId in notes
+        (paymentData as any).notes = JSON.stringify({ planId: plan.id });
       } else {
         if (course.price <= 0) {
           return apiError('Course is free, use normal enrollment', 400);
@@ -111,8 +129,30 @@ export async function POST(req: NextRequest) {
         where: { code: couponCode.toUpperCase() },
       });
 
-      if (coupon && coupon.isActive && (!coupon.validUntil || new Date(coupon.validUntil) >= new Date()) && coupon.usedCount < coupon.maxUses) {
-        appliedCouponDiscount = Number(((orderAmount * coupon.discountPercent) / 100).toFixed(2));
+      if (coupon && coupon.isActive && (!coupon.validUntil || new Date(coupon.validUntil) >= new Date()) && (!coupon.startDate || new Date(coupon.startDate) <= new Date()) && coupon.usedCount < coupon.maxUses) {
+        if (coupon.minPurchase && orderAmount < coupon.minPurchase) {
+          return apiError(`Minimum purchase amount for this coupon is ${coupon.minPurchase}`, 400);
+        }
+
+        if (coupon.limitPerLearner) {
+          const userUsageCount = await prisma.payment.count({
+            where: {
+              userId: auth.userId,
+              couponCode: coupon.code,
+              status: 'SUCCESS'
+            }
+          });
+          if (userUsageCount >= coupon.limitPerLearner) {
+            return apiError(`You have already reached the usage limit for this coupon (${coupon.limitPerLearner})`, 400);
+          }
+        }
+
+        if (coupon.discountType === "PERCENTAGE") {
+          appliedCouponDiscount = Number(((orderAmount * coupon.discountValue) / 100).toFixed(2));
+        } else {
+          appliedCouponDiscount = Number(coupon.discountValue);
+        }
+
         orderAmount = Math.max(0, orderAmount - appliedCouponDiscount);
         appliedCouponCode = coupon.code;
         

@@ -8,7 +8,8 @@ export async function POST(req: NextRequest) {
     const auth = await requireAuth(req);
     if (!auth) return apiError("Unauthorized", 401);
 
-    const { code, courseId, bundleId, installmentIndex } = await req.json();
+    const body = await req.json();
+    const { code, courseId, bundleId, installmentIndex, planId } = body;
     if (!code) {
       return apiError("Coupon code is required", 400);
     }
@@ -36,6 +37,19 @@ export async function POST(req: NextRequest) {
       return apiError("This coupon has reached its usage limit", 400);
     }
 
+    if (coupon.limitPerLearner) {
+      const userUsageCount = await prisma.payment.count({
+        where: {
+          userId: auth.userId,
+          couponCode: coupon.code,
+          status: 'SUCCESS'
+        }
+      });
+      if (userUsageCount >= coupon.limitPerLearner) {
+        return apiError(`You have already reached the usage limit for this coupon (${coupon.limitPerLearner})`, 400);
+      }
+    }
+
     let originalPrice = 0;
     
     if (bundleId) {
@@ -52,24 +66,46 @@ export async function POST(req: NextRequest) {
       });
       if (!course) return apiError("Course not found", 404);
       
-      const emiPlans = course.emiPlans as any[] | null;
+      const rawEmiPlans = course.emiPlans as any[] | null;
+      let emiPlans: any[] | null = null;
+      if (rawEmiPlans && rawEmiPlans.length > 0) {
+        if (rawEmiPlans[0]?.installments) {
+          emiPlans = rawEmiPlans;
+        } else {
+          emiPlans = [{ id: "legacy", name: "Installment Plan", installments: rawEmiPlans }];
+        }
+      }
+
       const isInstallment = typeof installmentIndex === 'number' && emiPlans && emiPlans.length > 0;
       
       if (isInstallment) {
-        if (installmentIndex < 0 || installmentIndex >= emiPlans!.length) {
+        const selectedPlan = planId ? emiPlans!.find(p => p.id === planId) : emiPlans![0];
+        if (!selectedPlan) return apiError("Invalid plan selected", 400);
+
+        if (installmentIndex < 0 || installmentIndex >= selectedPlan.installments.length) {
           return apiError("Invalid installment index", 400);
         }
-        originalPrice = Number(emiPlans![installmentIndex].amount);
+        originalPrice = Number(selectedPlan.installments[installmentIndex].amount);
       } else {
         originalPrice = Number(course.price);
       }
     }
 
-    const discountAmount = Number(((originalPrice * coupon.discountPercent) / 100).toFixed(2));
+    if (coupon.minPurchase && originalPrice < coupon.minPurchase) {
+      return apiError(`Minimum purchase amount for this coupon is ${coupon.minPurchase}`, 400);
+    }
+
+    let discountAmount = 0;
+    if (coupon.discountType === "PERCENTAGE") {
+      discountAmount = Number(((originalPrice * coupon.discountValue) / 100).toFixed(2));
+    } else {
+      discountAmount = Number(coupon.discountValue);
+    }
     const finalPrice = Math.max(0, originalPrice - discountAmount);
 
     return apiSuccess({
-      discountPercent: coupon.discountPercent,
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
       code: coupon.code,
       originalPrice,
       discountAmount,

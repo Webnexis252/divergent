@@ -1,13 +1,32 @@
 "use client";
 
-
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
+import {
+  PageTransition,
+  RevealSection,
+  StaggerGrid,
+} from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "@/app/admin/_components/AdminStatCard";
-import { Package, Pencil, Trash2, X, CheckCircle, EyeOff, Eye, ChevronDown, ImagePlus } from "lucide-react";
+import PricingPlanBuilder from "@/app/admin/_components/PricingPlanBuilder";
+import {
+  Package,
+  Pencil,
+  Trash2,
+  X,
+  CheckCircle,
+  EyeOff,
+  Eye,
+  ChevronDown,
+  ImagePlus,
+} from "lucide-react";
 
-type Course = { id: string; title: string; price: number; thumbnail?: string | null };
+type Course = {
+  id: string;
+  title: string;
+  price: number;
+  thumbnail?: string | null;
+};
 type BundleCourse = { id: string; course: Course };
 type Bundle = {
   id: string;
@@ -18,7 +37,7 @@ type Bundle = {
   price: number;
   isPublished: boolean;
   createdAt: string;
-  courses: (BundleCourse & { teachers?: {id: string, name: string}[] })[];
+  courses: (BundleCourse & { teachers?: { id: string; name: string }[] })[];
   _count: { payments: number };
   isInstallmentBased: boolean;
   emiPlans: Array<{ label: string; amount: number; dueDays: number }> | null;
@@ -37,17 +56,29 @@ export default function AdminBundlesPage() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
-  const [teacherAssignments, setTeacherAssignments] = useState<Record<string, string[]>>({});
+  const [teacherAssignments, setTeacherAssignments] = useState<
+    Record<string, string[]>
+  >({});
   const [submitting, setSubmitting] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isInstallmentBased, setIsInstallmentBased] = useState(false);
-  const [emiPlans, setEmiPlans] = useState<Array<{ label: string; amount: string; dueDays: string }>>([]);
+  const [emiPlans, setEmiPlans] = useState<any[]>([]);
   const [showAddInstalment, setShowAddInstalment] = useState(false);
-  const [newInstalment, setNewInstalment] = useState({ label: "", amount: "", dueDays: "" });
-  const [editingInstalmentIdx, setEditingInstalmentIdx] = useState<number | null>(null);
-  const [editInstalment, setEditInstalment] = useState({ label: "", amount: "", dueDays: "" });
+  const [newInstalment, setNewInstalment] = useState({
+    label: "",
+    amount: "",
+    dueDays: "",
+  });
+  const [editingInstalmentIdx, setEditingInstalmentIdx] = useState<
+    number | null
+  >(null);
+  const [editInstalment, setEditInstalment] = useState({
+    label: "",
+    amount: "",
+    dueDays: "",
+  });
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
-  
+
   const [thumbnail, setThumbnail] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -67,16 +98,20 @@ export default function AdminBundlesPage() {
         if (bundlesRes.success) setBundles(bundlesRes.data);
         if (coursesRes.success) setAllCourses(coursesRes.data);
         if (mentorsRes.success) {
-           const active = mentorsRes.data.active || [];
-           active.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-           setAllTeachers(active);
+          const active = mentorsRes.data.active || [];
+          active.sort((a: any, b: any) =>
+            (a.name || "").localeCompare(b.name || ""),
+          );
+          setAllTeachers(active);
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const openCreateForm = () => {
     setEditBundle(null);
@@ -99,14 +134,38 @@ export default function AdminBundlesPage() {
     setPrice(String(bundle.price));
     setSelectedCourseIds(bundle.courses.map((bc) => bc.course.id));
     const assignments: Record<string, string[]> = {};
-    bundle.courses.forEach(bc => {
+    bundle.courses.forEach((bc) => {
       if (bc.teachers && bc.teachers.length > 0) {
-         assignments[bc.course.id] = bc.teachers.map(t => t.id);
+        assignments[bc.course.id] = bc.teachers.map((t) => t.id);
       }
     });
     setTeacherAssignments(assignments);
     setIsInstallmentBased(bundle.isInstallmentBased || false);
-    setEmiPlans(Array.isArray(bundle.emiPlans) ? bundle.emiPlans.map((p) => ({ label: p.label, amount: String(p.amount), dueDays: String(p.dueDays) })) : []);
+    setEmiPlans(
+      Array.isArray(bundle.emiPlans)
+        ? (bundle.emiPlans as any[])[0]?.installments
+          ? (bundle.emiPlans as any[]).map((p: any) => ({
+              id: p.id || crypto.randomUUID(),
+              name: p.name || "Custom Instalment Plan",
+              installments: p.installments.map((i: any) => ({
+                label: i.label || "",
+                amount: String(i.amount || 0),
+                dueDays: String(i.dueDays || 0),
+              })),
+            }))
+          : [
+              {
+                id: "legacy",
+                name: "Default Installment Plan",
+                installments: (bundle.emiPlans as any[]).map((p: any) => ({
+                  label: p.label || "",
+                  amount: String(p.amount || 0),
+                  dueDays: String(p.dueDays || 0),
+                })),
+              },
+            ]
+        : [],
+    );
     setShowAddInstalment(false);
     setThumbnail(bundle.thumbnail || "");
     setShowForm(true);
@@ -119,7 +178,9 @@ export default function AdminBundlesPage() {
 
   const toggleCourse = (courseId: string) => {
     setSelectedCourseIds((prev) =>
-      prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]
+      prev.includes(courseId)
+        ? prev.filter((id) => id !== courseId)
+        : [...prev, courseId],
     );
   };
 
@@ -152,25 +213,43 @@ export default function AdminBundlesPage() {
 
   const handleSubmit = async () => {
     if (!title.trim()) return showToast("Bundle title is required", false);
-    if (selectedCourseIds.length < 2) return showToast("Select at least 2 courses", false);
+    if (selectedCourseIds.length < 2)
+      return showToast("Select at least 2 courses", false);
     const numPrice = parseFloat(price);
-    if (isNaN(numPrice) || numPrice < 0) return showToast("Enter a valid price", false);
+    if (isNaN(numPrice) || numPrice < 0)
+      return showToast("Enter a valid price", false);
 
     setSubmitting(true);
     try {
-      const url = editBundle ? `/api/admin/bundles/${editBundle.id}` : "/api/admin/bundles";
+      const url = editBundle
+        ? `/api/admin/bundles/${editBundle.id}`
+        : "/api/admin/bundles";
       const method = editBundle ? "PATCH" : "POST";
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          title, 
-          description, 
+        body: JSON.stringify({
+          title,
+          description,
           thumbnail,
-          price: numPrice, 
+          price: numPrice,
           isInstallmentBased,
-          emiPlans: emiPlans.length > 0 ? emiPlans.map((p) => ({ label: p.label, amount: Number(p.amount) || 0, dueDays: Number(p.dueDays) || 0 })) : null,
-          courses: selectedCourseIds.map(id => ({ courseId: id, teacherIds: teacherAssignments[id] || [] }))
+          emiPlans:
+            emiPlans.length > 0
+              ? emiPlans.map((plan) => ({
+                  id: plan.id,
+                  name: plan.name,
+                  installments: plan.installments.map((p: any) => ({
+                    label: p.label,
+                    amount: Number(p.amount) || 0,
+                    dueDays: Number(p.dueDays) || 0,
+                  })),
+                }))
+              : null,
+          courses: selectedCourseIds.map((id) => ({
+            courseId: id,
+            teacherIds: teacherAssignments[id] || [],
+          })),
         }),
       });
       const data = await res.json();
@@ -206,468 +285,542 @@ export default function AdminBundlesPage() {
     });
     const data = await res.json();
     if (data.success) {
-      showToast(bundle.isPublished ? "Bundle unpublished" : "Bundle published!");
+      showToast(
+        bundle.isPublished ? "Bundle unpublished" : "Bundle published!",
+      );
       load();
     }
   };
 
-  const totalRevenue = bundles.reduce((sum, b) => sum + b._count.payments * b.price, 0);
+  const totalRevenue = bundles.reduce(
+    (sum, b) => sum + b._count.payments * b.price,
+    0,
+  );
 
   return (
     <PageTransition>
       <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
-
-
-            {/* Hero */}
-            <RevealSection>
-              <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#7c3aed] via-[#9333ea] to-[#38c1ff] px-8 py-10 text-white shadow-[0_24px_60px_rgba(124,58,237,0.28)]">
-                <motion.div
-                  className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full bg-white/10 blur-3xl"
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ duration: 5, repeat: Infinity }}
-                />
-                <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-widest">
-                      <Package className="h-4 w-4" /> Course Bundles
-                    </div>
-                    <h1 className="mt-4 text-4xl font-bold tracking-tight">Bundles</h1>
-                    <p className="mt-2 text-white/80">
-                      Group multiple courses into a bundle and sell them together at a special price.
-                    </p>
-                  </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={showForm ? closeForm : openCreateForm}
-                    className="rounded-[14px] bg-white/20 px-5 py-2.5 font-semibold backdrop-blur-sm hover:bg-white/30 transition"
-                  >
-                    {showForm ? "✕ Cancel" : "+ New Bundle"}
-                  </motion.button>
+        {/* Hero */}
+        <RevealSection>
+          <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#7c3aed] via-[#9333ea] to-[#38c1ff] px-8 py-10 text-white shadow-[0_24px_60px_rgba(124,58,237,0.28)]">
+            <motion.div
+              className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full bg-white/10 blur-3xl"
+              animate={{ scale: [1, 1.3, 1] }}
+              transition={{ duration: 5, repeat: Infinity }}
+            />
+            <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-widest">
+                  <Package className="h-4 w-4" /> Course Bundles
                 </div>
+                <h1 className="mt-4 text-4xl font-bold tracking-tight">
+                  Bundles
+                </h1>
+                <p className="mt-2 text-white/80">
+                  Group multiple courses into a bundle and sell them together at
+                  a special price.
+                </p>
               </div>
-            </RevealSection>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={showForm ? closeForm : openCreateForm}
+                className="rounded-[14px] bg-white/20 px-5 py-2.5 font-semibold backdrop-blur-sm hover:bg-white/30 transition"
+              >
+                {showForm ? "✕ Cancel" : "+ New Bundle"}
+              </motion.button>
+            </div>
+          </div>
+        </RevealSection>
 
-            {/* Stats */}
-            <StaggerGrid className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              <AdminStatCard index={0} title="Total Bundles" value={loading ? "…" : bundles.length} caption="All bundles created." tone="sky" />
-              <AdminStatCard index={1} title="Published" value={loading ? "…" : bundles.filter((b) => b.isPublished).length} caption="Visible to students." tone="emerald" />
-              <AdminStatCard index={2} title="Est. Revenue" value={loading ? "…" : `₹${totalRevenue.toLocaleString("en-IN")}`} caption="From bundle purchases." tone="amber" />
-            </StaggerGrid>
+        {/* Stats */}
+        <StaggerGrid className="grid grid-cols-2 gap-4 md:grid-cols-3">
+          <AdminStatCard
+            index={0}
+            title="Total Bundles"
+            value={loading ? "…" : bundles.length}
+            caption="All bundles created."
+            tone="sky"
+          />
+          <AdminStatCard
+            index={1}
+            title="Published"
+            value={loading ? "…" : bundles.filter((b) => b.isPublished).length}
+            caption="Visible to students."
+            tone="emerald"
+          />
+          <AdminStatCard
+            index={2}
+            title="Est. Revenue"
+            value={loading ? "…" : `₹${totalRevenue.toLocaleString("en-IN")}`}
+            caption="From bundle purchases."
+            tone="amber"
+          />
+        </StaggerGrid>
 
-            {/* Create / Edit Form */}
-            <AnimatePresence>
-              {showForm && (
-                <motion.div
-                  initial={{ opacity: 0, y: -14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="rounded-[24px] bg-white p-6 shadow-[0_4px_24px_rgba(0,0,0,0.08)]"
+        {/* Create / Edit Form */}
+        <AnimatePresence>
+          {showForm && (
+            <motion.div
+              initial={{ opacity: 0, y: -14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="rounded-[24px] bg-white p-6 shadow-[0_4px_24px_rgba(0,0,0,0.08)]"
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-[18px] font-bold text-[#101828]">
+                  {editBundle ? "Edit Bundle" : "Create New Bundle"}
+                </h2>
+                <button
+                  onClick={closeForm}
+                  className="rounded-full p-2 text-gray-400 hover:bg-gray-100 transition"
                 >
-                  <div className="mb-5 flex items-center justify-between">
-                    <h2 className="text-[18px] font-bold text-[#101828]">
-                      {editBundle ? "Edit Bundle" : "Create New Bundle"}
-                    </h2>
-                    <button onClick={closeForm} className="rounded-full p-2 text-gray-400 hover:bg-gray-100 transition">
-                      <X className="h-5 w-5" />
-                    </button>
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Bundle Title
+                    </label>
+                    <input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="e.g. Complete JEE Prep Bundle"
+                      className="w-full rounded-[12px] border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed]"
+                    />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Bundle Price (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="e.g. 4999"
+                      className="w-full rounded-[12px] border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed]"
+                    />
+                  </div>
+                </div>
 
-                  <div className="space-y-5">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Bundle Title</label>
-                        <input
-                          value={title}
-                          onChange={(e) => setTitle(e.target.value)}
-                          placeholder="e.g. Complete JEE Prep Bundle"
-                          className="w-full rounded-[12px] border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed]"
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe what students get in this bundle..."
+                    rows={2}
+                    className="w-full rounded-[12px] border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#7c3aed] resize-none"
+                  />
+                </div>
+
+                {/* Bundle Thumbnail Upload */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Thumbnail Image
+                  </label>
+                  <div className="flex items-start gap-4">
+                    {thumbnail ? (
+                      <div className="relative h-[90px] w-[160px] flex-shrink-0 overflow-hidden rounded-[12px] border border-gray-200 shadow-sm">
+                        <img
+                          src={thumbnail}
+                          alt="Thumbnail"
+                          className="h-full w-full object-cover"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setThumbnail("")}
+                          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Bundle Price (₹)</label>
+                    ) : null}
+                    <div className="flex-1">
+                      <label
+                        className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-dashed px-4 py-6 transition ${thumbnail ? "border-gray-200 hover:bg-gray-50 text-gray-500" : "border-[#7c3aed]/40 bg-[#7c3aed]/5 text-[#7c3aed] hover:bg-[#7c3aed]/10"}`}
+                      >
+                        {uploadingImage ? (
+                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          <ImagePlus className="h-5 w-5" />
+                        )}
+                        <span className="text-sm font-semibold">
+                          {uploadingImage
+                            ? "Uploading..."
+                            : "Upload from device"}
+                        </span>
                         <input
-                          type="number"
-                          min="0"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          placeholder="e.g. 4999"
-                          className="w-full rounded-[12px] border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed]"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                          disabled={uploadingImage}
                         />
-                      </div>
+                      </label>
                     </div>
+                  </div>
+                </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Description (Optional)</label>
-                      <textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Describe what students get in this bundle..."
-                        rows={2}
-                        className="w-full rounded-[12px] border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#7c3aed] resize-none"
+                {/* Course multi-select */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Select Courses ({selectedCourseIds.length} selected —
+                    minimum 2)
+                  </label>
+                  <div className="relative">
+                    <div
+                      className="flex w-full cursor-pointer items-center justify-between rounded-[12px] border border-gray-200 bg-white px-4 py-2.5 text-sm transition hover:border-[#7c3aed]"
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                    >
+                      <span
+                        className={
+                          selectedCourseIds.length > 0
+                            ? "font-medium text-[#101828]"
+                            : "text-gray-400"
+                        }
+                      >
+                        {selectedCourseIds.length > 0
+                          ? `${selectedCourseIds.length} course${selectedCourseIds.length > 1 ? "s" : ""} selected`
+                          : "Click to select courses..."}
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 text-gray-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
                       />
                     </div>
 
-                    {/* Bundle Thumbnail Upload */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Thumbnail Image</label>
-                      <div className="flex items-start gap-4">
-                        {thumbnail ? (
-                          <div className="relative h-[90px] w-[160px] flex-shrink-0 overflow-hidden rounded-[12px] border border-gray-200 shadow-sm">
-                            <img src={thumbnail} alt="Thumbnail" className="h-full w-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => setThumbnail("")}
-                              className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        ) : null}
-                        <div className="flex-1">
-                          <label className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-dashed px-4 py-6 transition ${thumbnail ? 'border-gray-200 hover:bg-gray-50 text-gray-500' : 'border-[#7c3aed]/40 bg-[#7c3aed]/5 text-[#7c3aed] hover:bg-[#7c3aed]/10'}`}>
-                            {uploadingImage ? (
-                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            ) : (
-                              <ImagePlus className="h-5 w-5" />
-                            )}
-                            <span className="text-sm font-semibold">{uploadingImage ? "Uploading..." : "Upload from device"}</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={handleImageUpload}
-                              disabled={uploadingImage}
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Course multi-select */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                        Select Courses ({selectedCourseIds.length} selected — minimum 2)
-                      </label>
-                      <div className="relative">
-                        <div 
-                          className="flex w-full cursor-pointer items-center justify-between rounded-[12px] border border-gray-200 bg-white px-4 py-2.5 text-sm transition hover:border-[#7c3aed]"
-                          onClick={() => setDropdownOpen(!dropdownOpen)}
+                    <AnimatePresence>
+                      {dropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          className="absolute z-20 mt-2 max-h-60 w-full space-y-1 overflow-y-auto rounded-[14px] border border-gray-200 bg-white p-2 shadow-xl"
                         >
-                          <span className={selectedCourseIds.length > 0 ? "font-medium text-[#101828]" : "text-gray-400"}>
-                            {selectedCourseIds.length > 0 
-                              ? `${selectedCourseIds.length} course${selectedCourseIds.length > 1 ? 's' : ''} selected` 
-                              : "Click to select courses..."}
-                          </span>
-                          <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
-                        </div>
-
-                        <AnimatePresence>
-                          {dropdownOpen && (
-                            <motion.div 
-                              initial={{ opacity: 0, y: -5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -5 }}
-                              className="absolute z-20 mt-2 max-h-60 w-full space-y-1 overflow-y-auto rounded-[14px] border border-gray-200 bg-white p-2 shadow-xl"
-                            >
-                              {allCourses.map((course) => {
-                                const selected = selectedCourseIds.includes(course.id);
-                                return (
-                                  <label
-                                    key={course.id}
-                                    className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 transition ${
-                                      selected ? "bg-purple-50 border border-purple-200" : "border border-transparent hover:bg-gray-50"
-                                    }`}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={selected}
-                                      onChange={() => toggleCourse(course.id)}
-                                      className="h-4 w-4 rounded accent-[#7c3aed]"
-                                    />
-                                    <span className="flex-1 text-sm font-medium text-[#101828]">{course.title}</span>
-                                    <span className="text-xs text-gray-400">₹{course.price.toLocaleString("en-IN")}</span>
-                                  </label>
-                                );
-                              })}
-                              {allCourses.length === 0 && (
-                                <p className="py-4 text-center text-sm text-gray-400">No courses found.</p>
-                              )}
-                            </motion.div>
+                          {allCourses.map((course) => {
+                            const selected = selectedCourseIds.includes(
+                              course.id,
+                            );
+                            return (
+                              <label
+                                key={course.id}
+                                className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2.5 transition ${
+                                  selected
+                                    ? "bg-purple-50 border border-purple-200"
+                                    : "border border-transparent hover:bg-gray-50"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={() => toggleCourse(course.id)}
+                                  className="h-4 w-4 rounded accent-[#7c3aed]"
+                                />
+                                <span className="flex-1 text-sm font-medium text-[#101828]">
+                                  {course.title}
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  ₹{course.price.toLocaleString("en-IN")}
+                                </span>
+                              </label>
+                            );
+                          })}
+                          {allCourses.length === 0 && (
+                            <p className="py-4 text-center text-sm text-gray-400">
+                              No courses found.
+                            </p>
                           )}
-                        </AnimatePresence>
-                      </div>
-                      {selectedCourseIds.length >= 2 && (
-                        <p className="text-xs text-emerald-600">
-                          Total individual price: ₹{allCourses.filter(c => selectedCourseIds.includes(c.id)).reduce((s, c) => s + c.price, 0).toLocaleString("en-IN")}
-                          {price && parseFloat(price) > 0 && (
-                            <span className="ml-2 font-semibold text-purple-600">
-                              → Bundle saves ₹{Math.max(0, allCourses.filter(c => selectedCourseIds.includes(c.id)).reduce((s, c) => s + c.price, 0) - parseFloat(price)).toLocaleString("en-IN")}
-                            </span>
-                          )}
-                        </p>
+                        </motion.div>
                       )}
-                    </div>
-                    
-                    {/* Course Teacher Assignments */}
-                    {selectedCourseIds.length > 0 && (
-                      <div className="space-y-3 mt-4 border-t pt-4">
-                        <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Teacher Assignments</label>
-                        {selectedCourseIds.map(courseId => {
-                          const course = allCourses.find(c => c.id === courseId);
-                          if (!course) return null;
-                          const assignedIds = teacherAssignments[courseId] || [];
-                          // Note: we consider an override active if the key exists in teacherAssignments
-                          // It could be an empty array if they selected override but chose no one (or cleared it).
-                          // To keep it simple, if it's undefined, it's "original", otherwise "new".
-                          const hasOverride = typeof teacherAssignments[courseId] !== "undefined";
-                          
-                          return (
-                            <div key={courseId} className="rounded-xl border border-gray-200 p-4 bg-gray-50/50 space-y-3">
-                              <p className="text-sm font-semibold text-[#101828]">{course.title}</p>
-                              <div className="flex items-center gap-6 text-[13px] text-gray-700">
-                                <label className="flex items-center gap-2 cursor-pointer hover:text-purple-600 transition">
-                                  <input 
-                                    type="radio" 
-                                    name={`override-${courseId}`} 
-                                    className="accent-[#7c3aed]"
-                                    checked={!hasOverride} 
-                                    onChange={() => {
-                                      setTeacherAssignments(prev => { const next = {...prev}; delete next[courseId]; return next; });
-                                    }} 
-                                  />
-                                  Use Original Teachers
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer hover:text-purple-600 transition">
-                                  <input 
-                                    type="radio" 
-                                    name={`override-${courseId}`} 
-                                    className="accent-[#7c3aed]"
-                                    checked={hasOverride} 
-                                    onChange={() => {
-                                      setTeacherAssignments(prev => ({ ...prev, [courseId]: prev[courseId] || [] }));
-                                    }} 
-                                  />
-                                  Assign New Teachers
-                                </label>
-                              </div>
-                              {hasOverride && (
-                                <div className="mt-2 animate-in slide-in-from-top-1 fade-in duration-200">
-                                  <select 
-                                    multiple 
-                                    className="w-full rounded-[10px] border border-gray-300 bg-white px-3 py-2 text-[13px] text-gray-700 outline-none focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed]"
-                                    value={assignedIds}
-                                    onChange={(e) => {
-                                      const opts = Array.from(e.target.selectedOptions).map(o => o.value);
-                                      setTeacherAssignments(prev => ({...prev, [courseId]: opts}));
-                                    }}
-                                    style={{ minHeight: "120px" }}
-                                  >
-                                    {allTeachers.map(t => (
-                                      <option key={t.id} value={t.id} className="py-1 px-1">
-                                        {t.name} ({t.email})
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <p className="text-[11px] text-gray-500 mt-1.5 flex items-center gap-1">
-                                    <span>Hold</span>
-                                    <kbd className="rounded border bg-white px-1 font-mono text-[9px]">Cmd/Ctrl</kbd>
-                                    <span>to select multiple teachers</span>
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                    
-                    {/* EMI Plans Setup */}
-                    <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/50 p-5">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">Enable Installments</p>
-                          <p className="text-xs text-gray-500 mt-0.5">Allow students to pay for this bundle in multiple parts</p>
-                        </div>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={isInstallmentBased}
-                          onClick={() => setIsInstallmentBased(!isInstallmentBased)}
-                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:ring-offset-2 ${isInstallmentBased ? 'bg-[#7c3aed]' : 'bg-gray-200'}`}
-                        >
-                          <span aria-hidden="true" className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isInstallmentBased ? 'translate-x-5' : 'translate-x-0'}`} />
-                        </button>
-                      </div>
+                    </AnimatePresence>
+                  </div>
+                  {selectedCourseIds.length >= 2 && (
+                    <p className="text-xs text-emerald-600">
+                      Total individual price: ₹
+                      {allCourses
+                        .filter((c) => selectedCourseIds.includes(c.id))
+                        .reduce((s, c) => s + c.price, 0)
+                        .toLocaleString("en-IN")}
+                      {price && parseFloat(price) > 0 && (
+                        <span className="ml-2 font-semibold text-purple-600">
+                          → Bundle saves ₹
+                          {Math.max(
+                            0,
+                            allCourses
+                              .filter((c) => selectedCourseIds.includes(c.id))
+                              .reduce((s, c) => s + c.price, 0) -
+                              parseFloat(price),
+                          ).toLocaleString("en-IN")}
+                        </span>
+                      )}
+                    </p>
+                  )}
+                </div>
 
-                      {isInstallmentBased && (
-                        <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                          <div className="space-y-3">
-                            {emiPlans.length === 0 && !showAddInstalment ? (
-                              <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-xl bg-white">
-                                <p className="text-sm text-gray-500 mb-3">No installments configured</p>
-                                <button type="button" onClick={() => setShowAddInstalment(true)} className="text-sm font-semibold text-[#7c3aed] hover:text-[#6d28d9]">+ Add First Installment</button>
-                              </div>
-                            ) : (
-                              <div className="space-y-3">
-                                {emiPlans.map((plan, idx) => (
-                                  <div key={idx} className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
-                                    {editingInstalmentIdx === idx ? (
-                                      <div className="flex-1 flex flex-wrap gap-2 items-center w-full">
-                                        <input type="text" value={editInstalment.label} onChange={(e) => setEditInstalment(p => ({ ...p, label: e.target.value }))} placeholder="Label (e.g. 1st instalment)" className="flex-1 min-w-[120px] rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
-                                        <input type="number" min="0" value={editInstalment.amount} onChange={(e) => setEditInstalment(p => ({ ...p, amount: e.target.value }))} placeholder="Amount (₹)" className="w-24 rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs text-gray-500">Due in</span>
-                                          <input type="number" min="0" value={editInstalment.dueDays} onChange={(e) => setEditInstalment(p => ({ ...p, dueDays: e.target.value }))} placeholder="Days" className="w-20 rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
-                                          <span className="text-xs text-gray-500">days</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <button type="button" className="px-3 py-1.5 text-xs font-semibold bg-[#7c3aed] text-white rounded-[10px]" onClick={() => { setEmiPlans(p => p.map((pl, i) => i === idx ? editInstalment : pl)); setEditingInstalmentIdx(null); }}>Save</button>
-                                          <button type="button" className="p-1.5 text-gray-500 hover:bg-gray-100 rounded" onClick={() => setEditingInstalmentIdx(null)}><X className="h-4 w-4" /></button>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        <div className="flex-1">
-                                          <p className="text-sm font-semibold text-gray-900">{plan.label || `${idx + 1} instalment`}</p>
-                                          <p className="text-xs text-gray-500">Due in {plan.dueDays || '0'} days</p>
-                                        </div>
-                                        <div className="text-right pr-2">
-                                          <p className="text-sm font-bold text-gray-900">₹{Number(plan.amount).toLocaleString("en-IN")}</p>
-                                        </div>
-                                        <div className="flex items-center gap-1 border-l pl-3">
-                                          <button type="button" className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition" onClick={() => { setEditInstalment(plan); setEditingInstalmentIdx(idx); }}><Pencil className="h-3.5 w-3.5" /></button>
-                                          <button type="button" className="p-1.5 text-[#ef4444] hover:bg-[#fef2f2] rounded transition" onClick={() => setEmiPlans(p => p.filter((_, i) => i !== idx))}><Trash2 className="h-3.5 w-3.5" /></button>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
+                {/* Course Teacher Assignments */}
+                {selectedCourseIds.length > 0 && (
+                  <div className="space-y-3 mt-4 border-t pt-4">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Teacher Assignments
+                    </label>
+                    {selectedCourseIds.map((courseId) => {
+                      const course = allCourses.find((c) => c.id === courseId);
+                      if (!course) return null;
+                      const assignedIds = teacherAssignments[courseId] || [];
+                      // Note: we consider an override active if the key exists in teacherAssignments
+                      // It could be an empty array if they selected override but chose no one (or cleared it).
+                      // To keep it simple, if it's undefined, it's "original", otherwise "new".
+                      const hasOverride =
+                        typeof teacherAssignments[courseId] !== "undefined";
+
+                      return (
+                        <div
+                          key={courseId}
+                          className="rounded-xl border border-gray-200 p-4 bg-gray-50/50 space-y-3"
+                        >
+                          <p className="text-sm font-semibold text-[#101828]">
+                            {course.title}
+                          </p>
+                          <div className="flex items-center gap-6 text-[13px] text-gray-700">
+                            <label className="flex items-center gap-2 cursor-pointer hover:text-purple-600 transition">
+                              <input
+                                type="radio"
+                                name={`override-${courseId}`}
+                                className="accent-[#7c3aed]"
+                                checked={!hasOverride}
+                                onChange={() => {
+                                  setTeacherAssignments((prev) => {
+                                    const next = { ...prev };
+                                    delete next[courseId];
+                                    return next;
+                                  });
+                                }}
+                              />
+                              Use Original Teachers
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer hover:text-purple-600 transition">
+                              <input
+                                type="radio"
+                                name={`override-${courseId}`}
+                                className="accent-[#7c3aed]"
+                                checked={hasOverride}
+                                onChange={() => {
+                                  setTeacherAssignments((prev) => ({
+                                    ...prev,
+                                    [courseId]: prev[courseId] || [],
+                                  }));
+                                }}
+                              />
+                              Assign New Teachers
+                            </label>
+                          </div>
+                          {hasOverride && (
+                            <div className="mt-2 animate-in slide-in-from-top-1 fade-in duration-200">
+                              <select
+                                multiple
+                                className="w-full rounded-[10px] border border-gray-300 bg-white px-3 py-2 text-[13px] text-gray-700 outline-none focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed]"
+                                value={assignedIds}
+                                onChange={(e) => {
+                                  const opts = Array.from(
+                                    e.target.selectedOptions,
+                                  ).map((o) => o.value);
+                                  setTeacherAssignments((prev) => ({
+                                    ...prev,
+                                    [courseId]: opts,
+                                  }));
+                                }}
+                                style={{ minHeight: "120px" }}
+                              >
+                                {allTeachers.map((t) => (
+                                  <option
+                                    key={t.id}
+                                    value={t.id}
+                                    className="py-1 px-1"
+                                  >
+                                    {t.name} ({t.email})
+                                  </option>
                                 ))}
-
-                                {showAddInstalment ? (
-                                  <div className="flex flex-wrap items-center gap-2 bg-white p-3 rounded-xl border-2 border-dashed border-gray-200">
-                                    <input type="text" value={newInstalment.label} onChange={(e) => setNewInstalment(p => ({ ...p, label: e.target.value }))} placeholder={`${emiPlans.length + 1} instalment label`} className="flex-1 min-w-[120px] rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
-                                    <input type="number" min="0" value={newInstalment.amount} onChange={(e) => setNewInstalment(p => ({ ...p, amount: e.target.value }))} placeholder="Amount (₹)" className="w-24 rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs text-gray-500">Due</span>
-                                      <input type="number" min="0" value={newInstalment.dueDays} onChange={(e) => setNewInstalment(p => ({ ...p, dueDays: e.target.value }))} placeholder="Days" className="w-16 rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
-                                    </div>
-                                    <div className="flex items-center gap-1 ml-auto">
-                                      <button type="button" disabled={!newInstalment.amount} className="px-3 py-1.5 text-xs font-semibold bg-[#7c3aed] text-white rounded-[10px] disabled:opacity-50" onClick={() => { setEmiPlans(p => [...p, { label: newInstalment.label || `${p.length + 1} instalment`, amount: newInstalment.amount, dueDays: newInstalment.dueDays || '0' }]); setNewInstalment({ label: "", amount: "", dueDays: "" }); setShowAddInstalment(false); }}>Add</button>
-                                      <button type="button" className="p-1.5 text-gray-500 hover:bg-gray-100 rounded" onClick={() => setShowAddInstalment(false)}><X className="h-4 w-4" /></button>
-                                    </div>
-                                  </div>
-                                ) : emiPlans.length > 0 && (
-                                  <button type="button" onClick={() => setShowAddInstalment(true)} className="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:border-gray-300 hover:text-gray-900 transition">+ Add Instalment</button>
-                                )}
-                                
-                                {emiPlans.length > 0 && (
-                                  <div className="pt-2 flex justify-between px-2 text-xs font-semibold text-gray-600">
-                                    <p>Total Installment Price: ₹{emiPlans.reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString("en-IN")}</p>
-                                    <p>{emiPlans.length} installment{emiPlans.length !== 1 ? 's' : ''}</p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                              </select>
+                              <p className="text-[11px] text-gray-500 mt-1.5 flex items-center gap-1">
+                                <span>Hold</span>
+                                <kbd className="rounded border bg-white px-1 font-mono text-[9px]">
+                                  Cmd/Ctrl
+                                </kbd>
+                                <span>to select multiple teachers</span>
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      );
+                    })}
+                  </div>
+                )}
 
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={handleSubmit}
-                      disabled={submitting}
-                      className="w-full rounded-[12px] bg-[#7c3aed] py-3 text-sm font-semibold text-white disabled:opacity-60 hover:bg-[#6d28d9] transition"
+                {/* EMI Plans Setup */}
+                <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/50 p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        Enable Installments
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Allow students to pay for this bundle in multiple parts
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isInstallmentBased}
+                      onClick={() => setIsInstallmentBased(!isInstallmentBased)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:ring-offset-2 ${isInstallmentBased ? "bg-[#7c3aed]" : "bg-gray-200"}`}
                     >
-                      {submitting ? "Saving…" : editBundle ? "Update Bundle" : "Create Bundle"}
-                    </motion.button>
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isInstallmentBased ? "translate-x-5" : "translate-x-0"}`}
+                      />
+                    </button>
+                  </div>
+
+                  {isInstallmentBased && (
+                    <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <PricingPlanBuilder
+                        plans={emiPlans}
+                        onChange={setEmiPlans}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="w-full rounded-[12px] bg-[#7c3aed] py-3 text-sm font-semibold text-white disabled:opacity-60 hover:bg-[#6d28d9] transition"
+                >
+                  {submitting
+                    ? "Saving…"
+                    : editBundle
+                      ? "Update Bundle"
+                      : "Create Bundle"}
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Bundles List */}
+        <div className="rounded-[28px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
+          <div className="border-b px-6 py-5">
+            <h2 className="text-[18px] font-bold text-[#101828]">
+              All Bundles
+            </h2>
+          </div>
+          <div className="p-6 space-y-4">
+            {loading ? (
+              [1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-24 animate-pulse rounded-[16px] bg-gray-100"
+                />
+              ))
+            ) : bundles.length === 0 ? (
+              <div className="py-16 text-center">
+                <Package className="mx-auto h-12 w-12 text-gray-200" />
+                <p className="mt-4 text-[16px] font-semibold text-gray-400">
+                  No bundles yet
+                </p>
+                <p className="mt-1 text-[13px] text-gray-300">
+                  Create your first course bundle to get started.
+                </p>
+              </div>
+            ) : (
+              bundles.map((bundle, i) => (
+                <motion.div
+                  key={bundle.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="rounded-[18px] border border-[#f1f5f9] bg-[#fafbff] p-5"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 min-w-0">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-purple-100">
+                        <Package className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-bold text-[#101828]">
+                            {bundle.title}
+                          </p>
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${bundle.isPublished ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}
+                          >
+                            {bundle.isPublished ? "Published" : "Draft"}
+                          </span>
+                        </div>
+                        {bundle.description && (
+                          <p className="mt-0.5 text-[13px] text-gray-500 truncate max-w-md">
+                            {bundle.description}
+                          </p>
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {bundle.courses.map((bc) => (
+                            <span
+                              key={bc.id}
+                              className="inline-flex rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-medium text-purple-700"
+                            >
+                              {bc.course.title}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right mr-2">
+                        <p className="text-[20px] font-bold text-[#7c3aed]">
+                          ₹{bundle.price.toLocaleString("en-IN")}
+                        </p>
+                        <p className="text-[12px] text-gray-400">
+                          {bundle._count.payments} sold
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleTogglePublish(bundle)}
+                        title={bundle.isPublished ? "Unpublish" : "Publish"}
+                        className={`rounded-[10px] p-2 transition ${bundle.isPublished ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
+                      >
+                        {bundle.isPublished ? (
+                          <Eye className="h-4 w-4" />
+                        ) : (
+                          <EyeOff className="h-4 w-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => openEditForm(bundle)}
+                        className="rounded-[10px] bg-blue-50 p-2 text-blue-600 hover:bg-blue-100 transition"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(bundle.id)}
+                        className="rounded-[10px] bg-red-50 p-2 text-red-500 hover:bg-red-100 transition"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Bundles List */}
-            <div className="rounded-[28px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
-              <div className="border-b px-6 py-5">
-                <h2 className="text-[18px] font-bold text-[#101828]">All Bundles</h2>
-              </div>
-              <div className="p-6 space-y-4">
-                {loading ? (
-                  [1, 2, 3].map((i) => (
-                    <div key={i} className="h-24 animate-pulse rounded-[16px] bg-gray-100" />
-                  ))
-                ) : bundles.length === 0 ? (
-                  <div className="py-16 text-center">
-                    <Package className="mx-auto h-12 w-12 text-gray-200" />
-                    <p className="mt-4 text-[16px] font-semibold text-gray-400">No bundles yet</p>
-                    <p className="mt-1 text-[13px] text-gray-300">Create your first course bundle to get started.</p>
-                  </div>
-                ) : (
-                  bundles.map((bundle, i) => (
-                    <motion.div
-                      key={bundle.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="rounded-[18px] border border-[#f1f5f9] bg-[#fafbff] p-5"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 min-w-0">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-purple-100">
-                            <Package className="h-6 w-6 text-purple-600" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-bold text-[#101828]">{bundle.title}</p>
-                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${bundle.isPublished ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
-                                {bundle.isPublished ? "Published" : "Draft"}
-                              </span>
-                            </div>
-                            {bundle.description && (
-                              <p className="mt-0.5 text-[13px] text-gray-500 truncate max-w-md">{bundle.description}</p>
-                            )}
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {bundle.courses.map((bc) => (
-                                <span key={bc.id} className="inline-flex rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-medium text-purple-700">
-                                  {bc.course.title}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <div className="text-right mr-2">
-                            <p className="text-[20px] font-bold text-[#7c3aed]">₹{bundle.price.toLocaleString("en-IN")}</p>
-                            <p className="text-[12px] text-gray-400">{bundle._count.payments} sold</p>
-                          </div>
-                          <button
-                            onClick={() => handleTogglePublish(bundle)}
-                            title={bundle.isPublished ? "Unpublish" : "Publish"}
-                            className={`rounded-[10px] p-2 transition ${bundle.isPublished ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
-                          >
-                            {bundle.isPublished ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                          </button>
-                          <button
-                            onClick={() => openEditForm(bundle)}
-                            className="rounded-[10px] bg-blue-50 p-2 text-blue-600 hover:bg-blue-100 transition"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(bundle.id)}
-                            className="rounded-[10px] bg-red-50 p-2 text-red-500 hover:bg-red-100 transition"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Toast */}
