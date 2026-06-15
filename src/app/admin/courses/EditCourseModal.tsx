@@ -20,7 +20,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { formatShortDate } from "@/lib/date-format";
-import { Field, TextAreaField } from "@/components/ui/field";
+import { Field, TextAreaField, SelectField } from "@/components/ui/field";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Surface } from "@/components/ui/surface";
 import { Badge } from "@/components/ui/badge";
@@ -286,7 +286,14 @@ export default function EditCourseModal({
                         <Field label="Course Rating" onChange={e => setForm(p => ({ ...p, courseRating: e.target.value }))} value={form.courseRating} placeholder="e.g. 4.8" type="number" step="0.1" />
                       </div>
                       <div className="grid gap-4 lg:grid-cols-3">
-                        <Field label="Category" onChange={e => setForm(p => ({ ...p, category: e.target.value }))} value={form.category} placeholder="e.g. Design" />
+                        <SelectField label="Category" onChange={e => setForm(p => ({ ...p, category: e.target.value }))} value={form.category}>
+                          <option value="">Select Category</option>
+                          <option value="UCEED">UCEED</option>
+                          <option value="NIFT">NIFT</option>
+                          <option value="NID">NID</option>
+                          <option value="MOCK">MOCK</option>
+                          <option value="DROPPER">DROPPER</option>
+                        </SelectField>
                         <Field label="Course Level" onChange={e => setForm(p => ({ ...p, courseLevel: e.target.value }))} value={form.courseLevel} placeholder="e.g. Beginner" />
                         <Field label="Language" onChange={e => setForm(p => ({ ...p, language: e.target.value }))} value={form.language} placeholder="e.g. English" />
                       </div>

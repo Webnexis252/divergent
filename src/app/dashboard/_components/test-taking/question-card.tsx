@@ -401,6 +401,7 @@ function NumericInput({
   showResult?: boolean;
   correctAnswer?: unknown;
   explanation?: string | null;
+  explanationImageUrl?: string | null;
 }) {
   const value = typeof selectedAnswer === "string" ? selectedAnswer : "";
   const correctArr = Array.isArray(correctAnswer) ? (correctAnswer as string[]) : [String(correctAnswer ?? "")];
@@ -439,13 +440,20 @@ function NumericInput({
           }`}
       />
       {showResult && (
-        <div className={`flex items-start gap-2 rounded-[10px] px-4 py-3 text-[13px] ${isCorrect ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
-          <span className="text-base font-bold">{isCorrect ? "✓" : "✗"}</span>
-          <span>
-            {isCorrect ? "Correct!" : `Incorrect. Correct answer: `}
-            {!isCorrect && <strong>{correctDisplay}</strong>}
-            {explanation && <span className="ml-2 text-[#6b7280]"> — {explanation}</span>}
-          </span>
+        <div className={`flex flex-col gap-2 rounded-[10px] px-4 py-3 text-[13px] ${isCorrect ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
+          <div className="flex items-start gap-2">
+            <span className="text-base font-bold">{isCorrect ? "✓" : "✗"}</span>
+            <span>
+              {isCorrect ? "Correct!" : `Incorrect. Correct answer: `}
+              {!isCorrect && <strong>{correctDisplay}</strong>}
+              {explanation && <span className="ml-2 text-[#6b7280]"> — {explanation}</span>}
+            </span>
+          </div>
+          {explanationImageUrl && (
+            <div className="mt-2 overflow-hidden rounded-[8px] border border-black/5 bg-white p-2">
+              <img src={explanationImageUrl} alt="Explanation image" className="max-h-[200px] object-contain" />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -465,6 +473,7 @@ export function QuestionCard({
   showResult,
   correctAnswer,
   explanation,
+  explanationImageUrl,
   watermark,
 }: {
   question: QuestionData;
@@ -477,6 +486,7 @@ export function QuestionCard({
   showResult?: boolean;
   correctAnswer?: unknown;
   explanation?: string | null;
+  explanationImageUrl?: string | null;
   watermark?: QuestionWatermark;
 }) {
   return (
@@ -512,15 +522,15 @@ export function QuestionCard({
       </div>
 
       {/* Prompt */}
-      <p className="relative z-[1] mb-5 text-[17px] font-medium leading-relaxed text-[#111827]">
+      <p className="relative z-[1] mb-5 text-[15px] leading-relaxed text-[#111827]">
         {question.prompt}
       </p>
 
       {/* Optional image in prompt */}
       {question.imageUrl && (
-        <div className="relative z-[1] mb-5 overflow-hidden rounded-[12px] border border-[#e5e7eb]">
+        <div className="relative z-[1] mb-5 overflow-hidden rounded-[12px] border border-[#e5e7eb] bg-gray-50/50">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={question.imageUrl} alt="Question image" className="max-h-[300px] w-full object-contain" />
+          <img src={question.imageUrl} alt="Question image" className="max-h-[600px] w-full object-contain" />
         </div>
       )}
 
@@ -560,15 +570,22 @@ export function QuestionCard({
             showResult={showResult}
             correctAnswer={correctAnswer}
             explanation={explanation}
+            explanationImageUrl={explanationImageUrl}
           />
         )}
       </div>
 
-      {/* Explanation (shown after grading for SCQ/MCQ) */}
-      {showResult && explanation && question.type !== "NUMERIC" && (
+      {/* Explanation (shown after grading for SCQ/MCQ/SKETCH) */}
+      {showResult && (explanation || explanationImageUrl) && question.type !== "NUMERIC" && (
         <div className="relative z-[1] mt-4 rounded-[10px] bg-blue-50 px-4 py-3 text-[13px] leading-relaxed text-[#374151]">
-          <strong className="text-[#38c1ff]">Explanation: </strong>
-          {explanation}
+          <strong className="text-[#38c1ff] mb-1 block">Explanation: </strong>
+          {explanation && <p>{explanation}</p>}
+          {explanationImageUrl && (
+            <div className="mt-3 overflow-hidden rounded-[8px] border border-blue-100 bg-white p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={explanationImageUrl} alt="Explanation image" className="max-h-[500px] object-contain w-full" />
+            </div>
+          )}
         </div>
       )}
     </div>

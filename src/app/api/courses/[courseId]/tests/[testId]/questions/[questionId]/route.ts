@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { CreateTestQuestionSchema } from '@/lib/validators';
+import { CreateTestQuestionSchema, UpdateTestQuestionSchema } from '@/lib/validators';
 import { reindexQuestionsBySection } from '@/lib/test-question-sections';
 import {
   apiSuccess,
@@ -33,7 +33,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!question) return apiNotFound('Question');
 
     const body = await req.json();
-    const parsed = CreateTestQuestionSchema.partial().safeParse(body);
+    const parsed = UpdateTestQuestionSchema.safeParse(body);
     if (!parsed.success) {
       return apiError('Validation failed', 400, parsed.error.flatten());
     }
@@ -63,9 +63,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     });
 
     return apiSuccess(updated, 'Question updated successfully');
-  } catch (err) {
+  } catch (err: any) {
     console.error('[UPDATE_TEST_QUESTION_ERROR]', err);
-    return apiServerError();
+    require('fs').writeFileSync('/tmp/lms_error.txt', err.stack || err.toString());
+    return apiError('Server Error: ' + err.message, 500, { stack: err.stack });
   }
 }
 

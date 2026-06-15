@@ -22,6 +22,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data: parsed.data,
     });
 
+    // Update the total duration of the CourseTest
+    const allParts = await prisma.testPart.findMany({
+      where: { testId: part.testId },
+      select: { durationMins: true },
+    });
+    const totalDuration = allParts.reduce((acc, p) => acc + (p.durationMins || 0), 0);
+    await prisma.courseTest.update({
+      where: { id: part.testId },
+      data: { durationMins: totalDuration > 0 ? totalDuration : 60 },
+    });
+
     return apiSuccess(part, 'Test part updated successfully');
   } catch (err) {
     console.error('[UPDATE_TEST_PART_ERROR]', err);
@@ -36,8 +47,19 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
     const { partId } = await params;
 
-    await prisma.testPart.delete({
+    const part = await prisma.testPart.delete({
       where: { id: partId },
+    });
+
+    // Update the total duration of the CourseTest
+    const allParts = await prisma.testPart.findMany({
+      where: { testId: part.testId },
+      select: { durationMins: true },
+    });
+    const totalDuration = allParts.reduce((acc, p) => acc + (p.durationMins || 0), 0);
+    await prisma.courseTest.update({
+      where: { id: part.testId },
+      data: { durationMins: totalDuration > 0 ? totalDuration : 60 },
     });
 
     return apiSuccess(null, 'Test part deleted successfully');

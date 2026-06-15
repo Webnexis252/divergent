@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (!auth) return apiForbidden('Admin access required');
 
     const body = await req.json();
-    const { title, description, thumbnail, price, courseIds, isPublished } = body;
+    const { title, description, thumbnail, price, courseIds, isPublished, isInstallmentBased, emiPlans } = body;
 
     if (!title?.trim()) return apiBadRequest('title is required');
     const hasCoursesArray = Array.isArray(body.courses) && body.courses.length >= 2;
@@ -94,6 +94,8 @@ export async function POST(req: NextRequest) {
         thumbnail: thumbnail ?? null,
         price,
         isPublished: isPublished ?? false,
+        isInstallmentBased: isInstallmentBased ?? false,
+        emiPlans: emiPlans ?? null,
         courses: {
           create: coursesToCreate,
         },

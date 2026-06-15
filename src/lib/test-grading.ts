@@ -5,6 +5,7 @@ type TestQuestionForGrading = {
   allowPartialMarking?: boolean;
   correctAnswer: unknown;
   explanation?: string | null;
+  explanationImageUrl?: string | null;
 };
 
 type GradeQuestionAnswerOptions = {
@@ -17,6 +18,7 @@ export type GradedQuestionAnswer = {
   pointsAwarded: number;
   correctAnswer?: unknown;
   explanation?: string | null;
+  explanationImageUrl?: string | null;
 };
 
 function toTrimmedStringArray(value: unknown) {
@@ -51,6 +53,7 @@ export function gradeQuestionAnswer(
     pointsAwarded: 0,
     correctAnswer: includeAnswerKey ? question.correctAnswer : undefined,
     explanation: includeAnswerKey ? question.explanation ?? null : null,
+    explanationImageUrl: includeAnswerKey ? question.explanationImageUrl ?? null : null,
   };
 
   if (question.type === "SKETCH") {
@@ -59,6 +62,7 @@ export function gradeQuestionAnswer(
       isCorrect: null,
       pointsAwarded: 0,
       explanation: includeAnswerKey ? question.explanation ?? null : null,
+      explanationImageUrl: includeAnswerKey ? question.explanationImageUrl ?? null : null,
     };
   }
 

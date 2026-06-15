@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "@/app/admin/_components/AdminStatCard";
-import { Package, Pencil, Trash2, X, CheckCircle, EyeOff, Eye, ChevronDown } from "lucide-react";
+import { Package, Pencil, Trash2, X, CheckCircle, EyeOff, Eye, ChevronDown, ImagePlus } from "lucide-react";
 
 type Course = { id: string; title: string; price: number; thumbnail?: string | null };
 type BundleCourse = { id: string; course: Course };
@@ -20,6 +20,8 @@ type Bundle = {
   createdAt: string;
   courses: (BundleCourse & { teachers?: {id: string, name: string}[] })[];
   _count: { payments: number };
+  isInstallmentBased: boolean;
+  emiPlans: Array<{ label: string; amount: number; dueDays: number }> | null;
 };
 
 export default function AdminBundlesPage() {
@@ -38,7 +40,16 @@ export default function AdminBundlesPage() {
   const [teacherAssignments, setTeacherAssignments] = useState<Record<string, string[]>>({});
   const [submitting, setSubmitting] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isInstallmentBased, setIsInstallmentBased] = useState(false);
+  const [emiPlans, setEmiPlans] = useState<Array<{ label: string; amount: string; dueDays: string }>>([]);
+  const [showAddInstalment, setShowAddInstalment] = useState(false);
+  const [newInstalment, setNewInstalment] = useState({ label: "", amount: "", dueDays: "" });
+  const [editingInstalmentIdx, setEditingInstalmentIdx] = useState<number | null>(null);
+  const [editInstalment, setEditInstalment] = useState({ label: "", amount: "", dueDays: "" });
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  
+  const [thumbnail, setThumbnail] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -74,6 +85,10 @@ export default function AdminBundlesPage() {
     setPrice("");
     setSelectedCourseIds([]);
     setTeacherAssignments({});
+    setIsInstallmentBased(false);
+    setEmiPlans([]);
+    setShowAddInstalment(false);
+    setThumbnail("");
     setShowForm(true);
   };
 
@@ -90,6 +105,10 @@ export default function AdminBundlesPage() {
       }
     });
     setTeacherAssignments(assignments);
+    setIsInstallmentBased(bundle.isInstallmentBased || false);
+    setEmiPlans(Array.isArray(bundle.emiPlans) ? bundle.emiPlans.map((p) => ({ label: p.label, amount: String(p.amount), dueDays: String(p.dueDays) })) : []);
+    setShowAddInstalment(false);
+    setThumbnail(bundle.thumbnail || "");
     setShowForm(true);
   };
 
@@ -102,6 +121,33 @@ export default function AdminBundlesPage() {
     setSelectedCourseIds((prev) =>
       prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]
     );
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload/image", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setThumbnail(data.data.url);
+        showToast("Image uploaded successfully");
+      } else {
+        showToast("Upload failed", false);
+      }
+    } catch {
+      showToast("Upload failed", false);
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -120,7 +166,10 @@ export default function AdminBundlesPage() {
         body: JSON.stringify({ 
           title, 
           description, 
+          thumbnail,
           price: numPrice, 
+          isInstallmentBased,
+          emiPlans: emiPlans.length > 0 ? emiPlans.map((p) => ({ label: p.label, amount: Number(p.amount) || 0, dueDays: Number(p.dueDays) || 0 })) : null,
           courses: selectedCourseIds.map(id => ({ courseId: id, teacherIds: teacherAssignments[id] || [] }))
         }),
       });
@@ -257,6 +306,42 @@ export default function AdminBundlesPage() {
                         rows={2}
                         className="w-full rounded-[12px] border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#7c3aed] resize-none"
                       />
+                    </div>
+
+                    {/* Bundle Thumbnail Upload */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Thumbnail Image</label>
+                      <div className="flex items-start gap-4">
+                        {thumbnail ? (
+                          <div className="relative h-[90px] w-[160px] flex-shrink-0 overflow-hidden rounded-[12px] border border-gray-200 shadow-sm">
+                            <img src={thumbnail} alt="Thumbnail" className="h-full w-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setThumbnail("")}
+                              className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : null}
+                        <div className="flex-1">
+                          <label className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-dashed px-4 py-6 transition ${thumbnail ? 'border-gray-200 hover:bg-gray-50 text-gray-500' : 'border-[#7c3aed]/40 bg-[#7c3aed]/5 text-[#7c3aed] hover:bg-[#7c3aed]/10'}`}>
+                            {uploadingImage ? (
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            ) : (
+                              <ImagePlus className="h-5 w-5" />
+                            )}
+                            <span className="text-sm font-semibold">{uploadingImage ? "Uploading..." : "Upload from device"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleImageUpload}
+                              disabled={uploadingImage}
+                            />
+                          </label>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Course multi-select */}
@@ -396,6 +481,98 @@ export default function AdminBundlesPage() {
                         })}
                       </div>
                     )}
+                    
+                    {/* EMI Plans Setup */}
+                    <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/50 p-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">Enable Installments</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Allow students to pay for this bundle in multiple parts</p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isInstallmentBased}
+                          onClick={() => setIsInstallmentBased(!isInstallmentBased)}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#7c3aed] focus:ring-offset-2 ${isInstallmentBased ? 'bg-[#7c3aed]' : 'bg-gray-200'}`}
+                        >
+                          <span aria-hidden="true" className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isInstallmentBased ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </button>
+                      </div>
+
+                      {isInstallmentBased && (
+                        <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <div className="space-y-3">
+                            {emiPlans.length === 0 && !showAddInstalment ? (
+                              <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-xl bg-white">
+                                <p className="text-sm text-gray-500 mb-3">No installments configured</p>
+                                <button type="button" onClick={() => setShowAddInstalment(true)} className="text-sm font-semibold text-[#7c3aed] hover:text-[#6d28d9]">+ Add First Installment</button>
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {emiPlans.map((plan, idx) => (
+                                  <div key={idx} className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                                    {editingInstalmentIdx === idx ? (
+                                      <div className="flex-1 flex flex-wrap gap-2 items-center w-full">
+                                        <input type="text" value={editInstalment.label} onChange={(e) => setEditInstalment(p => ({ ...p, label: e.target.value }))} placeholder="Label (e.g. 1st instalment)" className="flex-1 min-w-[120px] rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
+                                        <input type="number" min="0" value={editInstalment.amount} onChange={(e) => setEditInstalment(p => ({ ...p, amount: e.target.value }))} placeholder="Amount (₹)" className="w-24 rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs text-gray-500">Due in</span>
+                                          <input type="number" min="0" value={editInstalment.dueDays} onChange={(e) => setEditInstalment(p => ({ ...p, dueDays: e.target.value }))} placeholder="Days" className="w-20 rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
+                                          <span className="text-xs text-gray-500">days</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <button type="button" className="px-3 py-1.5 text-xs font-semibold bg-[#7c3aed] text-white rounded-[10px]" onClick={() => { setEmiPlans(p => p.map((pl, i) => i === idx ? editInstalment : pl)); setEditingInstalmentIdx(null); }}>Save</button>
+                                          <button type="button" className="p-1.5 text-gray-500 hover:bg-gray-100 rounded" onClick={() => setEditingInstalmentIdx(null)}><X className="h-4 w-4" /></button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="flex-1">
+                                          <p className="text-sm font-semibold text-gray-900">{plan.label || `${idx + 1} instalment`}</p>
+                                          <p className="text-xs text-gray-500">Due in {plan.dueDays || '0'} days</p>
+                                        </div>
+                                        <div className="text-right pr-2">
+                                          <p className="text-sm font-bold text-gray-900">₹{Number(plan.amount).toLocaleString("en-IN")}</p>
+                                        </div>
+                                        <div className="flex items-center gap-1 border-l pl-3">
+                                          <button type="button" className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition" onClick={() => { setEditInstalment(plan); setEditingInstalmentIdx(idx); }}><Pencil className="h-3.5 w-3.5" /></button>
+                                          <button type="button" className="p-1.5 text-[#ef4444] hover:bg-[#fef2f2] rounded transition" onClick={() => setEmiPlans(p => p.filter((_, i) => i !== idx))}><Trash2 className="h-3.5 w-3.5" /></button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                ))}
+
+                                {showAddInstalment ? (
+                                  <div className="flex flex-wrap items-center gap-2 bg-white p-3 rounded-xl border-2 border-dashed border-gray-200">
+                                    <input type="text" value={newInstalment.label} onChange={(e) => setNewInstalment(p => ({ ...p, label: e.target.value }))} placeholder={`${emiPlans.length + 1} instalment label`} className="flex-1 min-w-[120px] rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
+                                    <input type="number" min="0" value={newInstalment.amount} onChange={(e) => setNewInstalment(p => ({ ...p, amount: e.target.value }))} placeholder="Amount (₹)" className="w-24 rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-gray-500">Due</span>
+                                      <input type="number" min="0" value={newInstalment.dueDays} onChange={(e) => setNewInstalment(p => ({ ...p, dueDays: e.target.value }))} placeholder="Days" className="w-16 rounded-[10px] border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#7c3aed]" />
+                                    </div>
+                                    <div className="flex items-center gap-1 ml-auto">
+                                      <button type="button" disabled={!newInstalment.amount} className="px-3 py-1.5 text-xs font-semibold bg-[#7c3aed] text-white rounded-[10px] disabled:opacity-50" onClick={() => { setEmiPlans(p => [...p, { label: newInstalment.label || `${p.length + 1} instalment`, amount: newInstalment.amount, dueDays: newInstalment.dueDays || '0' }]); setNewInstalment({ label: "", amount: "", dueDays: "" }); setShowAddInstalment(false); }}>Add</button>
+                                      <button type="button" className="p-1.5 text-gray-500 hover:bg-gray-100 rounded" onClick={() => setShowAddInstalment(false)}><X className="h-4 w-4" /></button>
+                                    </div>
+                                  </div>
+                                ) : emiPlans.length > 0 && (
+                                  <button type="button" onClick={() => setShowAddInstalment(true)} className="w-full py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:border-gray-300 hover:text-gray-900 transition">+ Add Instalment</button>
+                                )}
+                                
+                                {emiPlans.length > 0 && (
+                                  <div className="pt-2 flex justify-between px-2 text-xs font-semibold text-gray-600">
+                                    <p>Total Installment Price: ₹{emiPlans.reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString("en-IN")}</p>
+                                    <p>{emiPlans.length} installment{emiPlans.length !== 1 ? 's' : ''}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     <motion.button
                       whileHover={{ scale: 1.02 }}

@@ -67,7 +67,7 @@ export function BuilderDrawer({
         category: q.category || "CONCEPT",
         prompt: q.prompt || "",
         explanation: q.explanation || "",
-        explanationImageUrl: q.explanationImageUrl || null,
+        explanationImageUrl: q.type === "SKETCH" ? (q.referenceImage || q.explanationImageUrl || null) : (q.explanationImageUrl || null),
         options: q.options?.length ? q.options : ["Option 1", "Option 2", "Option 3", "Option 4"],
         correctAnswer: initialCorrectAnswers,
         imageUrl: q.imageUrl || null,
@@ -176,6 +176,8 @@ export function BuilderDrawer({
           partId: target!.partId,
           sectionId: target!.sectionId,
           groupId: target!.groupId || undefined,
+          referenceImage: type === "SKETCH" ? qForm.explanationImageUrl : null,
+          explanationImageUrl: type === "SKETCH" ? null : qForm.explanationImageUrl,
           options: qForm.options.filter((o) => o.trim()),
           correctAnswer: (type === "SCQ" || type === "MCQ")
             ? qForm.correctAnswer.map((idx) => {
@@ -245,12 +247,12 @@ export function BuilderDrawer({
 
                 <div>
                   <label className="mb-1 block text-sm font-medium">Question Prompt (Optional)</label>
-                  <textarea value={qForm.prompt} onChange={e => setQForm({...qForm, prompt: e.target.value})} className="w-full rounded-md border p-2" rows={3} />
+                  <textarea value={qForm.prompt} onChange={e => setQForm({...qForm, prompt: e.target.value})} className="w-full rounded-md border p-2" rows={2} />
                   
                   {qForm.imageUrl ? (
                       <div className="mt-3 overflow-hidden rounded-[14px] border border-[#e5e7eb] bg-gray-50/50">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={qForm.imageUrl} alt="Question" className="max-h-[280px] w-full object-contain" />
+                        <img src={qForm.imageUrl} alt="Question" className="max-h-[400px] w-full object-contain" />
                         <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-t border-[#e5e7eb]">
                           <span className="text-[12px] text-gray-600 font-medium">Question image uploaded ✓</span>
                           <button type="button" onClick={() => setQForm({...qForm, imageUrl: null})} className="text-[12px] text-red-500 hover:text-red-700 font-semibold">Remove</button>
@@ -260,9 +262,15 @@ export function BuilderDrawer({
                       <button
                         type="button"
                         onClick={() => document.getElementById('qImageUpload2')?.click()}
-                        className="mt-2 flex w-fit items-center gap-2 rounded-lg border border-[#e5e7eb] px-3 py-1.5 text-[12px] font-medium text-gray-600 transition hover:bg-gray-50"
+                        className="mt-3 flex w-full flex-col items-center justify-center gap-3 rounded-[12px] border-2 border-dashed border-[#d1d5db] bg-[#f9fafb] py-8 transition hover:border-[#38c1ff] hover:bg-blue-50/50"
                       >
-                        <ImagePlus className="h-3.5 w-3.5" /> Add Question Image *
+                        <div className="rounded-full bg-white p-3 shadow-sm border border-gray-200 text-gray-500">
+                          <ImagePlus className="h-6 w-6" />
+                        </div>
+                        <div className="text-center">
+                          <span className="text-[14px] font-semibold text-[#111827]">Upload Question Image *</span>
+                          <p className="mt-1 text-[12px] text-gray-500">Click to browse or drag and drop</p>
+                        </div>
                       </button>
                     )}
                     <input
@@ -365,7 +373,7 @@ export function BuilderDrawer({
                   {qForm.explanationImageUrl ? (
                     <div className="mt-3 overflow-hidden rounded-[14px] border border-[#e5e7eb] bg-gray-50/50">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={qForm.explanationImageUrl} alt="Explanation" className="max-h-[200px] w-full object-contain" />
+                      <img src={qForm.explanationImageUrl} alt="Explanation" className="max-h-[400px] w-full object-contain" />
                       <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-t border-[#e5e7eb]">
                         <span className="text-[12px] text-gray-600 font-medium">Explanation image uploaded ✓</span>
                         <button type="button" onClick={() => setQForm({...qForm, explanationImageUrl: null})} className="text-[12px] text-red-500 hover:text-red-700 font-semibold">Remove</button>
@@ -375,9 +383,15 @@ export function BuilderDrawer({
                     <button
                       type="button"
                       onClick={() => document.getElementById('explImageUpload')?.click()}
-                      className="mt-2 flex w-fit items-center gap-2 rounded-lg border border-[#e5e7eb] px-3 py-1.5 text-[12px] font-medium text-gray-600 transition hover:bg-gray-50"
+                      className="mt-3 flex w-full flex-col items-center justify-center gap-3 rounded-[12px] border-2 border-dashed border-[#d1d5db] bg-[#f9fafb] py-8 transition hover:border-[#38c1ff] hover:bg-blue-50/50"
                     >
-                      <ImagePlus className="h-3.5 w-3.5" /> Add Explanation Image (Optional)
+                      <div className="rounded-full bg-white p-3 shadow-sm border border-gray-200 text-gray-500">
+                        <ImagePlus className="h-6 w-6" />
+                      </div>
+                      <div className="text-center">
+                        <span className="text-[14px] font-semibold text-[#111827]">Upload Explanation Image (Optional)</span>
+                        <p className="mt-1 text-[12px] text-gray-500">Click to browse or drag and drop</p>
+                      </div>
                     </button>
                   )}
                   <input

@@ -48,7 +48,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const { id } = await params;
     const body = await req.json();
-    const { title, description, thumbnail, price, courseIds, isPublished } = body;
+    const { title, description, thumbnail, price, courseIds, isPublished, isInstallmentBased, emiPlans } = body;
 
     const existing = await prisma.bundle.findUnique({ where: { id } });
     if (!existing) return apiNotFound('Bundle');
@@ -60,6 +60,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (thumbnail !== undefined) updateData.thumbnail = thumbnail;
     if (price !== undefined) updateData.price = price;
     if (isPublished !== undefined) updateData.isPublished = isPublished;
+    if (isInstallmentBased !== undefined) updateData.isInstallmentBased = isInstallmentBased;
+    if (emiPlans !== undefined) updateData.emiPlans = emiPlans;
 
     // Use a transaction so deleteMany + creates are atomic
     const updated = await prisma.$transaction(async (tx) => {

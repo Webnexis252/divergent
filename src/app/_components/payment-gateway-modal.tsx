@@ -41,6 +41,47 @@ export function PaymentGatewayModal({
 }: PaymentGatewayModalProps) {
   const [selectedGateway, setSelectedGateway] = useState<"CASHFREE" | "RAZORPAY">("CASHFREE");
   const [isLoading, setIsLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; finalPrice: number } | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+
+  // If installment is > 0, we do not allow coupons (user requested "only first installment")
+  const isCouponAllowed = typeof installmentIndex !== "number" || installmentIndex === 0;
+
+  async function handleApplyCoupon() {
+    if (!couponCode.trim()) return;
+    setIsApplyingCoupon(true);
+    setCouponError("");
+    setAppliedCoupon(null);
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponCode.trim(),
+          courseId,
+          bundleId,
+          installmentIndex
+        })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setCouponError(json.error || "Invalid coupon code");
+      } else {
+        setAppliedCoupon({
+          code: json.data.code,
+          discountAmount: json.data.discountAmount,
+          finalPrice: json.data.finalPrice
+        });
+        setCouponError("");
+      }
+    } catch (err: any) {
+      setCouponError("Failed to validate coupon");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  }
 
   async function handleProceed() {
     setIsLoading(true);
@@ -53,6 +94,9 @@ export function PaymentGatewayModal({
       const payload: any = courseId ? { courseId } : { bundleId };
       if (typeof installmentIndex === 'number') {
         payload.installmentIndex = installmentIndex;
+      }
+      if (appliedCoupon?.code) {
+        payload.couponCode = appliedCoupon.code;
       }
       
       const response = await fetch(endpoint, {
@@ -186,11 +230,55 @@ export function PaymentGatewayModal({
 
           <div className="px-6 pb-6 pt-8">
             <h2 className="text-[20px] font-bold text-gray-900 mb-2">Select Payment Method</h2>
-            <p className="text-[14px] text-gray-500 mb-6">
+            <p className="text-[14px] text-gray-500 mb-4">
               Choose how you'd like to pay for this enrollment securely.
             </p>
 
-            <div className="space-y-3 mb-8">
+            {isCouponAllowed && (
+              <div className="mb-6 rounded-[16px] bg-gray-50 p-4 border border-gray-100">
+                <label className="block text-[13px] font-semibold text-gray-700 mb-2">Have a discount code?</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value.toUpperCase());
+                      setCouponError("");
+                    }}
+                    placeholder="Enter code"
+                    className="h-10 w-full rounded-[10px] border border-gray-200 px-3 text-[14px] outline-none focus:border-[#38c1ff] focus:ring-2 focus:ring-[#38c1ff]/20 uppercase"
+                  />
+                  <button
+                    onClick={handleApplyCoupon}
+                    disabled={isApplyingCoupon || !couponCode.trim()}
+                    className="h-10 shrink-0 rounded-[10px] bg-gray-900 px-4 text-[13px] font-semibold text-white transition hover:bg-gray-800 disabled:opacity-50"
+                  >
+                    {isApplyingCoupon ? "..." : "Apply"}
+                  </button>
+                </div>
+                {couponError && <p className="mt-2 text-[12px] text-red-500">{couponError}</p>}
+                {appliedCoupon && (
+                  <div className="mt-2 text-[13px] font-medium text-green-600 flex items-center justify-between">
+                    <span>Code applied! -₹{appliedCoupon.discountAmount} off</span>
+                    <button 
+                      onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}
+                      className="text-gray-400 hover:text-gray-600 underline text-[12px]"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {appliedCoupon?.finalPrice === 0 ? (
+              <div className="mb-8 rounded-[16px] bg-green-50 p-4 border border-green-100 text-center">
+                <ShieldCheck className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                <p className="text-[15px] font-bold text-green-900">100% Free with Coupon</p>
+                <p className="text-[13px] text-green-700 mt-1">No payment required. Proceed to enroll.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 mb-8">
               {/* Cashfree Option */}
               <button
                 onClick={() => setSelectedGateway("CASHFREE")}
@@ -227,6 +315,7 @@ export function PaymentGatewayModal({
                 </div>
               </button>
             </div>
+            )}
 
             <button
               disabled={isLoading}
@@ -238,8 +327,10 @@ export function PaymentGatewayModal({
                   <Loader2 className="h-5 w-5 animate-spin" />
                   Processing...
                 </>
+              ) : appliedCoupon?.finalPrice === 0 ? (
+                "Enroll Now"
               ) : (
-                `Proceed to Pay`
+                `Proceed to Pay ${appliedCoupon ? `₹${appliedCoupon.finalPrice}` : ''}`
               )}
             </button>
           </div>

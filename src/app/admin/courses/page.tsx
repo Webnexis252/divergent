@@ -22,7 +22,7 @@ import {
 import { AnimCard, PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
 import { formatShortDate } from "@/lib/date-format";
-import { Field, TextAreaField } from "@/components/ui/field";
+import { Field, TextAreaField, SelectField } from "@/components/ui/field";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Surface } from "@/components/ui/surface";
 import { Badge } from "@/components/ui/badge";
@@ -351,7 +351,14 @@ export default function AdminCoursesPage() {
                       />
                       <div className="grid gap-5 sm:grid-cols-2">
                         <Field label="Subtitle" onChange={e => setForm(p => ({...p, subtitle: e.target.value}))} value={form.subtitle} placeholder="e.g. Master the fundamentals" />
-                        <Field label="Category" onChange={e => setForm(p => ({...p, category: e.target.value}))} value={form.category} placeholder="e.g. Design" />
+                        <SelectField label="Category" onChange={e => setForm(p => ({...p, category: e.target.value}))} value={form.category}>
+                          <option value="">Select Category</option>
+                          <option value="UCEED">UCEED</option>
+                          <option value="NIFT">NIFT</option>
+                          <option value="NID">NID</option>
+                          <option value="MOCK">MOCK</option>
+                          <option value="DROPPER">DROPPER</option>
+                        </SelectField>
                         <Field label="Course Level" onChange={e => setForm(p => ({...p, courseLevel: e.target.value}))} value={form.courseLevel} placeholder="e.g. Beginner" />
                         <Field label="Language" onChange={e => setForm(p => ({...p, language: e.target.value}))} value={form.language} placeholder="e.g. English" />
                       </div>

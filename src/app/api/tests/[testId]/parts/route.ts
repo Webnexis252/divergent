@@ -64,9 +64,21 @@ export async function POST(req: NextRequest, { params }: Params) {
       },
     });
 
+    // Update the total duration of the CourseTest
+    const allParts = await prisma.testPart.findMany({
+      where: { testId },
+      select: { durationMins: true },
+    });
+    const totalDuration = allParts.reduce((acc, p) => acc + (p.durationMins || 0), 0);
+    await prisma.courseTest.update({
+      where: { id: testId },
+      data: { durationMins: totalDuration > 0 ? totalDuration : 60 },
+    });
+
     return apiCreated(part, 'Test part created successfully');
   } catch (err) {
     console.error('[CREATE_TEST_PART_ERROR]', err);
     return apiServerError();
   }
 }
+

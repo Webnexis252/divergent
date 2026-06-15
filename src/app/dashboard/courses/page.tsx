@@ -246,15 +246,15 @@ export default async function DashboardCoursesPage() {
 
             <section className="min-w-0 px-0 sm:px-4 xl:pr-10">
               <div className="mx-auto max-w-[1160px] space-y-10">
-                <div className="flex flex-col gap-10">
-                  <RevealSection className="space-y-6">
-                    <div id="current-course">
-                      <h1 className="text-[clamp(1.9rem,3vw,2rem)] font-medium text-black">
-                        {publishedEnrollments.length > 1 ? "Currently logged in courses" : "Currently logged in course"}
-                      </h1>
-                    </div>
+                {publishedEnrollments.length > 0 && (
+                  <div className="flex flex-col gap-10">
+                    <RevealSection className="space-y-6">
+                      <div id="current-course">
+                        <h1 className="text-[clamp(1.9rem,3vw,2rem)] font-medium text-black">
+                          {publishedEnrollments.length > 1 ? "Currently logged in courses" : "Currently logged in course"}
+                        </h1>
+                      </div>
 
-                    {publishedEnrollments.length > 0 ? (
                       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {publishedEnrollments.map((enrollment) => {
                           const course = enrollment.course;
@@ -323,59 +323,41 @@ export default async function DashboardCoursesPage() {
                           );
                         })}
                       </div>
-                    ) : (
-                      <AnimCard>
-                        <article className="max-w-[420px] rounded-[20px] bg-white px-6 py-7 shadow-[0_4px_10px_rgba(0,0,0,0.18)]">
-                          <p className="text-[1.15rem] font-semibold text-black">No active courses yet</p>
-                          <p className="mt-3 text-[14px] leading-7 text-black/58">
-                            As soon as you enroll in a program, it will appear here with your progress
-                            and the fastest route back into the lessons.
-                          </p>
-                          <Link
-                            className={workspaceButtonStyles({
-                              className: "mt-5 h-[38px] px-4 text-[13px]",
-                            })}
-                            href="#catalog"
-                          >
-                            Browse Courses
-                          </Link>
-                        </article>
-                      </AnimCard>
-                    )}
-                  </RevealSection>
+                    </RevealSection>
 
-                  <RevealSection className="space-y-6" delay={0.06}>
-                    <div>
-                      <h2 className="text-[clamp(1.9rem,3vw,2rem)] font-medium text-black">Explore</h2>
-                    </div>
+                    <RevealSection className="space-y-6" delay={0.06}>
+                      <div>
+                        <h2 className="text-[clamp(1.9rem,3vw,2rem)] font-medium text-black">Explore</h2>
+                      </div>
 
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {exploreItems.map((item) => (
-                        <AnimCard key={item.label}>
-                          <Link
-                            className="flex h-[179px] flex-col items-center justify-center gap-2 rounded-[20px] bg-[#71d3ff] px-6 py-5 text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
-                            href={
-                              item.target === "current-course"
-                                ? exploreLinks.currentCourse
-                                : item.target === "tests"
-                                  ? exploreLinks.tests
-                                  : exploreLinks.catalog
-                            }
-                          >
-                            <Image
-                              alt={item.label}
-                              className="h-auto w-[140px] object-contain drop-shadow-2xl"
-                              height={140}
-                              src={item.image}
-                              width={140}
-                            />
-                            <span className="text-[24px] font-semibold">{item.label}</span>
-                          </Link>
-                        </AnimCard>
-                      ))}
-                    </div>
-                  </RevealSection>
-                </div>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {exploreItems.map((item) => (
+                          <AnimCard key={item.label}>
+                            <Link
+                              className="flex h-[179px] flex-col items-center justify-center gap-2 rounded-[20px] bg-[#71d3ff] px-6 py-5 text-center text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
+                              href={
+                                item.target === "current-course"
+                                  ? exploreLinks.currentCourse
+                                  : item.target === "tests"
+                                    ? exploreLinks.tests
+                                    : exploreLinks.catalog
+                              }
+                            >
+                              <Image
+                                alt={item.label}
+                                className="h-auto w-[140px] object-contain drop-shadow-2xl"
+                                height={140}
+                                src={item.image}
+                                width={140}
+                              />
+                              <span className="text-[24px] font-semibold">{item.label}</span>
+                            </Link>
+                          </AnimCard>
+                        ))}
+                      </div>
+                    </RevealSection>
+                  </div>
+                )}
 
                 <RevealSection delay={0.06}>
                   <div className="space-y-6" id="catalog">

@@ -27,8 +27,10 @@ export type QuestionBreakdown = {
   userAnswer: unknown;
   isCorrect: boolean | null;
   explanation: string | null;
+  explanationImageUrl?: string | null;
   points: number;
   pointsAwarded: number;
+  negativeMarks?: number;
   difficulty: string | null;
 };
 
@@ -128,195 +130,300 @@ export function TestResultsClient({
   const isPending =
     selectedAttempt?.questionBreakdown?.some((q) => q.isCorrect === null && q.points > 0) ?? false;
 
-  // Split questions for per-part display
-  const partAQuestions = selectedAttempt?.questionBreakdown?.filter((q) => isPartAType(q.type)) ?? [];
-  const partBQuestions = selectedAttempt?.questionBreakdown?.filter((q) => !isPartAType(q.type)) ?? [];
+  const totalQuestions = data.test.totalQuestions;
+  const questions = selectedAttempt?.questionBreakdown ?? [];
+  const correctCount = questions.filter(q => q.isCorrect === true).length;
+  const incorrectCount = questions.filter(q => q.isCorrect === false && q.userAnswer).length;
+  const skippedCount = questions.filter(q => !q.userAnswer || (Array.isArray(q.userAnswer) && q.userAnswer.length === 0)).length;
 
-  const partAPoints = partAQuestions.reduce((sum, q) => sum + q.pointsAwarded, 0);
-  const partATotal = partAQuestions.reduce((sum, q) => sum + q.points, 0);
-  const partAScore = partATotal > 0 ? Math.round((partAPoints / partATotal) * 100) : 0;
+  const correctMarks = questions.filter(q => q.isCorrect === true).reduce((sum, q) => sum + q.pointsAwarded, 0);
+  const incorrectMarks = questions.filter(q => q.isCorrect === false && q.userAnswer && !(Array.isArray(q.userAnswer) && q.userAnswer.length === 0)).reduce((sum, q) => sum + q.points, 0); 
+  const negativeMarking = questions.filter(q => q.isCorrect === false && q.userAnswer && !(Array.isArray(q.userAnswer) && q.userAnswer.length === 0)).reduce((sum, q) => sum + (q.negativeMarks || 0), 0);
+  const skippedMarks = questions.filter(q => !q.userAnswer || (Array.isArray(q.userAnswer) && q.userAnswer.length === 0)).reduce((sum, q) => sum + q.points, 0);
 
-  const partBPoints = partBQuestions.reduce((sum, q) => sum + q.pointsAwarded, 0);
-  const partBTotal = partBQuestions.reduce((sum, q) => sum + q.points, 0);
+  const accuracy = totalQuestions > 0 ? Math.round((correctCount / (totalQuestions - skippedCount)) * 100) || 0 : 0;
+  const percentage = data.test.totalQuestions > 0 ? selectedAttempt.score : 0;
   
-  const hasPartB = partBQuestions.length > 0;
-  const partBGraded = hasPartB
-    ? partBQuestions.every((q) => q.isCorrect !== null)
-    : false;
+  const correctPct = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+  const incorrectPct = totalQuestions > 0 ? Math.round((incorrectCount / totalQuestions) * 100) : 0;
+  const skippedPct = totalQuestions > 0 ? 100 - correctPct - incorrectPct : 0;
+  
+  // Section Analysis
+  const sectionTypes = [
+    { type: "NUMERIC", label: "NAT" },
+    { type: "MCQ", label: "MSQ" },
+    { type: "SCQ", label: "MCQ" },
+    { type: "SKETCH", label: "Part B (DST)" },
+  ];
+  const sections = sectionTypes.map(sec => {
+    const secQuestions = questions.filter(q => q.type === sec.type);
+    const secTotal = secQuestions.reduce((sum, q) => sum + q.points, 0);
+    const secEarned = secQuestions.reduce((sum, q) => sum + q.pointsAwarded, 0);
+    const secCorrect = secQuestions.filter(q => q.isCorrect === true).length;
+    const secAttempted = secQuestions.filter(q => q.userAnswer && !(Array.isArray(q.userAnswer) && q.userAnswer.length === 0)).length;
+    const secAccuracy = secAttempted > 0 ? Math.round((secCorrect / secAttempted) * 100) : 0;
+    const secPercentage = secTotal > 0 ? Math.round((secEarned / secTotal) * 100) : 0;
 
-  const canShowQuestionDetails = Boolean(
-    selectedAttempt?.questionBreakdown?.some(
-      (question) => question.correctAnswer !== undefined || question.explanation !== null
-    )
-  );
-
-  const categoryBreakdown = selectedAttempt?.questionBreakdown
-    ? buildCategoryPerformanceBreakdown(
-        selectedAttempt.questionBreakdown.map((question) => ({
-          category: question.category,
-          points: question.points,
-          pointsAwarded: question.pointsAwarded,
-          isCorrect: question.isCorrect,
-        }))
-      )
-    : [];
+    return { ...sec, total: secTotal, earned: secEarned, accuracy: secAccuracy, percentage: secPercentage };
+  });
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="flex min-h-screen flex-col items-center justify-start bg-[#f5f6f8] px-4 py-8 sm:py-12"
+      className="flex min-h-screen flex-col items-center justify-start bg-[#f9fafb] px-4 py-8 sm:py-12"
     >
-      <div className="w-full max-w-3xl space-y-6">
-        
+      <div className="w-full max-w-[1100px]">
         {/* Navigation & Header */}
-        <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" className="text-gray-500 hover:text-gray-900" onClick={() => router.push(`/dashboard/courses/${slug}/tests`)}>
+        <div className="flex items-center justify-between mb-8">
+          <Button variant="ghost" className="text-gray-500 hover:text-gray-900 -ml-4" onClick={() => router.push(`/dashboard/courses/${slug}/tests`)}>
             ← Back to Tests
           </Button>
-          <div className="text-right">
-            <h1 className="text-xl font-bold text-gray-900">{data.test.title}</h1>
-            <p className="text-sm text-gray-500 capitalize">
-              {data.test.type.replace("_", " ")} · {data.test.totalQuestions} Questions
+        </div>
+        
+        <h1 className="text-[28px] font-bold text-[#111827] mb-8">{data.test.title}</h1>
+
+        {/* Top Overview Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6">
+          {/* Your Score Card */}
+          <div className="rounded-[12px] bg-white p-8 shadow-sm border border-gray-100 flex flex-col justify-center items-center">
+            <h2 className="text-[20px] font-bold text-gray-800 mb-6 w-full text-center">Your Score</h2>
+            <div className="text-center mb-8">
+              <span className="text-5xl font-bold text-gray-900">{selectedAttempt.pointsEarned}</span>
+              <div className="text-[18px] font-semibold text-gray-400 mt-2">out of {selectedAttempt.totalPoints}</div>
+            </div>
+            <div className="w-full space-y-4 text-[14px] mb-8 px-4">
+              <div className="flex justify-between items-center border-b border-gray-50 pb-3">
+                <span className="text-gray-600 font-bold">Percentile</span>
+                <span className="text-gray-900 font-bold">N/A</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-gray-50 pb-3">
+                <span className="text-gray-600 font-bold">Accuracy</span>
+                <span className="text-gray-900 font-bold">{accuracy}%</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-bold">Percentage</span>
+                <span className="text-gray-900 font-bold">{percentage}%</span>
+              </div>
+            </div>
+            <Button 
+              className="w-full bg-[#0062ff] hover:bg-[#0052cc] text-white font-bold py-6 text-[15px] rounded-[8px]"
+              onClick={() => setShowQuestions(!showQuestions)}
+            >
+              {showQuestions ? "HIDE SOLUTION" : "VIEW SOLUTION"}
+            </Button>
+          </div>
+
+          {/* Total Marks Card */}
+          <div className="rounded-[12px] bg-white p-8 shadow-sm border border-gray-100">
+            <h2 className="text-[16px] font-semibold text-gray-800 mb-10">Total Marks <span className="font-bold">{selectedAttempt.totalPoints}</span></h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+              <div className="flex flex-col items-center">
+                <div className="w-[110px] h-[110px] rounded-full border-[3px] border-[#f1f5f9] flex items-center justify-center mb-4">
+                  <span className="text-[28px] font-medium text-gray-900">{correctMarks}</span>
+                </div>
+                <span className="text-[15px] font-bold text-[#1e293b]">Correct</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-[110px] h-[110px] rounded-full border-[3px] border-[#f1f5f9] flex items-center justify-center mb-4">
+                  <span className="text-[28px] font-medium text-gray-900">{incorrectMarks}</span>
+                </div>
+                <span className="text-[15px] font-bold text-[#1e293b]">Incorrect</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-[110px] h-[110px] rounded-full border-[3px] border-[#f1f5f9] flex items-center justify-center mb-4">
+                  <span className="text-[28px] font-medium text-gray-900">{negativeMarking}</span>
+                </div>
+                <span className="text-[15px] font-bold text-[#1e293b]">Negative Marking</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-[110px] h-[110px] rounded-full border-[4px] border-gray-300 flex items-center justify-center mb-4">
+                  <span className="text-[28px] font-medium text-gray-600">-{skippedMarks}</span>
+                </div>
+                <span className="text-[15px] font-bold text-[#1e293b]">Skipped</span>
+              </div>
+            </div>
+            <p className="text-[15px] text-gray-600 leading-relaxed font-medium">
+              You have scored <span className="font-bold text-gray-900">{correctMarks} marks</span> for correct answers, missed <span className="font-bold text-gray-900">{incorrectMarks} marks</span> on incorrect answers, lost <span className="font-bold text-gray-900">{negativeMarking} marks</span> due to negative marking and <span className="font-bold text-gray-900">{skippedMarks} marks</span> by skipping questions.
             </p>
           </div>
         </div>
 
-        {/* Overall Score Card */}
-        <div className={`rounded-[28px] px-8 py-10 text-center text-white shadow-xl ${
-          selectedAttempt.isPassed
-            ? "bg-gradient-to-br from-[#22c55e] to-[#16a34a]"
-            : isPending
-              ? "bg-gradient-to-br from-[#f59e0b] to-[#d97706]"
-              : "bg-gradient-to-br from-[#38c1ff] to-[#0077ff]"
-        }`}>
-          <div className="text-6xl font-bold">{selectedAttempt.score}%</div>
-          <div className="mt-2 text-xl font-semibold opacity-90">
-            {isPending ? "Provisional Score" : selectedAttempt.isPassed ? "You Passed! 🎉" : "Keep Going! 💪"}
+        {/* Section Analysis */}
+        <div className="mt-12">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-[24px] font-bold text-[#1e293b]">Section Analysis</h2>
+            <button className="text-[14px] font-bold text-[#1e293b] flex items-center gap-1">
+              Compare Sections <span className="text-xl">→</span>
+            </button>
           </div>
-          <div className="mt-1 text-base opacity-75">
-            {selectedAttempt.pointsEarned} / {selectedAttempt.totalPoints} points earned
-          </div>
-        </div>
-
-        {/* Part A / Part B Score Cards */}
-        <div className={`grid gap-4 ${hasPartB ? "grid-cols-2" : "grid-cols-1"}`}>
-          <div className="rounded-[20px] bg-white p-5 shadow-sm border border-[#e5e7eb]">
-            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-[#6b7280] mb-2">Part A — Auto-Graded</h3>
-            <div className="text-3xl font-bold text-[#111827]">{partAScore}%</div>
-            <div className="text-[13px] text-[#6b7280] mt-1">{partAPoints}/{partATotal} points</div>
-            <div className="text-[12px] text-[#22c55e] font-medium mt-2">✓ Graded instantly</div>
-          </div>
-          {hasPartB && (
-            <div className="rounded-[20px] bg-white p-5 shadow-sm border border-[#e5e7eb]">
-              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-[#6b7280] mb-2">Part B — Sketching</h3>
-              {partBGraded ? (
-                <>
-                  <div className="text-3xl font-bold text-[#111827]">
-                    {partBTotal > 0 ? Math.round((partBPoints / partBTotal) * 100) : 0}%
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {sections.map(sec => (
+              <div key={sec.type} className="bg-white rounded-[12px] shadow-sm border border-gray-100 p-8 flex flex-col items-center">
+                <h3 className="text-[18px] font-bold text-[#1e293b] mb-8">{sec.label}</h3>
+                <div className="text-center mb-10">
+                  <span className="text-[36px] font-medium text-[#fb7185]">{sec.earned}</span>
+                  <div className="text-[18px] font-medium text-[#94a3b8] mt-1">out of {sec.total}</div>
+                </div>
+                <div className="w-full space-y-4 border-t border-gray-100 pt-6">
+                  <div className="flex justify-between items-center text-[14px]">
+                    <span className="text-[#334155] font-bold">Percentile</span>
+                    <span className="text-gray-900 font-bold">N/A</span>
                   </div>
-                  <div className="text-[13px] text-[#6b7280] mt-1">{partBPoints}/{partBTotal} points</div>
-                  <div className="text-[12px] text-[#22c55e] font-medium mt-2">✓ Graded by teacher</div>
-                </>
-              ) : (
-                <>
-                  <div className="text-3xl font-bold text-[#f59e0b]">—</div>
-                  <div className="text-[13px] text-[#6b7280] mt-1">{partBTotal} points total</div>
-                  <div className="text-[12px] text-[#f59e0b] font-medium mt-2 flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> Pending teacher review
+                  <div className="flex justify-between items-center text-[14px]">
+                    <span className="text-[#334155] font-bold">Accuracy</span>
+                    <span className="text-gray-900 font-bold">{sec.accuracy}%</span>
                   </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Stat row */}
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: "Score", value: `${selectedAttempt.score}%`, color: "text-[#38c1ff]" },
-            { label: "Passing Score", value: `${data.test.passingScore}%`, color: "text-[#f59e0b]" },
-            { label: "Status", value: isPending ? "Pending" : selectedAttempt.isPassed ? "Passed" : "Failed", color: selectedAttempt.isPassed ? "text-[#22c55e]" : isPending ? "text-[#f59e0b]" : "text-[#ef4444]" },
-          ].map((s) => (
-            <div key={s.label} className="rounded-[16px] bg-white px-4 py-4 text-center shadow-sm border border-gray-100">
-              <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="mt-1 text-[12px] text-[#9ca3af]">{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Category Breakdown */}
-        {categoryBreakdown.length > 0 && (
-          <div className="rounded-[20px] bg-white p-6 shadow-sm border border-gray-100">
-            <CategoryPerformancePanel
-              items={categoryBreakdown}
-              description="Your exam score grouped by the tags attached to each question."
-            />
+                  <div className="flex justify-between items-center text-[14px]">
+                    <span className="text-[#334155] font-bold">Percentage</span>
+                    <span className="text-gray-900 font-bold">{sec.percentage}%</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+
+        {/* Question Report */}
+        <div className="mt-12">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-[24px] font-bold text-[#1e293b]">Question Report</h2>
+            <button className="text-[14px] font-bold text-[#1e293b] flex items-center gap-1">
+              View Report <span className="text-xl">→</span>
+            </button>
+          </div>
+          <div className="bg-white rounded-[12px] shadow-sm border border-gray-100 p-8 flex flex-wrap justify-between items-center text-center gap-4">
+            <div className="flex-1 min-w-[80px]">
+              <div className="text-[32px] font-medium text-[#1e293b] mb-2">{totalQuestions}</div>
+              <div className="text-[16px] font-semibold text-[#94a3b8]">Questions</div>
+            </div>
+            <div className="flex-1 min-w-[80px]">
+              <div className="text-[32px] font-medium text-[#4ade80] mb-2">{correctCount}</div>
+              <div className="text-[16px] font-semibold text-[#94a3b8]">Correct</div>
+            </div>
+            <div className="flex-1 min-w-[80px]">
+              <div className="text-[32px] font-medium text-[#fb7185] mb-2">{incorrectCount}</div>
+              <div className="text-[16px] font-semibold text-[#94a3b8]">Incorrect</div>
+            </div>
+            <div className="flex-1 min-w-[80px]">
+              <div className="text-[32px] font-medium text-[#1e293b] mb-2">{skippedCount}</div>
+              <div className="text-[16px] font-semibold text-[#94a3b8]">Skipped</div>
+            </div>
+            <div className="flex-1 min-w-[80px]">
+              <div className="text-[32px] font-medium text-[#1e293b] mb-2">{selectedAttempt.score}</div>
+              <div className="text-[16px] font-semibold text-[#94a3b8]">Score</div>
+            </div>
+            <div className="flex-1 min-w-[120px] border-l border-gray-100 pl-4">
+              <div className="text-[32px] font-medium text-[#1e293b] mb-2">
+                {selectedAttempt.timeSpentSecs ? `${Math.floor(selectedAttempt.timeSpentSecs / 60)}m ${selectedAttempt.timeSpentSecs % 60}s` : "—"}
+              </div>
+              <div className="text-[16px] font-semibold text-[#94a3b8]">Time<br/>Taken</div>
+            </div>
+          </div>
+        </div>
+
+        {/* How did you perform? */}
+        <div className="mt-12">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-[24px] font-bold text-[#1e293b]">How did you perform?</h2>
+            <button className="text-[14px] font-bold text-[#1e293b] flex items-center gap-1">
+              View Report <span className="text-xl">→</span>
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_2.5fr] gap-6">
+            <div className="bg-white rounded-[12px] shadow-sm border border-gray-100 p-8 flex flex-col items-center">
+              <h3 className="text-[18px] font-bold text-[#1e293b] mb-8 w-full text-center">Question Breakdown</h3>
+              <div 
+                className="w-48 h-48 rounded-full mb-6 flex items-center justify-center relative"
+                style={{
+                  background: `conic-gradient(
+                    #4ade80 0% ${correctPct}%, 
+                    #fb7185 ${correctPct}% ${correctPct + incorrectPct}%, 
+                    #cbd5e1 ${correctPct + incorrectPct}% 100%
+                  )`
+                }}
+              >
+                <div className="w-36 h-36 bg-white rounded-full flex flex-col items-center justify-center z-10 shadow-inner">
+                  <div className="text-[24px] font-bold text-[#1e293b] mb-0.5">
+                    {selectedAttempt.timeSpentSecs ? `${Math.floor(selectedAttempt.timeSpentSecs / 60)}m ${selectedAttempt.timeSpentSecs % 60}s` : "—"}
+                  </div>
+                  <div className="text-[12px] font-semibold text-[#64748b] text-center leading-tight">Total Time<br/>Spent</div>
+                </div>
+              </div>
+              <div className="w-full space-y-4 text-sm mt-4">
+                <div className="flex justify-between items-center text-[14px]">
+                  <span className="text-[#64748b] font-semibold">Correct Answers</span>
+                  <span className="text-[#4ade80] font-bold">{correctPct}%</span>
+                </div>
+                <div className="flex justify-between items-center text-[14px]">
+                  <span className="text-[#64748b] font-semibold">Incorrect Answers</span>
+                  <span className="text-[#fb7185] font-bold">{incorrectPct}%</span>
+                </div>
+                <div className="flex justify-between items-center text-[14px]">
+                  <span className="text-[#64748b] font-semibold">Skipped</span>
+                  <span className="text-[#cbd5e1] font-bold">{skippedPct}%</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-[12px] shadow-sm border border-gray-100 p-8">
+              <div className="flex justify-between items-center mb-10">
+                <h3 className="text-[18px] font-bold text-[#1e293b]">Score Analysis</h3>
+                <span className="text-[15px] font-semibold text-[#64748b]">Total Questions <span className="text-[#1e293b] ml-1">{totalQuestions}</span></span>
+              </div>
+              <div className="flex items-center gap-6 mb-12 text-[14px] font-semibold">
+                <span className="text-[#1e293b]">Attempts</span>
+                <div className="flex gap-5 ml-auto">
+                  <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 rounded bg-[#4ade80]"></div>Correct {correctCount}</div>
+                  <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 rounded bg-[#fb7185]"></div>Incorrect {incorrectCount}</div>
+                  <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 rounded bg-[#cbd5e1]"></div>Skipped {skippedCount}</div>
+                </div>
+              </div>
+              
+              <div className="h-[280px] w-full border-b-2 border-l-2 border-gray-100 flex items-end pl-2 gap-2 relative mt-10">
+                  {/* Y axis labels */}
+                  <div className="absolute left-[-70px] top-0 bottom-0 flex flex-col justify-between text-[12px] font-semibold text-gray-500 py-4">
+                     <span>Correct -</span>
+                     <span>Incorrect -</span>
+                     <span>Skipped -</span>
+                  </div>
+                  {/* Grid lines */}
+                  <div className="absolute inset-0 flex flex-col justify-between pointer-events-none border-l-2 border-gray-100">
+                     <div className="border-b border-dashed border-gray-200 w-full h-[33.3%]"></div>
+                     <div className="border-b border-dashed border-gray-200 w-full h-[33.3%]"></div>
+                     <div className="w-full h-[33.3%]"></div>
+                  </div>
+                  {/* X axis lines / Questions */}
+                  {questions.slice(0, 30).map((q, i) => {
+                     let color = "#cbd5e1"; // Skipped
+                     let height = "33.3%"; // Skipped
+                     if (q.isCorrect === true) { color = "#4ade80"; height = "100%"; }
+                     else if (q.isCorrect === false && q.userAnswer && !(Array.isArray(q.userAnswer) && q.userAnswer.length === 0)) { color = "#fb7185"; height = "66.6%"; }
+
+                     return (
+                        <div key={i} className="flex-1 flex flex-col justify-end items-center relative z-10 h-full group">
+                           <div className="w-full max-w-[24px] rounded-sm transition-all hover:brightness-95" style={{ backgroundColor: color, height }}></div>
+                           <div className="absolute -bottom-8 text-[12px] font-bold text-gray-400">{i%2===0 ? i+1 : ''}</div>
+                        </div>
+                     );
+                  })}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Leaderboard */}
         {courseId && (
-          <div className="rounded-[20px] bg-white p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-2 mb-4">
-              <Trophy className="h-5 w-5 text-[#f59e0b]" />
-              <h2 className="text-[18px] font-semibold text-[#111827]">Leaderboard</h2>
-            </div>
+          <div className="mt-16 mb-20">
             <LeaderboardPanel courseId={courseId} testId={testId} />
           </div>
         )}
 
-        {/* Attempt Selector (if multiple attempts) */}
-        {data.attempts.length > 1 && (
-          <div className="rounded-[20px] bg-white p-6 shadow-sm border border-gray-100">
-            <h3 className="mb-4 text-[14px] font-semibold uppercase tracking-wider text-gray-500">
-              All Attempts
-            </h3>
-            <div className="flex flex-col gap-2">
-              {data.attempts.map((attempt, i) => (
-                <button
-                  key={attempt.id}
-                  className={`flex items-center gap-4 rounded-[12px] border-[1.5px] p-3 text-left transition-all ${
-                    i === selectedAttemptIndex
-                      ? "border-[#38c1ff] bg-[#38c1ff]/5"
-                      : "border-gray-200 hover:border-[#38c1ff]"
-                  }`}
-                  onClick={() => { setSelectedAttemptIndex(i); setShowQuestions(false); }}
-                >
-                  <span className="text-sm font-semibold text-gray-500">#{data.attempts.length - i}</span>
-                  <span className={`text-lg font-bold ${attempt.isPassed ? "text-[#4caf50]" : "text-[#ff3d00]"}`}>
-                    {attempt.score}%
-                  </span>
-                  <Badge tone={attempt.isPassed ? "success" : "danger"}>
-                    {attempt.isPassed ? "Pass" : "Fail"}
-                  </Badge>
-                  <span className="ml-auto text-xs text-gray-500">
-                    {attempt.submittedAt ? new Date(attempt.submittedAt).toLocaleDateString() : "In Progress"}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Question Details Toggle */}
-        {canShowQuestionDetails && (
-          <div className="text-center pt-4">
-             <Button 
-               variant="secondary" 
-               className="rounded-full px-6"
-               onClick={() => setShowQuestions(!showQuestions)}
-             >
-               {showQuestions ? "Hide Question Review" : "Show Question Review"}
-             </Button>
-          </div>
-        )}
-
-        {/* Per-question breakdown */}
-        {showQuestions && canShowQuestionDetails && selectedAttempt?.questionBreakdown && (
-          <div className="rounded-[20px] bg-white p-6 shadow-sm border border-gray-100 mt-6">
-            <h2 className="mb-6 text-[18px] font-semibold text-[#111827]">Question-by-Question Review</h2>
-            <div className="space-y-4">
+        {/* Per-question breakdown (Toggled) */}
+        {showQuestions && selectedAttempt?.questionBreakdown && (
+          <div className="rounded-[12px] bg-white p-8 shadow-sm border border-gray-100 mt-8">
+            <h2 className="mb-8 text-[24px] font-bold text-[#111827]">Solution & Review</h2>
+            <div className="space-y-6">
               {selectedAttempt.questionBreakdown.map((q, i) => {
                 return (
                   <QuestionCard
@@ -336,6 +443,7 @@ export function TestResultsClient({
                     showResult
                     correctAnswer={q.correctAnswer}
                     explanation={q.explanation}
+                    explanationImageUrl={q.explanationImageUrl}
                     watermark={watermark}
                   />
                 );
@@ -344,15 +452,8 @@ export function TestResultsClient({
           </div>
         )}
 
-        {data.stats.canRetake && (
-           <Button
-             className="w-full rounded-[14px] bg-black py-6 text-[16px] font-bold text-white shadow-lg transition hover:bg-gray-800 mt-6"
-             onClick={() => router.push(`/dashboard/courses/${slug}/tests/${testId}`)}
-           >
-             Retake Test
-           </Button>
-        )}
       </div>
     </motion.div>
   );
 }
+

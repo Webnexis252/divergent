@@ -104,10 +104,16 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
       return apiSuccess({ teacherId: mentorId, status: 'PENDING_APPROVAL' }, 'Deletion request sent to Super Admin');
     }
 
-    // If Super Admin, delete immediately
-    await prisma.user.delete({
-      where: { id: mentorId },
-    });
+    // If Super Admin, delete immediately (hard delete)
+    await prisma.$transaction([
+      prisma.payment.deleteMany({ where: { userId: mentorId } }),
+      prisma.doubtReply.deleteMany({ where: { authorId: mentorId } }),
+      prisma.doubtTicket.deleteMany({ where: { mentorId: mentorId } }),
+      prisma.post.deleteMany({ where: { authorId: mentorId } }),
+      prisma.user.delete({
+        where: { id: mentorId }
+      })
+    ]);
 
     return apiSuccess({ teacherId: mentorId }, 'Teacher account deleted successfully');
   } catch (err) {

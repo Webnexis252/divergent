@@ -54,8 +54,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           return NextResponse.json({ success: false, error: "Target user ID missing for deletion request" }, { status: 400 });
         }
 
-        // Delete the user and update request status
+        // Hard delete the user, their restricting relations, and update request status
         await prisma.$transaction([
+          prisma.payment.deleteMany({ where: { userId: request.targetUserId } }),
+          prisma.doubtReply.deleteMany({ where: { authorId: request.targetUserId } }),
+          prisma.doubtTicket.deleteMany({ where: { mentorId: request.targetUserId } }),
+          prisma.post.deleteMany({ where: { authorId: request.targetUserId } }),
           prisma.user.delete({
             where: { id: request.targetUserId }
           }),

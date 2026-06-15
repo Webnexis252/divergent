@@ -39,7 +39,8 @@ export default async function AdminExamsPage() {
               </div>
               <Link
                 href="/admin/exams/create"
-                className="shrink-0 inline-flex items-center justify-center gap-2 rounded-full border border-white/70 bg-white/95 px-6 py-3 text-[15px] font-semibold text-[#0284c7] transition hover:bg-white hover:scale-105"
+                className="shrink-0 inline-flex items-center justify-center gap-2 rounded-full border border-white/70 bg-white px-6 py-3 text-[15px] font-semibold shadow-sm transition hover:bg-white/90 hover:scale-105"
+                style={{ color: '#0284c7' }}
               >
                 + Create test
               </Link>

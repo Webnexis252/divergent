@@ -54,6 +54,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    if (dbPayment?.couponCode) {
+      await prisma.coupon.update({
+        where: { code: dbPayment.couponCode },
+        data: { usedCount: { increment: 1 } },
+      }).catch(err => console.error("Failed to increment coupon count:", err));
+    }
+
     if (bundleId) {
       // Enroll user in ALL courses inside the bundle
       const bundleCourses = await (prisma as any).bundleCourse.findMany({

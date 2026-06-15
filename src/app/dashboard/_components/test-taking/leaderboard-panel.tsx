@@ -22,27 +22,24 @@ function formatDuration(secs: number | null): string {
   return `${m}m ${s}s`;
 }
 
-const RANK_STYLES: Record<number, { bg: string; text: string; icon: string; scale: string; shadow: string }> = {
+const RANK_STYLES: Record<number, { bg: string; text: string; icon: string; shadow: string }> = {
   1: { 
-    bg: "bg-gradient-to-br from-[#fde68a] via-[#f59e0b] to-[#d97706]", 
-    text: "text-white text-shadow-sm", 
-    icon: "🥇",
-    scale: "scale-[1.05] z-10",
-    shadow: "shadow-2xl shadow-amber-500/40 border border-amber-300/50"
+    bg: "bg-white", 
+    text: "text-[#1e293b]", 
+    icon: "1st",
+    shadow: "shadow-sm border border-gray-100"
   },
   2: { 
-    bg: "bg-gradient-to-br from-[#e2e8f0] via-[#cbd5e1] to-[#94a3b8]", 
-    text: "text-white text-shadow-sm", 
-    icon: "🥈",
-    scale: "scale-100",
-    shadow: "shadow-xl shadow-slate-500/30 border border-slate-300/50"
+    bg: "bg-white", 
+    text: "text-[#1e293b]", 
+    icon: "2nd",
+    shadow: "shadow-sm border border-gray-100"
   },
   3: { 
-    bg: "bg-gradient-to-br from-[#fed7aa] via-[#f97316] to-[#c2410c]", 
-    text: "text-white text-shadow-sm", 
-    icon: "🥉",
-    scale: "scale-[0.98]",
-    shadow: "shadow-xl shadow-orange-500/30 border border-orange-300/50"
+    bg: "bg-white", 
+    text: "text-[#1e293b]", 
+    icon: "3rd",
+    shadow: "shadow-sm border border-gray-100"
   },
 };
 
@@ -108,10 +105,10 @@ export function LeaderboardPanel({
 
   if (entries.length === 0) {
     return (
-      <div className="rounded-[14px] border-2 border-dashed border-[#e5e7eb] py-8 text-center text-[#9ca3af]">
-        <Trophy className="h-8 w-8 mx-auto mb-2 opacity-40" />
-        <p className="text-[14px] font-medium">No submissions yet</p>
-        <p className="text-[12px] mt-1">Be the first to appear on the leaderboard!</p>
+      <div className="rounded-[14px] border border-[#e5e7eb] py-12 text-center text-[#9ca3af] bg-white">
+        <Trophy className="h-8 w-8 mx-auto mb-3 text-gray-300" />
+        <p className="text-[16px] font-semibold text-gray-800">No submissions yet</p>
+        <p className="text-[14px] mt-1 text-gray-500">Be the first to appear on the leaderboard!</p>
       </div>
     );
   }
@@ -120,108 +117,97 @@ export function LeaderboardPanel({
   const rest = entries.slice(3);
 
   return (
-    <div className="space-y-4">
-      {/* Top 3 podium */}
-      <div className="grid grid-cols-3 gap-3">
+    <div className="w-full">
+      <div className="flex justify-between items-end mb-8">
+        <h2 className="text-[24px] font-bold text-[#111827]">Where Do You Stand?</h2>
+        <span className="text-[14px] font-semibold text-gray-600">Total Learners <span className="text-gray-900 ml-1">{entries.length}</span></span>
+      </div>
+
+      {/* Top 3 Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         {top3.map((entry) => {
-          const style = RANK_STYLES[entry.rank] ?? { bg: "bg-gray-100", text: "text-gray-800", icon: "", scale: "", shadow: "" };
+          const style = RANK_STYLES[entry.rank] ?? RANK_STYLES[3];
           return (
             <div
               key={entry.rank}
-              className={`relative rounded-[24px] p-5 text-center transition-all duration-300 hover:scale-105 ${style.bg} ${style.text} ${style.scale} ${style.shadow} ${
-                entry.isCurrentUser ? "ring-4 ring-white/70 ring-offset-2 ring-offset-blue-50" : ""
+              className={`rounded-[12px] p-5 flex items-center justify-between ${style.bg} ${style.text} ${style.shadow} ${
+                entry.isCurrentUser ? "ring-2 ring-[#0062ff]" : ""
               }`}
             >
-              <div className="text-3xl mb-2 drop-shadow-md">{style.icon}</div>
-              <div className="flex items-center justify-center mb-2">
+              <div className="flex items-center gap-4">
                 {entry.studentImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={entry.studentImage}
                     alt=""
-                    className="h-10 w-10 rounded-full border-2 border-white/50 object-cover"
+                    className="h-[46px] w-[46px] rounded-[10px] object-cover"
                   />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-[14px] font-bold">
+                  <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[10px] bg-[#bfdbfe] text-[#1d4ed8] text-[18px] font-bold">
                     {entry.studentName.charAt(0).toUpperCase()}
                   </div>
                 )}
-              </div>
-              <p className="text-[14px] font-bold truncate mt-1 tracking-wide">{entry.studentName}</p>
-              <p className="text-[24px] font-extrabold mt-1 drop-shadow-sm">{entry.score}%</p>
-              <p className="text-[12px] opacity-90 mt-0.5 font-medium">
-                {entry.pointsEarned}/{entry.totalPoints} pts
-              </p>
-              {entry.timeSpentSecs && (
-                <div className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full bg-black/10 px-2.5 py-1 text-[11px] font-medium backdrop-blur-sm">
-                  <Clock className="h-3 w-3" />
-                  {formatDuration(entry.timeSpentSecs)}
+                <div>
+                  <div className="text-[15px] font-semibold text-[#1e293b] flex items-center gap-2">
+                    {entry.studentName}
+                    {entry.isCurrentUser && <span className="text-[11px] bg-[#0062ff] text-white px-2 py-0.5 rounded-full">You</span>}
+                  </div>
+                  <div className="text-[13px] font-medium text-gray-500 mt-0.5">
+                    score - <span className="text-gray-800 font-semibold">{entry.score}</span>
+                  </div>
                 </div>
-              )}
-              {entry.gradingStatus === "PENDING_REVIEW" && (
-                <span className="mt-1.5 inline-block rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold">
-                  Pending
-                </span>
-              )}
-              {entry.isCurrentUser && (
-                <span className="absolute top-2 right-2 text-[10px] font-bold bg-white/30 rounded-full px-1.5 py-0.5">
-                  You
-                </span>
-              )}
+              </div>
+              <div className="text-[16px] font-bold text-[#0f172a]">{style.icon}</div>
             </div>
           );
         })}
       </div>
 
-      {/* Remaining entries */}
+      {/* Remaining entries table */}
       {rest.length > 0 && (
-        <div className="rounded-[20px] border border-[#e8eaef] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden">
-          <table className="w-full text-[14px]">
+        <div className="w-full">
+          <table className="w-full text-[15px]">
             <thead>
-              <tr className="bg-[#f8fafc] border-b border-[#e8eaef] text-[12px] font-bold uppercase tracking-widest text-[#64748b]">
-                <th className="px-5 py-3.5 text-left">#</th>
-                <th className="px-5 py-3.5 text-left">Student</th>
-                <th className="px-4 py-2.5 text-right">Score</th>
-                <th className="px-4 py-2.5 text-right hidden sm:table-cell">Points</th>
-                <th className="px-4 py-2.5 text-right hidden sm:table-cell">Time</th>
+              <tr className="border-b border-gray-100 text-[14px] font-bold text-gray-800">
+                <th className="px-4 py-4 text-left w-[80px]">#</th>
+                <th className="px-4 py-4 text-left">Learner Name</th>
+                <th className="px-4 py-4 text-right">score</th>
               </tr>
             </thead>
             <tbody>
               {rest.map((entry) => (
                 <tr
                   key={entry.rank}
-                  className={`border-b last:border-0 border-[#f1f5f9] transition duration-200 hover:bg-[#f8fafc] ${
-                    entry.isCurrentUser ? "bg-[#eff6ff] font-semibold" : ""
+                  className={`border-b border-gray-50 transition duration-200 hover:bg-gray-50/50 ${
+                    entry.isCurrentUser ? "bg-blue-50/30" : ""
                   }`}
                 >
-                  <td className="px-5 py-4 text-[#94a3b8] font-black">{entry.rank}</td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
+                  <td className="px-4 py-5 text-[#64748b] font-medium">{entry.rank}</td>
+                  <td className="px-4 py-5">
+                    <div className="flex items-center gap-3">
                       {entry.studentImage ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={entry.studentImage} alt="" className="h-6 w-6 rounded-full object-cover" />
+                        <img src={entry.studentImage} alt="" className="h-8 w-8 rounded-full object-cover" />
                       ) : (
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-500">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#fcd34d] text-[#b45309] text-[13px] font-bold">
                           {entry.studentName.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <span className="truncate text-[#111827]">
+                      <span className={`font-medium ${entry.isCurrentUser ? "text-[#0062ff] font-bold" : "text-[#1e293b]"}`}>
                         {entry.studentName}
-                        {entry.isCurrentUser && <span className="ml-1 text-[#38c1ff] text-[11px]">(You)</span>}
                       </span>
+                      {entry.isCurrentUser && (
+                        <span className="text-[10px] bg-[#0062ff] text-white px-1.5 py-0.5 rounded-full ml-1">You</span>
+                      )}
                       {entry.gradingStatus === "PENDING_REVIEW" && (
-                        <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
                           Pending
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right font-bold text-[#111827]">{entry.score}%</td>
-                  <td className="px-4 py-3 text-right text-[#6b7280] hidden sm:table-cell">
-                    {entry.pointsEarned}/{entry.totalPoints}
-                  </td>
-                  <td className="px-4 py-3 text-right text-[#6b7280] hidden sm:table-cell">
-                    {formatDuration(entry.timeSpentSecs)}
+                  <td className="px-4 py-5 text-right font-semibold text-[#1e293b]">
+                    {entry.score}
                   </td>
                 </tr>
               ))}

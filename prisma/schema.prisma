@@ -117,6 +117,8 @@ model Bundle {
   thumbnail   String?
   price       Float          @default(0.0)
   isPublished Boolean        @default(false)
+  isInstallmentBased Boolean @default(false)
+  emiPlans    Json?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   courses     BundleCourse[]
@@ -478,6 +480,9 @@ model Payment {
   discountAmount    Float         @default(0)
   invoiceUrl        String?
   installmentIndex  Int?
+  referenceNumber   String?
+  notes             String?
+  receiptUrl        String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   course            Course?       @relation(fields: [courseId], references: [id])

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 async function main() {
   const tests = await prisma.courseTest.findMany({ include: { questions: true }});
@@ -6,7 +6,7 @@ async function main() {
     if (t.questions.length > 0) {
       console.log(`Test: ${t.title} (${t.id})`);
       for (const q of t.questions) {
-        console.log(`  - ${q.type}: ${q.prompt.substring(0,30)}...`);
+        console.log(`  - [${q.id}] ${q.type}: ${q.prompt.substring(0,30)}...`);
       }
     }
   }

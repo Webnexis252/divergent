@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     if (!auth) return apiError("Unauthorized", 401);
 
     const body = await req.json();
-    const { courseId, bundleId, installmentIndex } = body;
+    const { courseId, bundleId, installmentIndex, couponCode } = body;
 
     if (!courseId && !bundleId) {
       return apiError('Course ID or Bundle ID is required', 400);
@@ -97,7 +97,36 @@ export async function POST(req: NextRequest) {
 
     // Check if payment is bypassed globally
     const settings = await prisma.instituteSettings.findFirst();
-    if (settings && settings.requirePayment === false) {
+    let isBypassed = settings && settings.requirePayment === false;
+
+    // Apply Coupon Logic
+    let appliedCouponDiscount = 0;
+    let appliedCouponCode = null;
+
+    if (couponCode && !isBypassed) {
+      // Don't allow coupon if it's an installment > 0
+      if (typeof installmentIndex === "number" && installmentIndex > 0) {
+        return apiError("Coupons cannot be applied to subsequent installments", 400);
+      }
+
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+
+      if (coupon && coupon.isActive && (!coupon.validUntil || new Date(coupon.validUntil) >= new Date()) && coupon.usedCount < coupon.maxUses) {
+        appliedCouponDiscount = Number(((orderAmount * coupon.discountPercent) / 100).toFixed(2));
+        orderAmount = Math.max(0, orderAmount - appliedCouponDiscount);
+        appliedCouponCode = coupon.code;
+        
+        if (orderAmount === 0) {
+          isBypassed = true;
+        }
+      } else {
+        return apiError("Invalid, expired, or fully used coupon code", 400);
+      }
+    }
+
+    if (isBypassed) {
       if (bundleId) {
         // Enroll student in all courses of the bundle
         const bundleCourses = await (prisma as any).bundleCourse.findMany({
@@ -108,6 +137,25 @@ export async function POST(req: NextRequest) {
       } else {
         await ensureActiveEnrollmentWithXp(auth.userId, courseId);
       }
+
+      // Record the 0 INR payment if bypass was due to coupon
+      if (appliedCouponCode) {
+        await prisma.payment.create({
+          data: {
+            ...paymentData,
+            amount: 0,
+            status: "SUCCESS",
+            cashfreeOrderId: `free_${auth.userId.substring(0,8)}_${Date.now()}`,
+            couponCode: appliedCouponCode,
+            discountAmount: appliedCouponDiscount,
+          }
+        });
+        await prisma.coupon.update({
+          where: { code: appliedCouponCode },
+          data: { usedCount: { increment: 1 } }
+        });
+      }
+
       return apiSuccess({ bypassPayment: true });
     }
 
@@ -160,7 +208,12 @@ export async function POST(req: NextRequest) {
     await prisma.payment.create({
       data: {
         ...paymentData,
+        amount: orderAmount,
         cashfreeOrderId: cfOrder.order_id || orderId,
+        ...(appliedCouponCode && {
+          couponCode: appliedCouponCode,
+          discountAmount: appliedCouponDiscount
+        })
       },
     });
 

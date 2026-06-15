@@ -48,17 +48,25 @@ export function CatalogWithFilter({
   bundles: Array<any>;
   userId: string;
 }) {
-  const [filter, setFilter] = useState<"ALL" | "COURSES" | "BUNDLES">("ALL");
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
   const items = [];
   
-  if (filter === "ALL" || filter === "BUNDLES") {
+  if (activeFilters.length === 0 || activeFilters.includes("BUNDLE")) {
     items.push(...bundles.map(b => ({ type: "BUNDLE" as const, data: b })));
   }
-  if (filter === "ALL" || filter === "COURSES") {
+  
+  if (activeFilters.length === 0) {
     items.push(...courses.map(c => ({ type: "COURSE" as const, data: c })));
+  } else {
+    // Only push courses whose category is in activeFilters (ignoring BUNDLE which is handled above)
+    const activeCourseFilters = activeFilters.filter(f => f !== "BUNDLE");
+    if (activeCourseFilters.length > 0) {
+      const filteredCourses = courses.filter(c => c.category && activeCourseFilters.includes(c.category));
+      items.push(...filteredCourses.map(c => ({ type: "COURSE" as const, data: c })));
+    }
   }
 
   const totalPages = Math.ceil(items.length / itemsPerPage);
@@ -69,25 +77,38 @@ export function CatalogWithFilter({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 flex-wrap mb-4">
         <h2 className="text-[clamp(1.9rem,3vw,2rem)] font-medium text-black">
-          {filter === "ALL" ? "Catalog" : filter === "BUNDLES" ? "Bundles" : "Courses"}
+          {activeFilters.length === 0 ? "Catalog" : "Filtered Items"}
         </h2>
         
-        <div className="relative inline-flex items-center">
-          <select 
-            value={filter}
-            onChange={(e) => {
-              setFilter(e.target.value as any);
-              setCurrentPage(1);
-            }}
-            className="appearance-none rounded-[10px] border border-gray-200 bg-white px-4 py-2.5 pr-10 text-[14px] font-medium text-gray-700 outline-none hover:border-[#38c1ff] focus:border-[#38c1ff] focus:ring-1 focus:ring-[#38c1ff] shadow-[0_2px_8px_rgba(0,0,0,0.04)] cursor-pointer"
-          >
-            <option value="ALL">All Items</option>
-            <option value="COURSES">Individual Courses</option>
-            <option value="BUNDLES">Bundles</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 pointer-events-none text-gray-400" />
+        <div className="flex flex-wrap items-center gap-2">
+          {["ALL", "UCEED", "NIFT", "NID", "MOCK", "DROPPER", "BUNDLE"].map((cat) => {
+            const isActive = cat === "ALL" ? activeFilters.length === 0 : activeFilters.includes(cat);
+            return (
+              <button
+                key={cat}
+                onClick={() => {
+                  if (cat === "ALL") {
+                    setActiveFilters([]);
+                  } else {
+                    setActiveFilters(prev => 
+                      prev.includes(cat) ? prev.filter(f => f !== cat) : [...prev, cat]
+                    );
+                  }
+                  setCurrentPage(1);
+                }}
+                className={cx(
+                  "px-4 py-2 text-[13px] font-semibold rounded-full border transition-all duration-200",
+                  isActive
+                    ? "bg-[#38c1ff] border-[#38c1ff] text-white shadow-md shadow-[#38c1ff]/20" 
+                    : "bg-white border-gray-200 text-gray-600 hover:border-[#38c1ff] hover:text-[#38c1ff]"
+                )}
+              >
+                {cat === "ALL" ? "All Items" : cat === "BUNDLE" ? "Bundles" : cat}
+              </button>
+            );
+          })}
         </div>
       </div>
 

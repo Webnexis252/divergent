@@ -50,6 +50,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    if (payment.couponCode) {
+      await prisma.coupon.update({
+        where: { code: payment.couponCode },
+        data: { usedCount: { increment: 1 } },
+      }).catch(err => console.error("Failed to increment coupon count:", err));
+    }
+
     // Process enrollment
     let redirectUrl = "/dashboard/courses";
 

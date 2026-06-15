@@ -54,6 +54,7 @@ export default async function TestResultsPage({
           options: true,
           correctAnswer: true,
           explanation: true,
+          explanationImageUrl: true,
           points: true,
           order: true,
           difficulty: true,
@@ -115,6 +116,7 @@ export default async function TestResultsPage({
                 points: q.points,
                 correctAnswer: q.correctAnswer,
                 explanation: q.explanation,
+                explanationImageUrl: q.explanationImageUrl,
               },
               userAnswer,
               { includeAnswerKey: test.showResults }
@@ -138,7 +140,9 @@ export default async function TestResultsPage({
               userAnswer,
               isCorrect,
               explanation: gradedResult.explanation ?? null,
+              explanationImageUrl: gradedResult.explanationImageUrl ?? null,
               points: q.points,
+              negativeMarks: q.negativeMarks || 0,
               pointsAwarded,
               difficulty: q.difficulty,
             });

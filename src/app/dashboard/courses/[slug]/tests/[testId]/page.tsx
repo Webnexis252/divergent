@@ -171,8 +171,9 @@ export default function TakeTestPage() {
       }
       
       const hasPartB = fetchedQuestions.some((q: QuestionData) => q.type === "SKETCH");
+      const spentSecs = durationTotalSecs - totalSecs;
+      
       if (hasPartB) {
-        const spentSecs = durationTotalSecs - totalSecs;
         if (spentSecs < partATotal) {
           setCurrentPart("A");
           setPartATimeLeft(partATotal - spentSecs);
@@ -186,7 +187,8 @@ export default function TakeTestPage() {
         }
       } else {
         setCurrentPart("A");
-        setPartATimeLeft(totalSecs);
+        const effectivePartATotal = partA && partA.durationMins ? partA.durationMins * 60 : durationTotalSecs;
+        setPartATimeLeft(Math.max(0, effectivePartATotal - spentSecs));
         setPartBTimeLeft(null);
       }
       setPhase("in-progress");
@@ -465,97 +467,57 @@ export default function TakeTestPage() {
       <>
         <div className="take-test__stage">
           <div className="take-test__stage-shell">
-            <section className="take-test__hero">
-              <div className="take-test__eyebrow">
-                <Sparkles className="h-4 w-4" />
-                Assessment Workspace
-              </div>
-              <p className="take-test__kicker">{courseTitle || "Course assessment"}</p>
-              <h1 className="take-test__headline">{previewTitle}</h1>
-              <p className="take-test__copy">{previewDescription}</p>
-
-              <div className="take-test__metrics">
-                <div className="take-test__metric-card">
-                  <div className="take-test__metric-icon">
-                    <Clock3 className="h-4 w-4" />
-                  </div>
-                  <span className="take-test__metric-label">Duration</span>
-                  <strong className="take-test__metric-value">{durationMins} min</strong>
-                </div>
-                <div className="take-test__metric-card">
-                  <div className="take-test__metric-icon">
-                    <LayoutGrid className="h-4 w-4" />
-                  </div>
-                  <span className="take-test__metric-label">Questions</span>
-                  <strong className="take-test__metric-value">{totalQuestions}</strong>
-                </div>
-                <div className="take-test__metric-card">
-                  <div className="take-test__metric-icon">
-                    <Target className="h-4 w-4" />
-                  </div>
-                  <span className="take-test__metric-label">Pass Target</span>
-                  <strong className="take-test__metric-value">{passingScore}%</strong>
-                </div>
-                <div className="take-test__metric-card">
-                  <div className="take-test__metric-icon">
-                    <CheckCircle2 className="h-4 w-4" />
-                  </div>
-                  <span className="take-test__metric-label">Attempts</span>
-                  <strong className="take-test__metric-value">{attemptsLabel}</strong>
-                </div>
-              </div>
-
-              <div className="take-test__chip-row">
-                <span className="take-test__chip">
-                  <Clock3 className="h-3.5 w-3.5" />
-                  Timed flow
-                </span>
-                <span className="take-test__chip">
-                  <PenTool className="h-3.5 w-3.5" />
-                  Structured responses
-                </span>
-                <span className="take-test__chip">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Best-score grading
-                </span>
-              </div>
-            </section>
-
             <aside className="take-test__panel">
-              <div className="take-test__panel-tag">Before you start</div>
-              <h2 className="take-test__panel-title">Set yourself up for one calm, complete run.</h2>
+              <h2 className="take-test__panel-title">General Instructions</h2>
 
-              <div className="take-test__checklist">
-                <div className="take-test__checklist-item">
-                  <span className="take-test__checklist-mark">01</span>
-                  <div>
-                    <strong>Timer starts immediately</strong>
-                    <p>Once you begin, the countdown continues until you submit or time runs out.</p>
-                  </div>
-                </div>
-                <div className="take-test__checklist-item">
-                  <span className="take-test__checklist-mark">02</span>
-                  <div>
-                    <strong>Use the navigator as you go</strong>
-                    <p>Jump between questions, flag the uncertain ones, and come back before you submit.</p>
-                  </div>
-                </div>
-                <div className="take-test__checklist-item">
-                  <span className="take-test__checklist-mark">03</span>
-                  <div>
-                    <strong>Stay on a stable connection</strong>
-                    <p>Your attempt is tracked continuously, but the smoothest run is still the safest run.</p>
-                  </div>
-                </div>
+              <div className="take-test__instructions-content">
+                <p>1. The clock has been set on the server and countdown timer at top right corner of your screen will display the remaining time for you to complete the exam. When the clock runs out the exams ends by default- you are not required to end or submit your exam.</p>
+                <p>2. The questions palette at the right of screen shows one of the following status of each of the questions numbered:</p>
+                
+                <ul className="take-test__status-list">
+                  <li><span className="status-badge status-not-visited">15</span> You have <strong>not visited</strong> the question yet.</li>
+                  <li><span className="status-badge status-not-answered">15</span> You have <strong>not answered</strong> the question.</li>
+                  <li><span className="status-badge status-answered">15</span> You have <strong>answered</strong> the question.</li>
+                  <li><span className="status-badge status-marked">15</span> You have <strong>NOT answered</strong> the question but have <strong>marked the question for review</strong>.</li>
+                  <li><span className="status-badge status-answered-marked">15</span> You have <strong>answered</strong> the question but <strong>marked it for review</strong>.</li>
+                </ul>
+
+                <p>The Marked for Review status simply acts as a reminder that you have set to look at the question again. If an answer is selected for a question that is Marked for Review, the answer will be considered in the final evaluation.</p>
+
+                <h3>Navigation to a question</h3>
+                <p>3. To select a question to answer, you can do one of the following:</p>
+                <ul className="take-test__bullet-list">
+                  <li>Click on the <strong>question</strong> number on the question palette at the right of your screen to go to that numbered question directly. Note that using this option does NOT save your answer to the current question.</li>
+                  <li>Click on Save and Next to save answer to current question, <strong>mark it for review</strong>, and to go to the next question in sequence.</li>
+                  <li>Click on Mark for Review and <strong>Next to save answer</strong> to current question.</li>
+                </ul>
+                <p>4. You can view the entire paper by clicking on the <strong>All Questions</strong> button.</p>
+
+                <h3>Answering questions</h3>
+                <p>5. For multiple choice type question</p>
+                <ul className="take-test__bullet-list take-test__bullet-list--alpha">
+                  <li><strong>To select your answer</strong>, click on one of the option buttons</li>
+                  <li><strong>To change your answer</strong>, click the another desired option button</li>
+                  <li><strong>To save your answer</strong>, you MUST click on save</li>
+                  <li><strong>To deselect a chosen answer</strong>, click on the Clear Response button</li>
+                  <li><strong>To mark a question for review</strong> click on Mark for Review & Next. If an answer is selected for a question that is Marked for Review, the answer will be considered in the final evaluation</li>
+                </ul>
+                <p>6. To change an answer to a question, first select the question and then click on the new answer option followed by a click on the save button.</p>
+                <p>7. Questions that are saved or marked for review after answering will ONLY be considered for evaluation.</p>
+                <p>8. If quiz is paused, quiz can be continued from where left off within scheduled time.</p>
+
+                <h3>Navigation through sections</h3>
+                <p>9. Sections in this question paper are displayed on the top bar of the screen. Questions in a section can be viewed by clicking on the section name. The section you are currently viewing is highlighted.</p>
+                <p>10. After clicking the save button on the last question for a section, you will automatically be taken to the first question of the next section.</p>
+                <p>11. You can move the mouse cursor over the section names to view the status of the questions for that section.</p>
+                <p>12. You can shuffle between sections and questions anytime during the examination as per your convenience.</p>
               </div>
 
-              <div className="take-test__callout">
-                This paper is built for focused work: answer steadily, review deliberately, and finish cleanly.
+              <div className="take-test__cta-wrapper">
+                <Button className="take-test__panel-cta" size="lg" onClick={handleStart}>
+                  START TEST
+                </Button>
               </div>
-
-              <Button className="take-test__panel-cta" size="lg" onClick={handleStart}>
-                Start Test
-              </Button>
             </aside>
           </div>
         </div>
@@ -567,201 +529,122 @@ export default function TakeTestPage() {
           }
           .take-test__stage-shell {
             position: relative;
-            display: grid;
-            grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
-            gap: 1.5rem;
-            min-height: calc(100vh - 10rem);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 8rem);
+            max-height: 900px;
             max-width: 86rem;
             margin: 0 auto;
             border-radius: 36px;
             overflow: hidden;
-            background:
-              linear-gradient(135deg, #101727 0%, #14253f 52%, #0f3a6d 100%);
+            background: white;
             box-shadow: 0 34px 80px rgba(15, 23, 42, 0.18);
           }
-          .take-test__stage-shell::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background:
-              radial-gradient(circle at top right, rgba(250, 204, 21, 0.18), transparent 28%),
-              linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-            background-size: auto, 36px 36px, 36px 36px;
-            pointer-events: none;
-          }
-          .take-test__hero,
           .take-test__panel {
             position: relative;
             z-index: 1;
-          }
-          .take-test__hero {
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            padding: clamp(2rem, 5vw, 4rem);
-            color: white;
-          }
-          .take-test__eyebrow {
-            display: inline-flex;
-            width: fit-content;
-            align-items: center;
-            gap: 0.55rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 0.7rem 1rem;
-            font-size: 0.76rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-          }
-          .take-test__kicker {
-            margin: 1.25rem 0 0;
-            font-size: 0.92rem;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.68);
-          }
-          .take-test__headline {
-            margin: 1rem 0 0;
-            max-width: 13ch;
-            font-size: clamp(2.6rem, 5vw, 4.7rem);
-            line-height: 0.96;
-            font-weight: 800;
-          }
-          .take-test__copy {
-            margin: 1.35rem 0 0;
-            max-width: 42rem;
-            font-size: 1.04rem;
-            line-height: 1.9;
-            color: rgba(255, 255, 255, 0.78);
-          }
-          .take-test__metrics {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-            max-width: 44rem;
-          }
-          .take-test__metric-card {
-            display: grid;
-            gap: 0.45rem;
-            border-radius: 24px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 1rem 1.1rem 1.15rem;
-            backdrop-filter: blur(16px);
-          }
-          .take-test__metric-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 2rem;
-            height: 2rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.12);
-            color: #fde68a;
-          }
-          .take-test__metric-label {
-            font-size: 0.76rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.62);
-          }
-          .take-test__metric-value {
-            font-size: 1.05rem;
-            color: white;
-          }
-          .take-test__chip-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-top: 1.35rem;
-          }
-          .take-test__chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 0.68rem 0.95rem;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.92);
-          }
-          .take-test__panel {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 1.25rem;
-            padding: clamp(2rem, 4vw, 3rem);
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 248, 252, 0.93));
-          }
-          .take-test__panel-tag {
-            width: fit-content;
-            border-radius: 999px;
-            background: rgba(56, 189, 248, 0.1);
-            color: #0369a1;
-            padding: 0.55rem 0.9rem;
-            font-size: 0.74rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            padding: clamp(2rem, 5vw, 4rem);
+            background: white;
+            flex: 1;
           }
           .take-test__panel-title {
             margin: 0;
-            font-size: clamp(1.55rem, 2.2vw, 2.1rem);
-            line-height: 1.1;
-            font-weight: 800;
-            color: #111827;
+            font-size: clamp(1.4rem, 2vw, 1.8rem);
+            line-height: 1.2;
+            font-weight: 700;
+            color: #2563eb;
           }
-          .take-test__checklist {
-            display: grid;
-            gap: 0.95rem;
+          .take-test__instructions-content {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #374151;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
           }
-          .take-test__checklist-item {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 0.9rem;
-            align-items: start;
-            padding: 1rem 1rem 1.05rem;
-            border-radius: 22px;
-            background: white;
-            border: 1px solid rgba(226, 232, 240, 0.88);
+          .take-test__instructions-content h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin: 1rem 0 0.25rem 0;
           }
-          .take-test__checklist-mark {
+          .take-test__instructions-content p {
+            margin: 0;
+          }
+          .take-test__status-list {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+          .take-test__status-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+          }
+          .status-badge {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 2.25rem;
-            height: 2.25rem;
+            width: 28px;
+            height: 28px;
             border-radius: 999px;
-            background: rgba(15, 23, 42, 0.06);
-            font-size: 0.72rem;
-            font-weight: 800;
-            color: #0f172a;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
           }
-          .take-test__checklist-item strong {
-            display: block;
-            font-size: 0.96rem;
-            color: #111827;
+          .status-not-visited { background-color: #d1d5db; color: #4b5563; }
+          .status-not-answered { background-color: #ef4444; }
+          .status-answered { background-color: #22c55e; }
+          .status-marked { background-color: #8b5cf6; }
+          .status-answered-marked { background-color: #8b5cf6; position: relative; }
+          .status-answered-marked::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 10px;
+            height: 10px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            border: 2px solid white;
           }
-          .take-test__checklist-item p {
-            margin: 0.35rem 0 0;
-            font-size: 0.88rem;
-            line-height: 1.6;
-            color: #667085;
+          .take-test__bullet-list {
+            padding-left: 1.5rem;
+            margin: 0.25rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            list-style-type: disc;
           }
-          .take-test__callout {
-            border-radius: 22px;
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(250, 204, 21, 0.14));
-            padding: 1rem 1.1rem;
-            font-size: 0.9rem;
-            line-height: 1.65;
-            color: #1f2937;
+          .take-test__bullet-list--alpha {
+            list-style-type: lower-alpha;
+          }
+          .take-test__cta-wrapper {
+            margin-top: 1rem;
+            position: sticky;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 40%);
+            padding-top: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
           }
           .take-test__panel-cta {
             width: 100%;
+            max-width: 32rem;
+            font-size: 1.05rem;
+            padding: 1.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
           }
           @media (max-width: 1024px) {
             .take-test__stage-shell {
@@ -1222,93 +1105,104 @@ export default function TakeTestPage() {
 
   return (
     <>
-      <div className="take-test">
-        <section className="take-test__command">
-          <div className="take-test__command-copy">
-            <div className="take-test__eyebrow">
-              <PenTool className="h-4 w-4" />
-              Live Assessment
-            </div>
-            <p className="take-test__command-kicker">{courseTitle}</p>
-            <h1 className="take-test__command-title">{testInfo?.title ?? previewTitle} <span className="text-sm font-normal text-blue-600 bg-blue-50 px-2 py-1 rounded ml-2">Part {currentPart}</span></h1>
-            <p className="take-test__command-description">
-              {previewDescription}
-            </p>
+      <div className="cbt-app">
+        <header className="cbt-header">
+          <div className="cbt-header-tabs">
+            <button className="cbt-tab-close" onClick={() => setPhase("reviewing")}>
+              <span className="cbt-icon-x">✕</span>
+            </button>
+            {Array.from(new Set(questions.map((q) => q.type))).map((type) => (
+              <button
+                key={type}
+                className={`cbt-tab ${currentQuestion.type === type ? "cbt-tab--active" : ""}`}
+                onClick={() => {
+                  const idx = questions.findIndex((q) => q.type === type);
+                  if (idx !== -1) setCurrentIndex(idx);
+                }}
+              >
+                {type === "SKETCH" ? "+2 SECTIONS" : type.replace("_", " ")}
+              </button>
+            ))}
           </div>
+          <div className="cbt-header-user">
+            <div className="cbt-avatar">{user?.email?.charAt(0).toUpperCase() || "S"}</div>
+            <span className="cbt-username">{user?.email?.split("@")[0] || "Student"}</span>
+          </div>
+        </header>
 
-          <div className="take-test__command-side">
-            <div className="take-test__command-stat">
-              <span>Answered</span>
-              <strong>{answeredSet.size}/{questions.length}</strong>
-            </div>
-            <div className="take-test__command-stat">
-              <span>Flagged</span>
-              <strong>{flagged.size}</strong>
-            </div>
-            {testInfo && activeInitialSeconds !== null ? (
-              <div className="take-test__timer-wrap">
+        <div className="cbt-subheader">
+          <div className="cbt-sub-left">
+            <span className="cbt-qnum">
+              Q. {currentIndex + 1} of {questions.length}
+            </span>
+            <span className="cbt-marks">Marks: {currentQuestion.points ?? 4.0}</span>
+            <button
+              className={`cbt-flag-btn ${flagged.has(currentIndex) ? "cbt-flag-btn--active" : ""}`}
+              onClick={() => toggleFlag(currentIndex)}
+              title="Mark for Review"
+            >
+              ⚑
+            </button>
+          </div>
+          <div className="cbt-sub-right">
+            {testInfo && activeInitialSeconds !== null && (
+              <div className="cbt-timer">
+                <span className="cbt-timer-label">YOUR TIME</span>
                 <TestTimer key={currentPart} initialSeconds={activeInitialSeconds} onTimeUp={activeTimeUpHandler} />
               </div>
-            ) : null}
+            )}
           </div>
-        </section>
+        </div>
 
-        <div className="take-test__layout">
-          <div className="take-test__main">
-            <QuestionCard
-              question={currentQuestion}
-              questionNumber={currentIndex + 1}
-              totalQuestions={questions.length}
-              selectedAnswer={answers[currentQuestion.id]}
-              onAnswer={handleAnswer}
-              isFlagged={flagged.has(currentIndex)}
-              onToggleFlag={() => toggleFlag(currentIndex)}
-              watermark={watermark}
-            />
+        <div className="cbt-layout">
+          <div className="cbt-main">
+            <div className="cbt-question-area">
+              <QuestionCard
+                question={currentQuestion}
+                questionNumber={currentIndex + 1}
+                totalQuestions={questions.length}
+                selectedAnswer={answers[currentQuestion.id]}
+                onAnswer={handleAnswer}
+                isFlagged={flagged.has(currentIndex)}
+                onToggleFlag={() => toggleFlag(currentIndex)}
+                watermark={watermark}
+              />
+            </div>
 
-            <div className="take-test__bottom-nav">
-              <div className="take-test__bottom-copy">
-                <span className="take-test__bottom-kicker">
-                  Question {currentIndex + 1} of {questions.length}
-                </span>
-                <p className="take-test__bottom-note">
-                  {flagged.has(currentIndex)
-                    ? "Flagged for review. You can come back before submitting."
-                    : answeredSet.has(currentIndex)
-                      ? "Response saved in this session."
-                      : "Answer now or move ahead and return later from the navigator."}
-                </p>
+            <div className="cbt-footer">
+              <div className="cbt-footer-left">
+                <button className="cbt-footer-btn cbt-footer-btn--outline" onClick={() => setPhase("reviewing")}>
+                  INSTRUCTION
+                </button>
               </div>
 
-              <div className="take-test__bottom-actions">
-                <Button variant="secondary" size="sm" onClick={goPrevSection} disabled={prevSectionIndex === -1}>
-                  &lt;&lt; Prev Type
-                </Button>
-                <Button variant="secondary" size="sm" onClick={goPrev} disabled={currentIndex === 0 || (currentPart === "B" && isPartAQuestion(currentIndex - 1))}>
-                  Previous
-                </Button>
+              <div className="cbt-footer-nav">
+                <button className="cbt-nav-arrow" onClick={goPrev} disabled={currentIndex === 0}>
+                  ◀
+                </button>
+                <span>
+                  {currentIndex + 1} of {questions.length}
+                </span>
+                <button className="cbt-nav-arrow" onClick={goNext} disabled={currentIndex === questions.length - 1}>
+                  ▶
+                </button>
+              </div>
 
-                {(currentIndex < questions.length - 1 && !isPartBQuestion(currentIndex + 1) && currentPart === "A") || (currentIndex < questions.length - 1 && currentPart === "B") ? (
-                  <Button size="sm" onClick={goNext}>
-                    Next
-                  </Button>
+              <div className="cbt-footer-right">
+                {currentIndex < questions.length - 1 ? (
+                  <button className="cbt-footer-btn cbt-footer-btn--primary" onClick={goNext}>
+                    NEXT →
+                  </button>
                 ) : (
-                  <Button size="sm" disabled={currentPart === "A" && questions.some(q => q.type === "SKETCH")} onClick={() => {
-                    if (currentPart === "B" || !questions.some(q => q.type === "SKETCH")) {
-                      setPhase("reviewing");
-                    }
-                  }}>
-                    {currentPart === "A" && questions.some(q => q.type === "SKETCH") ? "End of Part A (Wait for Timer)" : "Review & Submit"}
-                  </Button>
+                  <button className="cbt-footer-btn cbt-footer-btn--primary" onClick={() => setPhase("reviewing")}>
+                    SUBMIT →
+                  </button>
                 )}
-                <Button variant="secondary" size="sm" onClick={goNextSection} disabled={nextSectionIndex === -1}>
-                  Next Type &gt;&gt;
-                </Button>
               </div>
             </div>
           </div>
 
-          <aside className="take-test__sidebar">
+          <aside className="cbt-sidebar">
             <QuestionNavigator
               questions={questions}
               currentIndex={currentIndex}
@@ -1316,214 +1210,221 @@ export default function TakeTestPage() {
               flaggedSet={flagged}
               onNavigate={setCurrentIndex}
             />
-
-            {(currentPart === "B" || !questions.some(q => q.type === "SKETCH")) && (
-              <button
-                className="take-test__review-cta"
-                onClick={() => setPhase("reviewing")}
-                type="button"
-              >
-                <span className="take-test__review-cta-copy">
-                  <strong>Open final review</strong>
-                  <span>{unansweredCount} unanswered · {flagged.size} flagged</span>
-                </span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            )}
           </aside>
         </div>
       </div>
 
       <style jsx>{`
-        .take-test {
-          max-width: 90rem;
-          margin: 0 auto;
-          padding: 1.4rem 1.25rem 2.6rem;
-        }
-        .take-test__command {
-          display: grid;
-          grid-template-columns: minmax(0, 1.2fr) auto;
-          gap: 1.5rem;
-          align-items: end;
-          padding: 1.5rem 1.5rem 1.6rem;
-          border-radius: 32px;
-          background:
-            linear-gradient(135deg, rgba(16, 23, 39, 0.98), rgba(20, 37, 63, 0.96));
-          box-shadow: 0 28px 70px rgba(15, 23, 42, 0.16);
-          color: white;
-        }
-        .take-test__eyebrow {
-          display: inline-flex;
-          width: fit-content;
-          align-items: center;
-          gap: 0.55rem;
-          border-radius: 999px;
-          background: rgba(255, 255, 255, 0.1);
-          padding: 0.7rem 1rem;
-          font-size: 0.76rem;
-          font-weight: 700;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-        }
-        .take-test__command-kicker {
-          margin: 1rem 0 0;
-          font-size: 0.82rem;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.66);
-        }
-        .take-test__command-title {
-          margin: 0.85rem 0 0;
-          font-size: clamp(2rem, 3.2vw, 3rem);
-          line-height: 1.02;
-          font-weight: 800;
-        }
-        .take-test__command-description {
-          margin: 0.9rem 0 0;
-          max-width: 42rem;
-          font-size: 0.98rem;
-          line-height: 1.75;
-          color: rgba(255, 255, 255, 0.76);
-        }
-        .take-test__command-side {
-          display: grid;
-          gap: 0.8rem;
-          justify-items: end;
-        }
-        .take-test__command-stat {
-          display: inline-flex;
-          min-width: 10rem;
-          align-items: center;
-          justify-content: space-between;
-          gap: 0.9rem;
-          border-radius: 18px;
-          background: rgba(255, 255, 255, 0.08);
-          padding: 0.85rem 1rem;
-          font-size: 0.88rem;
-        }
-        .take-test__command-stat span {
-          color: rgba(255, 255, 255, 0.7);
-        }
-        .take-test__command-stat strong {
-          font-size: 1rem;
-          color: white;
-        }
-        .take-test__timer-wrap {
-          margin-top: 0.25rem;
-        }
-        .take-test__layout {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) 19rem;
-          gap: 1.5rem;
-          align-items: start;
-          margin-top: 1.5rem;
-        }
-        .take-test__main {
+        .cbt-app {
           display: flex;
           flex-direction: column;
-          gap: 1.1rem;
+          height: 100vh;
+          width: 100vw;
+          background: #ffffff;
+          font-family: system-ui, -apple-system, sans-serif;
+          position: fixed;
+          top: 0;
+          left: 0;
+          z-index: 100;
         }
-        .take-test__bottom-nav {
+
+        .cbt-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          height: 3.5rem;
+          background: #ffffff;
+          border-bottom: 1px solid #e5e7eb;
+          padding: 0 1rem;
+        }
+        .cbt-header-tabs {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          gap: 1rem;
-          padding: 1rem 1.1rem;
-          border-radius: 24px;
-          background: rgba(255, 255, 255, 0.92);
-          border: 1px solid rgba(226, 232, 240, 0.9);
-          box-shadow: 0 18px 38px rgba(15, 23, 42, 0.06);
+          gap: 0.5rem;
+          height: 100%;
         }
-        .take-test__bottom-copy {
-          min-width: 0;
-        }
-        .take-test__bottom-kicker {
-          display: inline-block;
-          font-size: 0.78rem;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: #64748b;
-        }
-        .take-test__bottom-note {
-          margin: 0.4rem 0 0;
-          font-size: 0.92rem;
-          line-height: 1.6;
-          color: #5b6474;
-        }
-        .take-test__bottom-actions {
-          display: flex;
-          gap: 0.75rem;
-          flex-shrink: 0;
-        }
-        .take-test__sidebar {
-          position: sticky;
-          top: 1rem;
-          display: grid;
-          gap: 1rem;
-        }
-        .take-test__review-cta {
+        .cbt-tab-close {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          gap: 1rem;
+          justify-content: center;
+          width: 2rem;
+          height: 2rem;
+          border-radius: 50%;
+          border: 1px solid #d1d5db;
+          background: #f3f4f6;
+          margin-right: 0.5rem;
+          cursor: pointer;
+        }
+        .cbt-tab {
+          height: 100%;
+          padding: 0 1rem;
           border: none;
-          border-radius: 22px;
-          background: linear-gradient(135deg, #0f172a, #18263b);
-          color: white;
-          padding: 1rem 1.1rem;
-          box-shadow: 0 20px 46px rgba(15, 23, 42, 0.14);
+          background: transparent;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #6b7280;
+          cursor: pointer;
+          border-bottom: 2px solid transparent;
         }
-        .take-test__review-cta-copy {
+        .cbt-tab--active {
+          color: #3b82f6;
+          border-bottom-color: #3b82f6;
+        }
+
+        .cbt-header-user {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .cbt-avatar {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 2rem;
+          height: 2rem;
+          border-radius: 50%;
+          background: #3b82f6;
+          color: white;
+          font-weight: 600;
+          font-size: 0.9rem;
+        }
+        .cbt-username {
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: #374151;
+        }
+
+        .cbt-subheader {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem 1.5rem;
+          background: #ffffff;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .cbt-sub-left {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+        }
+        .cbt-qnum {
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: #374151;
+        }
+        .cbt-marks {
+          font-size: 0.85rem;
+          font-weight: 500;
+          color: #10b981;
+        }
+        .cbt-flag-btn {
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          color: #d1d5db;
+          font-size: 1.25rem;
+          padding: 0;
+          line-height: 1;
+        }
+        .cbt-flag-btn--active {
+          color: #8b5cf6;
+        }
+
+        .cbt-sub-right {
+          display: flex;
+          align-items: center;
+        }
+        .cbt-timer {
           display: flex;
           flex-direction: column;
-          gap: 0.25rem;
-          text-align: left;
+          align-items: flex-end;
         }
-        .take-test__review-cta-copy strong {
-          font-size: 0.95rem;
+        .cbt-timer-label {
+          font-size: 0.65rem;
+          font-weight: 600;
+          color: #6b7280;
+          text-transform: uppercase;
         }
-        .take-test__review-cta-copy span {
-          font-size: 0.78rem;
-          color: rgba(255, 255, 255, 0.68);
+
+        .cbt-layout {
+          display: flex;
+          flex: 1;
+          overflow: hidden;
         }
-        @media (max-width: 1080px) {
-          .take-test__command {
-            grid-template-columns: 1fr;
-          }
-          .take-test__command-side {
-            justify-items: start;
-            grid-template-columns: repeat(3, minmax(0, max-content));
-            align-items: start;
-          }
-          .take-test__layout {
-            grid-template-columns: 1fr;
-          }
-          .take-test__sidebar {
-            position: static;
-          }
+
+        .cbt-main {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+          background: #f9fafb;
         }
-        @media (max-width: 720px) {
-          .take-test {
-            padding: 1rem 0.75rem 6rem;
-          }
-          .take-test__command {
-            border-radius: 26px;
-            padding: 1.2rem;
-          }
-          .take-test__command-side {
-            grid-template-columns: 1fr;
-            width: 100%;
-          }
-          .take-test__command-stat {
-            width: 100%;
-          }
-          .take-test__bottom-nav {
-            flex-direction: column;
-            align-items: stretch;
-          }
-          .take-test__bottom-actions {
-            justify-content: space-between;
+        .cbt-question-area {
+          flex: 1;
+          overflow-y: auto;
+          padding: 2rem;
+          background: #ffffff;
+        }
+
+        .cbt-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.5rem;
+          background: #ffffff;
+          border-top: 1px solid #e5e7eb;
+        }
+        .cbt-footer-btn {
+          padding: 0.6rem 1.25rem;
+          font-size: 0.85rem;
+          font-weight: 600;
+          border-radius: 4px;
+          cursor: pointer;
+          text-transform: uppercase;
+        }
+        .cbt-footer-btn--outline {
+          background: #ffffff;
+          border: 1px solid #d1d5db;
+          color: #4b5563;
+        }
+        .cbt-footer-btn--primary {
+          background: #3b82f6;
+          border: 1px solid #3b82f6;
+          color: #ffffff;
+        }
+        
+        .cbt-footer-nav {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: #374151;
+        }
+        .cbt-nav-arrow {
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          color: #374151;
+          font-size: 0.9rem;
+        }
+        .cbt-nav-arrow:disabled {
+          color: #d1d5db;
+          cursor: not-allowed;
+        }
+
+        .cbt-sidebar {
+          width: 320px;
+          border-left: 1px solid #e5e7eb;
+          background: #ffffff;
+          display: flex;
+          flex-direction: column;
+          overflow-y: auto;
+        }
+
+        @media (max-width: 1024px) {
+          .cbt-sidebar {
+            display: none;
           }
         }
       `}</style>

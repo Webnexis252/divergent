@@ -236,7 +236,7 @@ export const UpdateCourseTestSchema = CreateCourseTestSchema.partial().extend({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
 });
 
-export const CreateTestQuestionSchema = z.object({
+export const BaseTestQuestionSchema = z.object({
   type: z
     .enum(['SCQ', 'MCQ', 'SKETCH', 'NUMERIC'])
     .default('SCQ'),
@@ -246,10 +246,10 @@ export const CreateTestQuestionSchema = z.object({
   prompt: z.string().optional().default(''),
   explanation: z.string().optional(),
   explanationImageUrl: z.string().nullable().optional(),
-  options: z.array(z.string()).default([]),              // SCQ/MCQ: options list; SKETCH/NUMERIC: empty
-  correctAnswer: z.union([z.string(), z.array(z.string())]).default([]), // SCQ/NUMERIC: string; MCQ: string[]; SKETCH: []
+  options: z.array(z.string()).default([]),
+  correctAnswer: z.union([z.string(), z.array(z.string())]).default([]),
   imageUrl: z.string().min(1, 'Question Image is required'),
-  referenceImage: z.string().optional().nullable(),     // SKETCH only: teacher's reference sketch
+  referenceImage: z.string().optional().nullable(),
   points: z.number().int().min(1).default(1),
   negativeMarks: z.number().min(0).default(0),
   allowPartialMarking: z.boolean().default(false),
@@ -258,7 +258,9 @@ export const CreateTestQuestionSchema = z.object({
   partId: z.string().optional(),
   sectionId: z.string().optional(),
   groupId: z.string().optional(),
-}).superRefine((data, ctx) => {
+});
+
+export const CreateTestQuestionSchema = BaseTestQuestionSchema.superRefine((data, ctx) => {
   const options = data.options.map((option) => option.trim()).filter(Boolean);
   const correctAnswers = Array.isArray(data.correctAnswer)
     ? data.correctAnswer.map((answer) => answer.trim()).filter(Boolean)
@@ -319,6 +321,8 @@ export const CreateTestQuestionSchema = z.object({
     });
   }
 });
+
+export const UpdateTestQuestionSchema = BaseTestQuestionSchema.partial();
 
 export const StartTestSchema = z.object({
   // No body needed — we just create an attempt for the authenticated user

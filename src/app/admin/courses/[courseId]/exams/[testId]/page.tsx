@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
 import { 
   Plus, Trash2, Clock, Target, Users, GripVertical,
-  X, Check, AlertCircle, CircleDot, CheckSquare, Hash, Palette, MoreVertical, Pencil
+  X, Check, AlertCircle, CircleDot, CheckSquare, Hash, Palette, MoreVertical, Pencil, Settings
 } from "lucide-react";
 import { BuilderDrawer } from "./_components/builder-drawer";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -95,10 +95,15 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
   const router = useRouter();
   const { courseId, testId } = use(params);
 
-  const [test, setTest] = useState<{ title: string; status: string } | null>(null);
+  const [test, setTest] = useState<{ id: string; title: string; status: string; durationMins: number; description: string | null } | null>(null);
   const [parts, setParts] = useState<Part[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPublishing, setIsPublishing] = useState(false);
+
+  // Settings Modal State
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({ title: "", description: "", durationMins: 60 });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Modals State
   const [addDrawerOpen, setAddDrawerOpen] = useState(false);
@@ -129,7 +134,14 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
       ]);
       const testData = await testRes.json();
       const partsData = await partsRes.json();
-      if (testData.success) setTest(testData.data);
+      if (testData.success) {
+        setTest(testData.data);
+        setSettingsForm({
+          title: testData.data.title || "",
+          description: testData.data.description || "",
+          durationMins: testData.data.durationMins || 60,
+        });
+      }
       if (partsData.success) setParts(partsData.data);
     } catch (err) {
       console.error(err);
@@ -170,6 +182,27 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
       console.error(err);
     } finally {
       setIsPublishing(false);
+    }
+  }
+
+  async function handleSaveSettings(e: React.FormEvent) {
+    e.preventDefault();
+    if (!test) return;
+    setSavingSettings(true);
+    try {
+      const res = await fetch(`/api/courses/${courseId}/tests/${testId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settingsForm)
+      });
+      if (res.ok) {
+        setSettingsModalOpen(false);
+        fetchExamData();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingSettings(false);
     }
   }
 
@@ -302,17 +335,25 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
             
             <div className="flex flex-wrap items-center gap-3">
               {test && (
-                <button 
-                  onClick={handleTogglePublish}
-                  disabled={isPublishing}
-                  className={`flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold shadow-sm transition-all duration-200 active:scale-[0.98] ${
-                    test.status === "PUBLISHED" 
-                      ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200" 
-                      : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-[0_4px_14px_rgba(5,150,105,0.3)]"
-                  } disabled:opacity-50`}
-                >
-                  {isPublishing ? "Saving..." : test.status === "PUBLISHED" ? "Unpublish Exam" : "Publish Exam"}
-                </button>
+                <>
+                  <button 
+                    onClick={() => setSettingsModalOpen(true)}
+                    className="flex items-center gap-2 rounded-xl px-4 py-3 text-[14px] font-bold shadow-sm transition-all duration-200 active:scale-[0.98] border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                  >
+                    <Settings className="h-4 w-4" /> Settings
+                  </button>
+                  <button 
+                    onClick={handleTogglePublish}
+                    disabled={isPublishing}
+                    className={`flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold shadow-sm transition-all duration-200 active:scale-[0.98] ${
+                      test.status === "PUBLISHED" 
+                        ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200" 
+                        : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-[0_4px_14px_rgba(5,150,105,0.3)]"
+                    } disabled:opacity-50`}
+                  >
+                    {isPublishing ? "Saving..." : test.status === "PUBLISHED" ? "Unpublish Exam" : "Publish Exam"}
+                  </button>
+                </>
               )}
               <button 
                 onClick={() => setPartModalOpen(true)} 
@@ -597,6 +638,47 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
         title="Confirm Deletion"
         message={`Are you sure you want to delete this ${deleteModal?.type.toLowerCase()}? This action cannot be undone and will remove all nested content.`}
       />
+
+      {/* Edit Settings Modal */}
+      <Modal isOpen={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} title="Exam Settings">
+        <form onSubmit={handleSaveSettings} className="space-y-5">
+          <div>
+            <label className="mb-1.5 block text-[13px] font-bold text-slate-700">Exam Title</label>
+            <input 
+              required
+              value={settingsForm.title}
+              onChange={(e) => setSettingsForm({ ...settingsForm, title: e.target.value })}
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[13px] font-bold text-slate-700">Description</label>
+            <textarea 
+              value={settingsForm.description}
+              onChange={(e) => setSettingsForm({ ...settingsForm, description: e.target.value })}
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+              rows={3}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[13px] font-bold text-slate-700">Total Duration (Minutes)</label>
+            <input 
+              type="number"
+              min="1"
+              required
+              value={settingsForm.durationMins}
+              onChange={(e) => setSettingsForm({ ...settingsForm, durationMins: parseInt(e.target.value) || 0 })}
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+            />
+            <p className="mt-1.5 text-[12px] text-slate-500">
+              This is the overall time limit for the entire exam. It determines what students see on the dashboard.
+            </p>
+          </div>
+          <button type="submit" disabled={savingSettings} className="mt-6 w-full rounded-xl bg-blue-600 py-3 text-[14px] font-bold text-white shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50">
+            {savingSettings ? "Saving..." : "Save Settings"}
+          </button>
+        </form>
+      </Modal>
     </PageTransition>
   );
 }

@@ -82,6 +82,9 @@ async function getBundleEnrollment(userId: string, bundleId: string) {
     select: {
       id: true,
       status: true,
+      isInstallmentBased: true,
+      validUntil: true,
+      currentInstallment: true,
     },
   });
 }
@@ -111,6 +114,7 @@ export default async function BundleDetailPage({ params }: BundleDetailPageProps
               courseLevel: true,
               language: true,
               totalHours: true,
+              price: true,
               learningOutcomes: true,
               teachers: { select: { id: true, name: true, image: true } },
               liveClasses: {
@@ -220,6 +224,19 @@ export default async function BundleDetailPage({ params }: BundleDetailPageProps
     isEnrolled && totalLessons > 0
       ? Math.round((completedLessonCount / totalLessons) * 100)
       : 0;
+
+  const originalPrice = bundle.courses.reduce((sum: number, bc: any) => sum + (bc.course.price || 0), 0);
+  const discountPercent =
+    bundle.price > 0 && originalPrice > bundle.price
+      ? Math.max(1, Math.round((1 - bundle.price / originalPrice) * 100))
+      : 0;
+  
+  let isExpiredInstallment = false;
+  if (enrollment && enrollment.isInstallmentBased && enrollment.validUntil) {
+    if (new Date() > new Date(enrollment.validUntil)) {
+      isExpiredInstallment = true;
+    }
+  }
 
   const teacherName = allTeachers?.[0]?.name ?? "Expert Mentors";
   const bundleHours = totalDuration > 0 ? Math.max(1, Math.round(totalDuration / 60)) : 0;
@@ -644,6 +661,144 @@ export default async function BundleDetailPage({ params }: BundleDetailPageProps
                           </div>
                         </div>
                       </section>
+                    </RevealSection>
+                  </div>
+
+                  <div className="relative z-20 space-y-4">
+                    <RevealSection delay={0.08}>
+                      <aside className="rounded-[24px] bg-white px-[24px] pb-[24px] pt-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.03]">
+                        <div className="space-y-5">
+                          <div className="overflow-hidden rounded-[16px] bg-[#d9d9d9] shadow-inner">
+                            <div
+                              aria-hidden="true"
+                              className="h-[184px] w-full bg-cover bg-center transition-transform duration-700 hover:scale-105"
+                              style={{
+                                backgroundImage: bundle.thumbnail
+                                  ? `linear-gradient(180deg, rgba(8, 16, 24, 0.02), rgba(8, 16, 24, 0.12)), url("${bundle.thumbnail}")`
+                                  : `url("${assets.fallbackThumbnail}")`,
+                              }}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <h2 className="text-[18px] font-bold leading-[1.3] text-black">
+                              {bundle.title}
+                            </h2>
+                            <div className="flex items-center justify-between">
+                              <p className="text-[13px] text-gray-500 font-medium">by <span className="text-black">{teacherName}</span></p>
+                              <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                                <Star className="h-3 w-3 fill-[#ffc107] text-[#ffc107]" />
+                                <p className="text-[12px] font-bold text-yellow-700">4.7</p>
+                              </div>
+                            </div>
+                            
+                            {isEnrolled && totalLessons > 0 ? (
+                              <div className="pt-2 space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-[12px] font-semibold text-[#4caf50]">
+                                    {completedLessonCount} / {totalLessons} lessons
+                                  </p>
+                                  <p className="text-[12px] font-bold text-black">{progressPercent}%</p>
+                                </div>
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                                  <div
+                                    className="h-full rounded-full bg-[#4caf50] transition-all duration-500"
+                                    style={{ width: `${progressPercent}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
+
+                          {!isEnrolled ? (
+                            <div className="rounded-[16px] border border-gray-100 bg-gray-50/50 p-4">
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#38c1ff]/10">
+                                  <Package className="h-3.5 w-3.5 text-[#38c1ff]" />
+                                </div>
+                                <p className="text-[13px] font-semibold text-gray-600">
+                                  {bundle.price > 0 ? "Full Access" : "Open Access"}
+                                </p>
+                              </div>
+
+                              <div className="mt-3 flex items-end gap-2.5">
+                                <p className="text-[28px] font-extrabold leading-none tracking-tight text-black">
+                                  {bundle.price > 0 ? `₹${bundle.price.toLocaleString("en-IN")}` : "Free"}
+                                </p>
+                                {bundle.price > 0 && originalPrice > bundle.price ? (
+                                  <p className="mb-1 text-[13px] font-semibold text-gray-400 line-through">
+                                    ₹{originalPrice.toLocaleString("en-IN")}
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              {bundle.price > 0 && discountPercent > 0 && (
+                                <div className="mt-2 inline-flex rounded-full bg-green-100 px-2 py-0.5">
+                                  <p className="text-[11px] font-bold text-green-700">
+                                    {discountPercent}% OFF APPLIED
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+
+                          {!isEnrolled && bundle.price > 0 && Array.isArray(bundle.emiPlans) && bundle.emiPlans.length > 0 ? (
+                            <div className="rounded-[16px] border border-gray-100 bg-white p-4 shadow-sm">
+                              <div className="space-y-2.5">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-50">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-purple-500" />
+                                  </div>
+                                  <p className="text-[13px] font-semibold text-black">Pay in Instalments</p>
+                                  <span className="ml-auto rounded bg-purple-100 px-1.5 py-0.5 text-[9px] font-bold text-purple-700">
+                                    CUSTOM EMI
+                                  </span>
+                                </div>
+                                <table className="w-full text-[12px]">
+                                  <thead>
+                                    <tr className="border-b border-gray-100">
+                                      <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">#</th>
+                                      <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">Amount</th>
+                                      <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">Due</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {(bundle.emiPlans as any[]).map((plan, i) => (
+                                      <tr key={i} className="border-b border-gray-50 last:border-0">
+                                        <td className="py-1.5 pr-2 font-medium text-[#475569]">{plan.label || `${i + 1}.`}</td>
+                                        <td className="py-1.5 pr-2 font-bold text-black">₹{plan.amount.toLocaleString("en-IN")}</td>
+                                        <td className="py-1.5 text-[#64748b]">{plan.dueDays === 0 ? 'On enrollment' : `${plan.dueDays} days`}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                                <p className="text-[11px] text-[#94a3b8]">
+                                  Total: ₹{(bundle.emiPlans as any[]).reduce((s, p) => s + p.amount, 0).toLocaleString("en-IN")} over {bundle.emiPlans.length} instalment{bundle.emiPlans.length !== 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          <div className="pt-2">
+                            {isEnrolled && !isExpiredInstallment ? (
+                              <Link
+                                className="inline-flex h-[44px] w-full items-center justify-center rounded-[12px] bg-[#38c1ff] px-4 text-[14px] font-bold tracking-wide text-white shadow-[0_6px_20px_rgba(56,193,255,0.3)] transition-all duration-300 ease-out hover:-translate-y-1 hover:bg-[#2db4f0] hover:shadow-[0_10px_24px_rgba(56,193,255,0.4)]"
+                                href={`#curriculum`}
+                              >
+                                Continue Course
+                              </Link>
+                            ) : (
+                              <BundleCheckoutButton 
+                                bundleId={bundle.id}
+                                userId={auth.userId}
+                                price={bundle.price}
+                                emiPlans={bundle.emiPlans as any[]}
+                                expiredInstallment={isExpiredInstallment ? { currentInstallment: enrollment?.currentInstallment ?? 0 } : null}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </aside>
                     </RevealSection>
                   </div>
                 </div>
