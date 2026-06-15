@@ -35,6 +35,7 @@ export default function TeacherAnalyticsPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"all" | "at-risk">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetch("/api/teacher/courses")
@@ -69,7 +70,12 @@ export default function TeacherAnalyticsPage() {
     return () => { ignore = true; };
   }, [selectedCourse]);
 
-  const displayed = tab === "all" ? analytics?.students ?? [] : analytics?.atRiskStudents ?? [];
+  const displayed = (tab === "all" ? analytics?.students ?? [] : analytics?.atRiskStudents ?? [])
+    .filter(s => 
+      !searchQuery || 
+      (s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (s.email && s.email.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
   return (
     <PageTransition>
@@ -127,13 +133,22 @@ export default function TeacherAnalyticsPage() {
 
               {/* Student Table */}
               <div className="rounded-[24px] bg-white shadow-[0px_4px_20px_rgba(0,0,0,0.06)]">
-                <div className="flex items-center justify-between border-b px-6 py-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b px-6 py-5">
                   <h2 className="text-[18px] font-semibold text-[#101828]">Students</h2>
-                  <div className="flex gap-2">
-                    <button onClick={() => setTab("all")} className={`rounded-full px-4 py-1.5 text-[13px] font-semibold ${tab === "all" ? "bg-[#7c3aed] text-white" : "bg-gray-100 text-gray-600"}`}>All</button>
-                    <button onClick={() => setTab("at-risk")} className={`rounded-full px-4 py-1.5 text-[13px] font-semibold ${tab === "at-risk" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-600"}`}>
-                      At-Risk {analytics ? `(${analytics.atRiskCount})` : ""}
-                    </button>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="text"
+                      placeholder="Search students..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5 text-[13px] text-black outline-none transition focus:border-[#7c3aed] focus:ring-2 focus:ring-[#7c3aed]/20 sm:w-[220px]"
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={() => setTab("all")} className={`rounded-full px-4 py-1.5 text-[13px] font-semibold ${tab === "all" ? "bg-[#7c3aed] text-white" : "bg-gray-100 text-gray-600"}`}>All</button>
+                      <button onClick={() => setTab("at-risk")} className={`rounded-full px-4 py-1.5 text-[13px] font-semibold ${tab === "at-risk" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+                        At-Risk {analytics ? `(${analytics.atRiskCount})` : ""}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="p-6">

@@ -66,6 +66,41 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         ]);
 
         return NextResponse.json({ success: true, message: "Student account deleted successfully." });
+      } else if (request.type === "EXTEND_INSTALLMENT") {
+        if (!request.targetUserId || !request.courseId) {
+          return NextResponse.json({ success: false, error: "Target user ID or course ID missing for extension request" }, { status: 400 });
+        }
+
+        const enrollment = await prisma.enrollment.findUnique({
+          where: { userId_courseId: { userId: request.targetUserId, courseId: request.courseId } },
+          include: { course: true }
+        });
+
+        if (!enrollment || !enrollment.isInstallmentBased) {
+          return NextResponse.json({ success: false, error: "Enrollment not found or not installment based" }, { status: 400 });
+        }
+
+        const emiPlans = enrollment.course.emiPlans as any[] | null;
+        if (!emiPlans || emiPlans.length <= enrollment.currentInstallment) {
+           return NextResponse.json({ success: false, error: "No pending installments found" }, { status: 400 });
+        }
+        
+        const plan = emiPlans[enrollment.currentInstallment];
+        const baseDate = enrollment.validUntil ? new Date(enrollment.validUntil) : new Date();
+        const newValidUntil = new Date(baseDate.getTime() + (plan.dueDays * 24 * 60 * 60 * 1000));
+
+        await prisma.$transaction([
+          prisma.enrollment.update({
+            where: { id: enrollment.id },
+            data: { validUntil: newValidUntil }
+          }),
+          prisma.studentApprovalRequest.update({
+            where: { id },
+            data: { status: "APPROVED" }
+          })
+        ]);
+
+        return NextResponse.json({ success: true, message: "Installment extended successfully." });
       } else {
         // Default CREATE behavior
         // Check user doesn't already exist

@@ -73,8 +73,41 @@ export async function POST(req: NextRequest) {
         redirectUrl = `/dashboard/bundles/${bundle.slug}?success=true`;
       }
     } else if (payment.courseId) {
-      // Enroll in single course
-      await ensureActiveEnrollmentWithXp(payment.userId, payment.courseId, "ACTIVE");
+      // Single course enrollment
+      let installmentOptions: { isInstallmentBased: boolean; currentInstallment: number; validUntil: Date | null } | undefined;
+
+      if (payment.installmentIndex !== null && payment.installmentIndex !== undefined) {
+        const course = await prisma.course.findUnique({
+          where: { id: payment.courseId },
+          select: { emiPlans: true }
+        });
+        
+        const emiPlans = course?.emiPlans as any[] | null;
+        if (emiPlans && emiPlans.length > 0) {
+          const index = payment.installmentIndex;
+          const plan = emiPlans[index];
+          
+          const existingEnrollment = await prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId: payment.userId, courseId: payment.courseId } }
+          });
+
+          const isLastInstallment = index === emiPlans.length - 1;
+          let newValidUntil: Date | null = null;
+          
+          if (!isLastInstallment) {
+            const baseDate = existingEnrollment?.validUntil ? new Date(existingEnrollment.validUntil) : new Date();
+            newValidUntil = new Date(baseDate.getTime() + (plan.dueDays * 24 * 60 * 60 * 1000));
+          }
+
+          installmentOptions = {
+            isInstallmentBased: true,
+            currentInstallment: index + 1,
+            validUntil: newValidUntil
+          };
+        }
+      }
+
+      await ensureActiveEnrollmentWithXp(payment.userId, payment.courseId, "ACTIVE", true, undefined, installmentOptions);
 
       const course = await prisma.course.findUnique({
         where: { id: payment.courseId },

@@ -116,21 +116,43 @@ export async function POST(
     }
 
     // ─── Save attempt ──────────────────────────────────────────────────────
-    const attempt = await prisma.testAttempt.create({
-      data: {
-        testId,
-        userId: user.userId,
-        answers,
-        score,
-        pointsEarned: autoPointsEarned,
-        totalPoints,
-        isPassed,
-        gradingStatus,
-        submittedAt: new Date(),
-        timeSpentSecs: timeSpentSecs ?? null,
-        questionOrder: exam.questions.map((q) => q.id),
-      },
+    const inProgress = await prisma.testAttempt.findFirst({
+      where: { testId, userId: user.userId, submittedAt: null },
+      orderBy: { createdAt: 'desc' }
     });
+
+    let attempt;
+    if (inProgress) {
+      attempt = await prisma.testAttempt.update({
+        where: { id: inProgress.id },
+        data: {
+          answers,
+          score,
+          pointsEarned: autoPointsEarned,
+          totalPoints,
+          isPassed,
+          gradingStatus,
+          submittedAt: new Date(),
+          timeSpentSecs: timeSpentSecs ?? null,
+        },
+      });
+    } else {
+      attempt = await prisma.testAttempt.create({
+        data: {
+          testId,
+          userId: user.userId,
+          answers,
+          score,
+          pointsEarned: autoPointsEarned,
+          totalPoints,
+          isPassed,
+          gradingStatus,
+          submittedAt: new Date(),
+          timeSpentSecs: timeSpentSecs ?? null,
+          questionOrder: exam.questions.map((q) => q.id),
+        },
+      });
+    }
 
     return apiCreated(
       {

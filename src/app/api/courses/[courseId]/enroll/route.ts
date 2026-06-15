@@ -68,7 +68,17 @@ export async function GET(req: NextRequest, { params }: Params) {
       where: { userId_courseId: { userId: user.userId, courseId } },
     });
 
-    return apiSuccess({ enrolled: !!enrollment, enrollment });
+    let enrolled = !!enrollment;
+    let isExpired = false;
+
+    if (enrollment && enrollment.validUntil) {
+      if (new Date() > enrollment.validUntil) {
+        enrolled = false;
+        isExpired = true;
+      }
+    }
+
+    return apiSuccess({ enrolled, isExpired, enrollment });
   } catch (err) {
     console.error('[CHECK_ENROLLMENT_ERROR]', err);
     return apiServerError();

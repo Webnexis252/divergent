@@ -18,9 +18,11 @@ export type Course = {
   isPublished: boolean;
   totalHours: number | null;
   lessonCount: number | null;
+  examCount: number | null;
   courseRating: number | null;
   autoCalculateRating: boolean;
-  enrolledStudents: number | null;
+  enrolledStudents?: number | null;
+  maxSeats?: number | null;
   autoUpdateEnrolled: boolean;
   learningOutcomes: unknown;
   features: unknown;

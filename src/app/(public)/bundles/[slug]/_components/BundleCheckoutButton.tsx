@@ -47,12 +47,12 @@ export function BundleCheckoutButton({ bundleId, userId, className }: { bundleId
         onSuccess={() => {
           setIsModalOpen(false);
           setLoading(false);
-          router.push(`/dashboard/courses`);
+          router.push(`/payment/status?status=success`);
         }}
         onError={(msg) => {
           setIsModalOpen(false);
           setLoading(false);
-          alert(msg);
+          router.push(`/payment/status?status=failed&message=${encodeURIComponent(msg)}`);
         }}
       />
     </>

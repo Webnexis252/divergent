@@ -30,6 +30,7 @@ type DoubtDetail = {
   createdAt: string;
   student: { id: string; name: string | null; email: string | null };
   mentor: { id: string; name: string | null } | null;
+  attachmentUrl?: string | null;
   replies: Reply[];
 };
 
@@ -310,6 +311,16 @@ export function TeacherDoubtDetail() {
                       <p className="mt-6 max-w-[680px] text-[17px] leading-relaxed text-[#4b5563]">
                         {doubt.body}
                       </p>
+
+                      {doubt.attachmentUrl && (
+                        <div className="mt-6 overflow-hidden rounded-[12px] border border-black/5 shadow-sm">
+                          <img 
+                            src={doubt.attachmentUrl} 
+                            alt="Doubt Attachment" 
+                            className="max-h-[400px] w-auto object-contain" 
+                          />
+                        </div>
+                      )}
                     </section>
                   </RevealSection>
 

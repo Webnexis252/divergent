@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     if (!auth) return apiError("Unauthorized", 401);
 
     const body = await req.json();
-    const { courseId, bundleId } = body;
+    const { courseId, bundleId, installmentIndex } = body;
 
     if (!courseId && !bundleId) {
       return apiError('Course ID or Bundle ID is required', 400);
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     let orderAmount: number;
     let orderNote: string;
-    let paymentData: { userId: string; courseId?: string; bundleId?: string; amount: number; currency: string; status: 'PENDING'; cashfreeOrderId: string };
+    let paymentData: { userId: string; courseId?: string; bundleId?: string; amount: number; currency: string; status: 'PENDING'; cashfreeOrderId: string; installmentIndex?: number };
 
     if (bundleId) {
       // --- Bundle purchase flow ---
@@ -53,24 +53,46 @@ export async function POST(req: NextRequest) {
       // --- Single course purchase flow ---
       const course = await prisma.course.findUnique({
         where: { id: courseId },
-        select: { id: true, price: true, title: true },
+        select: { id: true, price: true, title: true, emiPlans: true },
       });
       if (!course) {
         return apiError('Course not found', 404);
       }
-      if (course.price <= 0) {
-        return apiError('Course is free, use normal enrollment', 400);
+      
+      const emiPlans = course.emiPlans as any[] | null;
+      const isInstallment = typeof installmentIndex === 'number' && emiPlans && emiPlans.length > 0;
+      
+      if (isInstallment && (installmentIndex < 0 || installmentIndex >= emiPlans!.length)) {
+        return apiError('Invalid installment index', 400);
       }
+      
       // Check if already enrolled
       const existingEnrollment = await prisma.enrollment.findUnique({
         where: { userId_courseId: { userId: auth.userId, courseId } },
       });
+      
       if (existingEnrollment) {
-        return apiError('Already enrolled', 409);
+        if (!existingEnrollment.isInstallmentBased || existingEnrollment.validUntil === null) {
+          return apiError('Already enrolled', 409);
+        }
+        if (isInstallment && installmentIndex !== existingEnrollment.currentInstallment) {
+          return apiError('Invalid next installment sequence', 400);
+        }
       }
-      orderAmount = course.price;
-      orderNote = `Enrollment for: ${course.title}`;
-      paymentData = { userId: auth.userId, courseId, amount: course.price, currency: 'INR', status: 'PENDING', cashfreeOrderId: '' };
+
+      if (isInstallment) {
+        const plan = emiPlans![installmentIndex];
+        orderAmount = Number(plan.amount);
+        orderNote = `Installment ${installmentIndex + 1} for: ${course.title}`;
+        paymentData = { userId: auth.userId, courseId, amount: Number(plan.amount), currency: 'INR', status: 'PENDING', cashfreeOrderId: '', installmentIndex };
+      } else {
+        if (Number(course.price) <= 0) {
+          return apiError('Course is free, use normal enrollment', 400);
+        }
+        orderAmount = Number(course.price);
+        orderNote = `Enrollment for: ${course.title}`;
+        paymentData = { userId: auth.userId, courseId, amount: Number(course.price), currency: 'INR', status: 'PENDING', cashfreeOrderId: '' };
+      }
     }
 
     // Check if payment is bypassed globally
@@ -172,6 +194,6 @@ export async function POST(req: NextRequest) {
       return apiError("Could not connect to payment gateway. Please try again or contact support.", 502);
     }
     console.error("[CREATE ORDER] Unexpected error:", error);
-    return apiError("Something went wrong while processing your payment. Please try again.", 500);
+    return apiError(error instanceof Error ? error.message : "Something went wrong while processing your payment. Please try again.", 500);
   }
 }

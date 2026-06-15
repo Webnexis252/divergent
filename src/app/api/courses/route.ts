@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
       teacherIds,
       totalHours,
       lessonCount,
+      examCount,
       courseRating,
       autoCalculateRating,
       enrolledStudents,
@@ -83,6 +84,7 @@ export async function POST(req: NextRequest) {
       publishDate,
       originalPrice,
       emiPlans,
+      maxSeats,
     } = parsed.data;
 
     // Generate a URL-friendly slug from the title
@@ -121,9 +123,11 @@ export async function POST(req: NextRequest) {
         price, 
         totalHours,
         lessonCount,
+        examCount,
         courseRating,
         autoCalculateRating,
         enrolledStudents,
+        maxSeats,
         autoUpdateEnrolled,
         learningOutcomes: learningOutcomes ? JSON.parse(JSON.stringify(learningOutcomes)) : undefined,
         features: features ? JSON.parse(JSON.stringify(features)) : undefined,
@@ -148,6 +152,7 @@ export async function POST(req: NextRequest) {
     return apiCreated(course, 'Course created successfully');
   } catch (err) {
     console.error('[CREATE_COURSE_ERROR]', err);
+    require('fs').writeFileSync('/tmp/error.log', String(err && typeof err === 'object' && 'stack' in err ? err.stack : err));
     return apiServerError();
   }
 }

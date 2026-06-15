@@ -53,16 +53,18 @@ export default function AdminCoursesPage() {
     teacherIds: [] as string[],
     totalHours: "",
     lessonCount: "",
+    examCount: "",
     courseRating: "",
     autoCalculateRating: true,
     enrolledStudents: "",
+    maxSeats: "",
     autoUpdateEnrolled: true,
     learningOutcomes: [] as string[],
     category: "",
     courseLevel: "",
     language: "",
-    visibility: "Public",
-    pricingType: "Paid",
+    visibility: "PUBLIC",
+    pricingType: "PAID",
     originalPrice: "",
     emiPlans: [] as Array<{ label: string; amount: string; dueDays: string }>,
     testimonials: [] as Array<{ text: string; name: string; rating: string }>,
@@ -170,9 +172,11 @@ export default function AdminCoursesPage() {
           teacherIds: form.teacherIds,
           totalHours: form.totalHours ? Number(form.totalHours) : undefined,
           lessonCount: form.lessonCount ? Number(form.lessonCount) : undefined,
+          examCount: form.examCount ? Number(form.examCount) : undefined,
           courseRating: form.courseRating ? Number(form.courseRating) : undefined,
           autoCalculateRating: form.autoCalculateRating,
           enrolledStudents: form.enrolledStudents ? Number(form.enrolledStudents) : undefined,
+          maxSeats: form.maxSeats ? Number(form.maxSeats) : undefined,
           autoUpdateEnrolled: form.autoUpdateEnrolled,
           learningOutcomes: form.learningOutcomes,
           category: form.category,
@@ -195,7 +199,7 @@ export default function AdminCoursesPage() {
       const p = await res.json();
       if (!res.ok || !p.success) { setError(p.error ?? "Failed to create course"); return; }
       setCourses((prev) => [p.data, ...prev]);
-      setForm({ title: "", subtitle: "", description: "", overviewContent: "", thumbnail: "", price: "", teacherIds: [], totalHours: "", lessonCount: "", courseRating: "", autoCalculateRating: true, enrolledStudents: "", autoUpdateEnrolled: true, learningOutcomes: [], category: "", courseLevel: "", language: "", visibility: "Public", pricingType: "Paid", originalPrice: "", emiPlans: [], testimonials: [], faqs: [] });
+      setForm({ title: "", subtitle: "", description: "", overviewContent: "", thumbnail: "", price: "", teacherIds: [], totalHours: "", lessonCount: "", examCount: "", courseRating: "", autoCalculateRating: true, enrolledStudents: "", maxSeats: "", autoUpdateEnrolled: true, learningOutcomes: [], category: "", courseLevel: "", language: "", visibility: "PUBLIC", pricingType: "PAID", originalPrice: "", emiPlans: [], testimonials: [], faqs: [] });
       setNewInstalment({ label: "", amount: "", dueDays: "" });
       setShowAddInstalment(false);
       setEditingInstalmentIdx(null);
@@ -372,15 +376,11 @@ export default function AdminCoursesPage() {
                   <Surface className="overflow-hidden border border-[#e2e8f0] bg-white p-6 shadow-sm rounded-xl">
                     <h3 className="text-[16px] font-semibold text-[#0f172a] mb-5">Pricing & Plans</h3>
                     <div className="grid gap-5 sm:grid-cols-2">
-                      <Field
-                        label="Price (INR)"
-                        onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
-                        placeholder="0"
-                        type="number"
-                        min={0}
-                        value={form.price}
-                      />
+                      <Field label="Price (INR)" onChange={e => setForm(p => ({...p, price: e.target.value}))} value={form.price} placeholder="e.g. 1500" type="number" />
                       <Field label="Original Price (INR)" onChange={e => setForm(p => ({...p, originalPrice: e.target.value}))} value={form.originalPrice} placeholder="e.g. 2000" type="number" />
+                      <Field label="Max Seats" onChange={e => setForm(p => ({...p, maxSeats: e.target.value}))} value={form.maxSeats} placeholder="Leave empty for unlimited" type="number" />
+                      <Field label="Number of Lessons" onChange={e => setForm(p => ({...p, lessonCount: e.target.value}))} value={form.lessonCount} placeholder="e.g. 24" type="number" />
+                      <Field label="Number of Exams" onChange={e => setForm(p => ({...p, examCount: e.target.value}))} value={form.examCount} placeholder="e.g. 3" type="number" />
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-[#f1f5f9]">

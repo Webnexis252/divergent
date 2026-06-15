@@ -44,8 +44,8 @@ export function BuilderDrawer({
     options: ["Option 1", "Option 2", "Option 3", "Option 4"],
     correctAnswer: ["0"],
     imageUrl: null as string | null,
-    points: 1,
-    negativeMarks: 0,
+    points: 1 as number | string,
+    negativeMarks: 0 as number | string,
     allowPartialMarking: false,
   });
 
@@ -170,6 +170,8 @@ export function BuilderDrawer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...qForm,
+          points: Number(qForm.points) || 1,
+          negativeMarks: Number(qForm.negativeMarks) || 0,
           type: type,
           partId: target!.partId,
           sectionId: target!.sectionId,
@@ -299,11 +301,17 @@ export function BuilderDrawer({
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium">Points (+)</label>
-                    <input type="number" min="1" value={qForm.points} onChange={e => setQForm({...qForm, points: parseInt(e.target.value)})} className="w-full rounded-md border p-2" />
+                    <input type="number" min="1" value={qForm.points} onChange={e => {
+                      const val = parseInt(e.target.value);
+                      setQForm({...qForm, points: isNaN(val) ? "" : val});
+                    }} className="w-full rounded-md border p-2" />
                   </div>
                   <div>
                     <label className="mb-1 block text-sm font-medium">Negative Marks (-)</label>
-                    <input type="number" min="0" step="0.5" value={qForm.negativeMarks} onChange={e => setQForm({...qForm, negativeMarks: parseFloat(e.target.value) || 0})} className="w-full rounded-md border p-2" />
+                    <input type="number" min="0" step="0.5" value={qForm.negativeMarks} onChange={e => {
+                      const val = parseFloat(e.target.value);
+                      setQForm({...qForm, negativeMarks: isNaN(val) ? "" : val});
+                    }} className="w-full rounded-md border p-2" />
                   </div>
                 </div>
 

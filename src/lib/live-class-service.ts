@@ -314,17 +314,36 @@ export async function getStudentLiveClassData(userId: string) {
     },
     select: {
       courseId: true,
+      bundleId: true,
     },
   });
 
-  const courseIds = enrollments.map((enrollment) => enrollment.courseId);
-  if (courseIds.length === 0) {
+  const courseIds = new Set(enrollments.map((e) => e.courseId));
+  const bundleIds = new Set(
+    enrollments.map((e) => e.bundleId).filter((id): id is string => Boolean(id))
+  );
+
+  if (bundleIds.size > 0) {
+    const bundleCourses = await prisma.bundleCourse.findMany({
+      where: {
+        bundleId: {
+          in: Array.from(bundleIds),
+        },
+      },
+      select: {
+        courseId: true,
+      },
+    });
+    bundleCourses.forEach((bc) => courseIds.add(bc.courseId));
+  }
+
+  if (courseIds.size === 0) {
     return bucketLiveClasses([]);
   }
 
   const rows = await listLiveClassRows({
     courseId: {
-      in: courseIds,
+      in: Array.from(courseIds),
     },
   });
 
@@ -351,16 +370,35 @@ export async function getStudentScheduleData(
 
   const enrollments = await prisma.enrollment.findMany({
     where: { userId, status: "ACTIVE" },
-    select: { courseId: true },
+    select: { courseId: true, bundleId: true },
   });
 
-  const courseIds = enrollments.map((e) => e.courseId);
+  const courseIds = new Set(enrollments.map((e) => e.courseId));
+  const bundleIds = new Set(
+    enrollments.map((e) => e.bundleId).filter((id): id is string => Boolean(id))
+  );
+
+  if (bundleIds.size > 0) {
+    const bundleCourses = await prisma.bundleCourse.findMany({
+      where: {
+        bundleId: {
+          in: Array.from(bundleIds),
+        },
+      },
+      select: {
+        courseId: true,
+      },
+    });
+    bundleCourses.forEach((bc) => courseIds.add(bc.courseId));
+  }
+
+  const courseIdsArray = Array.from(courseIds);
 
   const rows =
-    courseIds.length === 0
+    courseIdsArray.length === 0
       ? []
       : await listLiveClassRows({
-          courseId: { in: courseIds },
+          courseId: { in: courseIdsArray },
           startTime: { gte: windowStart, lte: windowEnd },
         });
 

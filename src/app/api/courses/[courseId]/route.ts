@@ -84,7 +84,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
 
-    const { teacherIds, learningOutcomes, features, testimonials, faqs, publishDate, ...restData } = parsed.data;
+    const { teacherIds, learningOutcomes, features, testimonials, faqs, publishDate, examCount, ...restData } = parsed.data;
 
     const dataToUpdate: Record<string, unknown> = { ...restData };
     
@@ -93,6 +93,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (testimonials !== undefined) dataToUpdate.testimonials = testimonials ? JSON.parse(JSON.stringify(testimonials)) : null;
     if (faqs !== undefined) dataToUpdate.faqs = faqs ? JSON.parse(JSON.stringify(faqs)) : null;
     if (publishDate !== undefined) dataToUpdate.publishDate = publishDate ? new Date(publishDate) : null;
+    if (examCount !== undefined) dataToUpdate.examCount = examCount;
     if (teacherIds) dataToUpdate.teachers = { set: teacherIds.map((id) => ({ id })) };
 
     const course = await prisma.course.update({

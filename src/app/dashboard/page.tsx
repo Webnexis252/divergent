@@ -242,7 +242,6 @@ export default function DashboardPage() {
   const firstName = displayName.split(" ")[0] || "Student";
   const displayEmail = user?.email ?? "student@divergent.in";
   const enrolledCourses: EnrolledCourse[] = stats?.enrolledCourses ?? [];
-  const featuredCourses = enrolledCourses.slice(0, 2);
 
   const quickStartItems = [
     {
@@ -345,7 +344,7 @@ export default function DashboardPage() {
                             Loading your courses
                           </div>
                         </div>
-                      ) : featuredCourses.length === 0 ? (
+                      ) : enrolledCourses.length === 0 ? (
                         <div className="rounded-[20px] bg-white px-6 py-8 shadow-[0_4px_10px_rgba(0,0,0,0.12)]">
                           <p className="text-[20px] font-medium text-black">No courses joined yet</p>
                           <p className="mt-2 max-w-[32rem] text-[15px] leading-7 text-black/58">
@@ -361,9 +360,11 @@ export default function DashboardPage() {
                           </Link>
                         </div>
                       ) : (
-                        <div className="grid gap-5 md:grid-cols-2">
-                          {featuredCourses.map((course) => (
-                            <OverviewCourseCard key={course.id} course={course} />
+                        <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+                          {enrolledCourses.map((course) => (
+                            <div key={course.id} className="w-[calc(50%-10px)] min-w-[260px] shrink-0 snap-start">
+                              <OverviewCourseCard course={course} />
+                            </div>
                           ))}
                         </div>
                       )}

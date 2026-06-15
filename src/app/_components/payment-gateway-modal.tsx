@@ -12,6 +12,7 @@ export type PaymentGatewayModalProps = {
   onError: (msg: string) => void;
   courseId?: string;
   bundleId?: string;
+  installmentIndex?: number;
 };
 
 // Simple utility to load Razorpay script
@@ -36,6 +37,7 @@ export function PaymentGatewayModal({
   onError,
   courseId,
   bundleId,
+  installmentIndex,
 }: PaymentGatewayModalProps) {
   const [selectedGateway, setSelectedGateway] = useState<"CASHFREE" | "RAZORPAY">("CASHFREE");
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +50,10 @@ export function PaymentGatewayModal({
         ? "/api/payments/create-order" 
         : "/api/payments/razorpay/create-order";
 
-      const payload = courseId ? { courseId } : { bundleId };
+      const payload: any = courseId ? { courseId } : { bundleId };
+      if (typeof installmentIndex === 'number') {
+        payload.installmentIndex = installmentIndex;
+      }
       
       const response = await fetch(endpoint, {
         method: "POST",

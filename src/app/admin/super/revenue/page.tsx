@@ -23,6 +23,7 @@ type RevenueData = {
   monthlyTransactions: number;
   recentPayments: Payment[];
   monthlyTrend: { month: string; count: number }[];
+  dailyRevenue: { date: string; revenue: number }[];
 };
 
 const statusBadge: Record<string, string> = {
@@ -48,6 +49,13 @@ export default function SuperAdminRevenuePage() {
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
   const maxTrend = Math.max(...(data?.monthlyTrend ?? []).map((m) => m.count), 1);
+  const maxDaily = Math.max(...(data?.dailyRevenue ?? []).map((d) => d.revenue), 1);
+
+  const todayRevenue = data?.dailyRevenue?.at(-1)?.revenue ?? 0;
+  const yesterdayRevenue = data?.dailyRevenue?.at(-2)?.revenue ?? 0;
+  const dailyDelta = yesterdayRevenue > 0
+    ? Math.round(((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100)
+    : todayRevenue > 0 ? 100 : 0;
 
   return (
     <PageTransition>
@@ -161,6 +169,86 @@ export default function SuperAdminRevenuePage() {
             </section>
           </RevealSection>
         </div>
+
+        {/* Daily Revenue Chart */}
+        <RevealSection>
+          <section className="rounded-[28px] border border-white/70 bg-white/95 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[12px] font-semibold uppercase tracking-[0.2em] text-[#94a3b8]">Daily Revenue</p>
+                <h2 className="mt-1 text-[24px] font-semibold tracking-[-0.04em] text-[#0f172a]">Last 30 days</h2>
+              </div>
+              <div className="flex items-end gap-4">
+                <div className="text-right">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-[#94a3b8]">Today</p>
+                  <p className="mt-1 text-xl font-bold text-[#0f172a]">{loading ? "…" : fmt(todayRevenue)}</p>
+                </div>
+                {!loading && (
+                  <span className={`mb-0.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    dailyDelta >= 0
+                      ? "bg-[#ecfdf5] text-[#15803d]"
+                      : "bg-[#fff1f2] text-[#dc2626]"
+                  }`}>
+                    {dailyDelta >= 0 ? "+" : ""}{dailyDelta}% vs yesterday
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-end gap-[3px] overflow-x-auto pb-2">
+              {loading
+                ? Array.from({ length: 30 }).map((_, i) => (
+                    <div key={i} className="flex-1 min-w-[18px] h-16 animate-pulse rounded-[6px] bg-[#f3f4f6]" />
+                  ))
+                : (data?.dailyRevenue ?? []).map((item, index) => {
+                    const heightPct = `${Math.max((item.revenue / maxDaily) * 160, item.revenue > 0 ? 8 : 3)}px`;
+                    const dayLabel = new Date(item.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                    const isToday = index === (data?.dailyRevenue?.length ?? 0) - 1;
+                    return (
+                      <div key={item.date} className="group relative flex flex-1 min-w-[18px] flex-col items-center">
+                        {/* Tooltip */}
+                        <div className="pointer-events-none absolute bottom-full mb-2 hidden flex-col items-center group-hover:flex z-10">
+                          <div className="whitespace-nowrap rounded-[10px] bg-[#0f172a] px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg">
+                            {dayLabel}<br />{fmt(item.revenue)}
+                          </div>
+                          <div className="h-1.5 w-1.5 -mt-0.5 rotate-45 bg-[#0f172a]" />
+                        </div>
+                        {/* Bar */}
+                        <div className="flex w-full items-end justify-center rounded-t-[6px] bg-[#f6fafc]" style={{ height: "160px" }}>
+                          <motion.div
+                            className={`w-full rounded-t-[5px] ${
+                              isToday
+                                ? "bg-gradient-to-t from-[#15803d] to-[#34d399]"
+                                : "bg-gradient-to-t from-[#0ea5e9] to-[#7dd3fc]"
+                            }`}
+                            initial={{ height: 0 }}
+                            whileInView={{ height: heightPct }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.4, delay: index * 0.015 }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+              }
+            </div>
+
+            {/* X-axis date labels: show every ~5 days */}
+            {!loading && (
+              <div className="mt-2 flex gap-[3px]">
+                {(data?.dailyRevenue ?? []).map((item, index) => (
+                  <div key={item.date} className="flex-1 min-w-[18px] text-center">
+                    {(index % 5 === 0 || index === (data?.dailyRevenue?.length ?? 0) - 1) && (
+                      <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#94a3b8]">
+                        {new Date(item.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </RevealSection>
       </div>
     </PageTransition>
   );

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     if (!auth) return apiError("Unauthorized", 401);
 
     const body = await req.json();
-    const { courseId, bundleId } = body;
+    const { courseId, bundleId, installmentIndex } = body;
 
     if (!courseId && !bundleId) {
       return apiError('Course ID or Bundle ID is required', 400);
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     let orderAmount: number;
-    let paymentData: { userId: string; courseId?: string; bundleId?: string; amount: number; currency: string; status: 'PENDING'; paymentGateway: string };
+    let paymentData: { userId: string; courseId?: string; bundleId?: string; amount: number; currency: string; status: 'PENDING'; paymentGateway: string; installmentIndex?: number };
 
     if (bundleId) {
       // --- Bundle purchase flow ---
@@ -54,23 +54,44 @@ export async function POST(req: NextRequest) {
       // --- Single course purchase flow ---
       const course = await prisma.course.findUnique({
         where: { id: courseId },
-        select: { id: true, price: true, title: true },
+        select: { id: true, price: true, title: true, emiPlans: true },
       });
       if (!course) {
         return apiError('Course not found', 404);
       }
-      if (course.price <= 0) {
-        return apiError('Course is free, use normal enrollment', 400);
+
+      const emiPlans = course.emiPlans as any[] | null;
+      const isInstallment = typeof installmentIndex === 'number' && emiPlans && emiPlans.length > 0;
+
+      if (isInstallment && (installmentIndex < 0 || installmentIndex >= emiPlans!.length)) {
+        return apiError('Invalid installment index', 400);
       }
+
       // Check if already enrolled
       const existingEnrollment = await prisma.enrollment.findUnique({
         where: { userId_courseId: { userId: auth.userId, courseId } },
       });
+
       if (existingEnrollment) {
-        return apiError('Already enrolled', 409);
+        if (!existingEnrollment.isInstallmentBased || existingEnrollment.validUntil === null) {
+          return apiError('Already enrolled', 409);
+        }
+        if (isInstallment && installmentIndex !== existingEnrollment.currentInstallment) {
+          return apiError('Invalid next installment sequence', 400);
+        }
       }
-      orderAmount = course.price;
-      paymentData = { userId: auth.userId, courseId, amount: course.price, currency: 'INR', status: 'PENDING', paymentGateway: 'RAZORPAY' };
+
+      if (isInstallment) {
+        const plan = emiPlans![installmentIndex];
+        orderAmount = plan.amount;
+        paymentData = { userId: auth.userId, courseId, amount: plan.amount, currency: 'INR', status: 'PENDING', paymentGateway: 'RAZORPAY', installmentIndex };
+      } else {
+        if (course.price <= 0) {
+          return apiError('Course is free, use normal enrollment', 400);
+        }
+        orderAmount = course.price;
+        paymentData = { userId: auth.userId, courseId, amount: course.price, currency: 'INR', status: 'PENDING', paymentGateway: 'RAZORPAY' };
+      }
     }
 
     // Check if payment is bypassed globally

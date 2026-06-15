@@ -46,12 +46,12 @@ type CourseCurriculumSectionProps = {
 };
 
 export function CourseCurriculumSection({
-  chapters,
-  liveClasses,
-  assignments,
-  tests,
+  chapters = [],
+  liveClasses = [],
+  assignments = [],
+  tests = [],
   isEnrolled,
-  completedLessonIds: completedLessonIdsProp,
+  completedLessonIds: completedLessonIdsProp = [],
 }: CourseCurriculumSectionProps) {
   const [selectedLiveClassMonth, setSelectedLiveClassMonth] = useState<string>("ALL");
   const [selectedAssignmentMonth, setSelectedAssignmentMonth] = useState<string>("ALL");

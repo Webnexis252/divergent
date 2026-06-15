@@ -43,11 +43,13 @@ type EditForm = {
   isPublished: boolean;
   totalHours: string;
   lessonCount: string;
+  examCount: string;
   courseRating: string;
   category: string;
   courseLevel: string;
   language: string;
   originalPrice: string;
+  maxSeats: string;
   emiPlans: EmiInstalment[];
 };
 
@@ -99,11 +101,13 @@ export default function EditCourseModal({
     isPublished: course.isPublished,
     totalHours: course.totalHours !== null ? String(course.totalHours) : "",
     lessonCount: course.lessonCount !== null ? String(course.lessonCount) : "",
+    examCount: course.examCount !== null ? String(course.examCount) : "",
     courseRating: course.courseRating !== null ? String(course.courseRating) : "",
     category: course.category ?? "",
     courseLevel: course.courseLevel ?? "",
     language: course.language ?? "",
     originalPrice: course.originalPrice !== null ? String(course.originalPrice) : "",
+    maxSeats: course.maxSeats !== null && course.maxSeats !== undefined ? String(course.maxSeats) : "",
     emiPlans: Array.isArray(course.emiPlans)
       ? course.emiPlans.map((p) => ({ label: p.label, amount: String(p.amount), dueDays: String(p.dueDays) }))
       : [],
@@ -157,11 +161,13 @@ export default function EditCourseModal({
                 isPublished: form.isPublished,
                 totalHours: form.totalHours ? Number(form.totalHours) : undefined,
                 lessonCount: form.lessonCount ? Number(form.lessonCount) : undefined,
+                examCount: form.examCount ? Number(form.examCount) : undefined,
                 courseRating: form.courseRating ? Number(form.courseRating) : undefined,
                 category: form.category || undefined,
                 courseLevel: form.courseLevel || undefined,
                 language: form.language || undefined,
                 originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
+                maxSeats: form.maxSeats ? Number(form.maxSeats) : undefined,
           emiPlans: form.emiPlans.length > 0
             ? form.emiPlans.map((p) => ({
                   label: p.label,
@@ -276,6 +282,7 @@ export default function EditCourseModal({
                         <Field label="Subtitle/Tagline" onChange={e => setForm(p => ({ ...p, subtitle: e.target.value }))} value={form.subtitle} placeholder="e.g. Master the fundamentals" />
                         <Field label="Total Hours" onChange={e => setForm(p => ({ ...p, totalHours: e.target.value }))} value={form.totalHours} placeholder="e.g. 12" type="number" />
                         <Field label="Number of Lessons" onChange={e => setForm(p => ({ ...p, lessonCount: e.target.value }))} value={form.lessonCount} placeholder="e.g. 24" type="number" />
+                        <Field label="Number of Exams" onChange={e => setForm(p => ({ ...p, examCount: e.target.value }))} value={form.examCount} placeholder="e.g. 3" type="number" />
                         <Field label="Course Rating" onChange={e => setForm(p => ({ ...p, courseRating: e.target.value }))} value={form.courseRating} placeholder="e.g. 4.8" type="number" step="0.1" />
                       </div>
                       <div className="grid gap-4 lg:grid-cols-3">
@@ -285,6 +292,7 @@ export default function EditCourseModal({
                       </div>
                       <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
                         <Field label="Original Price (INR)" onChange={e => setForm(p => ({ ...p, originalPrice: e.target.value }))} value={form.originalPrice} placeholder="e.g. 2000" type="number" hint="Crossed out price" />
+                        <Field label="Max Seats" onChange={e => setForm(p => ({ ...p, maxSeats: e.target.value }))} value={form.maxSeats} placeholder="Leave empty for unlimited" type="number" hint="Maximum number of students" />
                       </div>
 
                       {/* Instalment Plan Builder */}

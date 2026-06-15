@@ -282,10 +282,20 @@ export async function ensureActiveEnrollmentWithXp(
   status: EnrollmentStatus = 'ACTIVE',
   reactivateExisting = true,
   bundleId?: string,
+  installmentOptions?: {
+    isInstallmentBased: boolean;
+    currentInstallment: number;
+    validUntil: Date | null;
+  }
 ) {
   return prisma.$transaction(async (tx) => {
     const data: any = { userId, courseId, status };
     if (bundleId) data.bundleId = bundleId;
+    if (installmentOptions) {
+      data.isInstallmentBased = installmentOptions.isInstallmentBased;
+      data.currentInstallment = installmentOptions.currentInstallment;
+      data.validUntil = installmentOptions.validUntil;
+    }
 
     const created = await tx.enrollment.createMany({
       data: [data],
@@ -295,6 +305,11 @@ export async function ensureActiveEnrollmentWithXp(
     if (created.count === 0) {
       const updateData: any = { status };
       if (bundleId) updateData.bundleId = bundleId;
+      if (installmentOptions) {
+        updateData.isInstallmentBased = installmentOptions.isInstallmentBased;
+        updateData.currentInstallment = installmentOptions.currentInstallment;
+        updateData.validUntil = installmentOptions.validUntil;
+      }
 
       const enrollment = reactivateExisting
         ? await tx.enrollment.update({

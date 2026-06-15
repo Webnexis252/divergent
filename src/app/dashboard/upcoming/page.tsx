@@ -220,19 +220,19 @@ function buildEvents(data: UpcomingOverviewResponse | null): CalendarEvent[] {
 }
 
 function CalendarWidget({
-  activeEventId,
+  activeDateKey,
   events,
   onNextMonth,
   onPrevMonth,
-  onSelectEvent,
+  onSelectDateKey,
   onToday,
   viewDate,
 }: {
-  activeEventId: string | null;
+  activeDateKey: string | null;
   events: CalendarEvent[];
   onNextMonth: () => void;
   onPrevMonth: () => void;
-  onSelectEvent: (id: string) => void;
+  onSelectDateKey: (key: string) => void;
   onToday: () => void;
   viewDate: Date;
 }) {
@@ -295,7 +295,7 @@ function CalendarWidget({
           const key = `${cell.date.getFullYear()}-${cell.date.getMonth()}-${cell.date.getDate()}`;
           const cellEvents = eventMap.get(key) ?? [];
           const isToday = isSameDay(today, cell.date);
-          const isActive = cellEvents.some((event) => event.id === activeEventId);
+          const isActive = key === activeDateKey;
 
           return (
             <button
@@ -306,9 +306,7 @@ function CalendarWidget({
                 isActive ? "bg-white" : ""
               }`}
               onClick={() => {
-                if (cellEvents.length > 0) {
-                  onSelectEvent(cellEvents[0].id);
-                }
+                onSelectDateKey(key);
               }}
               type="button"
             >
@@ -357,63 +355,91 @@ function CalendarWidget({
   );
 }
 
-function EventPanel({ event }: { event: CalendarEvent | null }) {
-  if (!event) {
+function DayPanel({ events, dateKey }: { events: CalendarEvent[], dateKey: string | null }) {
+  if (!events.length) {
     return (
       <EmptyState
-        description="Pick a highlighted date to see the most relevant detail, context, and next action for that item."
+        description={dateKey ? "There are no upcoming items scheduled for this day." : "Pick a highlighted date to see the most relevant detail, context, and next action for that item."}
         icon={<CalendarDays className="h-6 w-6" />}
         title="Nothing selected yet"
       />
     );
   }
 
-  const meta = EVENT_META[event.kind];
-  const Icon = meta.Icon;
-
   return (
-    <Surface className="flex h-full flex-col gap-5 px-5 py-5 sm:px-6 sm:py-6">
-      <div className="rounded-(--radius-lg) bg-[linear-gradient(135deg,#062f4f_0%,#0c4f78_34%,#38c1ff_100%)] px-5 py-5 text-white">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-(--radius-md) bg-white/16">
-            <Icon className="h-5 w-5" />
-          </div>
-          <Badge className="bg-white/14 text-white" tone="neutral">
-            {meta.label}
-          </Badge>
-        </div>
-        <h3 className="mt-4 text-[26px] font-semibold tracking-[-0.05em] text-white">
-          {event.title}
-        </h3>
-        <p className="mt-2 text-[14px] leading-7 text-white/78">{event.subtitle}</p>
+    <Surface className="flex h-full w-full max-h-[820px] flex-col gap-6 px-5 py-5 sm:px-6 sm:py-6 overflow-hidden">
+      <div className="flex-shrink-0">
+        <h2 className="text-[20px] font-bold tracking-tight text-(--text-strong)">
+          {formatShortDate(events[0].date)}
+        </h2>
+        <p className="mt-1 text-[13px] text-(--text-muted)">
+          {events.length} item{events.length === 1 ? "" : "s"} scheduled for this day
+        </p>
       </div>
 
-      <p className="text-[14px] leading-7 text-(--text-muted)">
-        {event.description}
-      </p>
+      <div className="flex-1 flex flex-col overflow-y-auto space-y-8 pr-2 -mr-2 snap-y snap-mandatory pb-4">
+        {events.map((event, index) => {
+          const meta = EVENT_META[event.kind];
+          const Icon = meta.Icon;
 
-      <div className="grid gap-3">
-        {event.details.map((detail) => (
-          <div
-            key={detail.label}
-            className="flex items-center justify-between gap-4 rounded-(--radius-md) bg-white/72 px-4 py-3"
-          >
-            <span className="text-[13px] text-(--text-muted)">{detail.label}</span>
-            <span className="text-[13px] font-semibold text-(--text-strong)">
-              {detail.value}
-            </span>
-          </div>
-        ))}
-      </div>
+          return (
+            <div key={event.id} className="min-h-[calc(100%-1rem)] flex-shrink-0 snap-start flex flex-col gap-5">
+              <div className="rounded-(--radius-lg) bg-[linear-gradient(135deg,#062f4f_0%,#0c4f78_34%,#38c1ff_100%)] px-5 py-5 text-white">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="grid h-10 w-10 place-items-center rounded-(--radius-md) bg-white/16">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <Badge className="bg-white/14 text-white" tone="neutral">
+                    {meta.label}
+                  </Badge>
+                </div>
+                <h3 className="mt-4 text-[26px] font-semibold tracking-[-0.05em] text-white">
+                  {event.title}
+                </h3>
+                <p className="mt-2 text-[14px] leading-7 text-white/78">{event.subtitle}</p>
+              </div>
 
-      <div className="mt-auto pt-2">
-        <Link
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-(--radius-pill) bg-(--brand-primary-strong) px-5 text-[15px] font-semibold text-white shadow-(--shadow-accent) transition-[transform,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:bg-(--brand-primary) focus-visible:outline-none"
-          href={event.ctaHref}
-        >
-          {event.ctaLabel}
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+              <p className="text-[14px] leading-7 text-(--text-muted)">
+                {event.description}
+              </p>
+
+              <div className="grid gap-3">
+                {event.details.map((detail) => (
+                  <div
+                    key={detail.label}
+                    className="flex items-center justify-between gap-4 rounded-(--radius-md) bg-white/72 px-4 py-3"
+                  >
+                    <span className="text-[13px] text-(--text-muted)">{detail.label}</span>
+                    <span className="text-[13px] font-semibold text-(--text-strong)">
+                      {detail.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-auto pt-2">
+                <Link
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-(--radius-pill) bg-(--brand-primary-strong) px-5 text-[15px] font-semibold text-white shadow-(--shadow-accent) transition-[transform,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:bg-(--brand-primary) focus-visible:outline-none"
+                  href={event.ctaHref}
+                >
+                  {event.ctaLabel}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+
+              {index < events.length - 1 && (
+                <div className="flex items-center justify-center pt-8 pb-4 text-(--text-muted) text-[12px] font-medium tracking-wide">
+                  <span className="animate-pulse flex flex-col items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-(--text-muted)" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-(--text-muted) opacity-60" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-(--text-muted) opacity-30" />
+                    <span className="mt-2">Scroll for next item</span>
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </Surface>
   );
@@ -479,7 +505,7 @@ export default function UpcomingPage() {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -506,8 +532,21 @@ export default function UpcomingPage() {
   }, []);
 
   const events = useMemo(() => buildEvents(data), [data]);
-  const activeEventId = selectedEventId ?? events[0]?.id ?? null;
-  const selectedEvent = events.find((event) => event.id === activeEventId) ?? null;
+  
+  // Set default active date to the date of the first event if none is selected
+  useEffect(() => {
+    if (!activeDateKey && events.length > 0 && !loading) {
+      const firstEventDate = new Date(events[0].date);
+      setActiveDateKey(`${firstEventDate.getFullYear()}-${firstEventDate.getMonth()}-${firstEventDate.getDate()}`);
+    }
+  }, [events, activeDateKey, loading]);
+
+  const selectedDayEvents = events.filter((event) => {
+    if (!activeDateKey) return false;
+    const date = new Date(event.date);
+    const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    return key === activeDateKey;
+  });
 
   function goToPreviousMonth() {
     setViewDate((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
@@ -599,15 +638,15 @@ export default function UpcomingPage() {
                 <RevealSection delay={0.08}>
                   <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
                     <CalendarWidget
-                      activeEventId={activeEventId}
+                      activeDateKey={activeDateKey}
                       events={events}
                       onNextMonth={goToNextMonth}
                       onPrevMonth={goToPreviousMonth}
-                      onSelectEvent={setSelectedEventId}
+                      onSelectDateKey={setActiveDateKey}
                       onToday={goToToday}
                       viewDate={viewDate}
                     />
-                    <EventPanel event={selectedEvent} />
+                    <DayPanel events={selectedDayEvents} dateKey={activeDateKey} />
                   </div>
                 </RevealSection>
 

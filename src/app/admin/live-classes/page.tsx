@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Check,
   Clock,
+  Edit2,
   Film,
   Link2,
   Loader2,
@@ -39,6 +40,7 @@ export default function AdminLiveClassesPage() {
   const [cancelTarget, setCancelTarget] = useState<AdminLiveClass | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
+  const [editTarget, setEditTarget] = useState<AdminLiveClass | null>(null);
 
   // Recording upload state
   const [recordingTarget, setRecordingTarget] = useState<AdminLiveClass | null>(null);
@@ -95,8 +97,16 @@ export default function AdminLiveClassesPage() {
     };
   }, []);
 
-  const handleCreated = useCallback((created: AdminLiveClass) => {
-    setClasses((prev) => [created, ...prev]);
+  const handleCreatedOrUpdated = useCallback((createdOrUpdated: AdminLiveClass) => {
+    setClasses((prev) => {
+      const idx = prev.findIndex(c => c.id === createdOrUpdated.id);
+      if (idx !== -1) {
+        const next = [...prev];
+        next[idx] = createdOrUpdated;
+        return next;
+      }
+      return [createdOrUpdated, ...prev];
+    });
   }, []);
 
   const handleCancelClass = useCallback(async () => {
@@ -390,14 +400,14 @@ export default function AdminLiveClassesPage() {
                 <table className="w-full text-left text-[14px]">
                   <thead>
                     <tr className="border-b border-[#eef0f3] text-[12px] font-semibold uppercase tracking-[0.12em] text-[#94a3b8]">
-                      <th className="px-6 py-4">Class</th>
-                      <th className="px-6 py-4">Course</th>
-                      <th className="px-6 py-4">Teacher</th>
-                      <th className="px-6 py-4">Date &amp; Time</th>
-                      <th className="px-6 py-4">Duration</th>
-                      <th className="px-6 py-4">Attendees</th>
-                      <th className="px-6 py-4">Status</th>
-                      <th className="px-6 py-4">Actions</th>
+                      <th className="px-6 py-5">Class</th>
+                      <th className="px-6 py-5">Course</th>
+                      <th className="px-6 py-5">Teacher</th>
+                      <th className="px-6 py-5">Date &amp; Time</th>
+                      <th className="px-6 py-5">Duration</th>
+                      <th className="px-6 py-5">Attendees</th>
+                      <th className="px-6 py-5">Status</th>
+                      <th className="px-6 py-5">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -414,20 +424,20 @@ export default function AdminLiveClassesPage() {
                           transition={{ delay: i * 0.03 }}
                           className="border-b border-[#f1f5f9] last:border-none hover:bg-[#f8fafc]"
                         >
-                          <td className="px-6 py-4">
-                            <p className="font-semibold text-[#101828]">
+                          <td className="px-6 py-6">
+                            <p className="font-semibold text-[#101828] text-[15px]">
                               {cls.title}
                             </p>
                             {cls.description && (
-                              <p className="mt-0.5 line-clamp-1 text-[12px] text-[#94a3b8]">
+                              <p className="mt-1 line-clamp-1 text-[13px] text-[#94a3b8] max-w-[200px]">
                                 {cls.description}
                               </p>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-[#475569]">
+                          <td className="px-6 py-6 text-[#475569]">
                             {cls.course.title}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-6">
                             {cls.course.teacher ? (
                               <span className="font-semibold text-[#101828]">
                                 {cls.course.teacher.name ??
@@ -439,7 +449,7 @@ export default function AdminLiveClassesPage() {
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-[#475569]">
+                          <td className="px-6 py-6 text-[#475569]">
                             {new Date(cls.startTime).toLocaleDateString(
                               "en-IN",
                               {
@@ -451,33 +461,43 @@ export default function AdminLiveClassesPage() {
                               },
                             )}
                           </td>
-                          <td className="px-6 py-4 text-[#475569]">
+                          <td className="px-6 py-6 text-[#475569]">
                             <span className="inline-flex items-center gap-1.5">
-                              <Clock className="h-3.5 w-3.5 text-[#94a3b8]" />
+                              <Clock className="h-4 w-4 text-[#94a3b8]" />
                               {formatDuration(cls.duration)}
                             </span>
                           </td>
-                          <td className="px-6 py-4 font-semibold text-[#101828]">
+                          <td className="px-6 py-6 font-semibold text-[#101828] text-center">
                             {cls._count.attendances}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-6">
                             {status === "live" ? (
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ecfdf5] px-3 py-1 text-[11px] font-bold text-[#15803d]">
-                                <Radio className="h-3 w-3 animate-pulse" />
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ecfdf5] px-3 py-1.5 text-[11px] font-bold text-[#15803d]">
+                                <Radio className="h-3.5 w-3.5 animate-pulse" />
                                 Live
                               </span>
                             ) : status === "upcoming" ? (
-                              <span className="rounded-full bg-[#eff6ff] px-3 py-1 text-[11px] font-bold text-[#2563eb]">
+                              <span className="rounded-full bg-[#eff6ff] px-3 py-1.5 text-[11px] font-bold text-[#2563eb]">
                                 Upcoming
                               </span>
                             ) : (
-                              <span className="rounded-full bg-[#f1f5f9] px-3 py-1 text-[11px] font-bold text-[#64748b]">
+                              <span className="rounded-full bg-[#f1f5f9] px-3 py-1.5 text-[11px] font-bold text-[#64748b]">
                                 Completed
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-6">
                             <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditTarget(cls);
+                                  setShowSchedule(true);
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-[12px] border border-[#fde68a] bg-[#fffbeb] px-3 py-1.5 text-[12px] font-semibold text-[#b45309] transition hover:bg-[#fef3c7]"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                                Edit
+                              </button>
                               {status === "completed" && (
                                 <button
                                   onClick={() => {
@@ -528,8 +548,12 @@ export default function AdminLiveClassesPage() {
           <ScheduleClassModal
             courses={courses}
             coursesLoading={coursesLoading}
-            onClose={() => setShowSchedule(false)}
-            onCreated={handleCreated}
+            editTarget={editTarget ?? undefined}
+            onClose={() => {
+              setShowSchedule(false);
+              setEditTarget(null);
+            }}
+            onCreated={handleCreatedOrUpdated}
           />
         </Suspense>
       )}

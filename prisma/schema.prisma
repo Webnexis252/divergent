@@ -92,6 +92,8 @@ model Course {
   courseRating        Float?
   autoCalculateRating Boolean   @default(true)
   enrolledStudents    Int?
+  maxSeats            Int?
+  examCount           Int?
   autoUpdateEnrolled  Boolean   @default(true)
   learningOutcomes    Json?
   features            Json?
@@ -176,6 +178,9 @@ model Enrollment {
   courseId        String
   bundleId        String?
   status          EnrollmentStatus @default(ACTIVE)
+  isInstallmentBased Boolean       @default(false)
+  currentInstallment Int           @default(0)
+  validUntil         DateTime?
   progressPercent Float            @default(0.0)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -472,6 +477,7 @@ model Payment {
   couponCode        String?
   discountAmount    Float         @default(0)
   invoiceUrl        String?
+  installmentIndex  Int?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   course            Course?       @relation(fields: [courseId], references: [id])
@@ -919,6 +925,7 @@ enum ApprovalRequestType {
   CREATE
   SUSPEND
   DELETE
+  EXTEND_INSTALLMENT
 }
 
 enum ApprovalStatus {

@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 interface ApprovalRequest {
   id: string;
-  type: "CREATE" | "SUSPEND" | "DELETE";
+  type: "CREATE" | "SUSPEND" | "DELETE" | "EXTEND_INSTALLMENT";
   name: string;
   email: string;
   phone: string | null;
@@ -119,6 +119,7 @@ export default function StudentApprovalsPage() {
   const creationRequests = studentRequests.filter(req => req.type === "CREATE");
   const suspensionRequests = studentRequests.filter(req => req.type === "SUSPEND");
   const deletionRequests = studentRequests.filter(req => req.type === "DELETE");
+  const extensionRequests = studentRequests.filter(req => req.type === "EXTEND_INSTALLMENT");
 
   const teacherSuspensionRequests = teacherRequests.filter(req => req.type === "SUSPEND");
   const teacherDeletionRequests = teacherRequests.filter(req => req.type === "DELETE");
@@ -253,6 +254,42 @@ export default function StudentApprovalsPage() {
                             className="bg-red-600 hover:bg-red-700 text-white font-bold"
                           >
                             <Trash2 className="mr-2 h-4 w-4" /> Confirm Deletion
+                          </Button>
+                        </div>
+                      </div>
+                    </Surface>
+                  ))}
+                </div>
+              )}
+
+              {extensionRequests.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-gray-900 px-1">Installment Extension Requests</h2>
+                  {extensionRequests.map((req) => (
+                    <Surface key={req.id} className="border-amber-200 bg-amber-50/30 p-6 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-amber-800">EXTEND DUE DATE: {req.name}</h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-amber-900/80">
+                            <span>Email: {req.email}</span>
+                          </div>
+                          <div className="mt-2 text-xs font-medium text-amber-700/70">
+                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleAction(req.id, "REJECT")}
+                            className="text-amber-900 hover:text-amber-950 bg-amber-50 hover:bg-amber-200"
+                          >
+                            <X className="mr-2 h-4 w-4" /> Reject
+                          </Button>
+                          <Button
+                            onClick={() => handleAction(req.id, "APPROVE")}
+                            className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                          >
+                            <Check className="mr-2 h-4 w-4" /> Approve Extension
                           </Button>
                         </div>
                       </div>

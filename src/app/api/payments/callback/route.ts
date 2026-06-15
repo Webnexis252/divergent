@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     if (!orderId) {
       return NextResponse.redirect(
-        new URL("/dashboard/courses?payment=error&reason=missing_order", req.url),
+        new URL("/payment/status?status=failed&message=missing_order", req.url),
       );
     }
 
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
       }
 
       return NextResponse.redirect(
-        new URL("/dashboard/courses?payment=success", req.url),
+        new URL("/payment/status?status=success", req.url),
       );
     }
 
@@ -66,12 +66,12 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.redirect(
-      new URL("/dashboard/courses?payment=failed", req.url),
+      new URL("/payment/status?status=failed", req.url),
     );
   } catch (error) {
     console.error("[PAYMENT_CALLBACK] Error:", error);
     return NextResponse.redirect(
-      new URL("/dashboard/courses?payment=error", req.url),
+      new URL("/payment/status?status=failed&message=error", req.url),
     );
   }
 }

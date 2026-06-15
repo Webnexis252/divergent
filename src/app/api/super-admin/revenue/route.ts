@@ -15,8 +15,11 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOf30Days = new Date(now);
+    startOf30Days.setDate(now.getDate() - 29);
+    startOf30Days.setHours(0, 0, 0, 0);
 
-    const [totalRevenue, monthlyRevenue, recentPayments, enrollmentsByMonth] = await Promise.all([
+    const [totalRevenue, monthlyRevenue, recentPayments, enrollmentsByMonth, dailyPayments] = await Promise.all([
       // Total successful revenue
       prisma.payment.aggregate({
         where: { status: 'SUCCESS' },
@@ -45,6 +48,13 @@ export async function GET(req: NextRequest) {
         where: { createdAt: { gte: startOfYear } },
         select: { createdAt: true },
       }),
+
+      // Daily successful payments for last 30 days
+      prisma.payment.findMany({
+        where: { status: 'SUCCESS', createdAt: { gte: startOf30Days } },
+        select: { amount: true, createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      }),
     ]);
 
     // Build monthly enrollment trend chart data
@@ -52,6 +62,20 @@ export async function GET(req: NextRequest) {
     const monthCounts = new Array(12).fill(0);
     enrollmentsByMonth.forEach(e => monthCounts[e.createdAt.getMonth()]++);
     const monthlyTrend = monthNames.map((m, i) => ({ month: m, count: monthCounts[i] }));
+
+    // Build daily revenue trend for last 30 days
+    const dailyMap = new Map<string, number>();
+    for (let d = 0; d < 30; d++) {
+      const day = new Date(startOf30Days);
+      day.setDate(startOf30Days.getDate() + d);
+      const key = day.toISOString().slice(0, 10); // YYYY-MM-DD
+      dailyMap.set(key, 0);
+    }
+    dailyPayments.forEach(p => {
+      const key = p.createdAt.toISOString().slice(0, 10);
+      dailyMap.set(key, (dailyMap.get(key) ?? 0) + p.amount);
+    });
+    const dailyRevenue = Array.from(dailyMap.entries()).map(([date, revenue]) => ({ date, revenue }));
 
     return apiSuccess({
       totalRevenue: totalRevenue._sum.amount ?? 0,
@@ -68,6 +92,7 @@ export async function GET(req: NextRequest) {
         createdAt: p.createdAt.toISOString(),
       })),
       monthlyTrend,
+      dailyRevenue,
     });
   } catch (err) {
     console.error('[SUPER_ADMIN_REVENUE_ERROR]', err);

@@ -6,6 +6,7 @@ import {
   Calendar,
   Check,
   Clock,
+  Edit,
   Link2,
   Type,
   Video,
@@ -43,27 +44,38 @@ export default function ScheduleClassModal({
   coursesLoading,
   onClose,
   onCreated,
+  editTarget,
 }: {
   courses: CourseSummary[];
   coursesLoading: boolean;
   onClose: () => void;
   onCreated: (created: AdminLiveClass) => void;
+  editTarget?: AdminLiveClass;
 }) {
-  const [form, setForm] = useState<ScheduleForm>(defaultForm);
+  const [form, setForm] = useState<ScheduleForm>(editTarget ? {
+    courseId: editTarget.courseId,
+    title: editTarget.title,
+    description: editTarget.description ?? "",
+    startTime: new Date(new Date(editTarget.startTime).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
+    duration: editTarget.duration.toString(),
+    meetingUrl: editTarget.meetingUrl ?? "",
+    teacherId: editTarget.course.teacher?.id ?? "",
+  } : defaultForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [successMsg, setSuccessMsg] = useState("");
 
-  // Set a default start time to the next full hour
+  // Set a default start time to the next full hour if not editing
   useEffect(() => {
+    if (editTarget) return;
     const now = new Date();
     now.setHours(now.getHours() + 1, 0, 0, 0);
     const localISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
       .toISOString()
       .slice(0, 16);
     setForm((p) => ({ ...p, startTime: localISO }));
-  }, []);
+  }, [editTarget]);
 
   const selectedCourse = courses.find((c) => c.id === form.courseId) ?? null;
   const durationNum = parseInt(form.duration, 10) || 0;
@@ -113,8 +125,13 @@ export default function ScheduleClassModal({
     setSaving(true);
 
     try {
-      const res = await fetch(`/api/courses/${form.courseId}/live-classes`, {
-        method: "POST",
+      const url = editTarget 
+        ? `/api/admin/live-classes/${editTarget.id}` 
+        : `/api/courses/${form.courseId}/live-classes`;
+      const method = editTarget ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           courseId: form.courseId,
@@ -134,24 +151,24 @@ export default function ScheduleClassModal({
         if (payload.details?.fieldErrors) {
           setFieldErrors(payload.details.fieldErrors as Record<string, string[]>);
         }
-        setError(payload.error ?? "Failed to schedule class");
+        setError(payload.error ?? `Failed to ${editTarget ? "update" : "schedule"} class`);
         return;
       }
 
-      setSuccessMsg("Live class scheduled!");
+      setSuccessMsg(editTarget ? "Live class updated!" : "Live class scheduled!");
 
       const selectedTeacher = selectedCourse?.teachers?.find(t => t.id === form.teacherId) || null;
 
       // Augment with course info for the table
-      const created: AdminLiveClass = {
+      const createdOrUpdated: AdminLiveClass = {
         ...payload.data,
         course: selectedCourse
           ? { id: selectedCourse.id, title: selectedCourse.title, slug: selectedCourse.slug, teacher: selectedTeacher }
           : { id: form.courseId, title: "Unknown", slug: "", teacher: null },
-        _count: { attendances: 0 },
+        _count: editTarget ? editTarget._count : { attendances: 0 },
       };
 
-      onCreated(created);
+      onCreated(createdOrUpdated);
       setTimeout(() => onClose(), 900);
     } catch {
       setError("Network error — please try again.");
@@ -183,17 +200,18 @@ export default function ScheduleClassModal({
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge tone="brand">Schedule</Badge>
+                <Badge tone="brand">{editTarget ? "Edit" : "Schedule"}</Badge>
                 <Badge className="bg-[#ecfdf5] text-[#15803d]" tone="neutral">
-                  New Live Class
+                  {editTarget ? "Update Live Class" : "New Live Class"}
                 </Badge>
               </div>
               <h2 className="mt-3 text-[24px] font-semibold tracking-[-0.04em] text-[#0f172a]">
-                Schedule a Live Class
+                {editTarget ? "Edit Live Class" : "Schedule a Live Class"}
               </h2>
               <p className="mt-1 text-[13px] text-[#64748b]">
-                Choose a course, set the time, and enrolled students + the
-                assigned teacher will see it instantly.
+                {editTarget 
+                  ? "Update the details of this live class." 
+                  : "Choose a course, set the time, and enrolled students + the assigned teacher will see it instantly."}
               </p>
             </div>
             <button
@@ -401,10 +419,12 @@ export default function ScheduleClassModal({
           <div className="flex flex-col gap-4 rounded-[24px] border border-[#e3edf7] bg-[linear-gradient(180deg,#f6faff_0%,#edf4ff_100%)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-[48ch]">
               <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#0284c7]">
-                Publish immediately
+                {editTarget ? "Save Changes" : "Publish immediately"}
               </p>
               <p className="mt-2 text-[14px] leading-6 text-[#475569]">
-                Once scheduled, enrolled students and the course teacher will see this class right away.
+                {editTarget 
+                  ? "Changes will be reflected instantly across the platform."
+                  : "Once scheduled, enrolled students and the course teacher will see this class right away."}
               </p>
             </div>
 
@@ -433,7 +453,7 @@ export default function ScheduleClassModal({
                 )}
               </AnimatePresence>
               <Button size="md" type="submit" loading={saving}>
-                {saving ? "Scheduling…" : "Schedule Class"}
+                {saving ? "Saving…" : editTarget ? "Update Class" : "Schedule Class"}
               </Button>
               <button
                 type="button"

@@ -226,6 +226,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       thumbnail: true,
       price: true,
       originalPrice: true,
+      maxSeats: true,
       emiPlans: true,
       isPublished: true,
       totalHours: true,
@@ -317,6 +318,15 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         enrollment.status === EnrollmentStatus.COMPLETED ||
         enrollment.status === EnrollmentStatus.PAUSED
       : false; // Never treat an enrollment without a known ACTIVE status as enrolled
+
+  let isExpiredInstallment = false;
+  if (enrollment && 'isInstallmentBased' in enrollment && enrollment.isInstallmentBased && 'validUntil' in enrollment && enrollment.validUntil) {
+    if (new Date() > new Date(enrollment.validUntil as Date)) {
+      isExpiredInstallment = true;
+    }
+  }
+
+  const hasAccess = isEnrolled && !isExpiredInstallment;
 
   // Fetch real completed lesson count from LessonProgress
   const allCourseLessonIds = course.chapters.flatMap((ch) => ch.lessons.map((l) => l.id));
@@ -931,7 +941,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                             </div>
                           )}
 
-                          {isEnrolled ? (
+                          {hasAccess ? (
                             <Link
                               className="inline-flex h-[37px] w-full items-center justify-center rounded-[10px] border border-[#d9d9d9] bg-[#38c1ff] px-4 text-[12px] font-semibold text-white shadow-[0_4px_10px_rgba(56,193,255,0.24)] transition-transform duration-150 ease-out hover:-translate-y-0.5"
                               href={primaryActionHref}
@@ -943,9 +953,13 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                               <EnrollButton
                                 courseId={course.id}
                                 courseTitle={course.title}
-                                initialEnrolled={false}
+                                initialEnrolled={isEnrolled}
                                 price={course.price}
+                                maxSeats={course.maxSeats}
+                                enrolledCount={course._count.enrollments}
                                 variant="detailCard"
+                                emiPlans={emiPlans}
+                                expiredInstallment={isExpiredInstallment ? { currentInstallment: (enrollment as any).currentInstallment } : null}
                               />
                             </div>
                           )}

@@ -39,6 +39,7 @@ const adminNavItems = [
   { label: "Mentors", href: "/admin/mentors", icon: Star },
   { label: "Cohorts", href: "/admin/cohorts", icon: UsersRound },
   { label: "Bundles", href: "/admin/bundles", icon: Package },
+  { label: "Installments", href: "/admin/installments", icon: DollarSign },
   { label: "Exams", href: "/admin/exams", icon: FileText },
   { label: "Assignments", href: "/admin/assignments", icon: ClipboardList },
   { label: "Live Classes", href: "/admin/live-classes", icon: Video },

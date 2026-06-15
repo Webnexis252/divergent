@@ -414,6 +414,7 @@ export function TeacherAssignmentsView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchData = () => {
     setLoading(true);
@@ -446,6 +447,10 @@ export function TeacherAssignmentsView() {
     0,
   );
   const active = assignments.filter((a) => a.status === "ACTIVE").length;
+
+  const filteredAssignments = assignments.filter((a) =>
+    !searchQuery || a.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <PageTransition>
@@ -516,23 +521,32 @@ export function TeacherAssignmentsView() {
             {/* Assignment list */}
             <RevealSection>
               <section className="overflow-hidden rounded-[28px] border border-[#e8eaef] bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-                <div className="flex items-center justify-between gap-4 border-b border-[#eef0f3] px-6 py-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#eef0f3] px-6 py-5">
                   <div>
                     <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-[#101828]">
                       Your Assignments
                     </h2>
                     <p className="mt-0.5 text-[13px] text-[#667085]">
-                      {loading ? "Loading…" : `${assignments.length} total`}
+                      {loading ? "Loading…" : `${filteredAssignments.length} total`}
                     </p>
                   </div>
-                  <motion.button
-                    onClick={() => setShowCreate(true)}
-                    className="rounded-[12px] bg-[#38c1ff] px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_6px_16px_rgba(56,193,255,0.25)]"
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    + New
-                  </motion.button>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      placeholder="Search assignments..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="rounded-[12px] border border-gray-200 bg-gray-50 px-4 py-2 text-[13px] text-black outline-none transition focus:border-[#38c1ff] focus:ring-2 focus:ring-[#38c1ff]/20 sm:w-[240px]"
+                    />
+                    <motion.button
+                      onClick={() => setShowCreate(true)}
+                      className="shrink-0 rounded-[12px] bg-[#38c1ff] px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_6px_16px_rgba(56,193,255,0.25)]"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      + New
+                    </motion.button>
+                  </div>
                 </div>
 
                 <div className="space-y-3 p-5">
@@ -544,18 +558,18 @@ export function TeacherAssignmentsView() {
                     <p className="rounded-[22px] border border-dashed border-[#fecaca] bg-[#fff5f5] px-5 py-12 text-center text-[14px] text-[#dc2626]">
                       ⚠️ {error}
                     </p>
-                  ) : assignments.length === 0 ? (
+                  ) : filteredAssignments.length === 0 ? (
                     <div className="rounded-[22px] border border-dashed border-[#d7dbe2] bg-[#fafafa] px-5 py-16 text-center">
                       <p className="text-[40px]">📋</p>
                       <p className="mt-3 text-[16px] font-semibold text-[#374151]">
-                        No assignments yet
+                        {assignments.length === 0 ? "No assignments yet" : "No assignments found"}
                       </p>
                       <p className="mt-2 text-[13px] text-[#667085]">
-                        Click &ldquo;+ New Assignment&rdquo; to post your first one.
+                        {assignments.length === 0 ? "Click \u201c+ New Assignment\u201d to post your first one." : "Try adjusting your search query."}
                       </p>
                     </div>
                   ) : (
-                    assignments.map((a, i) => (
+                    filteredAssignments.map((a, i) => (
                       <motion.article
                         key={a.id}
                         className="rounded-[18px] border border-[#eceef2] bg-[#fcfcfd] px-5 py-4"
