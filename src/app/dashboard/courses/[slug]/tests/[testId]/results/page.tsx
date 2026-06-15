@@ -56,6 +56,7 @@ export default async function TestResultsPage({
           explanation: true,
           explanationImageUrl: true,
           points: true,
+          negativeMarks: true,
           order: true,
           difficulty: true,
         },
