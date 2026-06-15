@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { AnimCard, PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
+import PricingPlanBuilder, { PricingPlan } from "../_components/PricingPlanBuilder";
 import { formatShortDate } from "@/lib/date-format";
 import { Field, TextAreaField, SelectField } from "@/components/ui/field";
 import { Button, buttonStyles } from "@/components/ui/button";
@@ -66,7 +67,8 @@ export default function AdminCoursesPage() {
     visibility: "PUBLIC",
     pricingType: "PAID",
     originalPrice: "",
-    emiPlans: [] as Array<{ label: string; amount: string; dueDays: string }>,
+    isInstallmentBased: false,
+    emiPlans: [] as PricingPlan[],
     testimonials: [] as Array<{ text: string; name: string; rating: string }>,
     faqs: [] as Array<{ question: string; answer: string }>,
   });
@@ -76,11 +78,6 @@ export default function AdminCoursesPage() {
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const [thumbnailUploadError, setThumbnailUploadError] = useState("");
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
-  // Instalment builder state
-  const [showAddInstalment, setShowAddInstalment] = useState(false);
-  const [newInstalment, setNewInstalment] = useState({ label: "", amount: "", dueDays: "" });
-  const [editingInstalmentIdx, setEditingInstalmentIdx] = useState<number | null>(null);
-  const [editInstalment, setEditInstalment] = useState({ label: "", amount: "", dueDays: "" });
 
   const [showAddTestimonial, setShowAddTestimonial] = useState(false);
   const [newTestimonial, setNewTestimonial] = useState({ text: "", name: "", rating: "5" });
@@ -185,8 +182,17 @@ export default function AdminCoursesPage() {
           visibility: form.visibility,
           pricingType: form.pricingType,
           originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
+          isInstallmentBased: form.isInstallmentBased,
           emiPlans: form.emiPlans.length > 0
-            ? form.emiPlans.map(p => ({ label: p.label, amount: Number(p.amount) || 0, dueDays: Number(p.dueDays) || 0 }))
+            ? form.emiPlans.map(plan => ({
+                id: plan.id,
+                name: plan.name,
+                installments: plan.installments.map(p => ({
+                  label: p.label,
+                  amount: Number(p.amount) || 0,
+                  dueDays: Number(p.dueDays) || 0,
+                })),
+              }))
             : null,
           testimonials: form.testimonials.length > 0
             ? form.testimonials.map(t => ({ text: t.text, name: t.name, rating: Number(t.rating) || 5 }))
@@ -199,10 +205,7 @@ export default function AdminCoursesPage() {
       const p = await res.json();
       if (!res.ok || !p.success) { setError(p.error ?? "Failed to create course"); return; }
       setCourses((prev) => [p.data, ...prev]);
-      setForm({ title: "", subtitle: "", description: "", overviewContent: "", thumbnail: "", price: "", teacherIds: [], totalHours: "", lessonCount: "", examCount: "", courseRating: "", autoCalculateRating: true, enrolledStudents: "", maxSeats: "", autoUpdateEnrolled: true, learningOutcomes: [], category: "", courseLevel: "", language: "", visibility: "PUBLIC", pricingType: "PAID", originalPrice: "", emiPlans: [], testimonials: [], faqs: [] });
-      setNewInstalment({ label: "", amount: "", dueDays: "" });
-      setShowAddInstalment(false);
-      setEditingInstalmentIdx(null);
+      setForm({ title: "", subtitle: "", description: "", overviewContent: "", thumbnail: "", price: "", teacherIds: [], totalHours: "", lessonCount: "", examCount: "", courseRating: "", autoCalculateRating: true, enrolledStudents: "", maxSeats: "", autoUpdateEnrolled: true, learningOutcomes: [], category: "", courseLevel: "", language: "", visibility: "PUBLIC", pricingType: "PAID", originalPrice: "", isInstallmentBased: false, emiPlans: [], testimonials: [], faqs: [] });
       setNewTestimonial({ text: "", name: "", rating: "5" });
       setShowAddTestimonial(false);
       setEditingTestimonialIdx(null);
@@ -391,80 +394,34 @@ export default function AdminCoursesPage() {
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-[#f1f5f9]">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <p className="text-[14px] font-medium text-[#0f172a]">Instalment Breakdown</p>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="flex h-5 items-center">
+                          <input
+                            id="installment-toggle"
+                            type="checkbox"
+                            checked={form.isInstallmentBased}
+                            onChange={(e) =>
+                              setForm((p) => ({ ...p, isInstallmentBased: e.target.checked }))
+                            }
+                            className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-600"
+                          />
                         </div>
-                        {!showAddInstalment && editingInstalmentIdx === null && (
-                          <Button type="button" variant="secondary" size="sm" onClick={() => { setNewInstalment({ label: "", amount: "", dueDays: "" }); setShowAddInstalment(true); }}>
-                            <Plus className="mr-1 h-3.5 w-3.5" /> Add instalment
-                          </Button>
-                        )}
+                        <div className="text-sm">
+                          <label htmlFor="installment-toggle" className="font-medium text-slate-700">
+                            Enable Custom Instalment Plans
+                          </label>
+                          <p className="text-slate-500">Allow students to pay for this course in multiple instalments.</p>
+                        </div>
                       </div>
 
-                      <div className="overflow-hidden rounded-lg border border-[#e2e8f0] bg-white">
-                        <table className="w-full text-[13px]">
-                          <thead>
-                            <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
-                              <th className="px-4 py-3 text-left font-medium text-[#64748b]">#</th>
-                              <th className="px-4 py-3 text-left font-medium text-[#64748b]">Amount (₹)</th>
-                              <th className="px-4 py-3 text-left font-medium text-[#64748b]">Due (days)</th>
-                              <th className="px-4 py-3" />
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {form.emiPlans.length === 0 && !showAddInstalment ? (
-                              <tr>
-                                <td colSpan={4} className="px-4 py-6 text-center text-[#94a3b8]">No instalments defined.</td>
-                              </tr>
-                            ) : (
-                              form.emiPlans.map((plan, idx) => (
-                                <tr key={idx} className={cx("border-b border-[#f1f5f9] last:border-0", editingInstalmentIdx === idx ? "bg-[#f8fafc]" : "")}>
-                                  {editingInstalmentIdx === idx ? (
-                                    <>
-                                      <td className="px-4 py-2"><input autoFocus value={editInstalment.label} onChange={e => setEditInstalment(p => ({ ...p, label: e.target.value }))} className="w-full rounded-md border border-[#cbd5e1] px-2 py-1.5 outline-none focus:border-[#0f172a]" /></td>
-                                      <td className="px-4 py-2"><input type="number" min={0} value={editInstalment.amount} onChange={e => setEditInstalment(p => ({ ...p, amount: e.target.value }))} className="w-24 rounded-md border border-[#cbd5e1] px-2 py-1.5 outline-none focus:border-[#0f172a]" /></td>
-                                      <td className="px-4 py-2"><input type="number" min={0} value={editInstalment.dueDays} onChange={e => setEditInstalment(p => ({ ...p, dueDays: e.target.value }))} className="w-20 rounded-md border border-[#cbd5e1] px-2 py-1.5 outline-none focus:border-[#0f172a]" /></td>
-                                      <td className="px-4 py-2 text-right">
-                                        <div className="flex gap-1.5 justify-end">
-                                          <Button type="button" size="sm" onClick={() => { setForm(p => ({ ...p, emiPlans: p.emiPlans.map((pl, i) => i === idx ? editInstalment : pl) })); setEditingInstalmentIdx(null); }}>Save</Button>
-                                          <Button type="button" size="sm" variant="ghost" onClick={() => setEditingInstalmentIdx(null)}>Cancel</Button>
-                                        </div>
-                                      </td>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <td className="px-4 py-3 text-[#0f172a]">{plan.label || `${idx + 1} instalment`}</td>
-                                      <td className="px-4 py-3 text-[#0f172a]">₹{plan.amount ? Number(plan.amount).toLocaleString("en-IN") : 0}</td>
-                                      <td className="px-4 py-3 text-[#64748b]">{plan.dueDays || 0} days</td>
-                                      <td className="px-4 py-3 text-right">
-                                        <div className="flex gap-1 justify-end">
-                                          <button type="button" className="p-1.5 text-[#64748b] hover:text-[#0f172a]" onClick={() => { setEditInstalment({ ...plan }); setEditingInstalmentIdx(idx); }}><Pencil className="h-3.5 w-3.5" /></button>
-                                          <button type="button" className="p-1.5 text-[#ef4444] hover:bg-[#fef2f2] rounded" onClick={() => setForm(p => ({ ...p, emiPlans: p.emiPlans.filter((_, i) => i !== idx) }))}><Trash2 className="h-3.5 w-3.5" /></button>
-                                        </div>
-                                      </td>
-                                    </>
-                                  )}
-                                </tr>
-                              ))
-                            )}
-                            
-                            {showAddInstalment && (
-                              <tr className="bg-[#f8fafc]">
-                                <td className="px-4 py-2"><input autoFocus value={newInstalment.label} onChange={e => setNewInstalment(p => ({ ...p, label: e.target.value }))} className="w-full rounded-md border border-[#cbd5e1] px-2 py-1.5 outline-none focus:border-[#0f172a]" placeholder="Label" /></td>
-                                <td className="px-4 py-2"><input type="number" min={0} value={newInstalment.amount} onChange={e => setNewInstalment(p => ({ ...p, amount: e.target.value }))} className="w-24 rounded-md border border-[#cbd5e1] px-2 py-1.5 outline-none focus:border-[#0f172a]" placeholder="Amount" /></td>
-                                <td className="px-4 py-2"><input type="number" min={0} value={newInstalment.dueDays} onChange={e => setNewInstalment(p => ({ ...p, dueDays: e.target.value }))} className="w-20 rounded-md border border-[#cbd5e1] px-2 py-1.5 outline-none focus:border-[#0f172a]" placeholder="Days" /></td>
-                                <td className="px-4 py-2 text-right">
-                                  <div className="flex gap-1.5 justify-end">
-                                    <Button type="button" size="sm" onClick={() => { if (!newInstalment.amount) return; setForm(p => ({ ...p, emiPlans: [...p.emiPlans, { label: newInstalment.label || `${p.emiPlans.length + 1} instalment`, amount: newInstalment.amount, dueDays: newInstalment.dueDays || '0' }] })); setNewInstalment({ label: "", amount: "", dueDays: "" }); setShowAddInstalment(false); }} disabled={!newInstalment.amount}>Add</Button>
-                                    <Button type="button" size="sm" variant="ghost" onClick={() => setShowAddInstalment(false)}>Cancel</Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
+                      {form.isInstallmentBased && (
+                        <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <PricingPlanBuilder
+                            plans={form.emiPlans}
+                            onChange={(plans) => setForm((p) => ({ ...p, emiPlans: plans }))}
+                          />
+                        </div>
+                      )}
                     </div>
                   </Surface>
 

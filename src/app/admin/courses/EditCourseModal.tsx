@@ -44,6 +44,7 @@ type EditForm = {
   price: string;
   teacherIds: string[];
   isPublished: boolean;
+  isInstallmentBased: boolean;
   totalHours: string;
   lessonCount: string;
   examCount: string;
@@ -108,6 +109,7 @@ export default function EditCourseModal({
     price: String(course.price),
     teacherIds: course.teachers?.map((t) => t.id) ?? [],
     isPublished: course.isPublished,
+    isInstallmentBased: course.isInstallmentBased,
     totalHours: course.totalHours !== null ? String(course.totalHours) : "",
     lessonCount: course.lessonCount !== null ? String(course.lessonCount) : "",
     examCount: course.examCount !== null ? String(course.examCount) : "",
@@ -191,6 +193,7 @@ export default function EditCourseModal({
           price: form.price ? Number(form.price) : 0,
           teacherIds: form.teacherIds,
           isPublished: form.isPublished,
+          isInstallmentBased: form.isInstallmentBased,
           totalHours: form.totalHours ? Number(form.totalHours) : undefined,
           lessonCount: form.lessonCount ? Number(form.lessonCount) : undefined,
           examCount: form.examCount ? Number(form.examCount) : undefined,
@@ -432,11 +435,34 @@ export default function EditCourseModal({
             />
           </div>
 
-          {/* Instalment Plan Builder */}
-          <PricingPlanBuilder
-            plans={form.emiPlans}
-            onChange={(plans) => setForm((p) => ({ ...p, emiPlans: plans }))}
-          />
+          <div className="flex items-center gap-3">
+            <div className="flex h-5 items-center">
+              <input
+                id="edit-installment-toggle"
+                type="checkbox"
+                checked={form.isInstallmentBased}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, isInstallmentBased: e.target.checked }))
+                }
+                className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-600"
+              />
+            </div>
+            <div className="text-sm">
+              <label htmlFor="edit-installment-toggle" className="font-medium text-slate-700">
+                Enable Custom Instalment Plans
+              </label>
+              <p className="text-slate-500">Allow students to pay for this course in multiple instalments.</p>
+            </div>
+          </div>
+
+          {form.isInstallmentBased && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+              <PricingPlanBuilder
+                plans={form.emiPlans}
+                onChange={(plans) => setForm((p) => ({ ...p, emiPlans: plans }))}
+              />
+            </div>
+          )}
 
           {/* Description & Thumbnail */}
           <div className="grid gap-4 sm:grid-cols-[1fr_0.7fr]">
