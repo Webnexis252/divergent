@@ -9,11 +9,16 @@ import { formatShortDate } from "@/lib/date-format";
 type Coupon = {
   id: string;
   code: string;
-  discountPercent: number;
+  name: string | null;
+  discountType: "FIXED" | "PERCENTAGE";
+  discountValue: number;
   maxUses: number;
   usedCount: number;
   isActive: boolean;
+  startDate: string | null;
   validUntil: string | null;
+  minPurchase: number | null;
+  limitPerLearner: number;
   description: string | null;
   createdAt: string;
 };
@@ -22,7 +27,17 @@ export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ code: "", discountPercent: "", maxUses: "100", validUntil: "", description: "" });
+  const [form, setForm] = useState({
+    code: "",
+    name: "",
+    discountType: "FIXED" as "FIXED" | "PERCENTAGE",
+    discountValue: "",
+    startDate: "",
+    validUntil: "",
+    maxUses: "",
+    minPurchase: "",
+    limitPerLearner: ""
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [toggling, setToggling] = useState<string | null>(null);
@@ -44,16 +59,30 @@ export default function AdminCouponsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: form.code.toUpperCase(),
-          discountPercent: parseFloat(form.discountPercent),
-          maxUses: parseInt(form.maxUses) || 100,
-          ...(form.validUntil && { validUntil: form.validUntil }),
-          ...(form.description && { description: form.description }),
+          name: form.name || undefined,
+          discountType: form.discountType,
+          discountValue: parseFloat(form.discountValue),
+          maxUses: form.maxUses ? parseInt(form.maxUses) : undefined,
+          startDate: form.startDate || undefined,
+          validUntil: form.validUntil || undefined,
+          minPurchase: form.minPurchase ? parseFloat(form.minPurchase) : undefined,
+          limitPerLearner: form.limitPerLearner ? parseInt(form.limitPerLearner) : undefined,
         }),
       });
       const p = await res.json();
       if (!res.ok || !p.success) { setError(p.error ?? "Failed to create"); return; }
       setCoupons((prev) => [p.data, ...prev]);
-      setForm({ code: "", discountPercent: "", maxUses: "100", validUntil: "", description: "" });
+      setForm({
+        code: "",
+        name: "",
+        discountType: "FIXED",
+        discountValue: "",
+        startDate: "",
+        validUntil: "",
+        maxUses: "",
+        minPurchase: "",
+        limitPerLearner: ""
+      });
       setShowCreate(false);
     } catch { setError("Network error"); }
     finally { setSaving(false); }
@@ -121,27 +150,152 @@ export default function AdminCouponsPage() {
               <section className="rounded-[28px] border border-[#fde68a]/60 bg-[#fffbeb] p-6">
                 <h2 className="text-[18px] font-semibold text-[#92400e]">Create Coupon</h2>
                 <form onSubmit={handleCreate} className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {[
-                    { key: "code", label: "Code *", type: "text", placeholder: "SAVE50", span: false },
-                    { key: "discountPercent", label: "Discount % *", type: "number", placeholder: "20", span: false },
-                    { key: "maxUses", label: "Max Uses", type: "number", placeholder: "100", span: false },
-                    { key: "validUntil", label: "Expires On", type: "date", placeholder: "", span: false },
-                    { key: "description", label: "Description", type: "text", placeholder: "Summer sale promo", span: true },
-                  ].map((f) => (
-                    <div key={f.key} className={f.span ? "sm:col-span-2 lg:col-span-3" : ""}>
-                      <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">{f.label}</label>
+                  <div className="sm:col-span-2 lg:col-span-3 space-y-4">
+                    {/* Coupon Code */}
+                    <div>
+                      <div className="flex justify-between mb-1.5">
+                        <label className="text-[13px] font-medium text-[#0f172a]">Coupon Code*</label>
+                        <span className="text-[12px] text-[#64748b]">{form.code.length}/15</span>
+                      </div>
                       <input
-                        type={f.type}
-                        required={f.label.includes("*")}
-                        placeholder={f.placeholder}
-                        value={form[f.key as keyof typeof form]}
-                        onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))}
-                        min={f.key === "discountPercent" ? 1 : f.key === "maxUses" ? 1 : undefined}
-                        max={f.key === "discountPercent" ? 100 : undefined}
-                        className="h-12 w-full rounded-[14px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                        type="text"
+                        required
+                        maxLength={15}
+                        placeholder="Ex: GET50"
+                        value={form.code}
+                        onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') })}
+                        className="h-11 w-full rounded-[10px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                      />
+                      <p className="mt-1 text-[11px] text-[#64748b] flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Coupon code can only contain uppercase letters and numbers
+                      </p>
+                    </div>
+
+                    {/* Coupon Name */}
+                    <div>
+                      <div className="flex justify-between mb-1.5">
+                        <label className="text-[13px] font-medium text-[#0f172a]">Coupon Name</label>
+                        <span className="text-[12px] text-[#64748b]">{form.name.length}/60</span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={60}
+                        placeholder="Give name for your coupon code"
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        className="h-11 w-full rounded-[10px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
                       />
                     </div>
-                  ))}
+
+                    {/* Discount Type */}
+                    <div>
+                      <label className="mb-2 block text-[13px] font-medium text-[#0f172a]">Discount Type*</label>
+                      <div className="flex flex-col gap-2">
+                        <label className="flex items-center gap-2 text-[14px] text-[#334155] cursor-pointer">
+                          <input
+                            type="radio"
+                            name="discountType"
+                            value="FIXED"
+                            checked={form.discountType === "FIXED"}
+                            onChange={() => setForm({ ...form, discountType: "FIXED" })}
+                            className="accent-[#16a34a] w-4 h-4 cursor-pointer"
+                          />
+                          Fixed Amount
+                        </label>
+                        <label className="flex items-center gap-2 text-[14px] text-[#334155] cursor-pointer">
+                          <input
+                            type="radio"
+                            name="discountType"
+                            value="PERCENTAGE"
+                            checked={form.discountType === "PERCENTAGE"}
+                            onChange={() => setForm({ ...form, discountType: "PERCENTAGE" })}
+                            className="accent-[#16a34a] w-4 h-4 cursor-pointer"
+                          />
+                          Percentage Discount
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Discount Value */}
+                    <div>
+                      <input
+                        type="number"
+                        required
+                        placeholder="Discount value"
+                        value={form.discountValue}
+                        onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+                        min={0}
+                        max={form.discountType === "PERCENTAGE" ? 100 : undefined}
+                        className="h-11 w-full rounded-[10px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                      />
+                    </div>
+
+                    {/* Start Date & Expiry Date */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Start Date*</label>
+                        <input
+                          type="date"
+                          required
+                          value={form.startDate}
+                          onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                          className="h-11 w-full rounded-[10px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Expiry Date</label>
+                        <input
+                          type="date"
+                          value={form.validUntil}
+                          onChange={(e) => setForm({ ...form, validUntil: e.target.value })}
+                          className="h-11 w-full rounded-[10px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Coupon Quantity */}
+                    <div>
+                      <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Coupon Quantity</label>
+                      <input
+                        type="number"
+                        placeholder="Enter coupon quantity limit"
+                        value={form.maxUses}
+                        onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
+                        min={1}
+                        className="h-11 w-full rounded-[10px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                      />
+                    </div>
+
+                    {/* Minimum Purchase Amount */}
+                    <div>
+                      <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Minimum Purchase Amount</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748b]">₹</span>
+                        <input
+                          type="number"
+                          placeholder="Enter the minimum purchase amount"
+                          value={form.minPurchase}
+                          onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
+                          min={0}
+                          className="h-11 w-full rounded-[10px] border border-[#fde68a] bg-white pl-8 pr-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Limit Per Learner */}
+                    <div>
+                      <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Coupon Limit Per Learner</label>
+                      <input
+                        type="number"
+                        placeholder="Enter limit per learner"
+                        value={form.limitPerLearner}
+                        onChange={(e) => setForm({ ...form, limitPerLearner: e.target.value })}
+                        min={1}
+                        className="h-11 w-full rounded-[10px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                      />
+                    </div>
+                  </div>
                   {error && <p className="sm:col-span-2 lg:col-span-3 text-[13px] text-[#dc2626]">{error}</p>}
                   <div className="flex gap-3 sm:col-span-2 lg:col-span-3">
                     <button type="submit" disabled={saving} className="rounded-[14px] bg-[#d97706] px-6 py-3 text-[14px] font-semibold text-white disabled:opacity-50 transition hover:bg-[#b45309]">
@@ -181,7 +335,9 @@ export default function AdminCouponsPage() {
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#94a3b8]">Discount Code</p>
                         <h3 className="mt-2 font-mono text-[26px] font-black tracking-[0.12em] text-[#0f172a]">{coupon.code}</h3>
-                        <p className="mt-1 text-[16px] font-semibold text-[#16a34a]">{coupon.discountPercent}% OFF</p>
+                        <p className="mt-1 text-[16px] font-semibold text-[#16a34a]">
+                          {coupon.discountType === "PERCENTAGE" ? `${coupon.discountValue}% OFF` : `₹${coupon.discountValue} OFF`}
+                        </p>
                       </div>
                       <button
                         onClick={() => toggleCoupon(coupon)}
@@ -217,6 +373,12 @@ export default function AdminCouponsPage() {
                     )}
                     {coupon.description && (
                       <p className="mt-1 text-[13px] text-[#64748b]">{coupon.description}</p>
+                    )}
+                    {coupon.name && (
+                      <p className="mt-1 text-[13px] text-[#64748b]">Name: {coupon.name}</p>
+                    )}
+                    {coupon.minPurchase && (
+                      <p className="mt-1 text-[12px] text-[#94a3b8]">Min Purchase: ₹{coupon.minPurchase}</p>
                     )}
                   </motion.article>
                 );

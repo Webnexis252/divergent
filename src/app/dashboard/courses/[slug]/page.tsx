@@ -388,8 +388,8 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
   const rawEmiPlans = Array.isArray(course.emiPlans) ? course.emiPlans : [];
   let emiPlans: any[] | null = null;
   if (rawEmiPlans.length > 0) {
-    if (rawEmiPlans[0]?.installments) {
-      emiPlans = rawEmiPlans;
+    if ((rawEmiPlans as any[])[0]?.installments) {
+      emiPlans = rawEmiPlans as any[];
     } else {
       emiPlans = [{
         id: "legacy",
