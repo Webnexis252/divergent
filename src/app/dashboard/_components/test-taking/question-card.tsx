@@ -394,6 +394,7 @@ function NumericInput({
   showResult,
   correctAnswer,
   explanation,
+  explanationImageUrl,
 }: {
   questionId: string;
   selectedAnswer: unknown;
