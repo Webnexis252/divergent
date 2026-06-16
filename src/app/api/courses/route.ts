@@ -80,11 +80,11 @@ export async function POST(req: NextRequest) {
       courseLevel,
       language,
       visibility,
+      isPublished,
       pricingType,
       publishDate,
       originalPrice,
       emiPlans,
-      maxSeats,
     } = parsed.data;
 
     // Generate a URL-friendly slug from the title
@@ -120,14 +120,13 @@ export async function POST(req: NextRequest) {
         description, 
         overviewContent,
         thumbnail: thumbnail || null, 
-        price, 
+        price: price ?? 0, 
         totalHours,
         lessonCount,
         examCount,
         courseRating,
         autoCalculateRating,
         enrolledStudents,
-        maxSeats,
         autoUpdateEnrolled,
         learningOutcomes: learningOutcomes ? JSON.parse(JSON.stringify(learningOutcomes)) : undefined,
         features: features ? JSON.parse(JSON.stringify(features)) : undefined,
@@ -137,6 +136,7 @@ export async function POST(req: NextRequest) {
         courseLevel,
         language,
         visibility,
+        isPublished,
         pricingType,
         originalPrice,
         emiPlans: emiPlans ? emiPlans : undefined,
@@ -153,6 +153,7 @@ export async function POST(req: NextRequest) {
       // @ts-ignore
       revalidateTag('courses');
       revalidatePath('/dashboard/courses', 'page');
+      revalidatePath('/admin/courses', 'page');
     });
 
     return apiCreated(course, 'Course created successfully');

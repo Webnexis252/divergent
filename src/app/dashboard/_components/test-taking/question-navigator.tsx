@@ -11,12 +11,14 @@ export function QuestionNavigator({
   currentIndex,
   answeredSet,
   flaggedSet,
+  visitedSet,
   onNavigate,
 }: {
   questions: QuestionData[];
   currentIndex: number;
   answeredSet: Set<number>;
   flaggedSet: Set<number>;
+  visitedSet: Set<number>;
   onNavigate: (index: number) => void;
 }) {
   const currentType = questions[currentIndex]?.type;
@@ -58,7 +60,7 @@ export function QuestionNavigator({
 
           let state = "not_visited";
           if (isAnswered) state = "answered";
-          else if (isCurrent) state = "not_answered"; // Treat current as visited/not answered if not answered
+          else if (isCurrent || visitedSet.has(originalIndex)) state = "not_answered"; // Red if visited or current but unanswered
 
           return (
             <button

@@ -43,18 +43,21 @@ type EditForm = {
   thumbnail: string;
   price: string;
   teacherIds: string[];
-  isPublished: boolean;
+  status: "PUBLISHED" | "DRAFT" | "UNLISTED";
   isInstallmentBased: boolean;
   totalHours: string;
   lessonCount: string;
   examCount: string;
   courseRating: string;
+  autoCalculateRating: boolean;
+  autoUpdateEnrolled: boolean;
   category: string;
   courseLevel: string;
   language: string;
   originalPrice: string;
-  maxSeats: string;
   emiPlans: PricingPlan[];
+  testimonials: Array<{ text: string; name: string; rating: string }>;
+  faqs: Array<{ question: string; answer: string }>;
 };
 
 function CurriculumSection({ courseId }: { courseId: string }) {
@@ -108,22 +111,22 @@ export default function EditCourseModal({
     thumbnail: course.thumbnail ?? "",
     price: String(course.price),
     teacherIds: course.teachers?.map((t) => t.id) ?? [],
-    isPublished: course.isPublished,
-    isInstallmentBased: course.isInstallmentBased,
+    status: course.isPublished 
+      ? (course.visibility === "UNLISTED" ? "UNLISTED" : "PUBLISHED")
+      : "DRAFT",
+    isInstallmentBased: Array.isArray(course.emiPlans) && course.emiPlans.length > 0,
     totalHours: course.totalHours !== null ? String(course.totalHours) : "",
     lessonCount: course.lessonCount !== null ? String(course.lessonCount) : "",
     examCount: course.examCount !== null ? String(course.examCount) : "",
     courseRating:
       course.courseRating !== null ? String(course.courseRating) : "",
+    autoCalculateRating: course.autoCalculateRating ?? true,
+    autoUpdateEnrolled: course.autoUpdateEnrolled ?? true,
     category: course.category ?? "",
     courseLevel: course.courseLevel ?? "",
     language: course.language ?? "",
     originalPrice:
       course.originalPrice !== null ? String(course.originalPrice) : "",
-    maxSeats:
-      course.maxSeats !== null && course.maxSeats !== undefined
-        ? String(course.maxSeats)
-        : "",
     emiPlans: Array.isArray(course.emiPlans)
       ? course.emiPlans[0]?.installments
         ? course.emiPlans.map((p: any) => ({
@@ -147,6 +150,10 @@ export default function EditCourseModal({
             },
           ]
       : [],
+    testimonials: Array.isArray(course.testimonials) 
+      ? course.testimonials.map((t: any) => ({ ...t, rating: String(t.rating ?? 5) })) 
+      : [],
+    faqs: Array.isArray(course.faqs) ? course.faqs : [],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -154,6 +161,17 @@ export default function EditCourseModal({
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const [thumbnailUploadError, setThumbnailUploadError] = useState("");
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
+
+  const [showAddTestimonial, setShowAddTestimonial] = useState(false);
+  const [newTestimonial, setNewTestimonial] = useState({ text: "", name: "", rating: "5" });
+  const [editingTestimonialIdx, setEditingTestimonialIdx] = useState<number | null>(null);
+  const [editTestimonial, setEditTestimonial] = useState({ text: "", name: "", rating: "5" });
+
+  const [showAddFaq, setShowAddFaq] = useState(false);
+  const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
+  const [editingFaqIdx, setEditingFaqIdx] = useState<number | null>(null);
+  const [editFaq, setEditFaq] = useState({ question: "", answer: "" });
+
   // Instalment editing state is now inside PricingPlanBuilder
 
   async function handleThumbnailFileChange(file: File) {
@@ -186,29 +204,28 @@ export default function EditCourseModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: form.title,
-          subtitle: form.subtitle || undefined,
-          description: form.description || undefined,
-          overviewContent: form.overviewContent || undefined,
-          thumbnail: form.thumbnail || undefined,
+          subtitle: form.subtitle || "",
+          description: form.description || "",
+          overviewContent: form.overviewContent || "",
+          thumbnail: form.thumbnail || "",
           price: form.price ? Number(form.price) : 0,
+          originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
+          pricingType: (form.price && Number(form.price) > 0) ? "PAID" : "FREE",
           teacherIds: form.teacherIds,
-          isPublished: form.isPublished,
+          isPublished: form.status === "PUBLISHED" || form.status === "UNLISTED",
+          visibility: form.status === "UNLISTED" ? "UNLISTED" : "PUBLIC",
           isInstallmentBased: form.isInstallmentBased,
-          totalHours: form.totalHours ? Number(form.totalHours) : undefined,
-          lessonCount: form.lessonCount ? Number(form.lessonCount) : undefined,
-          examCount: form.examCount ? Number(form.examCount) : undefined,
-          courseRating: form.courseRating
-            ? Number(form.courseRating)
-            : undefined,
-          category: form.category || undefined,
-          courseLevel: form.courseLevel || undefined,
-          language: form.language || undefined,
-          originalPrice: form.originalPrice
-            ? Number(form.originalPrice)
-            : undefined,
-          maxSeats: form.maxSeats ? Number(form.maxSeats) : undefined,
+          totalHours: form.totalHours ? Number(form.totalHours) : null,
+          lessonCount: form.lessonCount ? Number(form.lessonCount) : null,
+          examCount: form.examCount ? Number(form.examCount) : null,
+          courseRating: form.courseRating ? Number(form.courseRating) : null,
+          category: form.category || "",
+          courseLevel: form.courseLevel || "",
+          language: form.language || "",
+          autoCalculateRating: form.autoCalculateRating,
+          autoUpdateEnrolled: form.autoUpdateEnrolled,
           emiPlans:
-            form.emiPlans.length > 0
+            form.isInstallmentBased && form.emiPlans.length > 0
               ? form.emiPlans.map((plan) => ({
                   id: plan.id,
                   name: plan.name,
@@ -219,6 +236,8 @@ export default function EditCourseModal({
                   })),
                 }))
               : null,
+          testimonials: form.testimonials,
+          faqs: form.faqs,
         }),
       });
 
@@ -275,13 +294,15 @@ export default function EditCourseModal({
                 <Badge tone="brand">Edit Course</Badge>
                 <Badge
                   className={
-                    form.isPublished
+                    form.status === "PUBLISHED"
                       ? "bg-[#ecfdf5] text-[#15803d]"
-                      : "bg-[#fff3cd] text-[#b45309]"
+                      : form.status === "UNLISTED"
+                        ? "bg-[#eff6ff] text-[#1d4ed8]"
+                        : "bg-[#fff3cd] text-[#b45309]"
                   }
                   tone="neutral"
                 >
-                  {form.isPublished ? "Published" : "Draft"}
+                  {form.status === "PUBLISHED" ? "Published" : form.status === "UNLISTED" ? "Unlisted" : "Draft"}
                 </Badge>
               </div>
               <h2 className="mt-3 text-[24px] font-semibold tracking-[-0.04em] text-[#0f172a]">
@@ -369,16 +390,35 @@ export default function EditCourseModal({
               placeholder="e.g. 3"
               type="number"
             />
-            <Field
-              label="Course Rating"
-              onChange={(e) =>
-                setForm((p) => ({ ...p, courseRating: e.target.value }))
-              }
-              value={form.courseRating}
-              placeholder="e.g. 4.8"
-              type="number"
-              step="0.1"
-            />
+            <div className="flex flex-col gap-1.5">
+              <Field
+                label="Course Rating"
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, courseRating: e.target.value }))
+                }
+                value={form.courseRating}
+                placeholder="e.g. 4.8"
+                type="number"
+                step="0.1"
+                disabled={form.autoCalculateRating}
+              />
+              <label className="flex cursor-pointer items-center gap-2 text-[12px] text-[#64748b] select-none">
+                <input
+                  type="checkbox"
+                  checked={form.autoCalculateRating}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, autoCalculateRating: e.target.checked }))
+                  }
+                  className="h-3.5 w-3.5 rounded accent-[#38c1ff]"
+                />
+                Auto-calculate rating from reviews
+                {form.autoCalculateRating && (
+                  <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                    Overrides manual value
+                  </span>
+                )}
+              </label>
+            </div>
           </div>
           <div className="grid gap-4 lg:grid-cols-3">
             <SelectField
@@ -423,16 +463,6 @@ export default function EditCourseModal({
               type="number"
               hint="Crossed out price"
             />
-            <Field
-              label="Max Seats"
-              onChange={(e) =>
-                setForm((p) => ({ ...p, maxSeats: e.target.value }))
-              }
-              value={form.maxSeats}
-              placeholder="Leave empty for unlimited"
-              type="number"
-              hint="Maximum number of students"
-            />
           </div>
 
           <div className="flex items-center gap-3">
@@ -463,6 +493,139 @@ export default function EditCourseModal({
               />
             </div>
           )}
+
+          {/* Social Proof & FAQ */}
+          <div className="flex flex-col gap-6 pt-4 border-t border-[#e2e8f0]">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-[14px] font-semibold text-[#1e293b]">Student Reviews</label>
+                <Button type="button" size="sm" variant="secondary" onClick={() => setShowAddTestimonial(!showAddTestimonial)}>
+                  {showAddTestimonial ? "Cancel" : <><Plus className="mr-1 h-3.5 w-3.5" /> Add Review</>}
+                </Button>
+              </div>
+              
+              {showAddTestimonial && (
+                <div className="grid gap-3 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-4 mb-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Student Name" value={newTestimonial.name} onChange={e => setNewTestimonial(p => ({...p, name: e.target.value}))} />
+                    <Field label="Rating (1-5)" type="number" min={1} max={5} value={newTestimonial.rating} onChange={e => setNewTestimonial(p => ({...p, rating: e.target.value}))} />
+                  </div>
+                  <TextAreaField label="Review Text" value={newTestimonial.text} onChange={e => setNewTestimonial(p => ({...p, text: e.target.value}))} />
+                  <Button type="button" size="sm" onClick={() => {
+                    if (newTestimonial.name && newTestimonial.text) {
+                      setForm(p => ({ ...p, testimonials: [...p.testimonials, newTestimonial] }));
+                      setNewTestimonial({ name: "", text: "", rating: "5" });
+                      setShowAddTestimonial(false);
+                    }
+                  }}>Add Review</Button>
+                </div>
+              )}
+
+              {form.testimonials.length > 0 && (
+                <div className="rounded-lg border border-[#e2e8f0] bg-white divide-y divide-[#f1f5f9]">
+                  {form.testimonials.map((t, idx) => (
+                    <div key={idx} className="p-4 flex items-start justify-between gap-4">
+                      {editingTestimonialIdx === idx ? (
+                        <div className="grid gap-3 w-full">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Field label="Student Name" value={editTestimonial.name} onChange={e => setEditTestimonial(p => ({...p, name: e.target.value}))} />
+                            <Field label="Rating" type="number" min={1} max={5} value={editTestimonial.rating} onChange={e => setEditTestimonial(p => ({...p, rating: e.target.value}))} />
+                          </div>
+                          <TextAreaField label="Review Text" value={editTestimonial.text} onChange={e => setEditTestimonial(p => ({...p, text: e.target.value}))} />
+                          <div className="flex gap-2">
+                            <Button type="button" size="sm" onClick={() => {
+                              const updated = [...form.testimonials];
+                              updated[idx] = editTestimonial;
+                              setForm(p => ({ ...p, testimonials: updated }));
+                              setEditingTestimonialIdx(null);
+                            }}>Save</Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => setEditingTestimonialIdx(null)}>Cancel</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <p className="text-[14px] font-semibold text-[#0f172a]">{t.name} <span className="text-[#f59e0b] font-normal">({t.rating}★)</span></p>
+                            <p className="mt-1 text-[13px] text-[#475569]">"{t.text}"</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button type="button" className="p-1.5 text-[#64748b] hover:text-[#0f172a]" onClick={() => { setEditTestimonial(t); setEditingTestimonialIdx(idx); }}>
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button type="button" className="p-1.5 text-[#ef4444] hover:bg-[#fef2f2] rounded" onClick={() => setForm(p => ({ ...p, testimonials: p.testimonials.filter((_, i) => i !== idx) }))}>
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-[#e2e8f0]">
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-[14px] font-semibold text-[#1e293b]">FAQs</label>
+                <Button type="button" size="sm" variant="secondary" onClick={() => setShowAddFaq(!showAddFaq)}>
+                  {showAddFaq ? "Cancel" : <><Plus className="mr-1 h-3.5 w-3.5" /> Add FAQ</>}
+                </Button>
+              </div>
+              
+              {showAddFaq && (
+                <div className="grid gap-3 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-4 mb-4">
+                  <Field label="Question" value={newFaq.question} onChange={e => setNewFaq(p => ({...p, question: e.target.value}))} />
+                  <TextAreaField label="Answer" value={newFaq.answer} onChange={e => setNewFaq(p => ({...p, answer: e.target.value}))} />
+                  <Button type="button" size="sm" onClick={() => {
+                    if (newFaq.question && newFaq.answer) {
+                      setForm(p => ({ ...p, faqs: [...p.faqs, newFaq] }));
+                      setNewFaq({ question: "", answer: "" });
+                      setShowAddFaq(false);
+                    }
+                  }}>Add FAQ</Button>
+                </div>
+              )}
+
+              {form.faqs.length > 0 && (
+                <div className="rounded-lg border border-[#e2e8f0] bg-white divide-y divide-[#f1f5f9]">
+                  {form.faqs.map((f, idx) => (
+                    <div key={idx} className="p-4 flex items-start justify-between gap-4">
+                      {editingFaqIdx === idx ? (
+                        <div className="grid gap-3 w-full">
+                          <Field label="Question" value={editFaq.question} onChange={e => setEditFaq(p => ({...p, question: e.target.value}))} />
+                          <TextAreaField label="Answer" value={editFaq.answer} onChange={e => setEditFaq(p => ({...p, answer: e.target.value}))} />
+                          <div className="flex gap-2">
+                            <Button type="button" size="sm" onClick={() => {
+                              const updated = [...form.faqs];
+                              updated[idx] = editFaq;
+                              setForm(p => ({ ...p, faqs: updated }));
+                              setEditingFaqIdx(null);
+                            }}>Save</Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => setEditingFaqIdx(null)}>Cancel</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <p className="text-[14px] font-semibold text-[#0f172a]">Q: {f.question}</p>
+                            <p className="mt-1 text-[13px] text-[#475569]">A: {f.answer}</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button type="button" className="p-1.5 text-[#64748b] hover:text-[#0f172a]" onClick={() => { setEditFaq(f); setEditingFaqIdx(idx); }}>
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button type="button" className="p-1.5 text-[#ef4444] hover:bg-[#fef2f2] rounded" onClick={() => setForm(p => ({ ...p, faqs: p.faqs.filter((_, i) => i !== idx) }))}>
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Description & Thumbnail */}
           <div className="grid gap-4 sm:grid-cols-[1fr_0.7fr]">
@@ -663,26 +826,52 @@ export default function EditCourseModal({
               </div>
             </div>
 
-            <div className="flex flex-col justify-end">
-              <button
-                type="button"
-                onClick={() =>
-                  setForm((p) => ({ ...p, isPublished: !p.isPublished }))
-                }
-                className={cx(
-                  "flex h-12 items-center gap-2.5 rounded-(--radius-md) border px-5 text-[15px] font-semibold transition-all",
-                  form.isPublished
-                    ? "border-[#bbf7d0] bg-[#ecfdf5] text-[#15803d] hover:bg-[#dcfce7]"
-                    : "border-[#fde68a] bg-[#fffbeb] text-[#b45309] hover:bg-[#fef3c7]",
-                )}
-              >
-                {form.isPublished ? (
-                  <Eye className="h-4 w-4" />
-                ) : (
-                  <EyeOff className="h-4 w-4" />
-                )}
-                {form.isPublished ? "Published" : "Draft"}
-              </button>
+            <div className="flex flex-col gap-3 justify-end">
+              <label className="text-[13px] font-semibold text-[#1e293b]">Status & Visibility</label>
+              <div className="space-y-2">
+                <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                  <input 
+                    type="radio" 
+                    name="edit-course-status" 
+                    value="PUBLISHED"
+                    checked={form.status === "PUBLISHED"}
+                    onChange={() => setForm(p => ({...p, status: "PUBLISHED"}))}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <span className="block text-sm font-semibold text-slate-900">Published</span>
+                    <span className="block text-xs text-slate-500 mt-0.5">Visible to all students in the catalog.</span>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                  <input 
+                    type="radio" 
+                    name="edit-course-status" 
+                    value="UNLISTED"
+                    checked={form.status === "UNLISTED"}
+                    onChange={() => setForm(p => ({...p, status: "UNLISTED"}))}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <span className="block text-sm font-semibold text-slate-900">Unlisted</span>
+                    <span className="block text-xs text-slate-500 mt-0.5">Hidden from students. Can be added to Bundles.</span>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                  <input 
+                    type="radio" 
+                    name="edit-course-status" 
+                    value="DRAFT"
+                    checked={form.status === "DRAFT"}
+                    onChange={() => setForm(p => ({...p, status: "DRAFT"}))}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <span className="block text-sm font-semibold text-slate-900">Draft / Unpublished</span>
+                    <span className="block text-xs text-slate-500 mt-0.5">Hidden everywhere. Saved for later.</span>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
 

@@ -118,6 +118,25 @@ export async function POST(req: NextRequest) {
           return apiError(`Minimum purchase amount for this coupon is ${coupon.minPurchase}`, 400);
         }
 
+        // @ts-ignore
+        if (coupon.targetUsers === "FIRST_TIME" || coupon.targetUsers === "RENEWING") {
+          const successfulPaymentsCount = await prisma.payment.count({
+            where: {
+              userId: auth.userId,
+              status: "SUCCESS"
+            }
+          });
+          
+          // @ts-ignore
+          if (coupon.targetUsers === "FIRST_TIME" && successfulPaymentsCount > 0) {
+            return apiError("This coupon is only valid for first-time purchasers.", 400);
+          }
+          // @ts-ignore
+          if (coupon.targetUsers === "RENEWING" && successfulPaymentsCount === 0) {
+            return apiError("This coupon is only valid for renewing users (users with prior purchases).", 400);
+          }
+        }
+
         if (coupon.limitPerLearner) {
           const userUsageCount = await prisma.payment.count({
             where: {

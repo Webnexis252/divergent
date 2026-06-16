@@ -12,8 +12,6 @@ export function EnrollButton({
   courseTitle,
   price = 0,
   initialEnrolled,
-  maxSeats,
-  enrolledCount = 0,
   variant = "default",
   emiPlans,
   expiredInstallment,
@@ -22,19 +20,17 @@ export function EnrollButton({
   courseTitle: string;
   price?: number;
   initialEnrolled: boolean;
-  maxSeats?: number | null;
-  enrolledCount?: number;
   variant?: "default" | "detailCard";
-  emiPlans?: { label: string; amount: number; dueDays: number }[] | null;
+  emiPlans?: { id?: string; name?: string; installments?: { amount: number; dueDays: number; label?: string }[] }[] | null;
   expiredInstallment?: { currentInstallment: number } | null;
 }) {
-  const isFull = maxSeats != null && maxSeats > 0 && enrolledCount >= maxSeats;
-  const initialStatus = (initialEnrolled && !expiredInstallment) ? "enrolled" : (isFull ? "sold-out" : "idle");
+  const initialStatus = (initialEnrolled && !expiredInstallment) ? "enrolled" : "idle";
 
-  const [status, setStatus] = useState<EnrollmentStatus | "sold-out">(initialStatus);
+  const [status, setStatus] = useState<EnrollmentStatus>(initialStatus);
   const [errorMessage, setErrorMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>(undefined);
   const [selectedInstallmentIndex, setSelectedInstallmentIndex] = useState<number | undefined>(undefined);
 
   async function handleEnroll() {
@@ -50,6 +46,7 @@ export function EnrollButton({
       if (emiPlans && emiPlans.length > 0) {
         setIsChoiceModalOpen(true);
       } else {
+        setSelectedPlanId(undefined);
         setSelectedInstallmentIndex(undefined);
         setIsModalOpen(true);
       }
@@ -121,7 +118,7 @@ export function EnrollButton({
   return (
     <div className="space-y-3">
       <button
-        disabled={status === "loading" || status === "sold-out"}
+        disabled={status === "loading"}
         onClick={handleEnroll}
         className={
           variant === "detailCard"
@@ -141,16 +138,6 @@ export function EnrollButton({
               <Loader2 className="h-4.5 w-4.5 animate-spin" />
               {price > 0 ? "Processing..." : "Enrolling..."}
             </motion.span>
-          ) : status === "sold-out" ? (
-            <motion.span
-              key="sold-out"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className={variant === "detailCard" ? "flex items-center gap-1.5" : "flex items-center gap-2"}
-            >
-              Enrollment Full
-            </motion.span>
           ) : (
             <motion.span
               key="cta"
@@ -165,7 +152,7 @@ export function EnrollButton({
               {variant === "detailCard"
                 ? (expiredInstallment ? "Pay Instalment" : "Enroll Now")
                 : expiredInstallment
-                  ? `Pay Instalment ₹${emiPlans?.[expiredInstallment.currentInstallment]?.amount.toLocaleString("en-IN")}`
+                  ? `Pay Instalment ₹${emiPlans?.[0]?.installments?.[expiredInstallment.currentInstallment]?.amount?.toLocaleString("en-IN") ?? "..."}`
                   : price > 0
                     ? `Pay ₹${price.toLocaleString("en-IN")}`
                     : "Enroll Now — Free"}
@@ -189,6 +176,7 @@ export function EnrollButton({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         courseId={courseId}
+        planId={selectedPlanId}
         installmentIndex={selectedInstallmentIndex}
         onSuccess={() => {
           setIsModalOpen(false);
@@ -228,6 +216,7 @@ export function EnrollButton({
                 <div className="space-y-3 mb-6">
                   <button
                     onClick={() => {
+                      setSelectedPlanId(undefined);
                       setSelectedInstallmentIndex(undefined);
                       setIsChoiceModalOpen(false);
                       setIsModalOpen(true);
@@ -250,23 +239,27 @@ export function EnrollButton({
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setSelectedInstallmentIndex(0);
-                      setIsChoiceModalOpen(false);
-                      setIsModalOpen(true);
-                    }}
-                    className="flex w-full items-center justify-between gap-4 rounded-[16px] border-[2px] border-purple-100 bg-purple-50 hover:border-purple-300 hover:bg-purple-100 p-4 transition-all text-left"
-                  >
-                    <div>
-                      <p className="text-[15px] font-bold text-purple-900">Pay First Installment</p>
-                      <p className="text-[13px] text-purple-700">{emiPlans.length} easy installments</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[18px] font-extrabold text-purple-700">₹{emiPlans[0].amount.toLocaleString("en-IN")}</p>
-                      <p className="text-[11px] font-semibold text-purple-500">Valid for {emiPlans[0].dueDays} days</p>
-                    </div>
-                  </button>
+                  {emiPlans.map((plan: any, index: number) => (
+                    <button
+                      key={plan.id || index}
+                      onClick={() => {
+                        setSelectedPlanId(plan.id);
+                        setSelectedInstallmentIndex(0);
+                        setIsChoiceModalOpen(false);
+                        setIsModalOpen(true);
+                      }}
+                      className="flex w-full items-center justify-between gap-4 rounded-[16px] border-[2px] border-purple-100 bg-purple-50 hover:border-purple-300 hover:bg-purple-100 p-4 transition-all text-left mt-3"
+                    >
+                      <div>
+                        <p className="text-[15px] font-bold text-purple-900">{plan.name || `Installment Plan ${index + 1}`}</p>
+                        <p className="text-[13px] text-purple-700">{plan.installments?.length || 0} easy installments</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[18px] font-extrabold text-purple-700">₹{Number(plan.installments?.[0]?.amount || 0).toLocaleString("en-IN")}</p>
+                        <p className="text-[11px] font-semibold text-purple-500">Valid for {plan.installments?.[0]?.dueDays || 0} days</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             </motion.div>

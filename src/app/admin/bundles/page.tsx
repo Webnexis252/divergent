@@ -622,38 +622,39 @@ export default function AdminBundlesPage() {
                           </div>
                           {hasOverride && (
                             <div className="mt-2 animate-in slide-in-from-top-1 fade-in duration-200">
-                              <select
-                                multiple
-                                className="w-full rounded-[10px] border border-gray-300 bg-white px-3 py-2 text-[13px] text-gray-700 outline-none focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed]"
-                                value={assignedIds}
-                                onChange={(e) => {
-                                  const opts = Array.from(
-                                    e.target.selectedOptions,
-                                  ).map((o) => o.value);
-                                  setTeacherAssignments((prev) => ({
-                                    ...prev,
-                                    [courseId]: opts,
-                                  }));
-                                }}
-                                style={{ minHeight: "120px" }}
-                              >
-                                {allTeachers.map((t) => (
-                                  <option
-                                    key={t.id}
-                                    value={t.id}
-                                    className="py-1 px-1"
-                                  >
-                                    {t.name} ({t.email})
-                                  </option>
-                                ))}
-                              </select>
-                              <p className="text-[11px] text-gray-500 mt-1.5 flex items-center gap-1">
-                                <span>Hold</span>
-                                <kbd className="rounded border bg-white px-1 font-mono text-[9px]">
-                                  Cmd/Ctrl
-                                </kbd>
-                                <span>to select multiple teachers</span>
-                              </p>
+                              <div className="w-full max-h-[160px] overflow-y-auto rounded-[10px] border border-gray-300 bg-white p-2 text-[13px] text-gray-700 outline-none space-y-1">
+                                {allTeachers.map((t) => {
+                                  const isSelected = assignedIds.includes(t.id);
+                                  return (
+                                    <label
+                                      key={t.id}
+                                      className={`flex cursor-pointer items-center gap-2.5 rounded-[6px] px-2 py-1.5 transition ${
+                                        isSelected
+                                          ? "bg-purple-50 text-purple-800"
+                                          : "hover:bg-gray-50"
+                                      }`}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={(e) => {
+                                          setTeacherAssignments((prev) => {
+                                            const current = prev[courseId] || [];
+                                            const next = e.target.checked
+                                              ? [...current, t.id]
+                                              : current.filter((id) => id !== t.id);
+                                            return { ...prev, [courseId]: next };
+                                          });
+                                        }}
+                                        className="h-3.5 w-3.5 rounded accent-[#7c3aed] cursor-pointer"
+                                      />
+                                      <span>
+                                        {t.name} <span className="text-gray-500">({t.email})</span>
+                                      </span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                         </div>

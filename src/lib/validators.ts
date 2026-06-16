@@ -34,8 +34,8 @@ export const CreateCourseSchema = z.object({
   description: z.string().optional(),
   overviewContent: z.string().optional(),
   thumbnail: z.string().optional(),
-  price: z.number().min(0).optional(),
-  originalPrice: z.number().min(0).optional(),
+  price: z.number().min(0).optional().nullable(),
+  originalPrice: z.number().min(0).optional().nullable(),
   pricingType: z.enum(['PAID', 'FREE']).default('FREE'),
   teacherIds: z.array(z.string().cuid('Invalid teacher ID')).optional(),
   totalHours: z.number().min(0).optional().nullable(),
@@ -44,7 +44,6 @@ export const CreateCourseSchema = z.object({
   courseRating: z.number().min(0).max(5).optional().nullable(),
   autoCalculateRating: z.boolean().default(true),
   enrolledStudents: z.number().min(0).optional().nullable(),
-  maxSeats: z.number().int().nonnegative().optional().nullable(),
   autoUpdateEnrolled: z.boolean().default(true),
   learningOutcomes: z.any().optional(),
   features: z.any().optional(),
@@ -54,11 +53,13 @@ export const CreateCourseSchema = z.object({
   courseLevel: z.string().optional().nullable(),
   language: z.string().optional().nullable(),
   visibility: z.string().default('PUBLIC'),
+  isPublished: z.boolean().default(false),
+
   publishDate: z.string().optional().nullable().refine((val) => !val || !isNaN(Date.parse(val)), { message: 'Invalid ISO date' }),
   emiPlans: z.array(z.any()).optional().nullable(),
+  isInstallmentBased: z.boolean().optional().default(false),
 });
 export const UpdateCourseSchema = CreateCourseSchema.partial().extend({
-  isPublished: z.boolean().optional(),
   teacherIds: z.array(z.string().cuid('Invalid teacher ID')).optional().nullable(),
 });
 

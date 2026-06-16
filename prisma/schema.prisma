@@ -511,6 +511,7 @@ model Coupon {
   limitPerLearner Int       @default(1)
   isActive        Boolean   @default(true)
   description     String?
+  targetUsers     String    @default("ALL") // "ALL", "FIRST_TIME", "RENEWING"
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }

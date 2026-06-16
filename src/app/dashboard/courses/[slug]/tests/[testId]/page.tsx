@@ -82,6 +82,16 @@ export default function TakeTestPage() {
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [flagged, setFlagged] = useState<Set<number>>(new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [visitedSet, setVisitedSet] = useState<Set<number>>(new Set([0]));
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    body: string;
+    flaggedNums: number[];
+    confirmLabel: string;
+    cancelLabel: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [startTime] = useState<number>(Date.now());
@@ -133,6 +143,16 @@ export default function TakeTestPage() {
 
     resolve();
   }, [slug, testId]);
+
+  // Track which questions have been visited so they show red (not gray) when unanswered
+  useEffect(() => {
+    setVisitedSet((prev) => {
+      if (prev.has(currentIndex)) return prev;
+      const next = new Set(prev);
+      next.add(currentIndex);
+      return next;
+    });
+  }, [currentIndex]);
 
   const handleStart = useCallback(async () => {
     if (!courseId) return;
@@ -272,6 +292,54 @@ export default function TakeTestPage() {
     if (currentPart === "B" && isPartAQuestion(prev)) return index;
     return prev;
   });
+
+  // Helper: flagged question numbers in the current section (1-based)
+  const getFlaggedInSection = (sectionType: string): number[] =>
+    questions
+      .map((q, i) => ({ q, i }))
+      .filter(({ q, i }) => q.type === sectionType && flagged.has(i))
+      .map(({ i }) => i + 1);
+
+  // Helper: all flagged question numbers (1-based)
+  const getAllFlaggedNums = (): number[] =>
+    [...flagged].map((i) => i + 1).sort((a, b) => a - b);
+
+  // Show section-switch warning if there are flagged questions in current section
+  const handleSectionSwitch = (targetType: string, targetIndex: number) => {
+    if (targetType === currentQuestion?.type) return; // same section, no warning
+    const flaggedInSection = getFlaggedInSection(currentQuestion?.type ?? "");
+    if (flaggedInSection.length === 0) {
+      setCurrentIndex(targetIndex);
+      return;
+    }
+    setConfirmDialog({
+      title: "Flagged Questions in This Section",
+      body: `You have ${flaggedInSection.length} question${flaggedInSection.length > 1 ? "s" : ""} marked for review in the current section. Have you attempted them?`,
+      flaggedNums: flaggedInSection,
+      confirmLabel: "Leave Anyway",
+      cancelLabel: "Stay & Review",
+      onConfirm: () => { setConfirmDialog(null); setCurrentIndex(targetIndex); },
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
+
+  // Show submit warning if there are any flagged questions
+  const handleSubmitWithWarning = () => {
+    const allFlagged = getAllFlaggedNums();
+    if (allFlagged.length === 0) {
+      void handleSubmit();
+      return;
+    }
+    setConfirmDialog({
+      title: "You Have Marked Questions",
+      body: `${allFlagged.length} question${allFlagged.length > 1 ? "s are" : " is"} still marked for review. Have you attempted all of them before submitting?`,
+      flaggedNums: allFlagged,
+      confirmLabel: "Submit Anyway",
+      cancelLabel: "Go Back & Review",
+      onConfirm: () => { setConfirmDialog(null); void handleSubmit(); },
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
 
   const currentType = questions[currentIndex]?.type;
   
@@ -820,7 +888,7 @@ export default function TakeTestPage() {
                 >
                   Back to Questions
                 </Button>
-                <Button size="lg" onClick={handleSubmit} loading={submitting}>
+                <Button size="lg" onClick={handleSubmitWithWarning} loading={submitting}>
                   Submit Test
                 </Button>
               </div>
@@ -1117,7 +1185,7 @@ export default function TakeTestPage() {
                 className={`cbt-tab ${currentQuestion.type === type ? "cbt-tab--active" : ""}`}
                 onClick={() => {
                   const idx = questions.findIndex((q) => q.type === type);
-                  if (idx !== -1) setCurrentIndex(idx);
+                  if (idx !== -1) handleSectionSwitch(type, idx);
                 }}
               >
                 {type === "SKETCH" ? "+2 SECTIONS" : type.replace("_", " ")}
@@ -1172,7 +1240,13 @@ export default function TakeTestPage() {
             <div className="cbt-footer">
               <div className="cbt-footer-left">
                 <button className="cbt-footer-btn cbt-footer-btn--outline" onClick={() => setPhase("reviewing")}>
-                  INSTRUCTION
+                  ASK QUESTION
+                </button>
+                <button
+                  className={`cbt-footer-btn cbt-footer-btn--mark ${flagged.has(currentIndex) ? "cbt-footer-btn--mark-active" : ""}`}
+                  onClick={() => toggleFlag(currentIndex)}
+                >
+                  {flagged.has(currentIndex) ? "✓ MARKED" : "MARK FOR REVIEW"}
                 </button>
               </div>
 
@@ -1194,7 +1268,19 @@ export default function TakeTestPage() {
                     NEXT →
                   </button>
                 ) : (
-                  <button className="cbt-footer-btn cbt-footer-btn--primary" onClick={() => setPhase("reviewing")}>
+                  <button className="cbt-footer-btn cbt-footer-btn--primary" onClick={() => {
+                    const allFlagged = getAllFlaggedNums();
+                    if (allFlagged.length === 0) { setPhase("reviewing"); return; }
+                    setConfirmDialog({
+                      title: "You Have Marked Questions",
+                      body: `${allFlagged.length} question${allFlagged.length > 1 ? "s are" : " is"} still marked for review. Have you attempted all of them?`,
+                      flaggedNums: allFlagged,
+                      confirmLabel: "Go to Submit",
+                      cancelLabel: "Stay & Review",
+                      onConfirm: () => { setConfirmDialog(null); setPhase("reviewing"); },
+                      onCancel: () => setConfirmDialog(null),
+                    });
+                  }}>
                     SUBMIT →
                   </button>
                 )}
@@ -1208,11 +1294,36 @@ export default function TakeTestPage() {
               currentIndex={currentIndex}
               answeredSet={answeredSet}
               flaggedSet={flagged}
+              visitedSet={visitedSet}
               onNavigate={setCurrentIndex}
             />
           </aside>
         </div>
       </div>
+
+      {/* Review Warning Dialog */}
+      {confirmDialog && (
+        <div className="cbt-dialog-overlay">
+          <div className="cbt-dialog">
+            <div className="cbt-dialog-icon">⚑</div>
+            <h2 className="cbt-dialog-title">{confirmDialog.title}</h2>
+            <p className="cbt-dialog-body">{confirmDialog.body}</p>
+            <div className="cbt-dialog-chips">
+              {confirmDialog.flaggedNums.map((n) => (
+                <span key={n} className="cbt-dialog-chip">Q{n}</span>
+              ))}
+            </div>
+            <div className="cbt-dialog-actions">
+              <button className="cbt-dialog-btn cbt-dialog-btn--cancel" onClick={confirmDialog.onCancel}>
+                {confirmDialog.cancelLabel}
+              </button>
+              <button className="cbt-dialog-btn cbt-dialog-btn--confirm" onClick={confirmDialog.onConfirm}>
+                {confirmDialog.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .cbt-app {
@@ -1387,6 +1498,21 @@ export default function TakeTestPage() {
           border: 1px solid #d1d5db;
           color: #4b5563;
         }
+        .cbt-footer-btn--mark {
+          background: #ffffff;
+          border: 1px solid #8b5cf6;
+          color: #8b5cf6;
+        }
+        .cbt-footer-btn--mark-active {
+          background: #8b5cf6;
+          border: 1px solid #8b5cf6;
+          color: #ffffff;
+        }
+        .cbt-footer-left {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
         .cbt-footer-btn--primary {
           background: #3b82f6;
           border: 1px solid #3b82f6;
@@ -1426,6 +1552,89 @@ export default function TakeTestPage() {
           .cbt-sidebar {
             display: none;
           }
+        }
+
+        /* ---- Review Warning Dialog ---- */
+        .cbt-dialog-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 200;
+          background: rgba(15, 23, 42, 0.55);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+        }
+        .cbt-dialog {
+          background: #ffffff;
+          border-radius: 20px;
+          box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+          padding: 2rem 2rem 1.75rem;
+          max-width: 420px;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 0.75rem;
+        }
+        .cbt-dialog-icon {
+          font-size: 2rem;
+          color: #8b5cf6;
+          line-height: 1;
+        }
+        .cbt-dialog-title {
+          margin: 0;
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #111827;
+        }
+        .cbt-dialog-body {
+          margin: 0;
+          font-size: 0.9rem;
+          color: #4b5563;
+          line-height: 1.6;
+        }
+        .cbt-dialog-chips {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 0.4rem;
+          margin-top: 0.25rem;
+        }
+        .cbt-dialog-chip {
+          padding: 0.2rem 0.6rem;
+          border-radius: 999px;
+          background: #ede9fe;
+          color: #6d28d9;
+          font-size: 0.78rem;
+          font-weight: 700;
+        }
+        .cbt-dialog-actions {
+          display: flex;
+          gap: 0.75rem;
+          width: 100%;
+          margin-top: 0.5rem;
+        }
+        .cbt-dialog-btn {
+          flex: 1;
+          padding: 0.7rem 1rem;
+          border-radius: 10px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          border: none;
+          transition: opacity 0.15s;
+        }
+        .cbt-dialog-btn:hover { opacity: 0.88; }
+        .cbt-dialog-btn--cancel {
+          background: #f3f4f6;
+          color: #374151;
+        }
+        .cbt-dialog-btn--confirm {
+          background: #8b5cf6;
+          color: #ffffff;
         }
       `}</style>
     </>

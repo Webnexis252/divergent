@@ -20,6 +20,7 @@ type Coupon = {
   minPurchase: number | null;
   limitPerLearner: number;
   description: string | null;
+  targetUsers: "ALL" | "FIRST_TIME" | "RENEWING";
   createdAt: string;
 };
 
@@ -36,7 +37,8 @@ export default function AdminCouponsPage() {
     validUntil: "",
     maxUses: "",
     minPurchase: "",
-    limitPerLearner: ""
+    limitPerLearner: "",
+    targetUsers: "ALL" as "ALL" | "FIRST_TIME" | "RENEWING"
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -67,6 +69,7 @@ export default function AdminCouponsPage() {
           validUntil: form.validUntil || undefined,
           minPurchase: form.minPurchase ? parseFloat(form.minPurchase) : undefined,
           limitPerLearner: form.limitPerLearner ? parseInt(form.limitPerLearner) : undefined,
+          targetUsers: form.targetUsers,
         }),
       });
       const p = await res.json();
@@ -81,7 +84,8 @@ export default function AdminCouponsPage() {
         validUntil: "",
         maxUses: "",
         minPurchase: "",
-        limitPerLearner: ""
+        limitPerLearner: "",
+        targetUsers: "ALL"
       });
       setShowCreate(false);
     } catch { setError("Network error"); }
@@ -217,6 +221,46 @@ export default function AdminCouponsPage() {
                       </div>
                     </div>
 
+                    {/* Target Audience */}
+                    <div>
+                      <label className="mb-2 block text-[13px] font-medium text-[#0f172a]">Target Audience*</label>
+                      <div className="flex flex-col gap-2">
+                        <label className="flex items-center gap-2 text-[14px] text-[#334155] cursor-pointer">
+                          <input
+                            type="radio"
+                            name="targetUsers"
+                            value="ALL"
+                            checked={form.targetUsers === "ALL"}
+                            onChange={() => setForm({ ...form, targetUsers: "ALL" })}
+                            className="accent-[#16a34a] w-4 h-4 cursor-pointer"
+                          />
+                          All Users
+                        </label>
+                        <label className="flex items-center gap-2 text-[14px] text-[#334155] cursor-pointer">
+                          <input
+                            type="radio"
+                            name="targetUsers"
+                            value="FIRST_TIME"
+                            checked={form.targetUsers === "FIRST_TIME"}
+                            onChange={() => setForm({ ...form, targetUsers: "FIRST_TIME" })}
+                            className="accent-[#16a34a] w-4 h-4 cursor-pointer"
+                          />
+                          First Time Users
+                        </label>
+                        <label className="flex items-center gap-2 text-[14px] text-[#334155] cursor-pointer">
+                          <input
+                            type="radio"
+                            name="targetUsers"
+                            value="RENEWING"
+                            checked={form.targetUsers === "RENEWING"}
+                            onChange={() => setForm({ ...form, targetUsers: "RENEWING" })}
+                            className="accent-[#16a34a] w-4 h-4 cursor-pointer"
+                          />
+                          Renewing Users
+                        </label>
+                      </div>
+                    </div>
+
                     {/* Discount Value */}
                     <div>
                       <input
@@ -338,6 +382,11 @@ export default function AdminCouponsPage() {
                         <p className="mt-1 text-[16px] font-semibold text-[#16a34a]">
                           {coupon.discountType === "PERCENTAGE" ? `${coupon.discountValue}% OFF` : `₹${coupon.discountValue} OFF`}
                         </p>
+                        {coupon.targetUsers !== "ALL" && (
+                          <div className="mt-2 inline-flex rounded bg-[#fef3c7] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#b45309] uppercase">
+                            {coupon.targetUsers === "FIRST_TIME" ? "First Time Only" : "Renewing Only"}
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => toggleCoupon(coupon)}

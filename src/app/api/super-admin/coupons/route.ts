@@ -16,6 +16,7 @@ const CouponSchema = z.object({
   limitPerLearner: z.number().int().min(1).optional().default(1),
   isActive: z.boolean().default(true),
   description: z.string().optional(),
+  targetUsers: z.enum(["ALL", "FIRST_TIME", "RENEWING"]).optional().default("ALL"),
 });
 
 export async function GET(req: NextRequest) {

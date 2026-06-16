@@ -22,7 +22,6 @@ export type Course = {
   courseRating: number | null;
   autoCalculateRating: boolean;
   enrolledStudents?: number | null;
-  maxSeats?: number | null;
   autoUpdateEnrolled: boolean;
   learningOutcomes: unknown;
   features: unknown;

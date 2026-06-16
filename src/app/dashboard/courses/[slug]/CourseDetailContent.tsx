@@ -226,7 +226,6 @@ export async function CourseDetailContent({ slug }: { slug: string }) {
       thumbnail: true,
       price: true,
       originalPrice: true,
-      maxSeats: true,
       emiPlans: true,
       isPublished: true,
       totalHours: true,
@@ -301,7 +300,7 @@ export async function CourseDetailContent({ slug }: { slug: string }) {
     }); // <-- closes findUnique
   },
   [`course-details-${slug}`],
-  { tags: [`course-${slug}`, "courses"] }
+  { tags: [`course-${slug}`, "courses"], revalidate: 30 }
   );
 
   const courseResult = await getCachedCourse(slug).catch((err: unknown) => {
@@ -899,7 +898,7 @@ export async function CourseDetailContent({ slug }: { slug: string }) {
 
                           {course.price > 0 && emiPlans ? (
                             <div className="rounded-[16px] border border-gray-100 bg-white p-4 shadow-sm">
-                              <div className="space-y-2.5">
+                              <div className="space-y-4">
                                 <div className="flex items-center gap-2">
                                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-50">
                                     <Award className="h-3.5 w-3.5 text-purple-500" />
@@ -909,28 +908,34 @@ export async function CourseDetailContent({ slug }: { slug: string }) {
                                     {emiPlans.length > 1 ? "MULTIPLE PLANS" : "CUSTOM EMI"}
                                   </span>
                                 </div>
-                                <table className="w-full text-[12px]">
-                                  <thead>
-                                    <tr className="border-b border-gray-100">
-                                      <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">#</th>
-                                      <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">Amount</th>
-                                      <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">Due</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {emiPlans[0]?.installments.map((inst: any, i: number) => (
-                                      <tr key={i} className="border-b border-gray-50 last:border-0">
-                                        <td className="py-1.5 pr-2 font-medium text-[#475569]">{inst.label || `${i + 1}.`}</td>
-                                        <td className="py-1.5 pr-2 font-bold text-black">₹{Number(inst.amount).toLocaleString("en-IN")}</td>
-                                        <td className="py-1.5 text-[#64748b]">{inst.dueDays === 0 || inst.dueDays === "0" ? 'On enrollment' : `${inst.dueDays} days`}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                                <p className="text-[11px] text-[#94a3b8]">
-                                  {emiPlans.length > 1 && <span className="font-semibold text-purple-600 block mb-1">+{emiPlans.length - 1} other installment options available at checkout</span>}
-                                  Total: ₹{emiPlans[0]?.installments.reduce((s: any, p: any) => s + Number(p.amount), 0).toLocaleString("en-IN")} over {emiPlans[0]?.installments.length} instalment{emiPlans[0]?.installments.length !== 1 ? 's' : ''}
-                                </p>
+                                {emiPlans.map((plan: any, planIndex: number) => (
+                                  <div key={plan.id || planIndex} className="space-y-2.5 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
+                                    {emiPlans.length > 1 && (
+                                      <p className="text-[12px] font-bold text-purple-700 border-b border-gray-100 pb-1 mb-2">{plan.name || `Plan ${planIndex + 1}`}</p>
+                                    )}
+                                    <table className="w-full text-[12px]">
+                                      <thead>
+                                        <tr className="border-b border-gray-100">
+                                          <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">#</th>
+                                          <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">Amount</th>
+                                          <th className="pb-1.5 pt-1 text-left font-semibold text-[#94a3b8]">Due</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {plan.installments.map((inst: any, i: number) => (
+                                          <tr key={i} className="border-b border-gray-50 last:border-0">
+                                            <td className="py-1.5 pr-2 font-medium text-[#475569]">{inst.label || `${i + 1}.`}</td>
+                                            <td className="py-1.5 pr-2 font-bold text-black">₹{Number(inst.amount).toLocaleString("en-IN")}</td>
+                                            <td className="py-1.5 text-[#64748b]">{inst.dueDays === 0 || inst.dueDays === "0" ? 'On enrollment' : `${inst.dueDays} days`}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                    <p className="text-[11px] text-[#94a3b8]">
+                                      Total: ₹{plan.installments.reduce((s: any, p: any) => s + Number(p.amount), 0).toLocaleString("en-IN")} over {plan.installments.length} instalment{plan.installments.length !== 1 ? 's' : ''}
+                                    </p>
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           ) : (
@@ -963,7 +968,6 @@ export async function CourseDetailContent({ slug }: { slug: string }) {
                                 courseTitle={course.title}
                                 initialEnrolled={isEnrolled}
                                 price={course.price}
-                                maxSeats={course.maxSeats}
                                 enrolledCount={course._count.enrollments}
                                 variant="detailCard"
                                 emiPlans={emiPlans}

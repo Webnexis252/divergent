@@ -68,7 +68,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const body = await req.json();
     const parsed = UpdateCourseSchema.safeParse(body);
     if (!parsed.success) {
-      return apiError('Validation failed', 400, parsed.error.flatten());
+      console.error("Zod Validation Error: ", JSON.stringify(parsed.error.flatten(), null, 2)); return apiError('Validation failed', 400, parsed.error.flatten());
     }
 
     if (parsed.data.teacherIds && parsed.data.teacherIds.length > 0) {
@@ -84,7 +84,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
 
-    const { teacherIds, learningOutcomes, features, testimonials, faqs, publishDate, examCount, ...restData } = parsed.data;
+    const { teacherIds, learningOutcomes, features, testimonials, faqs, publishDate, examCount, isInstallmentBased, ...restData } = parsed.data;
 
     const dataToUpdate: Record<string, unknown> = { ...restData };
     
@@ -110,8 +110,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       revalidateTag('courses');
       // @ts-ignore
       revalidateTag(`course-${courseId}`);
+      // The course detail page caches by slug tag — revalidate that too.
+      // @ts-ignore
+      revalidateTag(`course-${course.slug}`);
       revalidatePath('/dashboard/courses', 'page');
       revalidatePath(`/dashboard/courses/${course.slug}`, 'page');
+      revalidatePath('/admin/courses', 'page');
+      revalidatePath(`/admin/courses/${course.slug}`, 'page');
     });
 
     return apiSuccess(course, 'Course updated successfully');
@@ -139,6 +144,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       // @ts-ignore
       revalidateTag(`course-${courseId}`);
       revalidatePath('/dashboard/courses', 'page');
+      revalidatePath('/admin/courses', 'page');
     });
 
     return apiSuccess(null, 'Course deleted successfully');

@@ -58,13 +58,12 @@ export default function AdminCoursesPage() {
     courseRating: "",
     autoCalculateRating: true,
     enrolledStudents: "",
-    maxSeats: "",
     autoUpdateEnrolled: true,
     learningOutcomes: [] as string[],
     category: "",
     courseLevel: "",
     language: "",
-    visibility: "PUBLIC",
+    status: "DRAFT",
     pricingType: "PAID",
     originalPrice: "",
     isInstallmentBased: false,
@@ -173,13 +172,13 @@ export default function AdminCoursesPage() {
           courseRating: form.courseRating ? Number(form.courseRating) : undefined,
           autoCalculateRating: form.autoCalculateRating,
           enrolledStudents: form.enrolledStudents ? Number(form.enrolledStudents) : undefined,
-          maxSeats: form.maxSeats ? Number(form.maxSeats) : undefined,
           autoUpdateEnrolled: form.autoUpdateEnrolled,
           learningOutcomes: form.learningOutcomes,
           category: form.category,
           courseLevel: form.courseLevel,
           language: form.language,
-          visibility: form.visibility,
+          isPublished: form.status === "PUBLISHED" || form.status === "UNLISTED",
+          visibility: form.status === "UNLISTED" ? "UNLISTED" : "PUBLIC",
           pricingType: form.pricingType,
           originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
           isInstallmentBased: form.isInstallmentBased,
@@ -205,7 +204,7 @@ export default function AdminCoursesPage() {
       const p = await res.json();
       if (!res.ok || !p.success) { setError(p.error ?? "Failed to create course"); return; }
       setCourses((prev) => [p.data, ...prev]);
-      setForm({ title: "", subtitle: "", description: "", overviewContent: "", thumbnail: "", price: "", teacherIds: [], totalHours: "", lessonCount: "", examCount: "", courseRating: "", autoCalculateRating: true, enrolledStudents: "", maxSeats: "", autoUpdateEnrolled: true, learningOutcomes: [], category: "", courseLevel: "", language: "", visibility: "PUBLIC", pricingType: "PAID", originalPrice: "", isInstallmentBased: false, emiPlans: [], testimonials: [], faqs: [] });
+      setForm({ title: "", subtitle: "", description: "", overviewContent: "", thumbnail: "", price: "", teacherIds: [], totalHours: "", lessonCount: "", examCount: "", courseRating: "", autoCalculateRating: true, enrolledStudents: "", autoUpdateEnrolled: true, learningOutcomes: [], category: "", courseLevel: "", language: "", status: "DRAFT", pricingType: "PAID", originalPrice: "", isInstallmentBased: false, emiPlans: [], testimonials: [], faqs: [] });
       setNewTestimonial({ text: "", name: "", rating: "5" });
       setShowAddTestimonial(false);
       setEditingTestimonialIdx(null);
@@ -388,7 +387,6 @@ export default function AdminCoursesPage() {
                     <div className="grid gap-5 sm:grid-cols-2">
                       <Field label="Price (INR)" onChange={e => setForm(p => ({...p, price: e.target.value}))} value={form.price} placeholder="e.g. 1500" type="number" />
                       <Field label="Original Price (INR)" onChange={e => setForm(p => ({...p, originalPrice: e.target.value}))} value={form.originalPrice} placeholder="e.g. 2000" type="number" />
-                      <Field label="Max Seats" onChange={e => setForm(p => ({...p, maxSeats: e.target.value}))} value={form.maxSeats} placeholder="Leave empty for unlimited" type="number" />
                       <Field label="Number of Lessons" onChange={e => setForm(p => ({...p, lessonCount: e.target.value}))} value={form.lessonCount} placeholder="e.g. 24" type="number" />
                       <Field label="Number of Exams" onChange={e => setForm(p => ({...p, examCount: e.target.value}))} value={form.examCount} placeholder="e.g. 3" type="number" />
                     </div>
@@ -597,6 +595,55 @@ export default function AdminCoursesPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Status & Visibility */}
+                <Surface className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
+                  <h4 className="font-semibold text-slate-900 mb-4">Status & Visibility</h4>
+                  <div className="space-y-3">
+                    <label className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                      <input 
+                        type="radio" 
+                        name="course-status" 
+                        value="PUBLISHED"
+                        checked={form.status === "PUBLISHED"}
+                        onChange={() => setForm(p => ({...p, status: "PUBLISHED"}))}
+                        className="mt-0.5"
+                      />
+                      <div>
+                        <span className="block text-sm font-semibold text-slate-900">Published</span>
+                        <span className="block text-xs text-slate-500 mt-0.5">Visible to all students in the catalog.</span>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                      <input 
+                        type="radio" 
+                        name="course-status" 
+                        value="UNLISTED"
+                        checked={form.status === "UNLISTED"}
+                        onChange={() => setForm(p => ({...p, status: "UNLISTED"}))}
+                        className="mt-0.5"
+                      />
+                      <div>
+                        <span className="block text-sm font-semibold text-slate-900">Unlisted</span>
+                        <span className="block text-xs text-slate-500 mt-0.5">Hidden from students. Can be added to Bundles.</span>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+                      <input 
+                        type="radio" 
+                        name="course-status" 
+                        value="DRAFT"
+                        checked={form.status === "DRAFT"}
+                        onChange={() => setForm(p => ({...p, status: "DRAFT"}))}
+                        className="mt-0.5"
+                      />
+                      <div>
+                        <span className="block text-sm font-semibold text-slate-900">Draft / Unpublished</span>
+                        <span className="block text-xs text-slate-500 mt-0.5">Hidden everywhere. Saved for later.</span>
+                      </div>
+                    </label>
+                  </div>
+                </Surface>
 
                 {/* Settings & Thumbnail Form */}
                 <Surface className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">

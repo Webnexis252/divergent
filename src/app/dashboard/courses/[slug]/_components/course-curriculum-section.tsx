@@ -61,35 +61,35 @@ export function CourseCurriculumSection({
 
   const liveClassMonths = useMemo(() => {
     const monthSet = new Set<string>();
-    liveClasses.forEach((lc) => monthSet.add(new Date(lc.startTime).toLocaleString('default', { month: 'long', year: 'numeric' })));
+    liveClasses.forEach((lc) => monthSet.add(new Date(lc.startTime).toLocaleString('en-US', { month: 'long', year: 'numeric' })));
     return Array.from(monthSet).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
   }, [liveClasses]);
 
   const assignmentMonths = useMemo(() => {
     const monthSet = new Set<string>();
-    assignments.forEach((a) => monthSet.add(new Date(a.createdAt).toLocaleString('default', { month: 'long', year: 'numeric' })));
+    assignments.forEach((a) => monthSet.add(new Date(a.createdAt).toLocaleString('en-US', { month: 'long', year: 'numeric' })));
     return Array.from(monthSet).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
   }, [assignments]);
 
   const testMonths = useMemo(() => {
     const monthSet = new Set<string>();
-    tests.forEach((t) => monthSet.add(new Date(t.createdAt).toLocaleString('default', { month: 'long', year: 'numeric' })));
+    tests.forEach((t) => monthSet.add(new Date(t.createdAt).toLocaleString('en-US', { month: 'long', year: 'numeric' })));
     return Array.from(monthSet).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
   }, [tests]);
 
   const filteredLiveClasses = useMemo(() => {
     if (selectedLiveClassMonth === "ALL") return liveClasses;
-    return liveClasses.filter(lc => new Date(lc.startTime).toLocaleString('default', { month: 'long', year: 'numeric' }) === selectedLiveClassMonth);
+    return liveClasses.filter(lc => new Date(lc.startTime).toLocaleString('en-US', { month: 'long', year: 'numeric' }) === selectedLiveClassMonth);
   }, [liveClasses, selectedLiveClassMonth]);
 
   const filteredAssignments = useMemo(() => {
     if (selectedAssignmentMonth === "ALL") return assignments;
-    return assignments.filter(a => new Date(a.createdAt).toLocaleString('default', { month: 'long', year: 'numeric' }) === selectedAssignmentMonth);
+    return assignments.filter(a => new Date(a.createdAt).toLocaleString('en-US', { month: 'long', year: 'numeric' }) === selectedAssignmentMonth);
   }, [assignments, selectedAssignmentMonth]);
 
   const filteredTests = useMemo(() => {
     if (selectedTestMonth === "ALL") return tests;
-    return tests.filter(t => new Date(t.createdAt).toLocaleString('default', { month: 'long', year: 'numeric' }) === selectedTestMonth);
+    return tests.filter(t => new Date(t.createdAt).toLocaleString('en-US', { month: 'long', year: 'numeric' }) === selectedTestMonth);
   }, [tests, selectedTestMonth]);
 
   const hasContent = chapters.length > 0 || liveClasses.length > 0 || assignments.length > 0 || tests.length > 0;
@@ -279,7 +279,7 @@ export function CourseCurriculumSection({
                                 Preview
                               </span>
                             )}
-                            <span className="ml-auto text-[12px] text-[#bbb]">{new Date(lc.startTime).toLocaleDateString()}</span>
+                            <span className="ml-auto text-[12px] text-[#bbb]">{new Date(lc.startTime).toLocaleDateString('en-US')}</span>
                           </div>
                         );
                       })}
@@ -329,7 +329,7 @@ export function CourseCurriculumSection({
                         <div key={assignment.id} className="flex items-center gap-3 rounded-[10px] border border-[#e9e9e9] bg-white px-[13px] py-[11px] text-[14px]">
                           <PenBox className="h-4 w-4 text-[#bbb]" />
                           <span className="font-medium text-black">{assignment.title}</span>
-                          <span className="ml-auto text-[12px] text-[#bbb]">{new Date(assignment.createdAt).toLocaleDateString()}</span>
+                          <span className="ml-auto text-[12px] text-[#bbb]">{new Date(assignment.createdAt).toLocaleDateString('en-US')}</span>
                         </div>
                       ))}
                     </div>
@@ -379,7 +379,7 @@ export function CourseCurriculumSection({
                           <FileText className="h-4 w-4 text-[#bbb]" />
                           <span className="font-medium text-black">{test.title}</span>
                           {test.durationMins > 0 && <span className="ml-auto text-[12px] text-[#bbb]">{test.durationMins} mins</span>}
-                          <span className="ml-4 text-[12px] text-[#bbb]">{new Date(test.createdAt).toLocaleDateString()}</span>
+                          <span className="ml-4 text-[12px] text-[#bbb]">{new Date(test.createdAt).toLocaleDateString('en-US')}</span>
                         </div>
                       ))}
                     </div>
