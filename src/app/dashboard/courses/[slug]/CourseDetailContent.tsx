@@ -968,7 +968,6 @@ export async function CourseDetailContent({ slug }: { slug: string }) {
                                 courseTitle={course.title}
                                 initialEnrolled={isEnrolled}
                                 price={course.price}
-                                enrolledCount={course._count.enrollments}
                                 variant="detailCard"
                                 emiPlans={emiPlans}
                                 expiredInstallment={isExpiredInstallment ? { currentInstallment: (enrollment as any).currentInstallment } : null}
