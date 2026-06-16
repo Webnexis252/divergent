@@ -41,6 +41,7 @@ type Bundle = {
   _count: { payments: number };
   isInstallmentBased: boolean;
   emiPlans: Array<{ label: string; amount: number; dueDays: number }> | null;
+  visibility?: "PUBLIC" | "UNLISTED";
 };
 
 export default function AdminBundlesPage() {
@@ -61,6 +62,7 @@ export default function AdminBundlesPage() {
   >({});
   const [submitting, setSubmitting] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [status, setStatus] = useState<"PUBLISHED" | "DRAFT" | "UNLISTED">("DRAFT");
   const [isInstallmentBased, setIsInstallmentBased] = useState(false);
   const [emiPlans, setEmiPlans] = useState<any[]>([]);
   const [showAddInstalment, setShowAddInstalment] = useState(false);
@@ -120,6 +122,7 @@ export default function AdminBundlesPage() {
     setPrice("");
     setSelectedCourseIds([]);
     setTeacherAssignments({});
+    setStatus("DRAFT");
     setIsInstallmentBased(false);
     setEmiPlans([]);
     setShowAddInstalment(false);
@@ -140,6 +143,7 @@ export default function AdminBundlesPage() {
       }
     });
     setTeacherAssignments(assignments);
+    setStatus(bundle.isPublished ? (bundle.visibility === "UNLISTED" ? "UNLISTED" : "PUBLISHED") : "DRAFT");
     setIsInstallmentBased(bundle.isInstallmentBased || false);
     setEmiPlans(
       Array.isArray(bundle.emiPlans)
@@ -233,6 +237,8 @@ export default function AdminBundlesPage() {
           description,
           thumbnail,
           price: numPrice,
+          isPublished: status === "PUBLISHED" || status === "UNLISTED",
+          visibility: status === "UNLISTED" ? "UNLISTED" : "PUBLIC",
           isInstallmentBased,
           emiPlans:
             emiPlans.length > 0
@@ -278,10 +284,12 @@ export default function AdminBundlesPage() {
   };
 
   const handleTogglePublish = async (bundle: Bundle) => {
+    const newIsPublished = !bundle.isPublished;
+    const newStatus = newIsPublished ? "PUBLISHED" : "DRAFT";
     const res = await fetch(`/api/admin/bundles/${bundle.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isPublished: !bundle.isPublished }),
+      body: JSON.stringify({ isPublished: newIsPublished, visibility: "PUBLIC" }),
     });
     const data = await res.json();
     if (data.success) {
@@ -468,8 +476,38 @@ export default function AdminBundlesPage() {
                   </div>
                 </div>
 
+                {/* Status Selection */}
+                <div className="space-y-3 mt-4">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Status & Visibility
+                  </label>
+                  <div className="grid gap-3">
+                    <label className={`flex cursor-pointer items-start gap-3 rounded-[12px] border p-4 transition ${status === "PUBLISHED" ? "border-[#38c1ff] bg-[#f0f9ff]" : "border-gray-200 hover:border-gray-300"}`}>
+                      <input type="radio" name="status" checked={status === "PUBLISHED"} onChange={() => setStatus("PUBLISHED")} className="mt-0.5 h-4 w-4 accent-[#38c1ff]" />
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">Published</div>
+                        <div className="text-sm text-gray-500 mt-0.5">Visible to all students in the catalog.</div>
+                      </div>
+                    </label>
+                    <label className={`flex cursor-pointer items-start gap-3 rounded-[12px] border p-4 transition ${status === "UNLISTED" ? "border-[#38c1ff] bg-[#f0f9ff]" : "border-gray-200 hover:border-gray-300"}`}>
+                      <input type="radio" name="status" checked={status === "UNLISTED"} onChange={() => setStatus("UNLISTED")} className="mt-0.5 h-4 w-4 accent-[#38c1ff]" />
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">Unlisted</div>
+                        <div className="text-sm text-gray-500 mt-0.5">Hidden from students. Can be added to Bundles.</div>
+                      </div>
+                    </label>
+                    <label className={`flex cursor-pointer items-start gap-3 rounded-[12px] border p-4 transition ${status === "DRAFT" ? "border-[#38c1ff] bg-[#f0f9ff]" : "border-gray-200 hover:border-gray-300"}`}>
+                      <input type="radio" name="status" checked={status === "DRAFT"} onChange={() => setStatus("DRAFT")} className="mt-0.5 h-4 w-4 accent-[#38c1ff]" />
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">Draft / Unpublished</div>
+                        <div className="text-sm text-gray-500 mt-0.5">Hidden everywhere. Saved for later.</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
                 {/* Course multi-select */}
-                <div className="space-y-2">
+                <div className="space-y-2 mt-4 border-t pt-4">
                   <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                     Select Courses ({selectedCourseIds.length} selected —
                     minimum 2)
@@ -761,9 +799,9 @@ export default function AdminBundlesPage() {
                             {bundle.title}
                           </p>
                           <span
-                            className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${bundle.isPublished ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}
+                            className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${bundle.isPublished ? (bundle.visibility === "UNLISTED" ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700") : "bg-gray-100 text-gray-500"}`}
                           >
-                            {bundle.isPublished ? "Published" : "Draft"}
+                            {bundle.isPublished ? (bundle.visibility === "UNLISTED" ? "Unlisted" : "Published") : "Draft"}
                           </span>
                         </div>
                         {bundle.description && (

@@ -152,6 +152,10 @@ export async function POST(req: NextRequest) {
 
         if (coupon.discountType === "PERCENTAGE") {
           appliedCouponDiscount = Number(((orderAmount * coupon.discountValue) / 100).toFixed(2));
+          const maxDiscount = (coupon as any).maxDiscount;
+          if (maxDiscount != null && appliedCouponDiscount > maxDiscount) {
+            appliedCouponDiscount = Number(maxDiscount);
+          }
         } else {
           appliedCouponDiscount = Number(coupon.discountValue);
         }

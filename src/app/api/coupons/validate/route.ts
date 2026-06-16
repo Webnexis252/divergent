@@ -37,6 +37,15 @@ export async function POST(req: NextRequest) {
       return apiError("This coupon has reached its usage limit", 400);
     }
 
+    // Enforce course-level restriction
+    const applicableIds = (coupon as any).applicableCourseIds as string[] | undefined;
+    if (Array.isArray(applicableIds) && applicableIds.length > 0) {
+      const targetId = courseId ?? bundleId;
+      if (!applicableIds.includes(targetId)) {
+        return apiError("This coupon is not valid for the selected course or bundle", 400);
+      }
+    }
+
     if (coupon.limitPerLearner) {
       const userUsageCount = await prisma.payment.count({
         where: {
@@ -98,6 +107,10 @@ export async function POST(req: NextRequest) {
     let discountAmount = 0;
     if (coupon.discountType === "PERCENTAGE") {
       discountAmount = Number(((originalPrice * coupon.discountValue) / 100).toFixed(2));
+      const maxDiscount = (coupon as any).maxDiscount;
+      if (maxDiscount != null && discountAmount > maxDiscount) {
+        discountAmount = Number(maxDiscount);
+      }
     } else {
       discountAmount = Number(coupon.discountValue);
     }

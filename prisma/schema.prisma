@@ -504,6 +504,7 @@ model Coupon {
   name            String?
   discountType    String    @default("PERCENTAGE") // "PERCENTAGE" or "FIXED"
   discountValue   Float     @default(0)
+  maxDiscount     Float?
   maxUses         Int       @default(100)
   usedCount       Int       @default(0)
   startDate       DateTime?
@@ -513,6 +514,7 @@ model Coupon {
   isActive        Boolean   @default(true)
   description     String?
   targetUsers     String    @default("ALL") // "ALL", "FIRST_TIME", "RENEWING"
+  applicableCourseIds String[] @default([]) // empty = applies to all courses
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }

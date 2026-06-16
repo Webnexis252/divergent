@@ -9,6 +9,7 @@ const CouponSchema = z.object({
   name: z.string().max(60).optional(),
   discountType: z.enum(["PERCENTAGE", "FIXED"]),
   discountValue: z.number().min(0),
+  maxDiscount: z.number().min(0).optional().nullable(),
   maxUses: z.number().int().min(1).optional().default(100),
   startDate: z.string().optional().nullable(),
   validUntil: z.string().optional().nullable(),
@@ -17,12 +18,24 @@ const CouponSchema = z.object({
   isActive: z.boolean().default(true),
   description: z.string().optional(),
   targetUsers: z.enum(["ALL", "FIRST_TIME", "RENEWING"]).optional().default("ALL"),
+  applicableCourseIds: z.array(z.string()).optional().default([]),
 });
 
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req, ['SUPER_ADMIN']);
     if (!auth) return apiForbidden('Super Admin access required');
+
+    const { searchParams } = new URL(req.url);
+    
+    // If requesting the courses list for the course picker
+    if (searchParams.get('courses') === '1') {
+      const courses = await prisma.course.findMany({
+        select: { id: true, title: true, thumbnail: true, price: true, category: true },
+        orderBy: { title: 'asc' },
+      });
+      return apiSuccess(courses);
+    }
 
     const coupons = await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' } });
     return apiSuccess(coupons);
@@ -49,6 +62,8 @@ export async function POST(req: NextRequest) {
         ...parsed.data,
         startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,
         validUntil: parsed.data.validUntil ? new Date(parsed.data.validUntil) : null,
+        // @ts-ignore: IDE TS server cache issue with newly added schema fields
+        applicableCourseIds: parsed.data.applicableCourseIds ?? [],
       },
     });
 
@@ -74,6 +89,8 @@ export async function PATCH(req: NextRequest) {
         ...data,
         ...(data.startDate && { startDate: new Date(data.startDate) }),
         ...(data.validUntil && { validUntil: new Date(data.validUntil) }),
+        // @ts-ignore: IDE TS server cache issue with newly added schema fields
+        ...(data.applicableCourseIds !== undefined && { applicableCourseIds: data.applicableCourseIds }),
       },
     });
 
