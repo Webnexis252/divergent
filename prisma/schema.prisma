@@ -119,6 +119,7 @@ model Bundle {
   isPublished Boolean        @default(false)
   isInstallmentBased Boolean @default(false)
   emiPlans    Json?
+  visibility  String         @default("PUBLIC")
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   courses     BundleCourse[]
