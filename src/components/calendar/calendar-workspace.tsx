@@ -320,47 +320,62 @@ function CalendarGrid({
             <button
               key={cell.date.toISOString()}
               className={cx(
-                "group relative min-h-[108px] border-b border-r border-(--line-soft) px-2 py-3 text-left transition-all duration-200 ease-out focus-visible:outline-none",
-                isActiveDate ? "bg-white z-10 shadow-sm" : "bg-transparent",
+                "group relative min-h-[108px] border-b border-r border-(--line-soft) px-2 py-3 text-left",
+                "transition-all duration-300 ease-out focus-visible:outline-none overflow-hidden cursor-pointer",
+                isActiveDate ? "bg-sky-50/60 z-10" : "bg-transparent",
                 cell.isCurrentMonth ? "text-(--text-strong)" : "bg-black/[0.02] text-(--text-subtle)",
-                "hover:bg-sky-50 hover:ring-2 hover:ring-sky-200 hover:z-20",
+                "hover:z-20 hover:bg-gradient-to-br hover:from-sky-50 hover:via-indigo-50/50 hover:to-violet-50/30",
+                "hover:shadow-[inset_0_2.5px_0_0_#38bdf8,0_12px_32px_-4px_rgba(56,189,248,0.22)]",
               )}
               onClick={() => {
                 onSelectDateKey(key);
               }}
               type="button"
             >
-              <div className="flex h-full flex-col justify-between gap-3">
+              {/* shimmer overlay on hover */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{
+                  background:
+                    "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.55) 50%, transparent 60%)",
+                  backgroundSize: "200% 100%",
+                  animation: "cal-shimmer 1.2s ease-in-out infinite",
+                }}
+              />
+
+              <div className="relative flex h-full flex-col justify-between gap-3">
                 <div className="flex items-start justify-between gap-2">
                   <span
                     className={cx(
                       "grid h-8 w-8 place-items-center rounded-full text-[13px] font-semibold",
+                      "transition-all duration-200",
                       todayCell
                         ? "bg-(--brand-primary-strong) text-white shadow-(--shadow-accent)"
-                        : "text-inherit",
+                        : "text-inherit group-hover:bg-sky-500 group-hover:text-white group-hover:shadow-[0_0_0_4px_rgba(56,189,248,0.25),0_4px_12px_rgba(56,189,248,0.35)]",
                     )}
                   >
                     {cell.day}
                   </span>
 
                   {cellEvents.length > 1 ? (
-                    <span className="rounded-full bg-black/[0.04] px-2 py-0.5 text-[10px] font-semibold text-(--text-subtle)">
+                    <span className="rounded-full bg-black/[0.04] px-2 py-0.5 text-[10px] font-semibold text-(--text-subtle) transition-all duration-200 group-hover:bg-sky-100 group-hover:text-sky-700">
                       {cellEvents.length}
                     </span>
                   ) : null}
                 </div>
 
                 {cellEvents.length > 0 ? (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 transition-transform duration-200 group-hover:-translate-y-[2px]">
                     {cellEvents.slice(0, 2).map((event) => {
                       const meta = EVENT_META[event.type];
                       return (
                         <div
                           key={event.id}
-                          className="flex items-center gap-2 rounded-full bg-white/88 px-2 py-1 shadow-(--shadow-soft)"
+                          className="flex items-center gap-2 rounded-full bg-white/88 px-2 py-1 shadow-(--shadow-soft) transition-all duration-200 group-hover:bg-white group-hover:shadow-md"
                         >
                           <span
-                            className="h-2.5 w-2.5 rounded-full"
+                            className="h-2.5 w-2.5 shrink-0 rounded-full transition-transform duration-200 group-hover:scale-110"
                             style={{ backgroundColor: meta.accent }}
                           />
                           <span className="truncate text-[10px] font-semibold text-(--text-strong)">

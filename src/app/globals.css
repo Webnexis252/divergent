@@ -335,3 +335,9 @@ a {
     width: 1.75rem;
   }
 }
+
+/* ── Calendar cell shimmer animation ── */
+@keyframes cal-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
