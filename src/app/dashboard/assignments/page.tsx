@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m as motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
@@ -34,7 +34,6 @@ import { useAuth } from "@/context/auth-context";
 import { brand } from "@/lib/brand";
 import { cx } from "@/lib/cx";
 import { formatShortDate } from "@/lib/date-format";
-import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
 import {
   AnimCard,
   PageTransition,
@@ -74,22 +73,6 @@ type AssignmentCardItem = Assignment & {
 };
 
 const assets = {
-  headerAvatar:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=021745ae-afe4-4dce-ad5c-2dd5ad2195e1",
-  dashboardIcon:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=cf63ebaf-2c2d-461d-b303-52e41d36c645",
-  coursesIcon:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=f5a0a60c-baa8-428d-b6e0-24fe7150e184",
-  liveClassesIcon:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=95f74062-c186-4036-9109-4876860c1840",
-  communityIcon:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=2adf51c8-f658-4f1e-84e4-26a5345706d5",
-  assignmentsIcon:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=ffea850b-8a37-4bd9-9bcf-92f2122bf9d0",
-  progressIcon:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=4c09dd54-76f0-47cb-81bd-6df94c0bdcf9",
-  calendarIcon:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=4853766a-1632-4bc4-912e-5e43efdf5ec1",
 } as const;
 
 const filters: Array<{
@@ -834,8 +817,7 @@ export default function DashboardAssignmentsPage() {
 
 
           <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-0 xl:py-8">
-            <div className="grid gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
-              <DashboardSidebar />
+            <div className="grid gap-6 xl:items-start">
 
               <section className="min-w-0 px-0 sm:px-4 xl:pr-10">
                 <div className="mx-auto max-w-[1160px] space-y-5 sm:space-y-6">

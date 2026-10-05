@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, lazy, Suspense, useRef } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import {
   ArrowUpRight,
   BookOpen,
@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
+  Star,
 } from "lucide-react";
 import { AnimCard, PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
@@ -477,7 +478,7 @@ export default function AdminCoursesPage() {
                                 ) : (
                                   <>
                                     <div>
-                                      <p className="text-[14px] font-semibold text-[#0f172a]">{t.name} <span className="text-[#f59e0b] font-normal">({t.rating}★)</span></p>
+                                      <p className="text-[14px] font-semibold text-[#0f172a]">{t.name} <span className="inline-flex items-center gap-0.5 align-middle font-normal text-[#f59e0b]">({t.rating}<Star className="h-3.5 w-3.5 fill-current" />)</span></p>
                                       <p className="mt-1 text-[13px] text-[#475569]">"{t.text}"</p>
                                     </div>
                                     <div className="flex items-center gap-1">
@@ -747,7 +748,7 @@ export default function AdminCoursesPage() {
                               style={{
                                 backgroundImage: course.thumbnail
                                   ? `linear-gradient(180deg, rgba(8, 16, 24, 0.04), rgba(8, 16, 24, 0.18)), url("${course.thumbnail}")`
-                                  : `url("https://api.dicebear.com/9.x/shapes/svg?seed=973b6412-1165-4257-8071-b30234e453cb")`,
+                                  : `url("/images/course-placeholder.svg")`,
                               }}
                             />
                           </div>

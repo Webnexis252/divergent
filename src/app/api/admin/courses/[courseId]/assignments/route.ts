@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { notifyCourseStudentsInBackground } from '@/lib/course-notifications';
 import {
   apiSuccess,
   apiCreated,
@@ -97,22 +98,12 @@ export async function POST(req: NextRequest, { params }: Params) {
       },
     });
 
-    // Notify enrolled students
-    const enrollments = await prisma.enrollment.findMany({
-      where: { courseId, status: 'ACTIVE' },
-      select: { userId: true },
+    // Notify enrolled students, after responding
+    await notifyCourseStudentsInBackground(courseId, {
+      title: `New Assignment: ${title}`,
+      body: `A new assignment has been posted in ${course.title}. Submit before the deadline!`,
+      actionUrl: `/dashboard/assignments`,
     });
-    if (enrollments.length > 0) {
-      await prisma.notification.createMany({
-        data: enrollments.map((e) => ({
-          userId: e.userId,
-          title: `New Assignment: ${title}`,
-          body: `A new assignment has been posted in ${course.title}. Submit before the deadline!`,
-          type: 'INFO' as const,
-          actionUrl: `/dashboard/assignments`,
-        })),
-      });
-    }
 
     return apiCreated(assignment, 'Assignment created successfully');
   } catch (err) {

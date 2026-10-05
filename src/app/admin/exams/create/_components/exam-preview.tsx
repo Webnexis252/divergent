@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { User as UserIcon, CheckCircle2, AlertTriangle, X } from "lucide-react";
 import {
   QuestionCard,

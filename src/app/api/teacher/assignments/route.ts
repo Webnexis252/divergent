@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { notifyCourseStudentsInBackground } from '@/lib/course-notifications';
 import { CreateAssignmentSchema } from '@/lib/validators';
 import {
   apiSuccess,
@@ -90,28 +91,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Create a notification for all students enrolled in this course
-    const enrollments = await prisma.enrollment.findMany({
-      where: { courseId, status: 'ACTIVE' },
-      select: { userId: true },
+    // Notify all students enrolled in this course, after responding
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { title: true },
     });
-
-    if (enrollments.length > 0) {
-      const course = await prisma.course.findUnique({
-        where: { id: courseId },
-        select: { title: true },
-      });
-
-      await prisma.notification.createMany({
-        data: enrollments.map((e) => ({
-          userId: e.userId,
-          title: `New Assignment: ${title}`,
-          body: `A new assignment has been posted in ${course?.title ?? 'your course'}. Submit before the deadline!`,
-          type: 'INFO',
-          actionUrl: `/dashboard/assignments`,
-        })),
-      });
-    }
+    await notifyCourseStudentsInBackground(courseId, {
+      title: `New Assignment: ${title}`,
+      body: `A new assignment has been posted in ${course?.title ?? 'your course'}. Submit before the deadline!`,
+      actionUrl: `/dashboard/assignments`,
+    });
 
     return apiCreated(assignment, 'Assignment created successfully');
   } catch (err) {

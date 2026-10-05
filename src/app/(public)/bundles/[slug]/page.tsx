@@ -6,6 +6,7 @@ import { CheckCircle, Package, CheckCircle2, BookOpen, Clock, BarChart3, Globe, 
 import { BundleCheckoutButton } from "./_components/BundleCheckoutButton";
 import { cookies } from "next/headers";
 import { verifyTokenValue, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -78,13 +79,13 @@ export default async function BundleDetailsPage({ params }: Params) {
   const mentorCards = uniqueTeachers.map(t => ({
     name: t.name,
     subtitle: "Mentor",
-    image: t.image || "https://api.dicebear.com/9.x/avataaars/svg?seed=" + t.name,
+    image: t.image || null,
   }));
   if (mentorCards.length === 0) {
     mentorCards.push({
       name: "Expert Mentors",
       subtitle: "Lead mentors",
-      image: "https://api.dicebear.com/9.x/avataaars/svg?seed=ExpertMentors",
+      image: null,
     });
   }
 
@@ -164,11 +165,15 @@ export default async function BundleDetailsPage({ params }: Params) {
                   <section key={mentor.name} className="relative overflow-hidden rounded-[24px] bg-white px-4 py-8 text-center shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] border border-gray-50 transition-shadow duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.09)] xl:min-h-[247px]">
                     <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#38c1ff,#ffc107)]" />
                     <div className="mx-auto h-[82px] w-[82px] overflow-hidden rounded-full bg-[#f0f0f0] ring-3 ring-[#38c1ff]/10 ring-offset-2">
-                      <div
-                        aria-hidden="true"
-                        className="h-full w-full bg-cover bg-center"
-                        style={{ backgroundImage: `url("${mentor.image}")` }}
-                      />
+                      {mentor.image ? (
+                        <div
+                          aria-hidden="true"
+                          className="h-full w-full bg-cover bg-center"
+                          style={{ backgroundImage: `url("${mentor.image}")` }}
+                        />
+                      ) : (
+                        <InitialsAvatar name={mentor.name} className="h-full w-full text-[26px]" />
+                      )}
                     </div>
                     <div className="mt-4 space-y-1">
                       <p className="text-[16px] font-semibold text-black">{mentor.name}</p>
@@ -215,7 +220,7 @@ export default async function BundleDetailsPage({ params }: Params) {
                     style={{
                       backgroundImage: bundle.thumbnail
                         ? `linear-gradient(180deg, rgba(8, 16, 24, 0.02), rgba(8, 16, 24, 0.12)), url("${bundle.thumbnail}")`
-                        : `linear-gradient(180deg, rgba(8, 16, 24, 0.02), rgba(8, 16, 24, 0.12)), url("https://api.dicebear.com/9.x/shapes/svg?seed=cf170519-6960-44d6-913f-b1df537a439e")`,
+                        : `linear-gradient(180deg, rgba(8, 16, 24, 0.02), rgba(8, 16, 24, 0.12)), url("/images/course-placeholder.svg")`,
                     }}
                   />
                 </div>

@@ -1,5 +1,6 @@
 // Shared Cashfree SDK instance (singleton)
 import { Cashfree, CFEnvironment } from "cashfree-pg";
+import { CircuitBreaker } from "./circuit-breaker";
 
 // Validate required Cashfree environment variables at startup.
 // If these are missing, all payment requests will fail with a cryptic
@@ -25,5 +26,12 @@ const cashfree = new Cashfree(
   CASHFREE_APP_ID,
   CASHFREE_SECRET_KEY,
 );
+
+export const paymentBreaker = new CircuitBreaker({
+  failureThreshold: 3,
+  resetTimeoutMs: 30000,
+  requestTimeoutMs: 8000,
+  maxConcurrency: 15
+});
 
 export default cashfree;

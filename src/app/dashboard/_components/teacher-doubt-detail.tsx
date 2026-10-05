@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { m as motion } from "motion/react";
+import { useState, useCallback, useRef } from "react";
+import { usePolling } from "@/hooks/use-polling";
 import { useSearchParams } from "next/navigation";
 import {
   PageTransition,
   RevealSection,
 } from "./motion-wrappers";
-import { TeacherSidebar } from "./teacher-sidebar";
+import { SearchX, TriangleAlert, Clock, Upload, CircleCheck, Send } from "lucide-react";
 
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
@@ -58,43 +59,23 @@ const priorityColors: Record<string, string> = {
 // ─── SVG Icons ──────────────────────────────────────────────────────────────
 
 function ClockIcon() {
-  return (
-    <svg className="h-3.5 w-3.5 text-[#949494]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" />
-    </svg>
-  );
+  return <Clock className="h-3.5 w-3.5 text-[#949494]" />;
 }
 
 function UploadIcon() {
-  return (
-    <svg className="h-3.5 w-3.5 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 16V4" /><path d="m7 9 5-5 5 5" /><path d="M4 20h16" />
-    </svg>
-  );
+  return <Upload className="h-3.5 w-3.5 text-black" />;
 }
 
 function ResolveIcon() {
-  return (
-    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7.5 12.5 10.5 15.5 16.5 9.5" /><circle cx="12" cy="12" r="8.5" />
-    </svg>
-  );
+  return <CircleCheck className="h-3.5 w-3.5" />;
 }
 
 function SendIcon() {
-  return (
-    <svg className="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 2 11 13" /><path d="m22 2-7 20-4-9-9-4Z" />
-    </svg>
-  );
+  return <Send className="h-3.5 w-3.5 text-white" />;
 }
 
 function CheckCircleIcon() {
-  return (
-    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" /><path d="m7.5 12.5 3 3 6-6" />
-    </svg>
-  );
+  return <CircleCheck className="h-3.5 w-3.5" />;
 }
 
 function ActionChip({ icon, label, onClick, tone = "default", disabled = false }: { icon: React.ReactNode; label: string; onClick?: () => void; tone?: "default" | "green"; disabled?: boolean }) {
@@ -134,23 +115,29 @@ export function TeacherDoubtDetail() {
   const [sendError, setSendError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchDoubt = useCallback(() => {
-    if (!doubtId) { setLoading(false); setNotFound(true); return; }
-    fetch(`/api/doubts/${doubtId}`)
-      .then((r) => r.json())
-      .then((json) => {
+  const lastPayloadRef = useRef("");
+  const fetchDoubt = useCallback(async (): Promise<boolean> => {
+    if (!doubtId) { setLoading(false); setNotFound(true); return false; }
+    try {
+      const text = await fetch(`/api/doubts/${doubtId}`).then((r) => r.text());
+      const changed = text !== lastPayloadRef.current;
+      lastPayloadRef.current = text;
+      if (changed) {
+        const json = JSON.parse(text);
         if (json.success) setDoubt(json.data);
         else setNotFound(true);
-      })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
+      }
+      return changed;
+    } catch {
+      setNotFound(true);
+      return false;
+    } finally {
+      setLoading(false);
+    }
   }, [doubtId]);
 
-  useEffect(() => { 
-    fetchDoubt(); 
-    const interval = setInterval(fetchDoubt, 5000);
-    return () => clearInterval(interval);
-  }, [fetchDoubt]);
+  // Every 5s while the thread is active, easing off to 30s; paused in a hidden tab
+  usePolling(fetchDoubt, { intervalMs: 5000, maxIntervalMs: 30_000, resetKey: doubtId });
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -231,8 +218,7 @@ export function TeacherDoubtDetail() {
 
   return (
     <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
-          <TeacherSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:gap-8 lg:px-0 lg:pt-8">
 
           <main className="space-y-8 lg:pr-[160px]">
 
@@ -247,7 +233,7 @@ export function TeacherDoubtDetail() {
             {/* Not found */}
             {!loading && notFound && (
               <div className="rounded-[20px] border border-dashed border-[#d9d9d9] bg-white py-20 text-center">
-                <p className="text-[40px]">🔍</p>
+                <SearchX className="mx-auto h-10 w-10 text-[#9ca3af]" strokeWidth={1.5} />
                 <p className="mt-3 text-[16px] font-medium text-[#374151]">Doubt not found</p>
                 <p className="mt-1 text-[14px] text-[#9ca3af]">No ID was provided or this doubt doesn&apos;t exist</p>
                 <Link href="/dashboard/teacher/doubt-list" className="mt-5 inline-block text-[14px] font-medium text-[#38c1ff] hover:underline">
@@ -391,7 +377,7 @@ export function TeacherDoubtDetail() {
                   <RevealSection delay={0.12}>
                     <section className="rounded-[20px] border border-[#d9d9d9] bg-white px-6 py-6 shadow-[0px_4px_10px_rgba(0,0,0,0.18)] sm:px-8">
                       <p className="text-[16px] font-medium text-black">
-                        Help the student understand, not just answer ✨
+                        Help the student understand, not just answer
                       </p>
 
                       <motion.div
@@ -437,7 +423,7 @@ export function TeacherDoubtDetail() {
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                         >
-                          ❌ {sendError}
+                          <TriangleAlert className="mr-1.5 inline h-4 w-4 align-[-3px]" />{sendError}
                         </motion.p>
                       )}
 

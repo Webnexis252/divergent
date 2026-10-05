@@ -53,14 +53,7 @@ type CourseDetailPageProps = {
 
 const assets = {
   heroIllustration: "/assets/789e932c2f45a3aedd7967edba282c943ce97d1d.png",
-  premiumBadge: "https://api.dicebear.com/9.x/shapes/svg?seed=d69210fb-fac4-4a3f-ae58-7426f89af020",
-  learnersIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=8bba02c3-8180-4d46-b5cd-f071d8a40f43",
-  ratings: "https://api.dicebear.com/9.x/shapes/svg?seed=58f66a79-9fb4-4b1a-a7cb-df0e2291a488",
-  divider: "https://api.dicebear.com/9.x/shapes/svg?seed=0c1d4445-8c2f-4539-95cc-a8cb555bb081",
-  fallbackThumbnail: "https://api.dicebear.com/9.x/shapes/svg?seed=cf170519-6960-44d6-913f-b1df537a439e",
-  mentorAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=1fdd695f-0eb2-4964-b9f7-d3b9472b043a",
-  buyNowIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=302f0b9c-5f11-4d9d-ab89-dfad0999d3f4",
-  emiIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=104750b5-4aac-439b-a0d7-04c01181c5da",
+  fallbackThumbnail: "/images/course-placeholder.svg",
   liveClassFeature: "/assets/7ac54c6ed7ca5712e26b75ff032783a11d45b059.png",
   doubtSolvingFeature: "/assets/18a626f90edd50604a508b3ec1fe4225d0168d5c.png",
   mockTestsFeature: "/assets/9e1f32ff326eef587374d218ae9b0ed57b8fa746.png",
@@ -68,17 +61,11 @@ const assets = {
   certificateFeature: "/assets/0eb8388fb7d03e1be4aacdf8c01dfcc329307443.png",
   testsTile: "/assets/dashboard/explore-tests.png",
   modulesTile: "/assets/dashboard/explore-modules.png",
-  dashboardIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=cf63ebaf-2c2d-461d-b303-52e41d36c645",
-  coursesIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=f5a0a60c-baa8-428d-b6e0-24fe7150e184",
-  liveClassesIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=95f74062-c186-4036-9109-4876860c1840",
-  communityIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=2adf51c8-f658-4f1e-84e4-26a5345706d5",
-  assignmentsIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=ffea850b-8a37-4bd9-9bcf-92f2122bf9d0",
-  progressIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=4c09dd54-76f0-47cb-81bd-6df94c0bdcf9",
-  calendarIcon: "https://api.dicebear.com/9.x/shapes/svg?seed=e233071f-ae5b-440b-b6a5-2a067b4e2248",
 } as const;
 
 import { studentNavItems } from "../../_components/nav-items";
 import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 
 const sidebarItems = studentNavItems.map(item => ({
   ...item,
@@ -431,14 +418,14 @@ export async function CourseDetailContent({ slug }: { slug: string }) {
         totalLessons > 0
           ? `Guides the ${pluralize(totalLessons, "lesson")} pathway and helps students turn concepts into confident outputs.`
           : "Guides the learning path and helps students turn concepts into confident outputs.",
-      image: displayTeachers?.[0]?.image ?? assets.mentorAvatar,
+      image: displayTeachers?.[0]?.image ?? null,
     },
     {
       name: "Mentor Support Team",
       subtitle: `${pluralize(course.liveClasses.length, "live session")} + doubt support`,
       body:
         "Adds critique, feedback, and practice review so learners stay consistent across every module.",
-      image: assets.mentorAvatar,
+      image: null,
     },
   ];
   const featureTiles = Array.isArray(course.features) && course.features.length > 0
@@ -667,11 +654,15 @@ export async function CourseDetailContent({ slug }: { slug: string }) {
                             <section className="group relative overflow-hidden rounded-[18px] bg-white px-4 py-8 text-center shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] transition-shadow duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.09)] xl:min-h-[247px]">
                               <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#38c1ff,#ffc107)]" />
                               <div className="mx-auto h-[82px] w-[82px] overflow-hidden rounded-full bg-[#f0f0f0] ring-3 ring-[#38c1ff]/10 ring-offset-2">
-                                <div
-                                  aria-hidden="true"
-                                  className="h-full w-full bg-cover bg-center"
-                                  style={{ backgroundImage: `url("${mentor.image}")` }}
-                                />
+                                {mentor.image ? (
+                                  <div
+                                    aria-hidden="true"
+                                    className="h-full w-full bg-cover bg-center"
+                                    style={{ backgroundImage: `url("${mentor.image}")` }}
+                                  />
+                                ) : (
+                                  <InitialsAvatar name={mentor.name} className="h-full w-full text-[26px]" />
+                                )}
                               </div>
                               <div className="mt-4 space-y-1">
                                 <p className="text-[16px] font-semibold text-black">{mentor.name}</p>
@@ -773,15 +764,7 @@ export async function CourseDetailContent({ slug }: { slug: string }) {
                               &quot;{testimonial.quote}&quot;
                             </p>
                             <div className="mt-6 flex items-center gap-3">
-                              <div className="h-10 w-10 overflow-hidden rounded-full bg-gray-100">
-                                <Image
-                                  src={`https://api.dicebear.com/9.x/initials/svg?seed=${testimonial.author}`}
-                                  alt={testimonial.author}
-                                  width={40}
-                                  height={40}
-                                  className="h-full w-full object-cover"
-                                />
-                              </div>
+                              <InitialsAvatar name={testimonial.author} className="h-10 w-10 text-sm" />
                               <p className="text-[14px] font-semibold text-black">{testimonial.author}</p>
                             </div>
                           </section>

@@ -1,8 +1,8 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { Camera, ArrowLeft } from "lucide-react";
-import { motion } from "motion/react";
+import { Camera, ArrowLeft, TriangleAlert, Clock, BookOpen } from "lucide-react";
+import { m as motion } from "motion/react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import {
@@ -62,21 +62,11 @@ interface StudentUser {
 
 // --- Inline SVG Icons (no external dependencies) ---
 function ClockIcon() {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
-      <circle cx="24" cy="24" r="20" stroke="white" strokeWidth="3" strokeOpacity="0.6" />
-      <path d="M24 14v10l6 4" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.9" />
-    </svg>
-  );
+  return <Clock className="h-full w-full" />;
 }
 
 function CoursesIcon() {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
-      <rect x="8" y="10" width="32" height="28" rx="4" stroke="white" strokeWidth="3" strokeOpacity="0.6" />
-      <path d="M16 18h16M16 24h12M16 30h8" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.9" />
-    </svg>
-  );
+  return <BookOpen className="h-full w-full" />;
 }
 
 function UserAvatarPlaceholder({ name }: { name: string }) {
@@ -163,7 +153,7 @@ export default function AdminStudentProfilePage({ params }: { params: Promise<{ 
             ) : error ? (
               <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
                 <div className="rounded-2xl bg-red-50 border border-red-100 px-8 py-6 max-w-sm">
-                  <p className="text-2xl mb-2">⚠️</p>
+                  <TriangleAlert className="mx-auto mb-2 h-7 w-7 text-red-500" />
                   <p className="text-base font-semibold text-red-700">{error}</p>
                   <button
                     className="mt-4 text-sm font-bold text-[#38c1ff] hover:underline"

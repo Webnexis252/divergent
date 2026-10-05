@@ -118,7 +118,7 @@ export function LessonCompleteButton({
           ) : (
             <Circle className="h-4 w-4" />
           )}
-          {isCompleted ? "Completed ✓" : "Mark as Complete"}
+          {isCompleted ? "Completed" : "Mark as Complete"}
         </button>
 
         {/* Auto-advance to next lesson once marked complete */}

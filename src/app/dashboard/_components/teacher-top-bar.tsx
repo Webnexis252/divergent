@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import Image from "next/image";
 import { useAuth } from "@/context/auth-context";
 import { brand } from "@/lib/brand";
 import { GlobalSearch } from "./global-search";
+import { useAppHeaderHeight } from "./use-app-header-height";
+import { useRef } from "react";
 
 import { LogOut, Settings } from "lucide-react";
 
@@ -13,11 +15,14 @@ const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
 export function TeacherTopBar() {
   const { logout, user } = useAuth();
-  
+  const headerRef = useRef<HTMLElement>(null);
+  useAppHeaderHeight(headerRef);
+
   return (
     <motion.header
+      ref={headerRef}
       className="sticky top-0 z-40 bg-white/95 shadow-[0_1px_0_rgba(0,0,0,0.04)] backdrop-blur-md"
-      initial={{ opacity: 0, y: -40 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease }}
     >

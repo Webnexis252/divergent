@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
+import { TriangleAlert, ThumbsUp, MessageCircle, ShieldCheck, Siren, CircleCheck, MessageSquareText } from "lucide-react";
 
 type FlaggedPost = {
   id: string;
@@ -103,7 +104,7 @@ function ModerationPostCard({
 
           {post.flagReason && (
             <div className="mt-3 rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-[12px] text-red-700 flex gap-2 items-start">
-              <span className="text-red-500 mt-0.5">⚠️</span>
+              <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500" />
               <div>
                 <span className="font-semibold">Flag reason:</span> {post.flagReason}
               </div>
@@ -112,8 +113,8 @@ function ModerationPostCard({
 
           <div className="flex items-center gap-4 mt-3 pt-2 border-t border-black/5 text-[11px] text-[#8b8888]">
             <span>{new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-            <span className="flex items-center gap-1"><span>👍</span> {post._count.likes}</span>
-            <span className="flex items-center gap-1"><span>💬</span> {post._count.replies}</span>
+            <span className="flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> {post._count.likes}</span>
+            <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> {post._count.replies}</span>
           </div>
         </div>
       </div>
@@ -180,7 +181,7 @@ export default function AdminModerationPage() {
           <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#dc2626] via-[#ef4444] to-[#f97316] px-8 py-10 text-white shadow-[0_24px_60px_rgba(220,38,38,0.25)]">
             <motion.div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl" animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 5, repeat: Infinity }} />
             <div className="relative z-10">
-              <div className="inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-widest">🛡️ Safety</div>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-widest"><ShieldCheck className="h-3.5 w-3.5" />Safety</div>
               <h1 className="mt-4 text-4xl font-semibold tracking-tight">Content Moderation</h1>
               <p className="mt-2 text-white/80">Review and manage flagged community posts to maintain platform safety.</p>
             </div>
@@ -199,7 +200,7 @@ export default function AdminModerationPage() {
             <div className="border-b border-red-200 px-6 py-5 bg-white flex items-center justify-between">
               <div>
                 <h2 className="text-[18px] font-bold text-red-700 flex items-center gap-2">
-                  <span className="animate-pulse">🚨</span> SLA Breaches: Overdue Sketch Evaluations
+                  <Siren className="h-5 w-5 animate-pulse" /> SLA Breaches: Overdue Sketch Evaluations
                 </h2>
                 <p className="text-[13px] text-red-600/80 mt-1">Teachers have not evaluated these sketch questions for over 24 hours.</p>
               </div>
@@ -240,7 +241,7 @@ export default function AdminModerationPage() {
               [1,2,3].map(i => <div key={i} className="h-28 animate-pulse rounded-[16px] bg-gray-100" />)
             ) : flagged.length === 0 ? (
               <div className="py-16 text-center">
-                <p className="text-[48px]">✅</p>
+                <CircleCheck className="mx-auto h-12 w-12 text-[#16a34a]" strokeWidth={1.5} />
                 <p className="mt-4 text-[18px] font-semibold text-[#101828]">No flagged posts</p>
                 <p className="mt-2 text-[14px] text-[#94a3b8]">The community is clean. No reports to review.</p>
               </div>
@@ -270,7 +271,7 @@ export default function AdminModerationPage() {
               [1, 2, 3].map(i => <div key={i} className="h-28 animate-pulse rounded-[16px] bg-gray-100" />)
             ) : posts.length === 0 ? (
               <div className="py-16 text-center">
-                <p className="text-[48px]">📝</p>
+                <MessageSquareText className="mx-auto h-12 w-12 text-[#94a3b8]" strokeWidth={1.5} />
                 <p className="mt-4 text-[18px] font-semibold text-[#101828]">No community posts yet</p>
                 <p className="mt-2 text-[14px] text-[#94a3b8]">
                   Posts will appear here once learners or mentors start publishing.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { motion, useMotionValue, useReducedMotion, useSpring } from "motion/react";
+import { m as motion, useMotionValue, useReducedMotion, useSpring } from "motion/react";
 
 const FINE_POINTER_MEDIA_QUERY = "(hover: hover) and (pointer: fine)";
 

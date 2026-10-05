@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from '@node-rs/bcrypt';
 import prisma from '@/lib/prisma';
 import { requireAuth, signPhoneVerifiedToken } from '@/lib/auth';
+import { recordRegisteredInBackground } from '@/lib/auth-bloom';
 import {
   apiSuccess,
   apiBadRequest,
@@ -110,6 +111,7 @@ export async function POST(req: NextRequest) {
         where: { id: auth.userId },
         data: { phone: normalizedPhone },
       });
+      recordRegisteredInBackground({ phone: normalizedPhone });
 
       return apiSuccess(
         { verified: true },

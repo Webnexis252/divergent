@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import bcrypt from "bcryptjs";
+import { NextRequest, after } from "next/server";
+import * as bcrypt from "@node-rs/bcrypt";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiSuccess, apiError, apiForbidden, apiNotFound, apiServerError } from "@/lib/api-response";
@@ -53,12 +53,16 @@ export async function POST(
       },
     });
 
-    // Notify teacher by email (non-blocking)
+    // Notify teacher by email after responding. `after` keeps the function
+    // alive until the send finishes; an un-awaited promise can be frozen.
     if (teacher.email) {
-      sendTeacherPasswordSetEmail({
-        to: teacher.email,
-        name: teacher.name ?? "",
-      }).catch((err) => console.error("[PASSWORD_SET_EMAIL_ERROR]", err));
+      const to = teacher.email;
+      after(() =>
+        sendTeacherPasswordSetEmail({
+          to,
+          name: teacher.name ?? "",
+        }).catch((err) => console.error("[PASSWORD_SET_EMAIL_ERROR]", err)),
+      );
     }
 
     return apiSuccess(

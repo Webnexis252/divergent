@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
+import { releaseCouponUse, reserveCouponUse } from "@/lib/coupons";
 
 export async function POST(req: NextRequest) {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
   });
+
+  // A coupon use claimed below but never attached to a payment is returned in `finally`.
+  let reservedCouponCode: string | null = null;
 
   try {
     const auth = await requireAuth(req);
@@ -174,6 +178,13 @@ export async function POST(req: NextRequest) {
 
         orderAmount = Math.max(0, orderAmount - appliedCouponDiscount);
         appliedCouponCode = coupon.code;
+
+        // Claim the use atomically: the usedCount check above can race with
+        // another buyer taking the last use at the same moment.
+        if (!(await reserveCouponUse(coupon.code))) {
+          return apiError("Invalid, expired, or fully used coupon code", 400);
+        }
+        reservedCouponCode = coupon.code;
         
         if (orderAmount === 0) {
           isBypassed = true;
@@ -206,10 +217,7 @@ export async function POST(req: NextRequest) {
             discountAmount: appliedCouponDiscount,
           }
         });
-        await prisma.coupon.update({
-          where: { code: appliedCouponCode },
-          data: { usedCount: { increment: 1 } }
-        });
+        reservedCouponCode = null; // kept: used by this SUCCESS payment
       }
 
       return apiSuccess({ bypassPayment: true });
@@ -248,6 +256,7 @@ export async function POST(req: NextRequest) {
         })
       },
     });
+    reservedCouponCode = null; // kept: used by this PENDING payment, released if it fails
 
     return apiSuccess({
       order_id: order.id,
@@ -261,5 +270,11 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     console.error("[RAZORPAY CREATE ORDER] Unexpected error:", error);
     return apiError("Something went wrong while processing your payment. Please try again.", 500);
+  } finally {
+    if (reservedCouponCode) {
+      await releaseCouponUse(reservedCouponCode).catch((err) =>
+        console.error("[CREATE ORDER] Failed to release coupon reservation:", err),
+      );
+    }
   }
 }

@@ -3,7 +3,7 @@
 import { Search, BookOpen, FileText, ClipboardList, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import useSWR from "swr";
 import { cx } from "@/lib/cx";
 import { apiClient } from "@/lib/api-client";

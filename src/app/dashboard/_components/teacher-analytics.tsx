@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   AnimCard,
@@ -9,7 +9,7 @@ import {
   RevealSection,
   StaggerGrid,
 } from "./motion-wrappers";
-import { TeacherSidebar } from "./teacher-sidebar";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
@@ -23,10 +23,18 @@ type AnalyticsData = {
     videoCompletionRate: number;
     dropOffRate: number;
   };
+  doubtResponse?: { asked: number; answered: number; withinTwoHours: number; medianMinutes: number | null };
   trendData: { label: string; value: number }[];
   topStudents: { id: string; name: string; detail: string }[];
   needsAttention: { id: string; name: string; detail: string; streakCount: number }[];
+  needsAttentionCount?: number;
 };
+
+function formatMinutes(minutes: number | null) {
+  if (minutes === null) return "—";
+  if (minutes < 60) return `${minutes} min`;
+  return `${(minutes / 60).toFixed(minutes < 600 ? 1 : 0)} h`;
+}
 
 type CourseOption = {
   id: string;
@@ -55,19 +63,11 @@ function ChevronIcon({ open }: { open?: boolean }) {
 }
 
 function TrendUpIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m5 15 5-5 4 4 5-7" /><path d="M14 7h5v5" />
-    </svg>
-  );
+  return <TrendingUp className="h-4 w-4" />;
 }
 
 function TrendDownIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m5 9 5 5 4-4 5 7" /><path d="M14 17h5v-5" />
-    </svg>
-  );
+  return <TrendingDown className="h-4 w-4" />;
 }
 
 // ─── Reusable dropdown ────────────────────────────────────────────────────────
@@ -343,7 +343,7 @@ function StudentStatusPanel({
       <div className="mt-6 space-y-3">
         {students.length === 0 ? (
           <p className="text-[14px] text-[#9ca3af]">
-            {tone === "attention" ? "All students are on track 🎉" : "No top performers yet — data will appear as students earn XP."}
+            {tone === "attention" ? "All students are on track." : "No top performers yet — data will appear as students earn XP."}
           </p>
         ) : (
           paginatedStudents.map((student, index) => (
@@ -372,7 +372,7 @@ function StudentStatusPanel({
                 </div>
               </div>
               <span className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold ${badgeTone}`}>
-                {tone === "attention" ? "Needs follow-up" : "On fire 🔥"}
+                {tone === "attention" ? "Needs follow-up" : "Top performer"}
               </span>
             </motion.article>
           ))
@@ -623,6 +623,11 @@ export function SharedAnalyticsDashboard({
   }, [fetchAnalytics]);
 
   const m = analytics?.metrics;
+  const response = analytics?.doubtResponse;
+  const answeredInTwoHoursPct =
+    response && response.asked > 0 ? Math.round((response.withinTwoHours / response.asked) * 100) : null;
+  const needsAttentionShown = analytics?.needsAttention.length ?? 0;
+  const needsAttentionTotal = analytics?.needsAttentionCount ?? needsAttentionShown;
 
   // Build dropdown options
   const courseOptions = [
@@ -671,6 +676,19 @@ export function SharedAnalyticsDashboard({
           accent: "from-[#f59e0b] via-[#f7c86d] to-[#fff1cf]",
           note: "Students with no lesson activity in this period",
         },
+        ...(response
+          ? [
+              {
+                title: "First Answer Time",
+                value: formatMinutes(response.medianMinutes),
+                delta: answeredInTwoHoursPct === null ? "No doubts" : `${answeredInTwoHoursPct}% within 2h`,
+                deltaTone:
+                  answeredInTwoHoursPct === null || answeredInTwoHoursPct >= 80 ? "text-[#16a34a]" : "text-[#f59e0b]",
+                accent: "from-[#16a34a] via-[#86efac] to-[#dcfce7]",
+                note: `Median time to a first teacher reply · ${response.answered} of ${response.asked} doubts answered in the last ${days} days`,
+              },
+            ]
+          : []),
       ]
     : [];
 
@@ -795,7 +813,7 @@ export function SharedAnalyticsDashboard({
             className="space-y-8"
           >
             <RevealSection delay={0.08}>
-              <StaggerGrid className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              <StaggerGrid className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
                 {metricCards.map((metric) => (
                   <AnalyticsMetricCard key={metric.title} {...metric} />
                 ))}
@@ -810,7 +828,11 @@ export function SharedAnalyticsDashboard({
               <div className="grid gap-5 xl:grid-cols-2">
                 <StudentStatusPanel
                   title="Need Attention"
-                  subtitle="Students below 40% overall performance"
+                  subtitle={
+                    needsAttentionTotal > needsAttentionShown
+                      ? `Students below 40% overall performance · lowest ${needsAttentionShown} of ${needsAttentionTotal}`
+                      : "Students below 40% overall performance"
+                  }
                   tone="attention"
                   students={analytics?.needsAttention ?? []}
                 />
@@ -836,8 +858,7 @@ export function SharedAnalyticsDashboard({
 export function TeacherAnalytics() {
   return (
     <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
-          <TeacherSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:gap-8 lg:px-0 lg:pt-8">
 
           <main className="lg:pr-[160px]">
             <SharedAnalyticsDashboard />

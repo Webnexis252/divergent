@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiUnauthorized, apiServerError } from "@/lib/api-response";
-import { averageCategoryPerformanceBreakdown } from "@/lib/test-category-performance";
-import { gradeQuestionAnswer } from "@/lib/test-grading";
 import { formatWatchTimeStat } from "@/lib/live-class-attendance";
+import { getStudentSkillBreakdown } from "@/lib/student-progress";
 
 /** Wrap a JSON response with private browser caching (60s fresh, 120s stale). */
 function cachedJson(data: unknown, status = 200): NextResponse {
@@ -12,9 +11,9 @@ function cachedJson(data: unknown, status = 200): NextResponse {
     status,
     headers: {
       'Content-Type': 'application/json',
-      // Browser caches the response for 60 s; up to 120 s stale-while-revalidating.
-      // "private" prevents CDN/proxy caches from storing per-user data.
-      'Cache-Control': 'private, max-age=60, stale-while-revalidate=120',
+      // Per-user data: never HTTP-cached, since the browser cache is keyed by
+      // URL and would serve the previous user's stats on a shared device.
+      'Cache-Control': 'private, no-store',
     },
   });
 }
@@ -61,7 +60,7 @@ export async function GET(req: NextRequest) {
         weeklyAttendance,
         enrollments,
         quizAttempts,
-        latestTestAttempts,
+        { skills, skillTestsEvaluated },
         studentGoals,
       ] = await Promise.all([
         prisma.notification.findMany({
@@ -95,35 +94,8 @@ export async function GET(req: NextRequest) {
           orderBy: { createdAt: "desc" },
           take: 20,
         }),
-        prisma.testAttempt.findMany({
-          where: {
-            userId,
-            submittedAt: { not: null },
-            gradingStatus: { in: ["AUTO_GRADED", "FULLY_GRADED"] },
-          },
-          orderBy: { submittedAt: "desc" },
-          take: 3,
-          select: {
-            gradingStatus: true,
-            answers: true,
-            sketchGrades: true,
-            test: {
-              select: {
-                questions: {
-                  orderBy: { order: "asc" },
-                  select: {
-                    id: true,
-                    type: true,
-                    category: true,
-                    points: true,
-                    correctAnswer: true,
-                    explanation: true,
-                  },
-                },
-              },
-            },
-          },
-        }),
+        // Per-category performance from the last 3 graded tests
+        getStudentSkillBreakdown(userId),
         prisma.studentGoal.findMany({
           where: { studentId: userId, weekStart: { gte: startOfWeek } },
           orderBy: { createdAt: "asc" },
@@ -213,50 +185,6 @@ export async function GET(req: NextRequest) {
         },
       ];
 
-      const skillEntriesByAttempt = latestTestAttempts.map((attempt) => {
-        const answers = (attempt.answers as Record<string, unknown> | null) || {};
-        const sketchGrades =
-          (attempt.sketchGrades as Record<string, { points: number; feedback?: string }> | null) ?? {};
-
-        return attempt.test.questions.map((question) => {
-          if (question.type === "SKETCH") {
-            const pointsAwarded =
-              attempt.gradingStatus === "FULLY_GRADED"
-                ? sketchGrades[question.id]?.points ?? 0
-                : 0;
-            return {
-              category: question.category,
-              points: question.points,
-              pointsAwarded,
-              isCorrect: attempt.gradingStatus === "FULLY_GRADED" ? pointsAwarded > 0 : null,
-            };
-          }
-
-          const gradedResult = gradeQuestionAnswer(
-            {
-              type: question.type,
-              points: question.points,
-              correctAnswer: question.correctAnswer,
-              explanation: question.explanation,
-            },
-            answers[question.id],
-            { includeAnswerKey: false }
-          );
-
-          return {
-            category: question.category,
-            points: question.points,
-            pointsAwarded: gradedResult.pointsAwarded,
-            isCorrect: gradedResult.isCorrect,
-          };
-        });
-      });
-
-      const skills =
-        latestTestAttempts.length > 0
-          ? averageCategoryPerformanceBreakdown(skillEntriesByAttempt, { includeEmpty: true })
-          : [];
-
       return cachedJson({
         success: true,
         data: {
@@ -276,7 +204,7 @@ export async function GET(req: NextRequest) {
             weeklyGoals,
             topicMastery,
             skills,
-            skillTestsEvaluated: latestTestAttempts.length,
+            skillTestsEvaluated,
           },
         },
       });

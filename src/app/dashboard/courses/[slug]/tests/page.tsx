@@ -6,6 +6,8 @@ import { useAuth } from "@/context/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { TriangleAlert, FileText, GraduationCap, BookOpen, RotateCcw, ChartNoAxesColumn, Timer, ListChecks, Target, Repeat } from "lucide-react";
+import type { ReactNode } from "react";
 
 type TestItem = {
   id: string;
@@ -77,7 +79,7 @@ export default function CourseTestsPage() {
   if (error) {
     return (
       <div className="tests-error">
-        <p>❌ {error}</p>
+        <p><TriangleAlert className="mr-1.5 inline h-4 w-4 align-[-3px]" />{error}</p>
       </div>
     );
   }
@@ -101,23 +103,23 @@ export default function CourseTestsPage() {
 
         {tests.length === 0 ? (
           <div className="tests-empty">
-            <div className="tests-empty__icon">📝</div>
+            <div className="tests-empty__icon"><FileText className="mx-auto h-[1em] w-[1em]" strokeWidth={1.5} /></div>
             <h3>No tests available yet</h3>
             <p>Your instructor hasn&apos;t created any tests for this course.</p>
           </div>
         ) : (
           <div className="tests-page__sections">
             {courseExams.length > 0 && (
-              <TestSection title="Course Exams" icon="🎓" tests={courseExams} slug={slug} router={router} />
+              <TestSection title="Course Exams" icon={<GraduationCap className="h-[1em] w-[1em]" />} tests={courseExams} slug={slug} router={router} />
             )}
             {chapterTests.length > 0 && (
-              <TestSection title="Chapter Tests" icon="📖" tests={chapterTests} slug={slug} router={router} />
+              <TestSection title="Chapter Tests" icon={<BookOpen className="h-[1em] w-[1em]" />} tests={chapterTests} slug={slug} router={router} />
             )}
             {mockTests.length > 0 && (
-              <TestSection title="Practice Tests" icon="🔄" tests={mockTests} slug={slug} router={router} />
+              <TestSection title="Practice Tests" icon={<RotateCcw className="h-[1em] w-[1em]" />} tests={mockTests} slug={slug} router={router} />
             )}
             {placementTests.length > 0 && (
-              <TestSection title="Placement Tests" icon="📊" tests={placementTests} slug={slug} router={router} />
+              <TestSection title="Placement Tests" icon={<ChartNoAxesColumn className="h-[1em] w-[1em]" />} tests={placementTests} slug={slug} router={router} />
             )}
           </div>
         )}
@@ -186,7 +188,7 @@ function TestSection({
   router,
 }: {
   title: string;
-  icon: string;
+  icon: ReactNode;
   tests: TestItem[];
   slug: string;
   router: ReturnType<typeof useRouter>;
@@ -194,7 +196,7 @@ function TestSection({
   return (
     <section className="test-section">
       <h2 className="test-section__title">
-        <span>{icon}</span> {title}
+        <span className="inline-flex align-[-0.1em]">{icon}</span> {title}
       </h2>
       <div className="test-section__list">
         {tests.map((test) => (
@@ -255,10 +257,10 @@ function TestCard({
             <p className="test-card__chapter">Chapter: {test.chapter.title}</p>
           )}
           <div className="test-card__meta">
-            <span>⏱ {test.durationMins} min</span>
-            <span>📝 {test._count.questions} questions</span>
-            <span>🎯 Pass: {test.passingScore}%</span>
-            <span>🔄 {test.maxAttempts === -1 ? "Unlimited" : `${test.maxAttempts} attempt${test.maxAttempts !== 1 ? "s" : ""}`}</span>
+            <span className="inline-flex items-center gap-1"><Timer className="h-3.5 w-3.5" />{test.durationMins} min</span>
+            <span className="inline-flex items-center gap-1"><ListChecks className="h-3.5 w-3.5" />{test._count.questions} questions</span>
+            <span className="inline-flex items-center gap-1"><Target className="h-3.5 w-3.5" />Pass: {test.passingScore}%</span>
+            <span className="inline-flex items-center gap-1"><Repeat className="h-3.5 w-3.5" />{test.maxAttempts === -1 ? "Unlimited" : `${test.maxAttempts} attempt${test.maxAttempts !== 1 ? "s" : ""}`}</span>
           </div>
         </div>
 

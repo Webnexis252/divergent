@@ -1,5 +1,7 @@
 @import "tailwindcss";
 :root {
+  /* Set at runtime by the sticky dashboard headers (useAppHeaderHeight) */
+  --app-header-height: 0px;
   --background: #f7f6f6;
   --background-alt: #f7f5f4;
   --foreground: #101828;
@@ -340,4 +342,22 @@ a {
 @keyframes cal-shimmer {
   0%   { background-position: 200% center; }
   100% { background-position: -200% center; }
+}
+
+/* Entrance animations that start at first paint, without JavaScript, so
+   server-rendered content is never held invisible while the bundle loads.
+   `backwards` fill: once finished they leave no transform behind (a lingering
+   transform would trap position: fixed descendants such as modals).
+   Reduced-motion users get the near-zero durations set above. */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+@keyframes enter-from-right {
+  from { opacity: 0; transform: translateX(28px); }
+}
+
+@layer utilities {
+  .page-enter { animation: page-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+  .enter-from-right { animation: enter-from-right 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 }

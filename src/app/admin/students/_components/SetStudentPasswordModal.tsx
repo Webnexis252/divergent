@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { Eye, EyeOff, X, Loader2, CheckCircle2, AlertTriangle, Lock } from "lucide-react";
 
 export function SetStudentPasswordModal({

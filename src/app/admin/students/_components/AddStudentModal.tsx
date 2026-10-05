@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { X, UserPlus, BookOpen } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { X, UserPlus, BookOpen, Check } from "lucide-react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 
 interface Course {
@@ -190,7 +190,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess, isSuperAdmin }: Ad
                 </select>
                 {courseId && (
                   <p className="mt-1.5 text-xs text-emerald-600">
-                    ✓ Student will be enrolled immediately upon{" "}
+                    <Check className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Student will be enrolled immediately upon{" "}
                     {isSuperAdmin ? "adding" : "approval"}.
                   </p>
                 )}

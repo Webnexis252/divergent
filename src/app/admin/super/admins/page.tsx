@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../../_components/AdminStatCard";
 import { formatShortDate } from "@/lib/date-format";
+import { Check } from "lucide-react";
 
 type Admin = {
   id: string;
@@ -162,7 +163,7 @@ export default function SuperAdminAdminsPage() {
               initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="rounded-[16px] bg-[#f0fdf4] border border-[#bbf7d0] px-5 py-4 text-[14px] font-medium text-[#15803d]"
             >
-              ✓ {success}
+              <Check className="mr-1.5 inline h-4 w-4 align-[-3px]" />{success}
             </motion.div>
           )}
         </AnimatePresence>

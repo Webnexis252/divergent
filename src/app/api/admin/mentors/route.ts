@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { apiSuccess, apiForbidden, apiServerError } from '@/lib/api-response';
+import { doubtResponseTimesByMentor } from '@/lib/teacher-analytics';
 
 /**
  * GET /api/admin/mentors
@@ -14,8 +15,9 @@ export async function GET(req: NextRequest) {
     if (!auth) return apiForbidden('Admin access required');
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    const allMentors = await prisma.user.findMany({
+    const [mentors, responseTimes] = await Promise.all([prisma.user.findMany({
       where: { role: { in: ['MENTOR', 'ADMIN', 'SUPER_ADMIN'] } },
       select: {
         id: true, name: true, email: true, image: true, role: true,
@@ -27,7 +29,8 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: { createdAt: 'asc' },
-    });
+    }), doubtResponseTimesByMentor(thirtyDaysAgo)]);
+    const allMentors = mentors.map((m) => ({ ...m, responseTime: responseTimes.get(m.id) ?? null }));
 
     // Split pending teachers from active team members
     const pending = allMentors.filter(

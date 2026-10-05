@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import CustomCursor from "@/components/CustomCursor";
 import { MotionProvider } from "@/components/providers/motion-provider";
@@ -53,6 +54,8 @@ export default function RootLayout({
             </div>
           </AuthProvider>
         </MotionProvider>
+        {/* Real-user page speed (Core Web Vitals) in the Vercel dashboard. */}
+        <SpeedInsights />
       </body>
     </html>
   );

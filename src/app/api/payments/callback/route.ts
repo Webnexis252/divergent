@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import cashfree from "@/lib/cashfree";
 import prisma from "@/lib/prisma";
-import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
+import { completePayment, failPayment } from "@/lib/payments";
+import { fetchCashfreeOutcome } from "@/lib/payment-gateways";
 
 /**
  * GET /api/payments/callback?order_id=xxx
@@ -20,53 +20,40 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Fetch order status from Cashfree
-    const response = await cashfree.PGOrderFetchPayments(orderId);
-    const payments = response?.data || [];
-    const successfulPayment = payments.find(
-      (p: { payment_status?: string }) => p.payment_status === "SUCCESS",
-    );
-
-    // Find the payment record
-    const payment = await prisma.payment.findFirst({
+    const payment = await prisma.payment.findUnique({
       where: { cashfreeOrderId: orderId },
+      select: { id: true, status: true },
     });
-
-    if (successfulPayment && payment) {
-      // Update payment if still pending
-      if (payment.status === "PENDING") {
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: "SUCCESS",
-            cashfreePaymentId: String(successfulPayment.cf_payment_id || ""),
-          },
-        });
-
-        // Enroll the user
-        if (payment.bundleId) {
-          const bundleCourses = await (prisma as any).bundleCourse.findMany({ where: { bundleId: payment.bundleId }, select: { courseId: true } });
-          await Promise.all(bundleCourses.map((bc: { courseId: string }) => ensureActiveEnrollmentWithXp(payment.userId, bc.courseId, 'ACTIVE', true, payment.bundleId!)));
-        } else if (payment.courseId) {
-          await ensureActiveEnrollmentWithXp(payment.userId, payment.courseId);
-        }
-      }
-
+    if (!payment) {
       return NextResponse.redirect(
-        new URL("/payment/status?status=success", req.url),
+        new URL("/payment/status?status=failed&message=missing_order", req.url),
       );
     }
 
-    // Payment failed or pending
-    if (payment && payment.status === "PENDING") {
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: { status: "FAILED" },
-      });
+    // Ask Cashfree (circuit-breaker protected) rather than trusting the redirect
+    const outcome = await fetchCashfreeOutcome(orderId);
+
+    if (outcome.state === "PAID") {
+      // No-op if the webhook already completed it
+      await completePayment(payment.id, outcome.reference);
+      return NextResponse.redirect(new URL("/payment/status?status=success", req.url));
     }
 
+    if (outcome.state === "IN_PROGRESS") {
+      // e.g. a UPI payment awaiting approval: don't mark it failed, the
+      // webhook or the reconciliation cron completes it when it clears
+      return NextResponse.redirect(new URL("/payment/status?status=pending", req.url));
+    }
+
+    // Only PENDING → FAILED; a payment the webhook already completed stays SUCCESS
+    await failPayment(payment.id);
+    const latest = await prisma.payment.findUnique({
+      where: { id: payment.id },
+      select: { status: true },
+    });
+
     return NextResponse.redirect(
-      new URL("/payment/status?status=failed", req.url),
+      new URL(`/payment/status?status=${latest?.status === "SUCCESS" ? "success" : "failed"}`, req.url),
     );
   } catch (error) {
     console.error("[PAYMENT_CALLBACK] Error:", error);

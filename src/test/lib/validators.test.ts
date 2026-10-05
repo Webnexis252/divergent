@@ -128,9 +128,11 @@ describe('validators', () => {
     it('accepts valid MCQ question', () => {
       const result = CreateQuestionSchema.safeParse({
         type: 'MCQ',
+        category: 'CONCEPT',
         prompt: 'What is the capital of France?',
         options: ['Berlin', 'Paris', 'Madrid', 'Rome'],
         correctAnswer: 'Paris',
+        points: 1,
       });
       expect(result.success).toBe(true);
     });
@@ -138,9 +140,11 @@ describe('validators', () => {
     it('accepts MULTIPLE_RESPONSE with array correctAnswer', () => {
       const result = CreateQuestionSchema.safeParse({
         type: 'MULTIPLE_RESPONSE',
+        category: 'CONCEPT',
         prompt: 'Which are primary colors?',
         options: ['Red', 'Green', 'Blue', 'Yellow'],
         correctAnswer: ['Red', 'Blue', 'Yellow'],
+        points: 1,
       });
       expect(result.success).toBe(true);
     });
@@ -172,6 +176,7 @@ describe('validators', () => {
         correctAnswer: 'All of the above',
         difficulty: 'HARD',
         points: 5,
+        imageUrl: 'https://example.com/image.png',
       });
       expect(result.success).toBe(true);
     });
@@ -183,6 +188,7 @@ describe('validators', () => {
         options: ['Balance', 'Contrast', 'Rhythm', 'Whitespace'],
         correctAnswer: ['Balance', 'Contrast', 'Rhythm'],
         points: 4,
+        imageUrl: 'https://example.com/image.png',
       });
       expect(result.success).toBe(true);
     });

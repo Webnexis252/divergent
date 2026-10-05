@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { Flag, Clock, CheckCircle2, ChevronRight, ChevronLeft, Image as ImageIcon } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────

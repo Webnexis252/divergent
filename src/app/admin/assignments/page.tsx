@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import {
   PageTransition,
   RevealSection,
@@ -27,6 +27,10 @@ import {
   User,
   MessageSquare,
   AlertCircle,
+  CircleCheck,
+  TriangleAlert,
+  ClipboardList,
+  Check,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -189,7 +193,7 @@ function CreateAssignmentModal({
       >
         {success ? (
           <div className="py-10 text-center">
-            <motion.p className="text-[52px]" animate={{ scale: 1 }} initial={{ scale: 0 }} transition={{ type: "spring", stiffness: 260 }}>✅</motion.p>
+            <motion.div className="flex justify-center text-[#16a34a]" animate={{ scale: 1 }} initial={{ scale: 0 }} transition={{ type: "spring", stiffness: 260 }}><CircleCheck className="h-14 w-14" strokeWidth={1.75} /></motion.div>
             <p className="mt-4 text-[20px] font-semibold text-[#15803d]">Assignment created!</p>
             <p className="mt-2 text-[13px] text-[#6b7280]">All enrolled students will be notified.</p>
           </div>
@@ -299,13 +303,13 @@ function CreateAssignmentModal({
                       />
                     </div>
                     <p className="mt-1.5 text-[11px] text-[#9ca3af]">
-                      {uploading ? `Uploading… ${uploadProgress}%` : uploadProgress === 100 ? "✓ Uploaded" : ""}
+                      {uploading ? `Uploading… ${uploadProgress}%` : uploadProgress === 100 ? <><Check className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Uploaded</> : ""}
                     </p>
                   </motion.div>
                 )}
               </div>
 
-              {error && <p className="rounded-[10px] bg-[#fff5f5] px-4 py-2 text-[13px] text-[#dc2626]">⚠️ {error}</p>}
+              {error && <p className="rounded-[10px] bg-[#fff5f5] px-4 py-2 text-[13px] text-[#dc2626]"><TriangleAlert className="mr-1.5 inline h-4 w-4 align-[-3px]" />{error}</p>}
             </div>
 
             <div className="mt-6 flex items-center gap-3">
@@ -819,10 +823,10 @@ export default function AdminAssignmentsPage() {
               {loading ? (
                 [1, 2, 3, 4].map((i) => <div key={i} className="h-24 animate-pulse rounded-[18px] bg-[#f3f4f6]" />)
               ) : error ? (
-                <p className="rounded-[22px] border border-dashed border-[#fecaca] bg-[#fff5f5] px-5 py-12 text-center text-[14px] text-[#dc2626]">⚠️ {error}</p>
+                <p className="rounded-[22px] border border-dashed border-[#fecaca] bg-[#fff5f5] px-5 py-12 text-center text-[14px] text-[#dc2626]"><TriangleAlert className="mr-1.5 inline h-4 w-4 align-[-3px]" />{error}</p>
               ) : assignments.length === 0 ? (
                 <div className="rounded-[22px] border border-dashed border-[#d7dbe2] bg-[#fafafa] px-5 py-16 text-center">
-                  <p className="text-[40px]">📋</p>
+                  <ClipboardList className="mx-auto h-10 w-10 text-[#9ca3af]" strokeWidth={1.5} />
                   <p className="mt-3 text-[16px] font-semibold text-[#374151]">No assignments found</p>
                   <p className="mt-2 text-[13px] text-[#667085]">
                     {search || courseFilter !== "all" || statusFilter !== "all"

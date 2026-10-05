@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { X, ImagePlus } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { X, ImagePlus, Check } from "lucide-react";
+import { m as motion, AnimatePresence } from "motion/react";
 
 type QuestionType = "SCQ" | "MCQ" | "SKETCH" | "NUMERIC";
 type QuestionCategory = "CONCEPT" | "VISUALIZATION" | "OBSERVATION" | "PRACTICAL";
@@ -283,7 +283,7 @@ export function BuilderDrawer({
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={qForm.imageUrl} alt="Question" className="max-h-[400px] w-full object-contain" />
                         <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-t border-[#e5e7eb]">
-                          <span className="text-[12px] text-gray-600 font-medium">Question image uploaded ✓</span>
+                          <span className="text-[12px] text-gray-600 font-medium"><Check className="mr-1 inline h-3.5 w-3.5 align-[-2px] text-[#16a34a]" />Question image uploaded</span>
                           <button type="button" onClick={() => setQForm({...qForm, imageUrl: null})} className="text-[12px] text-red-500 hover:text-red-700 font-semibold">Remove</button>
                         </div>
                       </div>
@@ -404,7 +404,7 @@ export function BuilderDrawer({
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={qForm.explanationImageUrl} alt="Explanation" className="max-h-[400px] w-full object-contain" />
                       <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-t border-[#e5e7eb]">
-                        <span className="text-[12px] text-gray-600 font-medium">Explanation image uploaded ✓</span>
+                        <span className="text-[12px] text-gray-600 font-medium"><Check className="mr-1 inline h-3.5 w-3.5 align-[-2px] text-[#16a34a]" />Explanation image uploaded</span>
                         <button type="button" onClick={() => setQForm({...qForm, explanationImageUrl: null})} className="text-[12px] text-red-500 hover:text-red-700 font-semibold">Remove</button>
                       </div>
                     </div>

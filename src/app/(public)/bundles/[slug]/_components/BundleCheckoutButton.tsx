@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { Loader2, Sparkles, ShieldCheck, X } from "lucide-react";
 import { PaymentGatewayModal } from "@/app/_components/payment-gateway-modal";
 

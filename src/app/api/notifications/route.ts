@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse, after } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiSuccess, apiUnauthorized, apiServerError } from "@/lib/api-response";
@@ -13,10 +13,12 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req);
     if (!auth) return apiUnauthorized();
 
-    // Auto-generate smart notifications for this user (non-blocking)
-    // This checks for missed classes, upcoming deadlines, and exams
+    // Auto-generate smart notifications for this user after responding.
+    // This checks for missed classes, upcoming deadlines, and exams. `after`
+    // keeps the function alive until it finishes; a bare un-awaited promise
+    // can be frozen mid-write once the response is sent on Vercel.
     if (auth.role === 'STUDENT') {
-      generateSmartNotificationsForUser(auth.userId).catch(console.error);
+      after(() => generateSmartNotificationsForUser(auth.userId).catch(console.error));
     }
 
     const notifications = await prisma.notification.findMany({

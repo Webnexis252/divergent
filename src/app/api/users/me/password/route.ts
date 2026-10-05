@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "@node-rs/bcrypt";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 

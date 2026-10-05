@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { KeyRound, Lock, PauseCircle, Trash2 } from "lucide-react";
 import { formatShortDate } from "@/lib/date-format";
 import type { Mentor } from "./_types";
@@ -62,6 +62,13 @@ export function MentorCard({
   const totalDoubts = mentor._count.managedDoubts;
   const resolutionRate =
     totalDoubts > 0 ? Math.round((resolvedThisWeek / totalDoubts) * 100) : 0;
+  const response = mentor.responseTime;
+  const medianAnswer =
+    response?.medianMinutes == null
+      ? null
+      : response.medianMinutes < 60
+        ? `${response.medianMinutes} min`
+        : `${(response.medianMinutes / 60).toFixed(1)} h`;
 
   return (
     <>
@@ -103,8 +110,22 @@ export function MentorCard({
           <div className="mt-4 grid grid-cols-3 gap-2">
             <StatChip value={totalDoubts}       label="Doubts" />
             <StatChip value={mentor._count.doubtReplies} label="Replies" />
-            <StatChip value={resolvedThisWeek}  label="Week✓" />
+            <StatChip value={resolvedThisWeek}  label="This week" />
           </div>
+
+          {/* First-answer time over the last 30 days */}
+          <p className="mt-3 text-[12px] text-[#667085]">
+            First answer (30 days):{" "}
+            {response && response.asked > 0 ? (
+              <span className="font-semibold text-[#101828]">
+                {medianAnswer ?? "not yet answered"}
+                {" · "}
+                {Math.round((response.withinTwoHours / response.asked) * 100)}% within 2h
+              </span>
+            ) : (
+              <span className="font-semibold text-[#101828]">no doubts assigned</span>
+            )}
+          </p>
 
           {/* Resolution rate bar */}
           <div className="mt-4">

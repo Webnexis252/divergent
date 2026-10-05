@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
 import { formatRelativeTime } from "@/lib/date-format";
+import { ArrowUpRight } from "lucide-react";
 
 type Doubt = {
   id: string;
@@ -186,7 +187,7 @@ export default function AdminDoubtsPage() {
                     {doubt.attachmentUrl && (
                       <div className="mt-3">
                         <a href={doubt.attachmentUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#7c3aed] hover:underline">
-                          View Attachment ↗
+                          View Attachment <ArrowUpRight className="inline h-4 w-4 align-[-3px]" />
                         </a>
                       </div>
                     )}

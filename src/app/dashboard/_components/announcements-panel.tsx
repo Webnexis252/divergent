@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { Megaphone, Pin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 

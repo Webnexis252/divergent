@@ -7,7 +7,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { Surface } from "@/components/ui/surface";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 
 interface ApprovalRequest {
   id: string;
@@ -418,7 +418,7 @@ export default function StudentApprovalsPage() {
               toast.ok ? "bg-[#15803d]" : "bg-[#dc2626]"
             }`}
           >
-            {toast.ok ? "✓" : "✗"} {toast.msg}
+            {toast.ok ? <Check className="mr-1.5 inline h-4 w-4 align-[-3px]" /> : <X className="mr-1.5 inline h-4 w-4 align-[-3px]" />}{toast.msg}
           </motion.div>
         )}
       </AnimatePresence>

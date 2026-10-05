@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthCookieOptions, AUTH_COOKIE_NAME, signToken, verifyMagicLinkTokenValue } from '@/lib/auth';
-import { awardDailyLoginXp } from '@/lib/xp';
+import { awardDailyLoginXpInBackground } from '@/lib/xp';
+import { recordRegisteredInBackground } from '@/lib/auth-bloom';
 
 /**
  * GET /api/auth/verify-magic-link
@@ -50,7 +51,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    await awardDailyLoginXp(user.id);
+    recordRegisteredInBackground({ email, phone });
+    awardDailyLoginXpInBackground(user.id);
 
     // Sign auth token
     const authToken = await signToken({

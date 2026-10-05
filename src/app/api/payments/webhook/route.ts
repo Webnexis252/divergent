@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
 import crypto from "crypto";
+import { completePayment, failPayment } from "@/lib/payments";
+import { safeEqual } from "@/lib/secure-compare";
 
 /**
  * POST /api/payments/webhook
  * Cashfree sends asynchronous payment status updates to this endpoint.
  * This is the most reliable way to confirm payments — never rely solely on
  * client-side callbacks.
+ *
+ * Cashfree retries deliveries, and the redirect callback and verify call may
+ * confirm the same order concurrently; completePayment fulfils it once.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -15,76 +19,69 @@ export async function POST(req: NextRequest) {
     const timestamp = req.headers.get("x-webhook-timestamp") || "";
     const signature = req.headers.get("x-webhook-signature") || "";
 
-    // Verify webhook signature for security
-    if (process.env.CASHFREE_WEBHOOK_SECRET) {
-      const signedPayload = timestamp + rawBody;
-      const expectedSignature = crypto
-        .createHmac("sha256", process.env.CASHFREE_WEBHOOK_SECRET)
-        .update(signedPayload)
-        .digest("base64");
+    // Fail closed: without a secret anyone could post a fake "payment success".
+    // Cashfree signs webhooks with the account's secret key.
+    const webhookSecret = process.env.CASHFREE_WEBHOOK_SECRET || process.env.CASHFREE_SECRET_KEY;
+    if (!webhookSecret) {
+      console.error("[CASHFREE_WEBHOOK] No CASHFREE_WEBHOOK_SECRET or CASHFREE_SECRET_KEY set; rejecting webhook");
+      return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
+    }
 
-      if (signature !== expectedSignature) {
-        console.error("[CASHFREE_WEBHOOK] Invalid signature");
-        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-      }
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(timestamp + rawBody)
+      .digest("base64");
+
+    if (!safeEqual(signature, expectedSignature)) {
+      console.error("[CASHFREE_WEBHOOK] Invalid signature");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
     const payload = JSON.parse(rawBody);
     const eventType = payload.type;
+    const orderId = payload.data?.order?.order_id;
 
     if (eventType === "PAYMENT_SUCCESS_WEBHOOK" || eventType === "PAYMENT_SUCCESS") {
-      const data = payload.data;
-      const orderId = data?.order?.order_id;
-      const cfPaymentId = data?.payment?.cf_payment_id;
-
       if (!orderId) {
         console.error("[CASHFREE_WEBHOOK] Missing order_id in payload");
         return NextResponse.json({ error: "Missing order_id" }, { status: 400 });
       }
 
-      // Find the pending payment record
-      const payment = await prisma.payment.findFirst({
-        where: { cashfreeOrderId: orderId, status: "PENDING" },
+      const payment = await prisma.payment.findUnique({
+        where: { cashfreeOrderId: orderId },
+        select: { id: true },
       });
-
       if (!payment) {
-        // Payment already processed or not found — acknowledge anyway
-        console.log("[CASHFREE_WEBHOOK] Payment already processed or not found:", orderId);
+        // Not one of ours — acknowledge so Cashfree stops retrying
+        console.log("[CASHFREE_WEBHOOK] Unknown order:", orderId);
         return NextResponse.json({ status: "ok" });
       }
 
-      // Update payment status
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: "SUCCESS",
-          cashfreePaymentId: cfPaymentId ? String(cfPaymentId) : null,
-        },
+      const cfPaymentId = payload.data?.payment?.cf_payment_id;
+      const { completed, payment: updated } = await completePayment(payment.id, {
+        cashfreePaymentId: cfPaymentId ? String(cfPaymentId) : null,
       });
-
-      // Enroll the user in the course/bundle
-      if (payment.bundleId) {
-        const bundleCourses = await (prisma as any).bundleCourse.findMany({ where: { bundleId: payment.bundleId }, select: { courseId: true } });
-        await Promise.all(bundleCourses.map((bc: { courseId: string }) => ensureActiveEnrollmentWithXp(payment.userId, bc.courseId, 'ACTIVE', true, payment.bundleId!)));
-      } else if (payment.courseId) {
-        await ensureActiveEnrollmentWithXp(payment.userId, payment.courseId);
-        console.log(
-          `[CASHFREE_WEBHOOK] Enrolled user ${payment.userId} in course ${payment.courseId}`,
-        );
-      }
+      console.log(
+        completed
+          ? `[CASHFREE_WEBHOOK] Completed order ${orderId} for user ${updated.userId}`
+          : `[CASHFREE_WEBHOOK] Order ${orderId} already ${updated.status}; nothing to do`,
+      );
     } else if (eventType === "PAYMENT_FAILED_WEBHOOK" || eventType === "PAYMENT_FAILED") {
-      const orderId = payload.data?.order?.order_id;
       if (orderId) {
-        await prisma.payment.updateMany({
-          where: { cashfreeOrderId: orderId, status: "PENDING" },
-          data: { status: "FAILED" },
+        const payment = await prisma.payment.findUnique({
+          where: { cashfreeOrderId: orderId },
+          select: { id: true },
         });
-        console.log("[CASHFREE_WEBHOOK] Payment failed for order:", orderId);
+        // Only PENDING → FAILED; a SUCCESS is never reverted
+        if (payment && (await failPayment(payment.id))) {
+          console.log("[CASHFREE_WEBHOOK] Payment failed for order:", orderId);
+        }
       }
     }
 
     return NextResponse.json({ status: "ok" });
   } catch (error) {
+    // 500 makes Cashfree retry; completePayment rolled back, so the retry is safe
     console.error("[CASHFREE_WEBHOOK] Error:", error);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }

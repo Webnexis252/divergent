@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
+import { recordRegisteredInBackground } from "@/lib/auth-bloom";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -140,6 +141,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             data: { status: "APPROVED" }
           })
         ]);
+        recordRegisteredInBackground(newUser);
 
         // Enroll in course if specified (offline/cash payment requested by admin)
         if (request.courseId) {

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
-import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
 import Image from "next/image";
+import { Trophy, GraduationCap, Award } from "lucide-react";
 
 type Certificate = {
   id: string;
@@ -31,8 +31,7 @@ export default function CertificatesPage() {
   return (
     <div className="text-black">
       <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-          <DashboardSidebar />
+        <div className="mx-auto grid max-w-[1920px] lg:gap-0">
           <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <div className="mx-auto max-w-[1100px] space-y-8">
 
@@ -41,7 +40,7 @@ export default function CertificatesPage() {
                 <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-r from-[#fbbf24] to-[#f59e0b] px-8 py-10 text-white shadow-[0_20px_50px_rgba(251,191,36,0.3)]">
                   <motion.div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/10 blur-3xl" animate={{ rotate: [0, 360] }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} />
                   <div className="relative z-10">
-                    <div className="inline-flex rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest">🏆 Achievements</div>
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest"><Trophy className="h-3.5 w-3.5" />Achievements</div>
                     <h1 className="mt-4 text-[32px] font-semibold tracking-tight">My Certificates</h1>
                     <p className="mt-2 text-white/85 text-[15px]">
                       You&apos;ve earned {certs.length} certificate{certs.length !== 1 ? "s" : ""}. Keep going!
@@ -57,7 +56,7 @@ export default function CertificatesPage() {
                 </div>
               ) : certs.length === 0 ? (
                 <div className="rounded-[24px] bg-white p-14 text-center shadow-sm">
-                  <p className="text-[60px]">🎓</p>
+                  <GraduationCap className="mx-auto h-14 w-14 text-[#f59e0b]" strokeWidth={1.5} />
                   <p className="mt-4 text-[20px] font-semibold text-[#101828]">No certificates yet</p>
                   <p className="mt-2 text-[14px] text-[#667085]">Complete a course at 100% to earn your first certificate.</p>
                 </div>
@@ -79,7 +78,7 @@ export default function CertificatesPage() {
                         {cert.course.thumbnail ? (
                           <Image src={cert.course.thumbnail} alt="" width={40} height={40} className="h-10 w-10 rounded-lg object-cover" />
                         ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-2xl">🎓</div>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-600"><GraduationCap className="h-5 w-5" /></div>
                         )}
 
                         <h3 className="mt-4 text-[16px] font-bold text-[#101828] leading-tight">{cert.course.title}</h3>
@@ -91,7 +90,7 @@ export default function CertificatesPage() {
                             <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Certificate of Completion</p>
                             <p className="mt-0.5 text-[11px] text-amber-700">Divergent Classes</p>
                           </div>
-                          <span className="text-2xl">🏅</span>
+                          <Award className="h-7 w-7 text-amber-500" />
                         </div>
 
                         <button
@@ -104,7 +103,7 @@ export default function CertificatesPage() {
                               .border{border:8px double #fbbf24;padding:40px;max-width:700px;margin:auto;}</style></head>
                               <body><div class="border">
                               <p style="font-size:14px;text-transform:uppercase;letter-spacing:3px;color:#b45309">Divergent Classes</p>
-                              <h1>🏆 Certificate of Completion</h1>
+                              <h1>Certificate of Completion</h1>
                               <p>This certifies that you have successfully completed</p>
                               <h2>${cert.course.title}</h2>
                               <p style="margin-top:24px">Issued on ${formatDate(cert.issuedAt)}</p>

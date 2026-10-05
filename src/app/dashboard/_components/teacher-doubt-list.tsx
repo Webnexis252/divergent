@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
-import { useState, useEffect, useMemo } from "react";
+import { m as motion } from "motion/react";
+import { useState, useCallback, useMemo, useRef } from "react";
+import { usePolling } from "@/hooks/use-polling";
 import {
   AnimCard,
   AnimStat,
@@ -10,9 +11,9 @@ import {
   RevealSection,
   StaggerGrid,
 } from "./motion-wrappers";
-import { TeacherSidebar } from "./teacher-sidebar";
 
 import { useAuth } from "@/context/auth-context";
+import { CircleCheck, Search, Clock, MessageSquare, TrendingUp } from "lucide-react";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -53,122 +54,22 @@ const priorityToneMap: Record<string, string> = {
 
 
 function SearchIcon() {
-  return (
-    <svg
-      className="h-4 w-4 text-black/35"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
+  return <Search className="h-4 w-4 text-black/35" />;
 }
 
 function ClockIcon() {
-  return (
-    <svg
-      className="h-3 w-3 text-[#6a7282]"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 7.5V12l3 2" />
-    </svg>
-  );
+  return <Clock className="h-3 w-3 text-[#6a7282]" />;
 }
 
 function RepliesIcon() {
-  return (
-    <svg
-      className="h-3 w-3 text-[#6a7282]"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M7 10h10" />
-      <path d="M7 14h6" />
-      <path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-5l-4 3v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-    </svg>
-  );
+  return <MessageSquare className="h-3 w-3 text-[#6a7282]" />;
 }
 
 function StatGlyph({ icon }: { icon: "check" | "pending" | "total" | string }) {
-  if (icon === "check") {
-    return (
-      <svg
-        className="h-4 w-4"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M7.5 12.5 10.5 15.5 16.5 9.5" />
-        <circle cx="12" cy="12" r="8.5" />
-      </svg>
-    );
-  }
-
-  if (icon === "pending") {
-    return (
-      <svg
-        className="h-4 w-4"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="8.5" />
-        <path d="M12 7.5V12l3 2" />
-      </svg>
-    );
-  }
-
-  if (icon === "total") {
-    return (
-      <svg
-        className="h-4 w-4"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M4.5 7.5A2.5 2.5 0 0 1 7 5h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 17H10l-3.5 2.5V17H7A2.5 2.5 0 0 1 4.5 14.5z" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 16 9 12l3 3 7-7" />
-      <path d="M19 10V4h-6" />
-    </svg>
-  );
+  if (icon === "check") return <CircleCheck className="h-4 w-4" />;
+  if (icon === "pending") return <Clock className="h-4 w-4" />;
+  if (icon === "total") return <MessageSquare className="h-4 w-4" />;
+  return <TrendingUp className="h-4 w-4" />;
 }
 
 function DoubtStatCard({
@@ -311,18 +212,25 @@ export function TeacherDoubtList() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "OPEN" | "ASSIGNED" | "RESOLVED" | "CLOSED">("ALL");
 
-  useEffect(() => {
-    const loadDoubts = () => {
-      fetch("/api/doubts")
-        .then((r) => r.json())
-        .then((json) => { if (json.success) setDoubts(json.data); })
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    };
-    loadDoubts();
-    const interval = setInterval(loadDoubts, 5000);
-    return () => clearInterval(interval);
+  const lastPayloadRef = useRef("");
+  const loadDoubts = useCallback(async (): Promise<boolean> => {
+    try {
+      const text = await fetch("/api/doubts").then((r) => r.text());
+      const changed = text !== lastPayloadRef.current;
+      lastPayloadRef.current = text;
+      const json = JSON.parse(text);
+      if (changed && json.success) setDoubts(json.data);
+      return changed;
+    } catch (err) {
+      console.error(err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Every 5s while doubts keep changing, easing off to 30s; paused in a hidden tab
+  usePolling(loadDoubts, { intervalMs: 5000, maxIntervalMs: 30_000 });
 
   const filtered = useMemo(() => {
     return doubts.filter((d) => {
@@ -357,8 +265,7 @@ export function TeacherDoubtList() {
 
   return (
     <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
-          <TeacherSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:gap-8 lg:px-0 lg:pt-8">
 
           <main className="space-y-6 lg:pr-[160px]">
             <RevealSection>
@@ -414,7 +321,7 @@ export function TeacherDoubtList() {
                         animate={{ scale: [1, 1.12, 1] }}
                         transition={{ duration: 1.8, repeat: Infinity }}
                       />
-                      {highPriority} high-priority doubt{highPriority !== 1 ? "s" : ""} need your attention ⚡
+                      {highPriority} high-priority doubt{highPriority !== 1 ? "s" : ""} need your attention
                     </motion.div>
                   </RevealSection>
                 )}
@@ -453,7 +360,7 @@ export function TeacherDoubtList() {
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="rounded-[20px] border border-dashed border-[#d9d9d9] bg-white py-16 text-center">
-                  <p className="text-[40px]">✅</p>
+                  <CircleCheck className="mx-auto h-10 w-10 text-[#16a34a]" strokeWidth={1.5} />
                   <p className="mt-3 text-[16px] font-medium text-[#374151]">
                     {search || statusFilter !== "ALL" ? "No doubts match your filter" : "No open doubts — all clear!"}
                   </p>

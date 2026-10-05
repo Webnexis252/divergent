@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
+import { Lock, ClipboardList } from "lucide-react";
 
 type AuditLog = {
   id: string;
@@ -65,7 +66,7 @@ export default function AuditLogsPage() {
           <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#334155] px-8 py-10 text-white shadow-[0_24px_60px_rgba(15,23,42,0.4)]">
             <motion.div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-blue-500/10 blur-3xl" animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 6, repeat: Infinity }} />
             <div className="relative z-10">
-              <div className="inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-widest">🔐 Governance</div>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-widest"><Lock className="h-3.5 w-3.5" />Governance</div>
               <h1 className="mt-4 text-4xl font-semibold tracking-tight">Audit Logs</h1>
               <p className="mt-2 text-white/70">Complete trail of all administrative actions on the platform.</p>
             </div>
@@ -99,7 +100,7 @@ export default function AuditLogsPage() {
               <div className="p-6 space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-16 animate-pulse rounded-[12px] bg-gray-100" />)}</div>
             ) : filtered.length === 0 ? (
               <div className="py-16 text-center">
-                <p className="text-[40px]">📋</p>
+                <ClipboardList className="mx-auto h-10 w-10 text-[#94a3b8]" strokeWidth={1.5} />
                 <p className="mt-4 text-[17px] font-semibold text-[#101828]">No audit events found</p>
                 <p className="mt-2 text-[13px] text-[#94a3b8]">Administrative actions will appear here as they happen.</p>
               </div>

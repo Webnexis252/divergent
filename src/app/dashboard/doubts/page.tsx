@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m as motion } from "motion/react";
 import {
   ChevronDown,
   CircleHelp,
@@ -31,7 +31,6 @@ import { Field, TextAreaField } from "@/components/ui/field";
 import { MetricCard } from "@/components/ui/metric-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Surface } from "@/components/ui/surface";
-import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
 import {
   PageTransition,
   RevealSection,
@@ -409,8 +408,7 @@ export default function DoubtsPage() {
   return (
     <div className="text-black bg-[#f9fafb] min-h-screen pb-24 sm:bg-[#f7f5f4] sm:pb-0">
       <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-8 text-black lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-          <DashboardSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-8 text-black lg:gap-0">
 
         <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-6">
           <div className="mx-auto max-w-[1180px] space-y-8">

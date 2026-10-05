@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": [
+    "sin1"
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/rebuild-auth-bloom",
+      "schedule": "30 21 * * *"
+    },
+    {
+      "path": "/api/cron/reconcile-payments",
+      "schedule": "0 22 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-reports",
+      "schedule": "30 13 * * 0"
+    }
+  ]
+}

@@ -16,10 +16,14 @@
 
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { assertWritableDatabase } from '../scripts/lib/db-guard.mjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // Creates demo accounts with published passwords: never against production
+  assertWritableDatabase(process.env.DATABASE_URL, 'seed demo accounts');
+
   console.log('🌱  Seeding database…');
 
   // ── 1. Institute Settings ──────────────────────────────────────────────

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, lazy, Suspense, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
-import { Clock, KeyRound, Lock, UserCheck, AlertCircle } from "lucide-react";
+import { Clock, KeyRound, Lock, UserCheck, AlertCircle, Users, GraduationCap, Target, CircleCheck, SearchX, Check, X } from "lucide-react";
 import type { Mentor } from "./_types";
 import { OtpPanel, SetPasswordModal } from "./TeacherSecurityModals";
 
@@ -281,10 +281,10 @@ export default function AdminMentorsPage() {
         {/* ── Summary Stats ── */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { icon: "👥", label: "All Members", value: loading ? "…" : active.length, sub: "mentors + admins", color: "bg-violet-50 text-violet-600" },
-            { icon: "🎓", label: "Active Mentors", value: loading ? "…" : mentorOnly, sub: "teaching role", color: "bg-blue-50 text-blue-600" },
-            { icon: "🎯", label: "Doubts Handled", value: loading ? "…" : totalDoubts, sub: "all time", color: "bg-emerald-50 text-emerald-600" },
-            { icon: "✅", label: "Resolved / Week", value: loading ? "…" : weekResolved, sub: "last 7 days", color: "bg-amber-50 text-amber-600" },
+            { icon: <Users className="h-5 w-5" />, label: "All Members", value: loading ? "…" : active.length, sub: "mentors + admins", color: "bg-violet-50 text-violet-600" },
+            { icon: <GraduationCap className="h-5 w-5" />, label: "Active Mentors", value: loading ? "…" : mentorOnly, sub: "teaching role", color: "bg-blue-50 text-blue-600" },
+            { icon: <Target className="h-5 w-5" />, label: "Doubts Handled", value: loading ? "…" : totalDoubts, sub: "all time", color: "bg-emerald-50 text-emerald-600" },
+            { icon: <CircleCheck className="h-5 w-5" />, label: "Resolved / Week", value: loading ? "…" : weekResolved, sub: "last 7 days", color: "bg-amber-50 text-amber-600" },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
               className="flex items-center gap-4 rounded-[20px] border border-[#eceef2] bg-white p-4 shadow-sm">
@@ -338,7 +338,7 @@ export default function AdminMentorsPage() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-[20px] border border-dashed border-[#d7dbe2] bg-[#fafafa] py-16 text-center">
-                <div className="mb-3 text-4xl">🔍</div>
+                <SearchX className="mb-3 h-10 w-10 text-[#98a2b3]" strokeWidth={1.5} />
                 <p className="text-[15px] font-semibold text-[#344054]">No members found</p>
                 <p className="mt-1 text-[13px] text-[#667085]">Try adjusting your search or role filter.</p>
                 <button onClick={() => { setSearch(""); setRoleFilter("All"); }}
@@ -401,7 +401,7 @@ export default function AdminMentorsPage() {
               toast.ok ? "bg-[#15803d]" : "bg-[#dc2626]"
             }`}
           >
-            {toast.ok ? "✓" : "✗"} {toast.msg}
+            {toast.ok ? <Check className="mr-1.5 inline h-4 w-4 align-[-3px]" /> : <X className="mr-1.5 inline h-4 w-4 align-[-3px]" />}{toast.msg}
           </motion.div>
         )}
       </AnimatePresence>

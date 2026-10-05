@@ -2,8 +2,9 @@
 
 import { MessageCircle, Send } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { cx } from "@/lib/cx";
+import { usePolling } from "@/hooks/use-polling";
 import { useAuth } from "@/context/auth-context";
 
 interface Author {
@@ -105,23 +106,28 @@ export function LessonDiscussion({ lessonId }: { lessonId: string }) {
   const endRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
-  const fetchMessages = useCallback(async () => {
+  const lastMessageIdRef = useRef<string | null>(null);
+
+  const fetchMessages = useCallback(async (): Promise<boolean> => {
     try {
       const res = await fetch(`/api/lessons/${lessonId}/discussions`);
       const json = await res.json();
-      if (json.data?.messages) setMessages(json.data.messages);
+      if (!json.data?.messages) return false;
+      setMessages(json.data.messages);
+      const lastId = json.data.messages[json.data.messages.length - 1]?.id ?? null;
+      const changed = lastId !== lastMessageIdRef.current;
+      lastMessageIdRef.current = lastId;
+      return changed;
     } catch {
       // silently ignore
+      return false;
+    } finally {
+      setLoading(false);
     }
   }, [lessonId]);
 
-  useEffect(() => {
-    if (!open) return;
-    setLoading(true);
-    fetchMessages().finally(() => setLoading(false));
-    const id = setInterval(fetchMessages, 15_000);
-    return () => clearInterval(id);
-  }, [open, fetchMessages]);
+  // Every 15s while the panel is open, easing off to a minute when quiet
+  usePolling(fetchMessages, { intervalMs: 15_000, maxIntervalMs: 60_000, enabled: open });
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -153,7 +159,10 @@ export function LessonDiscussion({ lessonId }: { lessonId: string }) {
       {/* Toggle header */}
       <button
         className="flex w-full items-center justify-between rounded-[16px] bg-[#f7f5f4] px-5 py-4 text-left transition-colors hover:bg-black/5"
-        onClick={() => setOpen((s) => !s)}
+        onClick={() => {
+          if (!open) setLoading(true);
+          setOpen(!open);
+        }}
         type="button"
       >
         <div className="flex items-center gap-3">

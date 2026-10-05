@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { X, CreditCard, ShieldCheck, Loader2 } from "lucide-react";
 import { load } from "@cashfreepayments/cashfree-js";
 

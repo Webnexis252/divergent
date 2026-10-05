@@ -9,6 +9,8 @@ import nodemailer from "nodemailer";
  *   EMAIL_PASS     — SMTP password / Gmail App Password
  *   EMAIL_FROM     — "From" display name + address
  */
+import { CircuitBreaker } from './circuit-breaker';
+
 function createTransport() {
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST ?? "smtp.gmail.com",
@@ -23,6 +25,20 @@ function createTransport() {
 
 const FROM = process.env.EMAIL_FROM ?? '"Divergent Classes" <noreply@divergentclasses.com>';
 
+const emailBreaker = new CircuitBreaker({
+  failureThreshold: 3,
+  resetTimeoutMs: 60000, // 60s
+  requestTimeoutMs: 10000, // 10s
+  maxConcurrency: 10
+});
+
+async function sendMailWithBreaker(options: nodemailer.SendMailOptions) {
+  return emailBreaker.fire(async () => {
+    const transport = createTransport();
+    return transport.sendMail(options);
+  });
+}
+
 // ─── Teacher OTP Activation Email ─────────────────────────────────────────────
 
 export async function sendTeacherOtpEmail({
@@ -34,8 +50,7 @@ export async function sendTeacherOtpEmail({
   name: string;
   otp: string;
 }) {
-  const transport = createTransport();
-  await transport.sendMail({
+  await sendMailWithBreaker({
     from: FROM,
     to,
     subject: "Your Teacher Account Activation OTP — Divergent Classes",
@@ -117,8 +132,7 @@ export async function sendTeacherPasswordSetEmail({
   to: string;
   name: string;
 }) {
-  const transport = createTransport();
-  await transport.sendMail({
+  await sendMailWithBreaker({
     from: FROM,
     to,
     subject: "Your Teacher Login Password Has Been Set — Divergent Classes",
@@ -132,7 +146,7 @@ export async function sendTeacherPasswordSetEmail({
         style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
         <tr>
           <td style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:36px 40px;text-align:center">
-            <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff">Password Set ✓</h1>
+            <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff">Password set</h1>
           </td>
         </tr>
         <tr>
@@ -174,8 +188,7 @@ export async function sendStudentMagicLinkEmail({
   name: string;
   magicLink: string;
 }) {
-  const transport = createTransport();
-  await transport.sendMail({
+  await sendMailWithBreaker({
     from: FROM,
     to,
     subject: "Confirm your email to join Divergent Classes",
@@ -216,5 +229,110 @@ export async function sendStudentMagicLinkEmail({
 </body>
 </html>`,
     text: `Hi ${name || "there"},\n\nClick the link below to confirm your email and create your account:\n${magicLink}\n\nThis link expires in 1 hour.\n\nDivergent Classes`,
+  });
+}
+
+// ─── Weekly Progress Report ───────────────────────────────────────────────────
+
+function escapeHtml(text: string) {
+  return text.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]!);
+}
+
+export type WeeklyReportStats = {
+  classesAttended: number;
+  lessonsCompleted: number;
+  assignmentsSubmitted: number;
+  testsTaken: number;
+  testScorePercent: number | null;
+  streakCount: number;
+  xpPoints: number;
+};
+
+export async function sendWeeklyReportEmail({
+  to,
+  name,
+  weekLabel,
+  stats,
+  progressUrl,
+  unsubscribeUrl,
+}: {
+  to: string;
+  name: string;
+  weekLabel: string;
+  stats: WeeklyReportStats;
+  progressUrl: string;
+  unsubscribeUrl: string;
+}) {
+  const firstName = escapeHtml((name || "").trim().split(/\s+/)[0] || "there");
+  const rows: [string, string][] = [
+    ["Live classes attended", String(stats.classesAttended)],
+    ["Lessons completed", String(stats.lessonsCompleted)],
+    ["Assignments submitted", String(stats.assignmentsSubmitted)],
+    ["Tests taken", stats.testsTaken > 0 && stats.testScorePercent !== null ? `${stats.testsTaken} · ${stats.testScorePercent}% average` : String(stats.testsTaken)],
+    ["Current streak", `${stats.streakCount} ${stats.streakCount === 1 ? "day" : "days"}`],
+    ["Total XP", stats.xpPoints.toLocaleString("en-IN")],
+  ];
+  const active = stats.classesAttended + stats.lessonsCompleted + stats.assignmentsSubmitted + stats.testsTaken > 0;
+  const headline = active ? "Here's what you got done this week." : "A quiet week. Pick up where you left off.";
+
+  await sendMailWithBreaker({
+    from: FROM,
+    to,
+    subject: `Your week at Divergent Classes (${weekLabel})`,
+    headers: {
+      "List-Unsubscribe": `<${unsubscribeUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f5f6f8;font-family:'Segoe UI',Montserrat,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0"
+        style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+        <tr>
+          <td style="background:#38c1ff;padding:32px 40px">
+            <p style="margin:0;font-size:13px;color:#ffffff;opacity:0.9">${escapeHtml(weekLabel)}</p>
+            <h1 style="margin:8px 0 0;font-size:24px;font-weight:800;color:#ffffff">Your week, ${firstName}</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 40px 8px">
+            <p style="margin:0 0 20px;font-size:15px;color:#374151">${headline}</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+              ${rows
+                .map(
+                  ([label, value]) => `
+              <tr>
+                <td style="padding:12px 0;border-bottom:1px solid #f0f1f3;font-size:14px;color:#6b7280">${label}</td>
+                <td style="padding:12px 0;border-bottom:1px solid #f0f1f3;font-size:15px;font-weight:700;color:#101828;text-align:right">${value}</td>
+              </tr>`,
+                )
+                .join("")}
+            </table>
+            <div style="text-align:center;margin:28px 0 8px">
+              <a href="${progressUrl}"
+                style="display:inline-block;background:#209bd2;color:#ffffff;font-weight:700;font-size:14px;
+                       text-decoration:none;padding:13px 28px;border-radius:12px">
+                See your full progress
+              </a>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 40px 28px">
+            <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center">
+              You get this every Sunday while you're enrolled.
+              <a href="${unsubscribeUrl}" style="color:#9ca3af">Unsubscribe</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+    text: `Hi ${(name || "").trim().split(/\s+/)[0] || "there"},\n\n${headline}\n\n${rows.map(([l, v]) => `${l}: ${v}`).join("\n")}\n\nSee your full progress: ${progressUrl}\n\nUnsubscribe: ${unsubscribeUrl}\n\nDivergent Classes`,
   });
 }

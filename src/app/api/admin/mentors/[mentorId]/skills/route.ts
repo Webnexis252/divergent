@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 import { apiSuccess, apiForbidden, apiServerError, apiError } from "@/lib/api-response";
 
 /** Extract mentorId from URL path: /api/admin/mentors/{mentorId}/skills */
@@ -36,13 +37,19 @@ export async function GET(req: NextRequest) {
     });
 
     if (skills.length === 0) {
-      skills = await Promise.all(
-        DEFAULT_SKILLS.map((s) =>
-          prisma.mentorSkill.create({
-            data: { mentorId, label: s.label, value: s.value, color: s.color },
-          })
-        )
-      );
+      await prisma.mentorSkill.createMany({
+        data: DEFAULT_SKILLS.map((s) => ({
+          mentorId,
+          label: s.label,
+          value: s.value,
+          color: s.color,
+        })),
+        skipDuplicates: true,
+      });
+      skills = await prisma.mentorSkill.findMany({
+        where: { mentorId },
+        orderBy: { label: "asc" },
+      });
     }
 
     return apiSuccess(skills);
@@ -92,14 +99,29 @@ export async function PUT(req: NextRequest) {
 
     if (!Array.isArray(skills)) return apiError("skills array is required", 400);
 
-    const updated = await Promise.all(
-      skills.map((s) =>
-        prisma.mentorSkill.update({
-          where: { id: s.id, mentorId },
-          data: { value: Math.max(0, Math.min(100, s.value)) },
-        })
-      )
-    );
+    if (skills.length > 0) {
+      const ids = skills.map((s) => s.id);
+      
+      // Build CASE statement for batch update
+      const caseFragments = skills.map((s) =>
+        Prisma.sql`WHEN ${s.id}::uuid THEN ${Math.max(0, Math.min(100, s.value))}::int`
+      );
+
+      await prisma.$executeRaw(
+        Prisma.sql`
+          UPDATE "MentorSkill"
+          SET "value" = CASE "id"
+            ${Prisma.join(caseFragments, ' ')}
+          END
+          WHERE "mentorId" = ${mentorId}::uuid AND "id" = ANY(${ids}::uuid[])
+        `
+      );
+    }
+    
+    // Fetch updated
+    const updated = await prisma.mentorSkill.findMany({
+      where: { mentorId, id: { in: skills.map((s) => s.id) } },
+    });
 
     return apiSuccess(updated);
   } catch (error) {

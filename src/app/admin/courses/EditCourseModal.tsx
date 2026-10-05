@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import {
   BookOpen,
   Check,
@@ -18,6 +18,7 @@ import {
   Plus,
   Trash2,
   Pencil,
+  Star,
 } from "lucide-react";
 import { formatShortDate } from "@/lib/date-format";
 import { Field, TextAreaField, SelectField } from "@/components/ui/field";
@@ -545,7 +546,7 @@ export default function EditCourseModal({
                       ) : (
                         <>
                           <div>
-                            <p className="text-[14px] font-semibold text-[#0f172a]">{t.name} <span className="text-[#f59e0b] font-normal">({t.rating}★)</span></p>
+                            <p className="text-[14px] font-semibold text-[#0f172a]">{t.name} <span className="inline-flex items-center gap-0.5 align-middle font-normal text-[#f59e0b]">({t.rating}<Star className="h-3.5 w-3.5 fill-current" />)</span></p>
                             <p className="mt-1 text-[13px] text-[#475569]">"{t.text}"</p>
                           </div>
                           <div className="flex items-center gap-1">

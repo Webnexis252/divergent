@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { CreateTestQuestionSchema, UpdateTestQuestionSchema } from '@/lib/validators';
 import { reindexQuestionsBySection } from '@/lib/test-question-sections';
+import { batchUpdateOrders } from '@/lib/batch-update-orders';
 import {
   apiSuccess,
   apiError,
@@ -50,13 +51,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       });
       const reorderedQuestions = reindexQuestionsBySection(testQuestions);
 
-      await Promise.all(
-        reorderedQuestions.map((item) =>
-          tx.testQuestion.update({
-            where: { id: item.id },
-            data: { order: item.order },
-          })
-        )
+      await batchUpdateOrders(
+        reorderedQuestions.map((q) => ({ id: q.id, order: q.order })),
+        tx
       );
 
       return nextQuestion;
@@ -95,13 +92,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       });
       const reorderedQuestions = reindexQuestionsBySection(testQuestions);
 
-      await Promise.all(
-        reorderedQuestions.map((item) =>
-          tx.testQuestion.update({
-            where: { id: item.id },
-            data: { order: item.order },
-          })
-        )
+      await batchUpdateOrders(
+        reorderedQuestions.map((q) => ({ id: q.id, order: q.order })),
+        tx
       );
     });
     return apiSuccess({ deleted: true }, 'Question deleted');

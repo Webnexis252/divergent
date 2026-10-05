@@ -45,6 +45,7 @@ model User {
   assignedStudentGoals    StudentGoal[]            @relation("TeacherAssignedGoals")
   messages                Message[]
   notifications           Notification[]
+  preference              UserPreference?
   payments                Payment[]
   posts                   Post[]                   @relation("PostAuthor")
   postLikes               PostLike[]
@@ -107,6 +108,10 @@ model Course {
   publishDate         DateTime?
   originalPrice       Float?
   emiPlans            Json? // [{label, amount, dueDays}]
+
+  // Trigram indexes let /api/search run ILIKE "%q%" without scanning the table.
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "Course_title_trgm_idx")
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "Course_description_trgm_idx")
 }
 
 model Bundle {
@@ -173,6 +178,8 @@ model Lesson {
   quiz          Quiz?
 
   @@index([chapterId])
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "Lesson_title_trgm_idx")
+  @@index([bodyText(ops: raw("gin_trgm_ops"))], type: Gin, map: "Lesson_bodyText_trgm_idx")
 }
 
 model Enrollment {
@@ -381,6 +388,8 @@ model Assignment {
   submissions   AssignmentSubmission[]
 
   @@index([courseId])
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "Assignment_title_trgm_idx")
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "Assignment_description_trgm_idx")
 }
 
 model AssignmentSubmission {
@@ -473,9 +482,9 @@ model Payment {
   currency          String        @default("INR")
   status            PaymentStatus @default(PENDING)
   paymentGateway    String        @default("CASHFREE")
-  cashfreeOrderId   String?
+  cashfreeOrderId   String?   @unique
   cashfreePaymentId String?
-  razorpayOrderId   String?
+  razorpayOrderId   String?   @unique
   razorpayPaymentId String?
   couponCode        String?
   discountAmount    Float         @default(0)
@@ -556,7 +565,8 @@ model Notification {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([userId, isRead, createdAt])
   @@index([isRead])
 }
 
@@ -799,6 +809,7 @@ model AuditLog {
 
   @@index([actorId])
   @@index([entityType])
+  @@index([createdAt])
 }
 
 enum UserRole {
@@ -989,3 +1000,35 @@ model PhoneOtp {
 
   @@index([phone])
 }
+
+// Kept in their own tables, not as new User / LiveClass columns: Prisma selects
+// every column of a model by default, so a new column on User would break every
+// user query on a database the migration hasn't reached yet. New tables only
+// affect the features that use them.
+
+/// Per-user notification preferences.
+model UserPreference {
+  userId             String   @id
+  weeklyReportOptOut Boolean  @default(false)
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// One row per weekly progress report sent, so a retried batch never emails a student twice.
+model WeeklyReportDelivery {
+  userId     String
+  weekEnding DateTime @db.Date
+  sentAt     DateTime @default(now())
+
+  @@id([userId, weekEnding])
+}
+
+/// One row per student reminded about a live class, so overlapping or retried runs never remind twice.
+model LiveClassReminder {
+  liveClassId String
+  userId      String
+  sentAt      DateTime @default(now())
+
+  @@id([liveClassId, userId])
+}
+

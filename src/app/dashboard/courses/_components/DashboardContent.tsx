@@ -9,9 +9,10 @@ import {
 import { unstable_cache } from "next/cache";
 import { CatalogWithFilter } from "../catalog-with-filter";
 import { cx } from "@/lib/cx";
+import { TriangleAlert } from "lucide-react";
 
 const assets = {
-  currentCourseFallback: "https://api.dicebear.com/9.x/shapes/svg?seed=973b6412-1165-4257-8071-b30234e453cb",
+  currentCourseFallback: "/images/course-placeholder.svg",
   exploreModules: "/assets/dashboard/explore-modules.png",
   exploreTests: "/assets/dashboard/explore-tests.png",
   exploreLibrary: "/assets/dashboard/explore-library.png",
@@ -196,7 +197,7 @@ export async function DashboardContent({ userId }: { userId: string | undefined 
     return (
       <div className="flex items-center justify-center p-8">
         <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
-          <div className="mb-4 text-5xl">⚠️</div>
+          <TriangleAlert className="mx-auto mb-4 h-12 w-12 text-[#f59e0b]" strokeWidth={1.5} />
           <h1 className="mb-2 text-xl font-bold text-gray-900">Couldn&apos;t load courses</h1>
           <p className="mb-6 text-sm text-gray-500">We&apos;re having trouble connecting to the database. This is temporary — please try again in a moment.</p>
           <a href="/dashboard/courses" className="inline-block rounded-xl bg-[#38c1ff] px-6 py-2.5 text-sm font-semibold text-white shadow hover:opacity-90">Retry</a>

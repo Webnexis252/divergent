@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { GraduationCap, Search, Sparkles, Users, Download, UserPlus, UserCheck, ChevronLeft, ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { GraduationCap, Search, Sparkles, Users, Download, UserPlus, UserCheck, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
+import { m as motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import { MetricCard } from "@/components/ui/metric-card";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -434,7 +434,7 @@ export default function AdminStudentsPage() {
               toast.ok ? "bg-[#15803d]" : "bg-[#dc2626]"
             }`}
           >
-            {toast.ok ? "✓" : "✗"} {toast.msg}
+            {toast.ok ? <Check className="mr-1.5 inline h-4 w-4 align-[-3px]" /> : <X className="mr-1.5 inline h-4 w-4 align-[-3px]" />}{toast.msg}
           </motion.div>
         )}
       </AnimatePresence>

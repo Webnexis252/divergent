@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { m as motion, useReducedMotion } from "motion/react";
 import type { HTMLMotionProps } from "motion/react";
 import { cx } from "@/lib/cx";
 import { Spinner } from "./spinner";

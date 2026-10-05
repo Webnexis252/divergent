@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import {
   Bell,
   BookOpen,
   CalendarDays,
   ClipboardList,
-  DollarSign,
+  IndianRupee,
   LayoutDashboard,
   LogOut,
   MessageSquare,
@@ -39,7 +39,7 @@ const adminNavItems = [
   { label: "Mentors", href: "/admin/mentors", icon: Star },
   { label: "Cohorts", href: "/admin/cohorts", icon: UsersRound },
   { label: "Bundles", href: "/admin/bundles", icon: Package },
-  { label: "Installments", href: "/admin/installments", icon: DollarSign },
+  { label: "Installments", href: "/admin/installments", icon: IndianRupee },
   { label: "Exams", href: "/admin/exams", icon: FileText },
   { label: "Assignments", href: "/admin/assignments", icon: ClipboardList },
   { label: "Live Classes", href: "/admin/live-classes", icon: Video },
@@ -49,7 +49,7 @@ const adminNavItems = [
 
 const superAdminNavItems = [
   { label: "Business Health", href: "/admin/super/overview", icon: TrendingUp },
-  { label: "Revenue", href: "/admin/super/revenue", icon: DollarSign },
+  { label: "Revenue", href: "/admin/super/revenue", icon: IndianRupee },
   { label: "Coupons", href: "/admin/super/coupons", icon: Tag },
   { label: "Admins", href: "/admin/super/admins", icon: Shield },
   { label: "Announcements", href: "/admin/super/announcements", icon: Bell },

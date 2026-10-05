@@ -17,7 +17,16 @@
  * then sync it in your Interakt dashboard under Templates.
  */
 
+import { CircuitBreaker } from './circuit-breaker';
+
 const INTERAKT_API_URL = 'https://api.interakt.ai/v1/public/message/';
+
+const interaktBreaker = new CircuitBreaker({
+  failureThreshold: 5,
+  resetTimeoutMs: 30000,
+  requestTimeoutMs: 15000,
+  maxConcurrency: 20
+});
 
 /** Request timeout in milliseconds */
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -201,7 +210,7 @@ export async function sendWhatsAppOtp(phone: string, otp: string): Promise<void>
           `[INTERAKT] Sending OTP (attempt ${attempt + 1}/${MAX_RETRIES + 1}) to ${parsed.countryCode}${parsed.phoneNumber.slice(0, 3)}***`,
         );
 
-        const response = await fetch(INTERAKT_API_URL, {
+        const response = await interaktBreaker.fire(() => fetch(INTERAKT_API_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -209,7 +218,7 @@ export async function sendWhatsAppOtp(phone: string, otp: string): Promise<void>
           },
           body: JSON.stringify(payload),
           signal: controller.signal,
-        });
+        }));
 
         clearTimeout(timeoutId);
 
@@ -314,4 +323,52 @@ export async function sendWhatsAppOtp(phone: string, otp: string): Promise<void>
   throw new Error(
     'Failed to send OTP via WhatsApp after multiple attempts. Please try again later.',
   );
+}
+
+/**
+ * Sends any approved WhatsApp template (single attempt, 15s timeout, through
+ * the same circuit breaker as OTPs). Used for notifications such as class
+ * reminders, where the job queue handles retries.
+ *
+ * @param bodyValues - values for the template's {{1}}, {{2}}, … placeholders, in order
+ * @throws Error when Interakt isn't configured or rejects the message
+ */
+export async function sendWhatsAppTemplate(
+  phone: string,
+  templateName: string,
+  bodyValues: string[],
+  callbackData?: string,
+): Promise<void> {
+  const apiKey = process.env.INTERAKT_API_KEY;
+  if (!apiKey) throw new Error('INTERAKT_API_KEY is not set');
+
+  const { countryCode, phoneNumber } = parsePhone(phone);
+  if (!countryCode || !phoneNumber) throw new Error(`Invalid phone number format: ${phone}`);
+
+  const payload: InteraktTemplatePayload = {
+    countryCode,
+    phoneNumber,
+    type: 'Template',
+    template: { name: templateName, languageCode: 'en', bodyValues },
+    callbackData,
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await interaktBreaker.fire(() =>
+      fetch(INTERAKT_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Basic ${apiKey}` },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      }),
+    );
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Interakt returned ${response.status}: ${errorText.substring(0, 200)}`);
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }

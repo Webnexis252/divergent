@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m as motion } from "motion/react";
 import {
   ArrowRight,
   BookOpen,
@@ -21,6 +21,7 @@ import {
   Users,
   Video,
   type LucideIcon,
+  Check,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -112,7 +113,7 @@ function AttendanceTracker({
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Attendance</p>
               <p className="text-[13px] font-semibold text-gray-900">
-                {isCounted ? "Counted ✓" : isTracking ? "Tracking live…" : "Not started"}
+                {isCounted ? <>Counted<Check className="ml-1 inline h-3.5 w-3.5 align-[-2px] text-[#16a34a]" /></> : isTracking ? "Tracking live…" : "Not started"}
               </p>
             </div>
           </div>
@@ -128,7 +129,7 @@ function AttendanceTracker({
         <div className="mt-4">
           <div className="flex items-center justify-between text-[11px] text-gray-500 mb-1.5">
             <span>{formatDuration(Math.min(totalSecs, ATTENDANCE_REQUIRED_SECS))} in class</span>
-            <span>{isCounted ? "30:00 ✓" : `${formatDuration(remainingSecs)} left`}</span>
+            <span>{isCounted ? <>30:00<Check className="ml-1 inline h-3.5 w-3.5 align-[-2px] text-[#16a34a]" /></> : `${formatDuration(remainingSecs)} left`}</span>
           </div>
           <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
             <motion.div

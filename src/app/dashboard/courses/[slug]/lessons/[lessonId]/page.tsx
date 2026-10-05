@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LessonDiscussion } from "@/components/lesson-discussion";
 import { LessonCompleteButton } from "./_components/lesson-complete-button";
-import { ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, CircleCheck } from "lucide-react";
 import Link from "next/link";
 import { verifyTokenValue, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -208,7 +208,7 @@ export default async function LessonPage({ params }: Props) {
           ) : (
             <Link href={`/dashboard/courses/${slug}`}>
               <Button variant="soft">
-                {progressPercent === 100 ? "🎉 Course Complete!" : "Back to Course"}
+                {progressPercent === 100 ? <><CircleCheck className="mr-1.5 inline h-4 w-4 align-[-3px]" />Course Complete</> : "Back to Course"}
               </Button>
             </Link>
           )}

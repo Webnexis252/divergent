@@ -6,20 +6,16 @@ import useSWR from "swr";
 
 export type UserRole = "STUDENT" | "MENTOR" | "ADMIN" | "SUPER_ADMIN";
 
+/**
+ * Identity of the signed-in user, from GET /api/auth/session. Pages that need
+ * the full profile (enrollments, streaks, doubts) fetch /api/users/me directly.
+ */
 export interface UserProfile {
   id: string;
   name: string | null;
   email: string | null;
   role: UserRole;
   image: string | null;
-  streakCount: number;
-  totalStudyTime: number;
-  enrollments: Array<{
-    courseId?: string;
-    id?: string;
-    progressPercent?: number;
-    status?: string;
-  }>;
 }
 
 interface AuthContextType {
@@ -35,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-  const { data, isLoading, mutate } = useSWR("/api/users/me", fetcher, {
+  const { data, isLoading, mutate } = useSWR("/api/auth/session", fetcher, {
     revalidateOnFocus: false, // Prevents spamming the DB when switching tabs
     shouldRetryOnError: false, // Fail fast for unauthenticated users
   });

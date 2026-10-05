@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { QUESTION_CATEGORY_LABELS, QUESTION_CATEGORY_OPTIONS } from "@/lib/test-question-sections";
+import { Clock, Flag, Check, X } from "lucide-react";
 
 export type QuestionType = "SCQ" | "MCQ" | "SKETCH" | "NUMERIC";
 export type QuestionCategory = (typeof QUESTION_CATEGORY_OPTIONS)[number];
@@ -192,10 +193,10 @@ function ScqMcqOptions({
               </span>
               <span className="flex-1 text-[15px] text-[#111827]">{opt}</span>
               {showResult && state === "correct" && (
-                <span className="text-[#22c55e] font-bold">✓</span>
+                <Check className="h-4 w-4 shrink-0 text-[#22c55e]" strokeWidth={2.5} />
               )}
               {showResult && state === "incorrect" && (
-                <span className="text-[#ef4444] font-bold">✗</span>
+                <X className="h-4 w-4 shrink-0 text-[#ef4444]" strokeWidth={2.5} />
               )}
             </button>
           );
@@ -325,7 +326,7 @@ function SketchUpload({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={currentImage} alt="Your submitted sketch" className="w-full max-h-[400px] object-contain bg-gray-50" />
         <p className="px-4 py-2 text-[12px] text-[#6b7280] bg-amber-50 border-t border-amber-100">
-          📋 Submitted sketch — pending teacher review
+          <Clock className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]" />Submitted sketch — pending teacher review
         </p>
       </div>
     );
@@ -338,7 +339,7 @@ function SketchUpload({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={currentImage} alt="Your sketch preview" className="w-full max-h-[360px] object-contain bg-amber-50/30" />
           <div className="flex items-center justify-between px-4 py-2 bg-amber-50 border-t border-amber-100">
-            <span className="text-[13px] font-medium text-amber-800">Sketch uploaded ✓</span>
+            <span className="text-[13px] font-medium text-amber-800"><Check className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Sketch uploaded</span>
             {!showResult && (
               <button
                 onClick={() => { onAnswer(questionId, ""); if (inputRef.current) { inputRef.current.value = ""; } }}
@@ -443,7 +444,7 @@ function NumericInput({
       {showResult && (
         <div className={`flex flex-col gap-2 rounded-[10px] px-4 py-3 text-[13px] ${isCorrect ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
           <div className="flex items-start gap-2">
-            <span className="text-base font-bold">{isCorrect ? "✓" : "✗"}</span>
+            {isCorrect ? <Check className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.5} /> : <X className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.5} />}
             <span>
               {isCorrect ? "Correct!" : `Incorrect. Correct answer: `}
               {!isCorrect && <strong>{correctDisplay}</strong>}
@@ -517,7 +518,7 @@ export function QuestionCard({
             title={isFlagged ? "Unflag" : "Flag for review"}
             className="rounded-lg p-1.5 transition hover:bg-black/5 text-lg"
           >
-            {isFlagged ? "🚩" : "🏳️"}
+            <Flag className={isFlagged ? "h-5 w-5 fill-current text-[#dc2626]" : "h-5 w-5 text-[#9ca3af]"} />
           </button>
         )}
       </div>

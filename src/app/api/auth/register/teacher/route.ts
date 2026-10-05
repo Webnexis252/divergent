@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "@node-rs/bcrypt";
 import prisma from "@/lib/prisma";
 import { apiCreated, apiError, apiServerError } from "@/lib/api-response";
 import { checkRateLimit, authLimiter } from "@/lib/rate-limit";
 
 import { verifyPhoneVerifiedToken } from "@/lib/auth";
+import { mightBeRegistered, recordRegisteredInBackground } from "@/lib/auth-bloom";
 
 /**
  * POST /api/auth/register/teacher
@@ -59,12 +60,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-    if (existing) return apiError("An account with this email already exists", 409);
+    // Bloom filter first: "definitely not registered" skips the lookup. The
+    // unique constraint (P2002 below) still guards the insert either way.
+    if (await mightBeRegistered("email", email)) {
+      const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+      if (existing) return apiError("An account with this email already exists", 409);
+    }
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    await prisma.user.create({
+    const created = await prisma.user.create({
       data: {
         name: name.trim(),
         email: email.toLowerCase().trim(),
@@ -73,7 +78,9 @@ export async function POST(req: NextRequest) {
         role: "MENTOR",
         mentorStatus: "PENDING",
       },
+      select: { email: true, phone: true },
     });
+    recordRegisteredInBackground(created);
 
     // No session cookie — admin must activate via OTP first
     return apiCreated(

@@ -1,4 +1,10 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+import zlib from 'zlib';
+import { promisify } from 'util';
+
+const gzipAsync = promisify(zlib.gzip);
+const brotliAsync = promisify(zlib.brotliCompress);
 
 /**
  * Common API response helpers for the Divergent Classes LMS backend.
@@ -17,36 +23,71 @@ type ApiErrorPayload = {
   details?: unknown;
 };
 
-export function apiSuccess<T>(data: T, message?: string, status = 200): NextResponse {
-  const payload: ApiSuccessPayload<T> = { success: true, data, message };
-  return NextResponse.json(payload, { status });
+async function createCompressedResponse(payload: any, status: number): Promise<NextResponse> {
+  const reqHeaders = await headers();
+  const acceptEncoding = reqHeaders.get('accept-encoding') || '';
+  
+  const jsonString = JSON.stringify(payload);
+  const buffer = Buffer.from(jsonString, 'utf-8');
+  
+  const responseHeaders = new Headers({
+    'Content-Type': 'application/json',
+    'Vary': 'Accept-Encoding',
+  });
+
+  // Only compress if size > 1024 bytes
+  if (buffer.length < 1024) {
+    return new NextResponse(buffer, { status, headers: responseHeaders });
+  }
+
+  try {
+    if (acceptEncoding.includes('br')) {
+      const compressed = await brotliAsync(buffer);
+      responseHeaders.set('Content-Encoding', 'br');
+      return new NextResponse(compressed, { status, headers: responseHeaders });
+    } else if (acceptEncoding.includes('gzip')) {
+      const compressed = await gzipAsync(buffer);
+      responseHeaders.set('Content-Encoding', 'gzip');
+      return new NextResponse(compressed, { status, headers: responseHeaders });
+    }
+  } catch (err) {
+    console.error('[COMPRESSION_ERROR]', err);
+    // fallback to uncompressed
+  }
+  
+  return new NextResponse(buffer, { status, headers: responseHeaders });
 }
 
-export function apiCreated<T>(data: T, message = 'Created successfully'): NextResponse {
+export async function apiSuccess<T>(data: T, message?: string, status = 200): Promise<NextResponse> {
+  const payload: ApiSuccessPayload<T> = { success: true, data, message };
+  return createCompressedResponse(payload, status);
+}
+
+export async function apiCreated<T>(data: T, message = 'Created successfully'): Promise<NextResponse> {
   return apiSuccess(data, message, 201);
 }
 
-export function apiError(error: string, status = 400, details?: unknown): NextResponse {
+export async function apiError(error: string, status = 400, details?: unknown): Promise<NextResponse> {
   const payload: ApiErrorPayload = { success: false, error, details };
-  return NextResponse.json(payload, { status });
+  return createCompressedResponse(payload, status);
 }
 
-export function apiUnauthorized(error = 'Unauthorized'): NextResponse {
+export async function apiUnauthorized(error = 'Unauthorized'): Promise<NextResponse> {
   return apiError(error, 401);
 }
 
-export function apiForbidden(error = 'Forbidden'): NextResponse {
+export async function apiForbidden(error = 'Forbidden'): Promise<NextResponse> {
   return apiError(error, 403);
 }
 
-export function apiNotFound(resource = 'Resource'): NextResponse {
+export async function apiNotFound(resource = 'Resource'): Promise<NextResponse> {
   return apiError(`${resource} not found`, 404);
 }
 
-export function apiServerError(details?: unknown): NextResponse {
+export async function apiServerError(details?: unknown): Promise<NextResponse> {
   return apiError('Internal server error', 500, details);
 }
 
-export function apiBadRequest(error = 'Bad request', details?: unknown): NextResponse {
+export async function apiBadRequest(error = 'Bad request', details?: unknown): Promise<NextResponse> {
   return apiError(error, 400, details);
 }

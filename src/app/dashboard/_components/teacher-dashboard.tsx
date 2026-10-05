@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useState } from "react";
 import useSWR from "swr";
 import { apiClient } from "@/lib/api-client";
 
 import {
-  FloatPulse,
   PageTransition,
   ParallaxHero,
   RevealSection,
@@ -15,7 +14,6 @@ import {
 } from "./motion-wrappers";
 import { useAuth } from "@/context/auth-context";
 import { TeacherAssignmentModal } from "./teacher-assignment-modal";
-import { TeacherSidebar } from "./teacher-sidebar";
 
 import { TeacherStatCard } from "./teacher-stats-grid";
 import { ClassControlIcon, DoubtIcon, DashboardIcon, AnalyticsIcon, ProfileIcon, ReplyIcon, WarningIcon } from "./teacher-icons";
@@ -144,8 +142,7 @@ export function TeacherDashboard() {
     <>
     <PageTransition>
         {/* Shared layout: sidebar + main — same grid as student/admin pages */}
-        <div className="mx-auto grid max-w-[1920px] gap-0 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <TeacherSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-0">
 
           <main className="space-y-8 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:px-10 xl:px-14">
             <ParallaxHero className="rounded-[28px]">
@@ -180,11 +177,6 @@ export function TeacherDashboard() {
                       >
                         Good Morning, {displayName}!
                       </motion.h1>
-                      <FloatPulse className="text-[clamp(1.6rem,2.8vw,2.5rem)]">
-                        <span role="img" aria-label="waving hand">
-                          👋
-                        </span>
-                      </FloatPulse>
                     </div>
 
                     <motion.p
@@ -201,7 +193,7 @@ export function TeacherDashboard() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.55, ease, delay: 0.16 }}
                     >
-                      You&apos;re on a roll today 🚀
+                      You&apos;re on a roll today.
                     </motion.p>
                   </div>
                 </section>
@@ -277,7 +269,7 @@ export function TeacherDashboard() {
                       {statsLoading ? (
                         <div className="flex items-center gap-2 py-3 text-[#8b8888]"><motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="h-5 w-5 rounded-full border-2 border-[#38c1ff] border-t-transparent" />Loading...</div>
                       ) : doubtList.length === 0 ? (
-                        <p className="py-3 text-[13px] text-[#9ca3af]">No open doubts right now 🎉</p>
+                        <p className="py-3 text-[13px] text-[#9ca3af]">No open doubts right now.</p>
                       ) : (
                         doubtList.map((doubt, index) => (
                           <TeacherDoubtCard
@@ -355,7 +347,7 @@ export function TeacherDashboard() {
                           Attention Required
                         </p>
                         <p className="mt-1 text-[10px] text-[#b8821b]">
-                          {statsLoading ? "..." : `${data?.analyticsSnapshot.assignmentsOverview.pending} assignments need to be graded by tomorrow 📝`}
+                          {statsLoading ? "..." : `${data?.analyticsSnapshot.assignmentsOverview.pending} assignments need to be graded by tomorrow`}
                         </p>
                       </div>
                     </motion.div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { AdminStatCard } from "../../_components/AdminStatCard";
 import {
   PageTransition,
@@ -11,7 +11,7 @@ import {
 import {
   ActivityIcon,
   CreditCardIcon,
-  DollarSignIcon,
+  RupeeIcon,
   TagIcon,
 } from "../../_components/admin-icons";
 import { formatShortDate } from "@/lib/date-format";
@@ -101,7 +101,7 @@ export default function SuperAdminOverviewPage() {
             index={0}
             title="Total Revenue"
             value={formatCurrency(data?.totalRevenue ?? 0)}
-            icon={<DollarSignIcon className="h-5 w-5" />}
+            icon={<RupeeIcon className="h-5 w-5" />}
             tone="sky"
           />
           <AdminStatCard

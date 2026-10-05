@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from '@node-rs/bcrypt';
 import prisma from '@/lib/prisma';
 import { signToken } from '@/lib/auth';
 import { LoginSchema } from '@/lib/validators';
 import { apiSuccess, apiError, apiUnauthorized, apiServerError } from '@/lib/api-response';
 import { checkRateLimit, authLimiter } from '@/lib/rate-limit';
-import { awardDailyLoginXp } from '@/lib/xp';
+import { awardDailyLoginXpInBackground } from '@/lib/xp';
 
 /**
  * POST /api/auth/mobile-login
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       return apiError('Your teacher account has been suspended.', 403);
     }
 
-    await awardDailyLoginXp(user.id);
+    awardDailyLoginXpInBackground(user.id);
 
     const token = await signToken({
       userId: user.id,

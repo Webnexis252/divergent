@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { CalendarIcon, StudentsIcon } from "./teacher-icons";
 import { fadeUp } from "./motion-wrappers";
 
