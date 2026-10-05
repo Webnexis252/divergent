@@ -3,6 +3,7 @@ import * as bcrypt from "@node-rs/bcrypt";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiSuccess, apiError, apiForbidden, apiNotFound, apiServerError } from "@/lib/api-response";
+import { revokeAllSessions } from "@/lib/session-revocation";
 
 /**
  * POST /api/admin/students/[id]/set-password
@@ -46,6 +47,8 @@ export async function POST(
         passwordHash,
       },
     });
+    // A reset password should lock out whoever had the old one
+    await revokeAllSessions(id);
 
     return apiSuccess(
       { studentId: id, studentEmail: student.email },

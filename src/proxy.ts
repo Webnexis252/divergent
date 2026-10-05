@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import type { JWTPayload } from 'jose';
 import { jwtVerify } from 'jose';
+import { isTokenRevoked } from '@/lib/session-revocation';
 
 // AUTH_COOKIE_NAME is hardcoded to avoid importing lib/auth which relies on node jsonwebtoken
 
@@ -24,7 +25,10 @@ export async function proxy(request: NextRequest) {
     try {
       const secret = new TextEncoder().encode(process.env.JWT_SECRET || '');
       const { payload } = await jwtVerify(token, secret);
-      user = payload as AuthPayload;
+      const revoked =
+        typeof payload.userId === 'string' &&
+        (await isTokenRevoked({ userId: payload.userId, jti: payload.jti, iat: payload.iat }));
+      user = revoked ? null : (payload as AuthPayload);
     } catch {
       user = null;
     }

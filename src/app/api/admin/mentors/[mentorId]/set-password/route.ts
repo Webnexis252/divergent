@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiSuccess, apiError, apiForbidden, apiNotFound, apiServerError } from "@/lib/api-response";
 import { sendTeacherPasswordSetEmail } from "@/lib/email";
+import { revokeAllSessions } from "@/lib/session-revocation";
 
 /**
  * POST /api/admin/mentors/[mentorId]/set-password
@@ -52,6 +53,8 @@ export async function POST(
         mentorOtpExpiry: null,
       },
     });
+    // A reset password should lock out whoever had the old one
+    await revokeAllSessions(mentorId);
 
     // Notify teacher by email after responding. `after` keeps the function
     // alive until the send finishes; an un-awaited promise can be frozen.

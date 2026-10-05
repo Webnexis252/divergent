@@ -8,6 +8,8 @@ import type { Instrumentation } from 'next';
  *   SENTRY_TRACES_SAMPLE_RATE   — share of requests traced for performance (default 0)
  */
 export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') await reportConfigProblems();
+
   if (!process.env.SENTRY_DSN) return;
   if (process.env.NEXT_RUNTIME !== 'nodejs' && process.env.NEXT_RUNTIME !== 'edge') return;
 
@@ -27,3 +29,19 @@ export const onRequestError: Instrumentation.onRequestError = async (...args) =>
   const Sentry = await import('@sentry/nextjs');
   Sentry.captureRequestError(...args);
 };
+
+/**
+ * Logs missing or unsafe production settings once per server start, so they
+ * show up in the Vercel logs (names only, never values). See
+ * src/lib/production-config.ts; GET /api/health/config returns the same list.
+ */
+async function reportConfigProblems() {
+  const { checkProductionConfig, isProductionDeployment } = await import('@/lib/production-config');
+  if (!isProductionDeployment()) return;
+  for (const problem of checkProductionConfig()) {
+    const line = `[CONFIG] ${problem.name}: ${problem.message}`;
+    if (problem.level === 'error') console.error(line);
+    else console.warn(line);
+  }
+}
+
