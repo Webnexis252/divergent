@@ -1,46 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, m as motion } from "motion/react";
-import {
-  ChevronDown,
-  CircleHelp,
-  Clock3,
-  MessageSquareText,
-  Plus,
-  SendHorizontal,
-  House,
-  BookOpen,
-  CalendarDays,
-  Video,
-  NotebookPen,
-  ChartNoAxesColumn,
-  Award,
-  UserCircle,
-  Image as ImageIcon,
-  X,
-} from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useAuth } from "@/context/auth-context";
+import Image from "next/image";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ChevronDown, Clock3, ImagePlus, MessageCircle, Plus, X } from "lucide-react";
 import { cx } from "@/lib/cx";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { DOUBT_IMAGE_XP_COST, DOUBT_SUBMISSION_XP_COST } from "@/lib/xp-costs";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Field, TextAreaField } from "@/components/ui/field";
-import { MetricCard } from "@/components/ui/metric-card";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { Surface } from "@/components/ui/surface";
-import {
-  PageTransition,
-  RevealSection,
-  StaggerGrid,
-} from "../_components/motion-wrappers";
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
+import { PageHero } from "@/components/ui/page-hero";
+import { usePolling } from "@/hooks/use-polling";
+import { AnimCard, PageTransition, RevealSection, StaggerGrid } from "../_components/motion-wrappers";
 
 type DoubtReply = {
   id: string;
   body: string;
   createdAt: string;
+  isAiGenerated?: boolean;
   author: { id: string; name: string | null; role: string } | null;
 };
 
@@ -53,170 +28,252 @@ type Doubt = {
   createdAt: string;
   updatedAt: string;
   mentor: { id: string; name: string | null } | null;
-  replies?: DoubtReply[];  // not included by the list API; fetched lazily on expand
+  replies?: DoubtReply[]; // not included by the list API; fetched when a doubt is opened
   _count: { replies: number };
   attachmentUrl?: string | null;
 };
 
-const priorityMeta = {
-  LOW: { label: "Low priority", tone: "success" as const },
-  MEDIUM: { label: "Normal priority", tone: "warning" as const },
-  HIGH: { label: "Urgent priority", tone: "danger" as const },
+type Filter = "all" | "waiting" | "answered";
+
+const art = {
+  waiting: "/assets/dashboard/quick-exam.png",
+  answered: "/assets/dashboard/explore-library.png",
 } as const;
 
-const statusMeta = {
-  OPEN: { label: "Open", tone: "warning" as const },
-  ASSIGNED: { label: "Assigned", tone: "brand" as const },
-  RESOLVED: { label: "Resolved", tone: "success" as const },
-  CLOSED: { label: "Closed", tone: "neutral" as const },
-} as const;
+// Brand blue darkened just enough to pass AA as small text on white
+const brandInk = "text-[color-mix(in_srgb,var(--brand-primary-strong)_72%,black)]";
+// globals.css sets `button { font: inherit }` outside any layer, so on <button>s the type utilities go on an inner span
+const primaryAction =
+  "inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-[12px] bg-(--brand-primary-strong) px-5 text-white shadow-[0_4px_12px_rgba(32,155,210,0.28)] transition-[transform,filter,background-color] duration-150 hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0 disabled:pointer-events-none disabled:bg-black/[0.12] disabled:text-black/40 disabled:shadow-none";
+const secondaryAction = cx(
+  "inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-[12px] border border-[rgba(56,193,255,0.45)] bg-white px-5 transition-colors duration-150 hover:bg-(--brand-primary-soft)",
+  brandInk,
+);
+const card = "rounded-[20px] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04]";
+const sectionTitle = "text-[clamp(1.5rem,2.6vw,1.85rem)] font-semibold tracking-[-0.02em] text-black";
+const sectionLede = "mt-1 text-[14px] text-black/55";
+const pill = "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold";
+const input =
+  "w-full rounded-[14px] bg-[#f4f6f9] px-4 text-[14px] text-black outline-none ring-1 ring-black/[0.04] transition placeholder:text-black/40 focus:bg-white focus:ring-[rgba(56,193,255,0.55)]";
+
+const STAFF_ROLES = new Set(["MENTOR", "TEACHER", "ADMIN", "SUPER_ADMIN"]);
+const isWaiting = (doubt: Doubt) => doubt.status === "OPEN" || doubt.status === "ASSIGNED";
+
+const priorityOptions = [
+  { value: "LOW", label: "Low" },
+  { value: "MEDIUM", label: "Normal" },
+  { value: "HIGH", label: "Urgent" },
+] as const;
 
 function timeAgo(dateStr: string) {
   const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
-  if (diff < 60) return "Just now";
+  if (diff < 60) return "just now";
   if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
-  return `${Math.floor(diff / 86400)} day${diff >= 172800 ? "s" : ""} ago`;
+  const days = Math.floor(diff / 86400);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
+function plural(count: number, word: string) {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+// ─── Small pieces ─────────────────────────────────────────────────────────────
+
+function StatusPill({ doubt }: { doubt: Doubt }) {
+  switch (doubt.status) {
+    case "OPEN":
+      return <span className={cx(pill, "bg-[rgba(254,198,0,0.2)] text-[#6b4c00]")}>Waiting for a teacher</span>;
+    case "ASSIGNED":
+      return (
+        <span className={cx(pill, "bg-(--brand-primary-soft)", brandInk)}>
+          {doubt.mentor?.name ? `With ${doubt.mentor.name}` : "Teacher assigned"}
+        </span>
+      );
+    case "RESOLVED":
+      return <span className={cx(pill, "bg-[rgba(76,175,80,0.14)] text-[#2e6b31]")}>Answered</span>;
+    default:
+      return <span className={cx(pill, "bg-black/[0.05] text-black/60")}>Closed</span>;
+  }
+}
+
+function StatCard({ image, label, value, note }: { image: string; label: string; value: string; note: string }) {
+  return (
+    <AnimCard className="min-w-[220px] flex-1 snap-start sm:min-w-0">
+      <div className="flex items-center gap-4 rounded-[24px] bg-white p-3 pr-5 shadow-[0_4px_20px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04]">
+        <div className="grid h-[76px] w-[76px] shrink-0 place-items-center overflow-hidden rounded-[18px] bg-[#f4f2ff]">
+          <Image alt="" className="h-[76px] w-[76px] scale-[1.35] object-contain" height={152} src={image} width={152} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-black/55">{label}</p>
+          <p className="mt-1 text-[2rem] font-bold leading-none tracking-[-0.03em] tabular-nums text-black">{value}</p>
+          <p className="mt-1 truncate text-[12px] text-black/45">{note}</p>
+        </div>
+      </div>
+    </AnimCard>
+  );
+}
+
+function FilterChip({ active, count, label, onClick }: { active: boolean; count: number; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cx(
+        "inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-4 transition-colors",
+        active ? "bg-(--brand-primary-strong) text-white" : "bg-white text-black/70 ring-1 ring-black/[0.06] hover:bg-black/[0.03]",
+      )}
+    >
+      <span className="text-[13px] font-semibold">{label}</span>
+      <span className={cx("text-[12px] font-semibold tabular-nums", active ? "text-white/80" : "text-black/40")}>{count}</span>
+    </button>
+  );
+}
+
+// ─── Thread ───────────────────────────────────────────────────────────────────
+
 function ReplyThread({ replies }: { replies?: DoubtReply[] }) {
-  if (!replies || replies.length === 0) {
+  if (!replies) {
     return (
-      <div className="rounded-(--radius-md) border border-dashed border-(--line-soft) px-4 py-6 text-[14px] text-(--text-muted)">
-        No reply yet. Your mentors will respond here when they pick this up.
+      <div role="status" className="space-y-3">
+        <span className="sr-only">Loading replies</span>
+        {[0, 1].map((i) => (
+          <div key={i} className="flex gap-3">
+            <div className="h-8 w-8 shrink-0 animate-pulse rounded-full bg-black/[0.06]" />
+            <div className="h-14 flex-1 animate-pulse rounded-[16px] bg-black/[0.04]" />
+          </div>
+        ))}
       </div>
     );
   }
 
-  return (
-    <div className="space-y-3">
-      {replies.map((reply) => {
-        const isMentorReply =
-          reply.author?.role === "MENTOR" ||
-          reply.author?.role === "ADMIN" ||
-          reply.author?.role === "SUPER_ADMIN";
+  if (replies.length === 0) {
+    return (
+      <p className="rounded-[16px] bg-[#f6f9fc] px-4 py-5 text-center text-[13px] text-black/55">
+        No replies yet. A teacher&apos;s answer will show up here.
+      </p>
+    );
+  }
 
+  return (
+    <ul className="space-y-3">
+      {replies.map((reply) => {
+        const isStaff = Boolean(reply.author && STAFF_ROLES.has(reply.author.role));
+        const isAi = reply.isAiGenerated || !reply.author;
+        const name = isAi ? "AI assistant" : (reply.author?.name ?? "Unknown");
         return (
-          <div
-            key={reply.id}
-            className="rounded-(--radius-md) border border-(--line-soft) bg-white px-4 py-4 shadow-(--shadow-soft)"
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[14px] font-semibold text-(--text-strong)">
-                {reply.author?.name ?? "Unknown"}
-              </p>
-              {isMentorReply ? <Badge tone="brandStrong">Mentor</Badge> : null}
-              <span className="text-[12px] text-(--text-subtle)">
-                {timeAgo(reply.createdAt)}
-              </span>
+          <li key={reply.id} className="flex items-start gap-3">
+            <InitialsAvatar name={name} className="mt-0.5 h-8 w-8 text-[11px]" />
+            <div
+              className={cx(
+                "min-w-0 flex-1 rounded-[16px] rounded-tl-[6px] px-4 py-3",
+                isStaff ? "bg-[#eef8ff] ring-1 ring-[rgba(56,193,255,0.25)]" : "bg-[#f6f9fc]",
+              )}
+            >
+              <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-[13px] font-semibold text-black">{name}</span>
+                {isStaff && (
+                  <span className="rounded-full bg-[rgba(254,198,0,0.22)] px-2 py-0.5 text-[11px] font-semibold text-[#6b4c00]">
+                    {reply.author?.role === "MENTOR" || reply.author?.role === "TEACHER" ? "Teacher" : "Admin"}
+                  </span>
+                )}
+                <span className="text-[11px] text-black/45">{timeAgo(reply.createdAt)}</span>
+              </div>
+              <p className="whitespace-pre-wrap break-words text-[14px] leading-relaxed text-black/75">{reply.body}</p>
             </div>
-            <p className="mt-3 text-[14px] leading-7 text-(--text-muted)">
-              {reply.body}
-            </p>
-          </div>
+          </li>
         );
       })}
+    </ul>
+  );
+}
+
+function DoubtCard({ doubt, isExpanded, onToggle }: { doubt: Doubt; isExpanded: boolean; onToggle: () => void }) {
+  const threadId = `doubt-thread-${doubt.id}`;
+  return (
+    <article className={cx(card, "overflow-hidden")}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-controls={threadId}
+        className="flex w-full items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-[#f8fcff] sm:px-6 sm:py-5"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            <StatusPill doubt={doubt} />
+            {doubt.priority === "HIGH" && (
+              <span className={cx(pill, "bg-[rgba(255,61,0,0.1)] text-[#b42d00]")}>Urgent</span>
+            )}
+            <span className="inline-flex items-center gap-1 text-[12px] text-black/45">
+              <Clock3 aria-hidden="true" className="h-3.5 w-3.5" />
+              Asked {timeAgo(doubt.createdAt)}
+            </span>
+          </span>
+          <span className="mt-2 block text-[16px] font-semibold leading-snug text-black">{doubt.subject}</span>
+          <span className={cx("mt-1 block whitespace-pre-wrap break-words text-[14px] leading-relaxed text-black/60", !isExpanded && "line-clamp-2")}>
+            {doubt.body}
+          </span>
+          <span className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-black/50">
+            <span className="inline-flex items-center gap-1">
+              <MessageCircle aria-hidden="true" className="h-3.5 w-3.5" />
+              {doubt._count.replies} {doubt._count.replies === 1 ? "reply" : "replies"}
+            </span>
+            {doubt.attachmentUrl && <span>· Photo attached</span>}
+            <span>· Updated {timeAgo(doubt.updatedAt)}</span>
+          </span>
+        </span>
+        <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-black/[0.04]">
+          <ChevronDown
+            aria-hidden="true"
+            className={cx("h-4 w-4 text-black/50 transition-transform duration-200", isExpanded && "rotate-180")}
+          />
+        </span>
+      </button>
+
+      {isExpanded && (
+        <div id={threadId} className="space-y-4 border-t border-black/[0.05] bg-[#fcfdff] px-5 py-5 sm:px-6">
+          {doubt.attachmentUrl && (
+            <a
+              href={doubt.attachmentUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="block w-fit overflow-hidden rounded-[14px] ring-1 ring-black/[0.06] transition-opacity hover:opacity-90"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- uploaded images live on external storage */}
+              <img src={doubt.attachmentUrl} alt="Photo attached to this doubt" className="max-h-56 w-auto object-cover" />
+            </a>
+          )}
+          <ReplyThread replies={doubt.replies} />
+        </div>
+      )}
+    </article>
+  );
+}
+
+function ListSkeleton() {
+  return (
+    <div role="status" className="space-y-3">
+      <span className="sr-only">Loading your doubts</span>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className={cx(card, "space-y-3 px-6 py-5")}>
+          <div className="h-6 w-40 animate-pulse rounded-full bg-black/[0.05]" />
+          <div className="h-4 w-3/5 animate-pulse rounded bg-black/[0.07]" />
+          <div className="h-3 w-4/5 animate-pulse rounded bg-black/[0.04]" />
+        </div>
+      ))}
     </div>
   );
 }
 
-function DoubtCard({
-  doubt,
-  isExpanded,
-  onToggle,
-}: {
-  doubt: Doubt;
-  isExpanded: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <motion.article
-      className="overflow-hidden rounded-(--radius-xl) border border-(--line-soft) bg-white/84 shadow-(--shadow-soft)"
-      layout
-      transition={{ duration: 0.26 }}
-    >
-      <button
-        className="flex w-full flex-col gap-4 px-5 py-5 text-left transition-colors duration-150 hover:bg-white focus-visible:outline-none sm:px-6"
-        onClick={onToggle}
-        type="button"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={statusMeta[doubt.status].tone}>{statusMeta[doubt.status].label}</Badge>
-              <Badge tone={priorityMeta[doubt.priority].tone}>
-                {priorityMeta[doubt.priority].label}
-              </Badge>
-              <span className="inline-flex items-center gap-1 text-[12px] text-(--text-subtle)">
-                <Clock3 className="h-3.5 w-3.5" />
-                {timeAgo(doubt.createdAt)}
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-[22px] font-semibold tracking-[-0.04em] text-(--text-strong)">
-                {doubt.subject}
-              </h3>
-              <p className="max-w-[70ch] text-[14px] leading-7 text-(--text-muted)">
-                {doubt.body}
-              </p>
-              {doubt.attachmentUrl && (
-                <div className="mt-3">
-                  <a href={doubt.attachmentUrl} target="_blank" rel="noreferrer">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={doubt.attachmentUrl} alt="Doubt attachment" className="h-32 w-auto rounded-lg border object-cover shadow-sm transition-opacity hover:opacity-80" />
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex shrink-0 flex-col items-end gap-3">
-            <div className="rounded-(--radius-md) bg-(--brand-primary-soft) px-3 py-2 text-right">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-(--text-subtle)">
-                Replies
-              </p>
-              <p className="mt-1 text-[18px] font-semibold tracking-[-0.04em] text-(--brand-primary-dark)">
-                {doubt._count.replies}
-              </p>
-            </div>
-            <ChevronDown
-              className={`h-5 w-5 text-(--text-subtle) transition-transform duration-150 ${
-                isExpanded ? "rotate-180" : ""
-              }`}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 border-t border-(--line-soft) pt-4 text-[13px] text-(--text-subtle)">
-          <span>Updated {timeAgo(doubt.updatedAt)}</span>
-          <span className="h-1 w-1 rounded-full bg-(--text-subtle)/40" />
-          <span>{doubt.mentor?.name ? `Assigned to ${doubt.mentor.name}` : "Waiting for mentor pickup"}</span>
-        </div>
-      </button>
-
-      <AnimatePresence initial={false}>
-        {isExpanded ? (
-          <motion.div
-            animate={{ height: "auto", opacity: 1 }}
-            className="overflow-hidden border-t border-(--line-soft) bg-[rgba(255,255,255,0.52)] px-5 py-5 sm:px-6"
-            exit={{ height: 0, opacity: 0 }}
-            initial={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-          >
-            <ReplyThread replies={doubt.replies} />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </motion.article>
-  );
-}
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DoubtsPage() {
-  const pathname = usePathname();
-  const { user } = useAuth();
   const [doubts, setDoubts] = useState<Doubt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [filter, setFilter] = useState<Filter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
   const [subject, setSubject] = useState("");
@@ -226,6 +283,9 @@ export default function DoubtsPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const lastListRef = useRef("");
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -240,149 +300,107 @@ export default function DoubtsPage() {
     setImagePreview(null);
   }
 
-  async function fetchDoubts(background = false) {
-    if (!background) setLoading(true);
-
-    try {
-      const response = await fetch("/api/doubts");
-      const json = await response.json();
-
-      if (json.success) {
-        setDoubts((prev) => {
-          return json.data.map((newDoubt: Doubt) => {
-            const old = prev.find((d) => d.id === newDoubt.id);
-            if (old && old.replies) {
-              return { ...newDoubt, replies: old.replies };
-            }
-            return newDoubt;
-          });
-        });
-      }
-    } catch (error) {
-      console.error("Failed to fetch doubts", error);
-    } finally {
-      if (!background) setLoading(false);
-    }
+  function openComposer() {
+    setShowComposer(true);
+    requestAnimationFrame(() => {
+      composerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      subjectRef.current?.focus({ preventScroll: true });
+    });
   }
 
-  useEffect(() => {
-    void fetchDoubts();
-    const interval = setInterval(() => {
-      fetchDoubts(true);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const stats = useMemo(() => {
-    const open = doubts.filter(
-      (doubt) => doubt.status === "OPEN" || doubt.status === "ASSIGNED",
-    ).length;
-    const resolved = doubts.filter(
-      (doubt) => doubt.status === "RESOLVED" || doubt.status === "CLOSED",
-    ).length;
-
-    return {
-      open,
-      resolved,
-      replies: doubts.reduce((count, doubt) => count + doubt._count.replies, 0),
-    };
-  }, [doubts]);
-
-  useEffect(() => {
-    if (!expandedId) return;
-    const interval = setInterval(() => {
-      fetch(`/api/doubts/${expandedId}`)
-        .then((res) => res.json())
-        .then((json) => {
-          if (json.success) {
-            setDoubts((current) =>
-              current.map((item) =>
-                item.id === expandedId ? { ...item, replies: json.data.replies } : item
-              )
-            );
-          }
-        })
-        .catch(console.error);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [expandedId]);
-
-  async function handleToggle(doubt: Doubt) {
-    if (expandedId === doubt.id) {
-      setExpandedId(null);
-      return;
-    }
-
-    setExpandedId(doubt.id);
-
-    // replies is undefined until fetched; treat missing/empty as needing a fetch
-    if (doubt.replies && doubt.replies.length > 0) {
-      return;
-    }
-
+  // Resolves to whether anything changed, so polling eases off when it hasn't
+  const fetchDoubts = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/doubts/${doubt.id}`);
-      const json = await response.json();
-
-      if (json.success) {
-        setDoubts((current) =>
-          current.map((item) =>
-            item.id === doubt.id ? { ...item, replies: json.data.replies } : item,
-          ),
+      const text = await fetch("/api/doubts").then((r) => r.text());
+      const changed = text !== lastListRef.current;
+      lastListRef.current = text;
+      const json = JSON.parse(text);
+      if (!json.success) {
+        setLoadFailed(true);
+        return false;
+      }
+      setLoadFailed(false);
+      if (changed) {
+        setDoubts((prev) =>
+          json.data.map((next: Doubt) => {
+            const old = prev.find((d) => d.id === next.id);
+            return old?.replies ? { ...next, replies: old.replies } : next;
+          }),
         );
       }
+      return changed;
+    } catch (error) {
+      console.error("Failed to fetch doubts", error);
+      setLoadFailed(true);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // The list every 15s, easing off to a minute while nothing changes; paused in a hidden tab
+  usePolling(fetchDoubts, { intervalMs: 15_000, maxIntervalMs: 60_000 });
+
+  const lastThreadRef = useRef("");
+  const fetchThread = useCallback(async (): Promise<boolean> => {
+    if (!expandedId) return false;
+    const id = expandedId;
+    try {
+      const text = await fetch(`/api/doubts/${id}`).then((res) => res.text());
+      const changed = text !== lastThreadRef.current;
+      lastThreadRef.current = text;
+      const json = JSON.parse(text);
+      if (!json.success || !changed) return false;
+      setDoubts((current) => current.map((item) => (item.id === id ? { ...item, replies: json.data.replies } : item)));
+      return true;
     } catch (error) {
       console.error("Failed to fetch doubt detail", error);
+      return false;
     }
-  }
+  }, [expandedId]);
+
+  // The open thread every 5s while replies arrive, easing off to 30s
+  usePolling(fetchThread, { intervalMs: 5000, maxIntervalMs: 30_000, enabled: Boolean(expandedId), resetKey: expandedId });
+
+  const stats = useMemo(() => {
+    const waiting = doubts.filter(isWaiting).length;
+    return { waiting, answered: doubts.length - waiting };
+  }, [doubts]);
+
+  const visible = useMemo(
+    () =>
+      doubts.filter((doubt) =>
+        filter === "all" ? true : filter === "waiting" ? isWaiting(doubt) : !isWaiting(doubt),
+      ),
+    [doubts, filter],
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!subject.trim() || !body.trim()) {
-      return;
-    }
+    if (!subject.trim() || !body.trim()) return;
 
     setSubmitting(true);
     setErrorMsg("");
 
     try {
       let attachmentUrl = null;
-      let imageUploadWarning = "";
-
       if (imageFile) {
         try {
           const formData = new FormData();
           formData.append("file", imageFile);
-          const uploadRes = await fetch("/api/upload/image", {
-            method: "POST",
-            body: formData,
-          });
-          const uploadJson = await uploadRes.json();
-          if (uploadJson.success) {
-            attachmentUrl = uploadJson.data.url;
-          } else {
-            // Upload failed — warn but don't block the doubt submission
-            imageUploadWarning = "Image could not be uploaded; submitting without it.";
-          }
+          const uploadJson = await fetch("/api/upload/image", { method: "POST", body: formData }).then((r) => r.json());
+          if (uploadJson.success) attachmentUrl = uploadJson.data.url;
+          else setErrorMsg("The photo could not be uploaded, so the doubt was sent without it.");
         } catch {
-          imageUploadWarning = "Image could not be uploaded; submitting without it.";
-        }
-
-        if (imageUploadWarning) {
-          setErrorMsg(imageUploadWarning);
+          // Upload failed: send the doubt without the photo rather than not at all
+          setErrorMsg("The photo could not be uploaded, so the doubt was sent without it.");
         }
       }
 
       const response = await fetch("/api/doubts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          body,
-          priority,
-          subject,
-          attachmentUrl,
-        }),
+        body: JSON.stringify({ body, priority, subject, attachmentUrl }),
       });
       const json = await response.json();
 
@@ -392,240 +410,279 @@ export default function DoubtsPage() {
         setPriority("MEDIUM");
         handleImageRemove();
         setShowComposer(false);
+        setFilter("all");
         void fetchDoubts();
         return;
       }
-
-      setErrorMsg(json.error || json.message || "Could not submit the doubt right now.");
+      setErrorMsg(json.error || json.message || "Could not send your doubt right now.");
     } catch (error) {
       console.error("Failed to submit doubt", error);
-      setErrorMsg("Could not submit the doubt right now.");
+      setErrorMsg("Could not send your doubt right now. Check your connection and try again.");
     } finally {
       setSubmitting(false);
     }
   }
 
+  async function handleToggle(doubt: Doubt) {
+    if (expandedId === doubt.id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(doubt.id);
+    // The open-thread poll loads the replies straight away
+  }
+
+  const heroSummary = loading
+    ? "Getting your doubts ready."
+    : doubts.length === 0
+      ? "Stuck on a lesson, an assignment or a test question? Ask a teacher and the answer lands here."
+      : stats.waiting > 0
+        ? `${plural(stats.waiting, "doubt")} waiting for a teacher, ${stats.answered} answered.`
+        : `All ${plural(stats.answered, "doubt")} answered. Ask another whenever you're stuck.`;
+
+  const cost = `${DOUBT_SUBMISSION_XP_COST} XP${imageFile ? ` + ${DOUBT_IMAGE_XP_COST} XP for the photo` : ""}`;
+
   return (
-    <div className="text-black bg-[#f9fafb] min-h-screen pb-24 sm:bg-[#f7f5f4] sm:pb-0">
-      <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-8 text-black lg:gap-0">
-
-        <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-10 lg:py-6">
-          <div className="mx-auto max-w-[1180px] space-y-8">
-            <RevealSection>
-              <Surface className="relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8">
-                <div className="pointer-events-none absolute inset-y-0 right-0 w-[30%] bg-[radial-gradient(circle_at_center,rgba(56,193,255,0.14),transparent_72%)]" />
-                <div className="relative z-10 space-y-8">
-                  <SectionHeading
-                    action={
-                      <Button
-                        onClick={() => setShowComposer((current) => !current)}
-                        size="lg"
-                      >
-                        <Plus className="h-4 w-4" />
-                        {showComposer ? "Hide composer" : "Ask a doubt"}
-                      </Button>
-                    }
-                    eyebrow="Mentor Support"
-                    title="Questions deserve the same level of polish as the lessons."
-                    description="Capture a doubt clearly, track whether it is still open, and keep the reply thread readable without the page turning into a utility dump."
-                  />
-
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <MetricCard
-                      accent="var(--brand-primary-strong)"
-                      icon={<CircleHelp className="h-5 w-5" />}
-                      label="Open Threads"
-                      meta="Questions that still need a mentor response or follow-up."
-                      value={stats.open}
-                    />
-                    <MetricCard
-                      accent="var(--success)"
-                      icon={<MessageSquareText className="h-5 w-5" />}
-                      label="Resolved"
-                      meta="Doubts that have already been answered or wrapped up."
-                      value={stats.resolved}
-                    />
-                    <MetricCard
-                      accent="var(--warning)"
-                      icon={<SendHorizontal className="h-5 w-5" />}
-                      label="Replies Shared"
-                      meta="Total responses exchanged across your active doubt threads."
-                      value={stats.replies}
-                    />
-                  </div>
+    <PageTransition>
+      {/* overflow-x-clip, not hidden: hidden makes <main> a scroll container and breaks the sticky rail */}
+      <main className="min-h-screen overflow-x-clip bg-[#f9fafb] pb-24 text-black sm:bg-[#f7f5f4] sm:pb-0">
+        <section className="mx-auto min-w-0 max-w-[1920px] space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px] xl:pr-10">
+          <RevealSection>
+            <PageHero
+              eyebrow="Doubts"
+              title="Ask a Teacher"
+              description={<p>{heroSummary}</p>}
+              aside={
+                <div className="rounded-[20px] bg-white p-5 text-black shadow-[0_12px_30px_rgba(8,80,130,0.18)] sm:p-6">
+                  <p className="text-[16px] font-bold">Stuck on something?</p>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-black/60">
+                    Describe the problem, add a photo of your work if it helps, and a teacher will reply in your thread.
+                  </p>
+                  <button type="button" onClick={openComposer} className={cx(primaryAction, "mt-4 w-full")}>
+                    <Plus aria-hidden="true" className="h-4 w-4" />
+                    <span className="text-[14px] font-semibold">Ask a doubt</span>
+                  </button>
+                  <p className="mt-2.5 text-center text-[12px] text-black/45">
+                    Costs {DOUBT_SUBMISSION_XP_COST} XP, plus {DOUBT_IMAGE_XP_COST} XP with a photo
+                  </p>
                 </div>
-              </Surface>
-            </RevealSection>
+              }
+            />
+          </RevealSection>
 
-            <AnimatePresence initial={false}>
-              {showComposer ? (
-                <RevealSection delay={0.04}>
-                  <motion.div
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    initial={{ opacity: 0, y: -12 }}
-                  >
-                    <Surface className="px-6 py-6 sm:px-8">
-                      <div className="mb-6 space-y-2">
-                        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-(--text-subtle)">
-                          New Doubt
-                        </p>
-                        <h2 className="text-[28px] font-semibold tracking-[-0.05em] text-(--text-strong)">
-                          Write it once, clearly.
-                        </h2>
-                        <p className="text-[14px] leading-7 text-(--text-muted)">
-                          Add the exact problem, what you already tried, and how urgent it is so mentors can respond with context instead of guesswork.
-                        </p>
-                        <p className="text-[13px] font-medium text-(--text-subtle)">
-                          Submitting a doubt uses 25 XP from your account (50 XP with an attached image).
+          <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_293px] xl:items-start">
+            <div className="min-w-0 space-y-6">
+              {showComposer && (
+                <div ref={composerRef} className="scroll-mt-[calc(var(--app-header-height)+1rem)]">
+                  <form onSubmit={handleSubmit} className={cx(card, "space-y-5 px-5 py-6 sm:px-7")}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h2 className={sectionTitle}>Ask a doubt</h2>
+                        <p className={sectionLede}>
+                          Say what you&apos;re stuck on, where it&apos;s from, and what you already tried.
                         </p>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowComposer(false)}
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-black/45 transition-colors hover:bg-black/[0.05] hover:text-black"
+                        aria-label="Close"
+                      >
+                        <X aria-hidden="true" className="h-5 w-5" />
+                      </button>
+                    </div>
 
-                      <form className="space-y-5" onSubmit={handleSubmit}>
-                        <Field
-                          label="Subject"
-                          onChange={(event) => setSubject(event.target.value)}
-                          placeholder="Example: I am stuck on perspective drawing for the sketching module"
-                          value={subject}
-                        />
+                    <label className="block">
+                      <span className="mb-1.5 block text-[13px] font-semibold text-black/70">Subject</span>
+                      <input
+                        ref={subjectRef}
+                        value={subject}
+                        onChange={(e) => setSubject(e.target.value)}
+                        placeholder="e.g. Why is the moment of inertia of a ring MR²?"
+                        className={cx(input, "h-11")}
+                      />
+                    </label>
 
-                        <TextAreaField
-                          label="Details"
-                          onChange={(event) => setBody(event.target.value)}
-                          placeholder="Describe the problem, what lesson or assignment it belongs to, and what you already tried."
-                          value={body}
-                        />
+                    <label className="block">
+                      <span className="mb-1.5 block text-[13px] font-semibold text-black/70">Details</span>
+                      <textarea
+                        value={body}
+                        onChange={(e) => setBody(e.target.value)}
+                        rows={5}
+                        placeholder="Which lesson, assignment or question is it from? Where exactly do you get stuck?"
+                        className={cx(input, "resize-y py-3 leading-relaxed")}
+                      />
+                    </label>
 
-                        <div className="space-y-3">
-                          <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-(--text-muted)">
-                            Attachment (Optional)
-                          </p>
-                          {imagePreview ? (
-                            <div className="relative inline-block">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={imagePreview} alt="Preview" className="h-32 w-auto rounded-lg border object-cover shadow-sm" />
+                    <div className="flex flex-wrap items-start gap-6">
+                      <div>
+                        <p className="mb-1.5 text-[13px] font-semibold text-black/70">Photo (optional)</p>
+                        {imagePreview ? (
+                          <div className="relative inline-block">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- local preview of the chosen file */}
+                            <img src={imagePreview} alt="Selected photo" className="h-24 w-auto rounded-[12px] object-cover ring-1 ring-black/10" />
+                            <button
+                              type="button"
+                              onClick={handleImageRemove}
+                              className="absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full bg-black/75 text-white shadow-sm transition-colors hover:bg-black"
+                              aria-label="Remove photo"
+                            >
+                              <X aria-hidden="true" className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-[12px] border border-dashed border-[rgba(56,193,255,0.55)] bg-[#f8fcff] px-4 text-[13px] font-semibold text-black/65 transition-colors hover:bg-(--brand-primary-soft) hover:text-black">
+                            <ImagePlus aria-hidden="true" className="h-4 w-4" />
+                            Add a photo
+                            <input
+                              type="file"
+                              accept="image/png, image/jpeg, image/webp, image/gif"
+                              className="sr-only"
+                              onChange={handleImageSelect}
+                            />
+                          </label>
+                        )}
+                        <p className="mt-1.5 text-[12px] text-black/45">JPEG, PNG, WEBP or GIF, up to 10 MB</p>
+                      </div>
+
+                      <fieldset>
+                        <legend className="mb-1.5 text-[13px] font-semibold text-black/70">How urgent is it?</legend>
+                        <div className="inline-flex rounded-[12px] bg-[#f4f6f9] p-1 ring-1 ring-black/[0.04]">
+                          {priorityOptions.map((option) => {
+                            const active = priority === option.value;
+                            return (
                               <button
+                                key={option.value}
                                 type="button"
-                                onClick={handleImageRemove}
-                                className="absolute -right-2 -top-2 rounded-full bg-white p-1 text-red-500 shadow-md hover:bg-red-50 hover:text-red-600"
+                                onClick={() => setPriority(option.value)}
+                                aria-pressed={active}
+                                className={cx(
+                                  "h-9 rounded-[9px] px-4 transition-colors",
+                                  active
+                                    ? option.value === "HIGH"
+                                      ? "bg-white text-[#b42d00] shadow-[0_1px_4px_rgba(15,23,42,0.1)]"
+                                      : cx("bg-white shadow-[0_1px_4px_rgba(15,23,42,0.1)]", brandInk)
+                                    : "text-black/55 hover:text-black",
+                                )}
                               >
-                                <X className="h-4 w-4" />
+                                <span className="text-[13px] font-semibold">{option.label}</span>
                               </button>
-                            </div>
-                          ) : (
-                            <div>
-                              <label className="flex w-max cursor-pointer items-center gap-2 rounded-lg border border-dashed border-(--line-strong) bg-white px-4 py-3 text-[14px] text-(--text-muted) transition-colors hover:bg-gray-50 hover:text-(--text-strong)">
-                                <ImageIcon className="h-4 w-4" />
-                                <span>Upload an image</span>
-                                <input
-                                  type="file"
-                                  accept="image/png, image/jpeg, image/webp, image/gif"
-                                  className="hidden"
-                                  onChange={handleImageSelect}
-                                />
-                              </label>
-                              <p className="mt-1 text-[12px] text-(--text-subtle)">Max 10MB. Formats: JPEG, PNG, WEBP, GIF.</p>
-                            </div>
-                          )}
+                            );
+                          })}
                         </div>
+                      </fieldset>
+                    </div>
 
-                        <div className="space-y-3">
-                          <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-(--text-muted)">
-                            Priority
-                          </p>
-                          <div className="flex flex-wrap gap-3">
-                            {(["LOW", "MEDIUM", "HIGH"] as const).map((item) => {
-                              const active = priority === item;
+                    {errorMsg && (
+                      <p role="alert" className="rounded-[12px] bg-[rgba(255,61,0,0.08)] px-4 py-3 text-[13px] font-medium text-[#b42d00]">
+                        {errorMsg}
+                      </p>
+                    )}
 
-                              return (
-                                <button
-                                  key={item}
-                                  className={`rounded-(--radius-pill) border px-4 py-2 text-[14px] font-semibold transition-[border-color,background-color,color,transform] duration-150 ease-out focus-visible:outline-none ${
-                                    active
-                                      ? "border-transparent bg-(--brand-primary-strong) text-white shadow-(--shadow-accent)"
-                                      : "border-(--line-soft) bg-white text-(--text-muted) hover:border-(--line-strong) hover:text-(--text-strong)"
-                                  }`}
-                                  onClick={() => setPriority(item)}
-                                  type="button"
-                                >
-                                  {priorityMeta[item].label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {errorMsg ? (
-                          <div className="rounded-(--radius-md) border border-[rgba(255,61,0,0.16)] bg-[rgba(255,61,0,0.08)] px-4 py-3 text-[14px] text-(--danger)">
-                            {errorMsg}
-                          </div>
-                        ) : null}
-
-                        <div className="flex flex-wrap items-center gap-3">
-                          <Button
-                            disabled={!subject.trim() || !body.trim()}
-                            loading={submitting}
-                            size="lg"
-                            type="submit"
-                          >
-                            Submit doubt
-                          </Button>
-                          <Button
-                            onClick={() => setShowComposer(false)}
-                            size="lg"
-                            type="button"
-                            variant="secondary"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </form>
-                    </Surface>
-                  </motion.div>
-                </RevealSection>
-              ) : null}
-            </AnimatePresence>
-
-            <RevealSection delay={0.08}>
-              {loading ? (
-                <Surface className="flex items-center justify-center gap-3 px-6 py-16 text-(--text-muted)">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    className="h-5 w-5 rounded-full border-2 border-(--brand-primary-strong) border-t-transparent"
-                    transition={{ duration: 0.9, ease: "linear", repeat: Number.POSITIVE_INFINITY }}
-                  />
-                  Loading your doubt threads...
-                </Surface>
-              ) : doubts.length === 0 ? (
-                <EmptyState
-                  action={
-                    <Button onClick={() => setShowComposer(true)} size="lg">
-                      <Plus className="h-4 w-4" />
-                      Ask your first doubt
-                    </Button>
-                  }
-                  description="Once you send a question, it will appear here with its status, response history, and the latest mentor activity."
-                  icon={<CircleHelp className="h-6 w-6" />}
-                  title="No doubts yet"
-                />
-              ) : (
-                <StaggerGrid className="space-y-4">
-                  {doubts.map((doubt) => (
-                    <DoubtCard
-                      key={doubt.id}
-                      doubt={doubt}
-                      isExpanded={expandedId === doubt.id}
-                      onToggle={() => void handleToggle(doubt)}
-                    />
-                  ))}
-                </StaggerGrid>
+                    <div className="flex flex-wrap items-center gap-3 border-t border-black/[0.05] pt-5">
+                      <button type="submit" disabled={submitting || !subject.trim() || !body.trim()} className={primaryAction}>
+                        {submitting && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/80 border-t-transparent" />}
+                        <span className="text-[14px] font-semibold">{submitting ? "Sending…" : "Send doubt"}</span>
+                      </button>
+                      <button type="button" onClick={() => setShowComposer(false)} className={secondaryAction}>
+                        <span className="text-[14px] font-semibold">Cancel</span>
+                      </button>
+                      <span className="text-[12px] text-black/45">Uses {cost}</span>
+                    </div>
+                  </form>
+                </div>
               )}
-            </RevealSection>
+
+              <RevealSection delay={0.06}>
+                <section aria-labelledby="doubts-heading" className="space-y-4">
+                  <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+                    <div>
+                      <h2 id="doubts-heading" className={sectionTitle}>
+                        Your Doubts
+                      </h2>
+                      <p className={sectionLede}>Open one to see the teacher&apos;s reply.</p>
+                    </div>
+                    {doubts.length > 0 && (
+                      <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+                        <FilterChip active={filter === "all"} count={doubts.length} label="All" onClick={() => setFilter("all")} />
+                        <FilterChip active={filter === "waiting"} count={stats.waiting} label="Waiting" onClick={() => setFilter("waiting")} />
+                        <FilterChip active={filter === "answered"} count={stats.answered} label="Answered" onClick={() => setFilter("answered")} />
+                      </div>
+                    )}
+                  </div>
+
+                  {loading ? (
+                    <ListSkeleton />
+                  ) : loadFailed && doubts.length === 0 ? (
+                    <EmptyState
+                      title="Couldn't load your doubts"
+                      description="Check your connection and try again."
+                      action={
+                        <button type="button" onClick={() => void fetchDoubts()} className={primaryAction}>
+                          <span className="text-[14px] font-semibold">Try again</span>
+                        </button>
+                      }
+                    />
+                  ) : doubts.length === 0 ? (
+                    <div className={cx(card, "flex flex-col items-center px-6 py-12 text-center")}>
+                      <Image alt="" className="h-28 w-28 scale-[1.3] object-contain" height={224} src={art.waiting} width={224} />
+                      <p className="mt-4 text-[18px] font-bold text-black">No doubts yet</p>
+                      <p className="mt-1.5 max-w-[44ch] text-[14px] leading-relaxed text-black/55">
+                        When you ask one, it shows up here with its status and the teacher&apos;s reply.
+                      </p>
+                      <button type="button" onClick={openComposer} className={cx(primaryAction, "mt-5")}>
+                        <Plus aria-hidden="true" className="h-4 w-4" />
+                        <span className="text-[14px] font-semibold">Ask your first doubt</span>
+                      </button>
+                    </div>
+                  ) : visible.length === 0 ? (
+                    <p className={cx(card, "px-6 py-8 text-center text-[14px] text-black/55")}>
+                      {filter === "waiting" ? "Nothing waiting. Every doubt has an answer." : "No answered doubts yet."}
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {visible.map((doubt) => (
+                        <DoubtCard
+                          key={doubt.id}
+                          doubt={doubt}
+                          isExpanded={expandedId === doubt.id}
+                          onToggle={() => void handleToggle(doubt)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </RevealSection>
+            </div>
+
+            <aside
+              aria-labelledby="doubt-summary-heading"
+              className="order-first min-w-0 space-y-4 xl:sticky xl:top-[calc(var(--app-header-height)+1.5rem)] xl:order-none"
+            >
+              <div className="sr-only xl:not-sr-only">
+                <h2 id="doubt-summary-heading" className={sectionTitle}>
+                  At a Glance
+                </h2>
+                <p className={sectionLede}>Where your questions stand.</p>
+              </div>
+              <StaggerGrid className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-1">
+                <StatCard
+                  image={art.waiting}
+                  label="Waiting"
+                  value={loading ? "–" : String(stats.waiting)}
+                  note="Not answered yet"
+                />
+                <StatCard
+                  image={art.answered}
+                  label="Answered"
+                  value={loading ? "–" : String(stats.answered)}
+                  note="Answered or closed"
+                />
+              </StaggerGrid>
+            </aside>
           </div>
         </section>
-      </div>
+      </main>
     </PageTransition>
-    </div>
   );
 }
