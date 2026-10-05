@@ -4,9 +4,45 @@ How to switch on and run the reliability and engagement features. Everything
 below is off or inert until configured, so deploying the code changes nothing
 by itself.
 
-## 1. Database migrations (do these first)
+## 0. Launch checklist
 
-Two migrations are waiting. Run them against production through the **session
+1. **Vercel plan**: Hobby is for non-commercial projects only; a paid client LMS needs Pro.
+2. **Environment variables** for Production in Vercel: at minimum `JWT_SECRET` (48+ random
+   characters), `CRON_SECRET`, `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`,
+   `NEXT_PUBLIC_APP_URL`, live payment keys (`RAZORPAY_KEY_ID` must not start with
+   `rzp_test_`; `CASHFREE_ENVIRONMENT=PRODUCTION`) and `EMAIL_*`.
+3. **Check them** after each deploy. The server logs problems at start-up as `[CONFIG]` lines,
+   and you can ask for the list (names only, never values):
+
+   ```bash
+   curl -H "Authorization: Bearer $CRON_SECRET" https://<domain>/api/health/config
+   ```
+
+   `"ready": true` means no errors remain; warnings are listed too.
+4. **Supabase**: confirm daily backups and point-in-time recovery on your plan
+   (Project Settings → Database → Backups), and test a restore once.
+5. **Uptime monitoring**: point UptimeRobot (or similar) at `GET /api/health`.
+6. **Click through a preview deployment** as a student, a teacher and an admin before
+   promoting it.
+
+## Sign-in sessions
+
+Sign-in tokens last 7 days but can now be cancelled early (`src/lib/session-revocation.ts`,
+stored in Upstash Redis):
+
+- **Logout** cancels that device's token on the server, not just the cookie.
+- **Changing your password** signs out every other device; an **admin resetting** a
+  student's or teacher's password signs that person out everywhere.
+- Takes effect within 30 seconds on every server. If Redis is unreachable, tokens keep
+  working rather than signing everyone out.
+
+Tokens issued before this change have no id, so logging out can't cancel them
+individually; a password change still does.
+
+## 1. Database migrations
+
+Applied to production on 2026-10-05. For reference, this is how they went in.
+Two migrations were waiting. Run them against production through the **session
 pooler** (port 5432, not the 6543 transaction pooler), with `DIRECT_URL` set to
 that URL:
 

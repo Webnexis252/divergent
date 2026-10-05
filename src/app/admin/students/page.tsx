@@ -190,6 +190,8 @@ export default function AdminStudentsPage() {
       return;
     }
 
+    // xlsx 0.18.5 is the last npm release; its open advisories (prototype
+    // pollution, ReDoS) are in *reading* spreadsheets. This only writes one.
     const XLSX = await import("xlsx");
 
     const dataToExport = students.map((student) => ({

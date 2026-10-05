@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as bcrypt from "@node-rs/bcrypt";
 import prisma from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { getAuthCookieOptions, AUTH_COOKIE_NAME, requireAuth, signToken } from "@/lib/auth";
+import { revokeAllSessions } from "@/lib/session-revocation";
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -29,7 +30,12 @@ export async function PATCH(req: NextRequest) {
       data: { passwordHash },
     });
 
-    return NextResponse.json({ success: true, message: "Password updated successfully" });
+    // Sign out every other device (anyone who had the old password or a
+    // stolen token), then give this device a fresh token so it stays signed in
+    await revokeAllSessions(auth.userId);
+    const response = NextResponse.json({ success: true, message: "Password updated successfully" });
+    response.cookies.set(AUTH_COOKIE_NAME, await signToken(auth), getAuthCookieOptions());
+    return response;
   } catch (error) {
     console.error("[UPDATE_PASSWORD_ERROR]", error);
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });

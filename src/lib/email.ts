@@ -32,7 +32,11 @@ const emailBreaker = new CircuitBreaker({
   maxConcurrency: 10
 });
 
-async function sendMailWithBreaker(options: nodemailer.SendMailOptions) {
+// Derived from sendMail itself: nodemailer 10 ships its own types and no longer
+// exposes a `nodemailer.SendMailOptions` namespace type
+type SendMailOptions = Parameters<ReturnType<typeof createTransport>["sendMail"]>[0];
+
+async function sendMailWithBreaker(options: SendMailOptions) {
   return emailBreaker.fire(async () => {
     const transport = createTransport();
     return transport.sendMail(options);

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { SignJWT, jwtVerify } from 'jose';
 import { UserRole } from '@prisma/client';
+import { isTokenRevoked } from '@/lib/session-revocation';
 
 const JWT_SECRET_VALUE = process.env.JWT_SECRET!;
 export const AUTH_COOKIE_NAME = 'divergent_auth_token';
@@ -36,6 +37,8 @@ export async function signToken(payload: JwtPayload): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
+    // A unique id per token, so one device can be signed out (see session-revocation)
+    .setJti(crypto.randomUUID())
     .setExpirationTime('7d')
     .sign(getSecretKey());
 }
@@ -59,11 +62,29 @@ export async function verifyTokenValue(
     ) {
       return null;
     }
+    // Logged out on this device, or signed out everywhere after a password change
+    if (await isTokenRevoked({ userId: payload.userId, jti: payload.jti, iat: payload.iat })) {
+      return null;
+    }
     return {
       userId: payload.userId,
       email: payload.email,
       role: payload.role as UserRole,
     };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The id and expiry of a validly signed auth token (revoked or not), so
+ * logout can revoke exactly this token.
+ */
+export async function readTokenClaims(token?: string | null): Promise<{ jti?: string; exp?: number } | null> {
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, getSecretKey());
+    return { jti: payload.jti, exp: payload.exp };
   } catch {
     return null;
   }
