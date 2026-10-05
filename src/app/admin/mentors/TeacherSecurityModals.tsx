@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { Eye, EyeOff, X, Loader2, Copy, CheckCircle2, AlertTriangle, KeyRound, Lock } from "lucide-react";
 
 export function OtpPanel({

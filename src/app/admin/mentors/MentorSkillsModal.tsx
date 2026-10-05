@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import type { Mentor } from "./_types";
+import { TriangleAlert, Check } from "lucide-react";
 
 interface Skill {
   id: string;
@@ -138,7 +139,7 @@ export function MentorSkillsModal({
             ) : error ? (
               /* Error state */
               <div className="flex flex-col items-center py-10 text-center">
-                <div className="mb-3 text-4xl">⚠️</div>
+                <TriangleAlert className="mb-3 h-10 w-10 text-[#f59e0b]" strokeWidth={1.5} />
                 <p className="font-semibold text-gray-800">Could not load skills</p>
                 <p className="mt-1 text-sm text-gray-500">{error}</p>
                 <button
@@ -223,7 +224,7 @@ export function MentorSkillsModal({
             <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50/50 px-6 py-4">
               <p className="text-[12px] text-gray-400">
                 {savedAt
-                  ? `✓ Saved at ${savedAt.toLocaleTimeString()}`
+                  ? <><Check className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Saved at {savedAt.toLocaleTimeString()}</>
                   : dirty
                   ? "Unsaved changes"
                   : "Changes reflect immediately on the mentor's profile."}

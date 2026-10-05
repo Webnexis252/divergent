@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { formatShortDate } from "@/lib/date-format";
 import { TeacherScheduleData, TeacherScheduleItem } from "@/lib/live-class-types";
 import { ClassControlIcon } from "./teacher-icons";
-import { TeacherSidebar } from "./teacher-sidebar";
 
 import { PageTransition, RevealSection, StaggerGrid } from "./motion-wrappers";
 
@@ -205,8 +204,7 @@ export function TeacherClassControl() {
 
   return (
     <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
-          <TeacherSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:gap-8 lg:px-0 lg:pt-8">
 
           <main className="space-y-8 lg:pr-[160px]">
             <RevealSection>

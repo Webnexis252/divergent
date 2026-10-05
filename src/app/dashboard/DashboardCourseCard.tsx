@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { buttonStyles } from "@/components/ui/button";
 import { Surface } from "@/components/ui/surface";
 import { Badge } from "@/components/ui/badge";

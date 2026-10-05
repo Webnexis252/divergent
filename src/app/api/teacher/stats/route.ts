@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { getTodayTeacherClasses } from '@/lib/live-class-service';
+import { countEnrollmentsByMonth } from '@/lib/analytics-trends';
 import {
   apiSuccess,
   apiForbidden,
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
       openDoubtTickets,
       recentReplies,
       lowEngagement,
-      enrollmentsThisYear,
+      monthCounts,
       totalAssignments,
       pendingGrading,
       lateAssignments,
@@ -164,14 +165,8 @@ export async function GET(req: NextRequest) {
         },
       }),
 
-      // Enrollments this year in teacher's courses (for chart)
-      prisma.enrollment.findMany({
-        where: {
-          courseId: { in: teacherCourseIds },
-          createdAt: { gte: startOfYear },
-        },
-        select: { createdAt: true },
-      }),
+      // Enrollments this year in teacher's courses, per month (for chart)
+      countEnrollmentsByMonth(startOfYear, teacherCourseIds),
 
       // Total assignments for teacher's courses
       prisma.assignment.count({
@@ -248,8 +243,6 @@ export async function GET(req: NextRequest) {
     }));
 
     const monthNames = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    const monthCounts = new Array(12).fill(0);
-    enrollmentsThisYear.forEach((e) => monthCounts[e.createdAt.getMonth()]++);
     const maxCount = Math.max(...monthCounts, 1);
     const progressBars = monthNames.map((month, idx) => ({
       month,

@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { CreateTestQuestionSchema, type CreateTestQuestionInput } from '@/lib/validators';
 import { reindexQuestionsBySection } from '@/lib/test-question-sections';
+import { batchUpdateOrders } from '@/lib/batch-update-orders';
 import {
   apiCreated,
   apiError,
@@ -86,13 +87,9 @@ export async function POST(
       });
       const reorderedQuestions = reindexQuestionsBySection(existingQuestions);
 
-      await Promise.all(
-        reorderedQuestions.map((question) =>
-          tx.testQuestion.update({
-            where: { id: question.id },
-            data: { order: question.order },
-          })
-        )
+      await batchUpdateOrders(
+        reorderedQuestions.map((q) => ({ id: q.id, order: q.order })),
+        tx
       );
 
       const allQuestions = await tx.testQuestion.findMany({

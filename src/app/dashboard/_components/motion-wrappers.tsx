@@ -1,10 +1,37 @@
 "use client";
 
-import { motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
-import { useRef } from "react";
-import type { ReactNode } from "react";
+import { m as motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode, RefObject } from "react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
+
+type InViewMargin = NonNullable<Parameters<typeof useInView>[1]>["margin"];
+
+/**
+ * Whether a reveal-on-scroll element should be visible.
+ *
+ * The server HTML and the first client render always show it, so content is
+ * on screen at first paint instead of waiting (invisible) for JavaScript to
+ * download and hydrate on a slow phone. After hydration, elements that are
+ * still entirely below the fold are hidden and revealed as they scroll into
+ * view; they are offscreen when that happens, so nobody sees them disappear.
+ */
+export function useReveal(ref: RefObject<Element | null>, margin: InViewMargin = "-80px"): boolean {
+  const inView = useInView(ref, { once: true, margin });
+  const [belowFold, setBelowFold] = useState(false);
+
+  useEffect(() => {
+    // Measure on the next frame, once hydration's layout has settled
+    const frame = requestAnimationFrame(() => {
+      const top = ref.current?.getBoundingClientRect().top;
+      if (top !== undefined && top > window.innerHeight) setBelowFold(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [ref]);
+
+  return !belowFold || inView;
+}
 
 export const fadeUp = {
   hidden: { opacity: 0, y: 18 },
@@ -34,18 +61,13 @@ export const staggerFast = {
   show: { transition: { staggerChildren: 0.05, delayChildren: 0 } },
 };
 
+/**
+ * Page entrance as a CSS animation (`.page-enter` in globals.css): it starts
+ * at first paint, without waiting for JavaScript, so server-rendered content
+ * is never held invisible while the bundle loads.
+ */
 export function PageTransition({ children }: { children: ReactNode }) {
-  const reduceMotion = useReducedMotion();
-
-  return (
-    <motion.div
-      animate={{ opacity: 1, y: 0, transitionEnd: { transform: "none" } }}
-      initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
-      transition={reduceMotion ? { duration: 0 } : { duration: 0.28, ease }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className="page-enter">{children}</div>;
 }
 
 export function RevealSection({
@@ -61,14 +83,14 @@ export function RevealSection({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const visible = useReveal(ref, "-80px");
 
   return (
     <motion.div
       ref={ref}
-      animate={inView ? "show" : "hidden"}
+      animate={visible ? "show" : "hidden"}
       className={className}
-      initial="hidden"
+      initial={false}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.38, ease, delay }}
       variants={reduceMotion ? { hidden: { opacity: 1 }, show: { opacity: 1 } } : variant}
     >
@@ -86,14 +108,14 @@ export function StaggerGrid({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
-  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const visible = useReveal(ref, "-60px");
 
   return (
     <motion.div
       ref={ref}
-      animate={inView ? "show" : "hidden"}
+      animate={visible ? "show" : "hidden"}
       className={className}
-      initial="hidden"
+      initial={false}
       variants={reduceMotion ? undefined : stagger}
     >
       {children}
@@ -199,15 +221,15 @@ export function AnimHeading({
 }) {
   const ref = useRef<HTMLHeadingElement>(null);
   const reduceMotion = useReducedMotion();
-  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const visible = useReveal(ref, "-40px");
   const Component = motion[Tag as keyof typeof motion] as typeof motion.h2;
 
   return (
     <Component
       ref={ref}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: reduceMotion ? 0 : 10 }}
+      animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: reduceMotion ? 0 : 10 }}
       className={className}
-      initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
+      initial={false}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.3, ease }}
     >
       {children}
@@ -222,15 +244,17 @@ export function AnimStat({
   children: ReactNode;
   className?: string;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
+  const visible = useReveal(ref, "0px");
 
   return (
     <motion.div
+      ref={ref}
+      animate={visible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: reduceMotion ? 1 : 0.98 }}
       className={className}
-      initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.98 }}
+      initial={false}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.32, ease }}
-      viewport={{ once: true }}
-      whileInView={{ opacity: 1, scale: 1 }}
     >
       {children}
     </motion.div>

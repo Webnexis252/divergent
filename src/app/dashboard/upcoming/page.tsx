@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -20,7 +20,6 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Surface } from "@/components/ui/surface";
 import { PageTransition, RevealSection } from "../_components/motion-wrappers";
-import { DashboardSidebar } from "../_components/sidebar-nav";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
@@ -563,8 +562,7 @@ export default function UpcomingPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-        <DashboardSidebar />
+      <div className="mx-auto grid max-w-[1920px] lg:gap-0">
 
         <section className="px-6 py-8 lg:px-10 lg:py-10">
           <div className="mx-auto max-w-[1260px] space-y-8">

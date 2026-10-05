@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import {
   PageTransition,
   RevealSection,
@@ -9,6 +9,7 @@ import {
 } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../../_components/AdminStatCard";
 import { formatShortDate } from "@/lib/date-format";
+import { Pencil, X, Plus } from "lucide-react";
 
 type CourseOption = {
   id: string;
@@ -95,7 +96,7 @@ function CoursePicker({
           onClick={() => onChange([])}
           className="w-full px-4 py-2 text-left text-[12px] text-[#d97706] font-semibold hover:bg-[#fffbeb] transition border-b border-[#fef3c7]"
         >
-          ✕ Clear selection (apply to all courses)
+          <X className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Clear selection (apply to all courses)
         </button>
       )}
       
@@ -592,7 +593,7 @@ export default function AdminCouponsPage() {
                 onClick={() => { setShowCreate((v) => !v); setEditingCoupon(null); }}
                 className="shrink-0 rounded-2xl bg-white px-6 py-3 text-[14px] font-semibold text-[#b45309] transition hover:bg-white/90"
               >
-                {showCreate ? "✕ Cancel" : "+ New Coupon"}
+                {showCreate ? <><X className="mr-1 inline h-4 w-4 align-[-3px]" />Cancel</> : <><Plus className="mr-1 inline h-4 w-4 align-[-3px]" />New Coupon</>}
               </button>
             </div>
           </section>
@@ -643,7 +644,7 @@ export default function AdminCouponsPage() {
               <div className="rounded-[28px] border-2 border-[#f59e0b] bg-[#fffbeb] p-1">
                 <div className="flex items-center gap-2 px-5 pt-4 pb-0">
                   <span className="text-[11px] font-bold uppercase tracking-widest text-[#d97706]">
-                    ✎ Editing
+                    <Pencil className="mr-1 inline h-3 w-3 align-[-1px]" />Editing
                   </span>
                   <span className="font-mono text-[14px] font-black text-[#0f172a]">{editingCoupon.code}</span>
                 </div>
@@ -737,7 +738,7 @@ export default function AdminCouponsPage() {
                               : "bg-[#fef3c7] text-[#b45309] hover:bg-[#fde68a]"
                           }`}
                         >
-                          {isEditing ? "✕ Close" : "✎ Edit"}
+                          {isEditing ? <><X className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Close</> : <><Pencil className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Edit</>}
                         </button>
                       </div>
                     </div>

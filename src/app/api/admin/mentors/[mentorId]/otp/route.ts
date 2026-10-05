@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiSuccess, apiError, apiForbidden, apiNotFound, apiServerError } from "@/lib/api-response";
@@ -44,13 +44,18 @@ export async function POST(
       },
     });
 
-    // Send OTP email (non-blocking — don't fail the request if email fails)
+    // Send OTP email after responding (don't fail the request if email fails).
+    // `after` keeps the function alive until the send finishes; an un-awaited
+    // promise can be frozen, and the teacher would never get their OTP.
     if (teacher.email) {
-      sendTeacherOtpEmail({
-        to: teacher.email,
-        name: teacher.name ?? "",
-        otp,
-      }).catch((err) => console.error("[OTP_EMAIL_ERROR]", err));
+      const to = teacher.email;
+      after(() =>
+        sendTeacherOtpEmail({
+          to,
+          name: teacher.name ?? "",
+          otp,
+        }).catch((err) => console.error("[OTP_EMAIL_ERROR]", err)),
+      );
     }
 
     return apiSuccess(

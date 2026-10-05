@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera } from "lucide-react";
-import { motion } from "motion/react";
+import { Camera, TriangleAlert, Clock, Users } from "lucide-react";
+import { m as motion } from "motion/react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/context/auth-context";
 
-import { TeacherSidebar } from "../../_components/teacher-sidebar";
 import {
   FloatPulse,
   PageTransition,
@@ -52,52 +51,11 @@ interface TeacherStats {
 }
 
 function TeachingHoursIcon() {
-  return (
-    <svg
-      viewBox="0 0 48 48"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-full w-full"
-    >
-      <circle cx="24" cy="24" r="20" stroke="white" strokeWidth="3" strokeOpacity="0.6" />
-      <path
-        d="M24 14v10l6 4"
-        stroke="white"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeOpacity="0.9"
-      />
-    </svg>
-  );
+  return <Clock className="h-full w-full" />;
 }
 
 function StudentsMentoredIcon() {
-  return (
-    <svg
-      viewBox="0 0 48 48"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-full w-full"
-    >
-      <circle cx="18" cy="18" r="6" stroke="white" strokeWidth="3" strokeOpacity="0.6" />
-      <circle cx="31" cy="20" r="5" stroke="white" strokeWidth="3" strokeOpacity="0.5" />
-      <path
-        d="M9 35c1.8-5 5.8-8 11-8s9.2 3 11 8"
-        stroke="white"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeOpacity="0.9"
-      />
-      <path
-        d="M28 33c1.3-3.4 4.1-5.5 7.8-6"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeOpacity="0.8"
-      />
-    </svg>
-  );
+  return <Users className="h-full w-full" />;
 }
 
 function UserAvatarPlaceholder({ name }: { name: string }) {
@@ -215,8 +173,7 @@ export default function TeacherProfilePage() {
     <PageTransition>
       <main>
         <div className="mx-auto max-w-[1920px]">
-          <div className="grid gap-8 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-12">
-            <TeacherSidebar />
+          <div className="grid gap-8 lg:gap-12">
 
             <div className="space-y-8 px-3 py-5 sm:px-6 sm:py-8 lg:py-8 lg:pl-0 lg:pr-8">
               {authLoading || loading ? (
@@ -224,7 +181,7 @@ export default function TeacherProfilePage() {
               ) : error ? (
                 <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
                   <div className="max-w-sm rounded-2xl border border-red-100 bg-red-50 px-8 py-6">
-                    <p className="mb-2 text-2xl">⚠️</p>
+                    <TriangleAlert className="mx-auto mb-2 h-7 w-7 text-red-500" />
                     <p className="text-base font-semibold text-red-700">{error}</p>
                     <button
                       className="mt-4 text-sm font-bold text-[#38c1ff] hover:underline"

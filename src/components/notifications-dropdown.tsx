@@ -2,9 +2,10 @@
 
 import { Bell, Check, CheckCheck, ExternalLink } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { cx } from "@/lib/cx";
 import Link from "next/link";
+import { usePolling } from "@/hooks/use-polling";
 
 interface Notification {
   id: string;
@@ -40,33 +41,36 @@ export function NotificationsDropdown() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const lastSignatureRef = useRef("");
 
-  const fetchNotifications = useCallback(async () => {
+  // Resolves to whether anything changed, so polling can ease off when quiet
+  const fetchNotifications = useCallback(async (): Promise<boolean> => {
     try {
       const res = await fetch("/api/notifications", { cache: "no-store" });
-      if (!res.ok) return;
+      if (!res.ok) return false;
       const json = await res.json();
-      if (json.data) {
-        setNotifications(json.data.notifications);
-        setUnreadCount(json.data.unreadCount);
-      }
       setFetchError(false);
+      if (!json.data) return false;
+      const signature = `${json.data.unreadCount}:${json.data.notifications[0]?.id ?? ""}`;
+      const changed = signature !== lastSignatureRef.current;
+      lastSignatureRef.current = signature;
+      setNotifications(json.data.notifications);
+      setUnreadCount(json.data.unreadCount);
+      return changed;
     } catch (error) {
       console.error("[NOTIFICATIONS_FETCH_ERROR]", error);
       setFetchError(true);
       setNotifications([]);
       setUnreadCount(0);
+      return false;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Fetch on mount and poll every 30s
-  useEffect(() => {
-    void fetchNotifications();
-    const id = setInterval(fetchNotifications, 30_000);
-    return () => clearInterval(id);
-  }, [fetchNotifications]);
+  // Every 30s, easing off to 2 minutes when nothing new arrives; paused while
+  // the tab is hidden. This runs in the header on every page for every user.
+  usePolling(fetchNotifications, { intervalMs: 30_000, maxIntervalMs: 120_000 });
 
   // Close on outside click
   useEffect(() => {

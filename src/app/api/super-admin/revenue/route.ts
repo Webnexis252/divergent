@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { apiSuccess, apiForbidden, apiServerError } from '@/lib/api-response';
+import { countEnrollmentsByMonth, sumSuccessfulPaymentsByDay } from '@/lib/analytics-trends';
 
 /**
  * GET /api/super-admin/revenue
@@ -44,24 +45,15 @@ export async function GET(req: NextRequest) {
       }),
 
       // Enrollments per month this year (proxy for revenue trend since payment is new)
-      prisma.enrollment.findMany({
-        where: { createdAt: { gte: startOfYear } },
-        select: { createdAt: true },
-      }),
+      countEnrollmentsByMonth(startOfYear),
 
-      // Daily successful payments for last 30 days
-      prisma.payment.findMany({
-        where: { status: 'SUCCESS', createdAt: { gte: startOf30Days } },
-        select: { amount: true, createdAt: true },
-        orderBy: { createdAt: 'asc' },
-      }),
+      // Daily successful payment totals for last 30 days
+      sumSuccessfulPaymentsByDay(startOf30Days),
     ]);
 
     // Build monthly enrollment trend chart data
     const monthNames = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    const monthCounts = new Array(12).fill(0);
-    enrollmentsByMonth.forEach(e => monthCounts[e.createdAt.getMonth()]++);
-    const monthlyTrend = monthNames.map((m, i) => ({ month: m, count: monthCounts[i] }));
+    const monthlyTrend = monthNames.map((m, i) => ({ month: m, count: enrollmentsByMonth[i] }));
 
     // Build daily revenue trend for last 30 days
     const dailyMap = new Map<string, number>();
@@ -69,12 +61,8 @@ export async function GET(req: NextRequest) {
       const day = new Date(startOf30Days);
       day.setDate(startOf30Days.getDate() + d);
       const key = day.toISOString().slice(0, 10); // YYYY-MM-DD
-      dailyMap.set(key, 0);
+      dailyMap.set(key, dailyPayments.get(key) ?? 0);
     }
-    dailyPayments.forEach(p => {
-      const key = p.createdAt.toISOString().slice(0, 10);
-      dailyMap.set(key, (dailyMap.get(key) ?? 0) + p.amount);
-    });
     const dailyRevenue = Array.from(dailyMap.entries()).map(([date, revenue]) => ({ date, revenue }));
 
     return apiSuccess({

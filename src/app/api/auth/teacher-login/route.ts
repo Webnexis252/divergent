@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       role: user.role,
     });
 
-    const response = apiSuccess(
+    const response = await apiSuccess(
       { user: { id: user.id, name: user.name, email: user.email, role: user.role } },
       "Login successful! Welcome to your teacher dashboard."
     );

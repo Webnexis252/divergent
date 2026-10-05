@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronDown, ChevronUp, FileText, PenBox, Video, BookOpen, Calendar, ClipboardList } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, PenBox, Video, BookOpen, Calendar, ClipboardList, CircleCheck } from "lucide-react";
 
 type Lesson = {
   id: string;
@@ -190,7 +190,7 @@ export function CourseCurriculumSection({
                                       )}
                                       {/* Completion tick */}
                                       {done ? (
-                                        <span className="text-green-500 text-[16px]" aria-label="Completed">✓</span>
+                                        <CircleCheck className="h-4 w-4 shrink-0 text-green-500" aria-label="Completed" />
                                       ) : (
                                         <span className="h-4 w-4 rounded-full border-2 border-[#ddd]" aria-hidden />
                                       )}

@@ -1,5 +1,4 @@
 import { PageTransition } from "@/app/dashboard/_components/motion-wrappers";
-import { TeacherSidebar } from "@/app/dashboard/_components/teacher-sidebar";
 import { CalendarWorkspaceClient } from "@/components/calendar/calendar-workspace-client";
 import { requirePageAuth } from "@/lib/page-auth";
 
@@ -8,8 +7,7 @@ export default async function TeacherCalendarPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-        <TeacherSidebar />
+      <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:gap-0">
 
         <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
           <CalendarWorkspaceClient

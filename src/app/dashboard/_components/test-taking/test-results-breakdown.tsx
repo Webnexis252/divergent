@@ -6,6 +6,7 @@
  */
 import { CategoryPerformancePanel } from "@/app/dashboard/_components/test-taking/category-performance-panel";
 import { CategoryPerformanceItem } from "@/lib/test-category-performance";
+import { Hourglass, CircleCheck, CircleX } from "lucide-react";
 
 export function TestResultsBreakdown({
   score,
@@ -74,7 +75,13 @@ export function TestResultsBreakdown({
         </div>
 
         <div className="test-results__verdict" data-passed={gradingStatus === "PENDING_REVIEW" ? "pending" : isPassed}>
-          {gradingStatus === "PENDING_REVIEW" ? "⏳ Pending Review" : isPassed ? "🎉 Passed!" : "❌ Not Passed"}
+          {gradingStatus === "PENDING_REVIEW" ? (
+            <><Hourglass className="mr-2 inline h-[1em] w-[1em] align-[-0.15em]" />Pending Review</>
+          ) : isPassed ? (
+            <><CircleCheck className="mr-2 inline h-[1em] w-[1em] align-[-0.15em]" />Passed</>
+          ) : (
+            <><CircleX className="mr-2 inline h-[1em] w-[1em] align-[-0.15em]" />Not Passed</>
+          )}
         </div>
         {gradingStatus === "PENDING_REVIEW" ? (
           <p className="test-results__passing-info text-amber-600 font-medium">

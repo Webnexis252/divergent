@@ -14,13 +14,13 @@ import {
   StaggerGrid,
 } from "../../_components/motion-wrappers";
 import { BundleCheckoutButton } from "@/app/(public)/bundles/[slug]/_components/BundleCheckoutButton";
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  Video, 
-  Users, 
-  ClipboardList, 
-  TrendingUp, 
+import {
+  LayoutDashboard,
+  BookOpen,
+  Video,
+  Users,
+  ClipboardList,
+  TrendingUp,
   Calendar,
   Award,
   Star,
@@ -35,7 +35,8 @@ import {
   ChevronRight,
   Play,
   Shield,
-  Package
+  Package,
+  CircleCheck,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -46,8 +47,7 @@ type BundleDetailPageProps = {
 
 const assets = {
   heroIllustration: "/assets/789e932c2f45a3aedd7967edba282c943ce97d1d.png",
-  fallbackThumbnail: "https://api.dicebear.com/9.x/shapes/svg?seed=cf170519-6960-44d6-913f-b1df537a439e",
-  mentorAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=1fdd695f-0eb2-4964-b9f7-d3b9472b043a",
+  fallbackThumbnail: "/images/course-placeholder.svg",
   liveClassFeature: "/assets/7ac54c6ed7ca5712e26b75ff032783a11d45b059.png",
   doubtSolvingFeature: "/assets/18a626f90edd50604a508b3ec1fe4225d0168d5c.png",
   mockTestsFeature: "/assets/9e1f32ff326eef587374d218ae9b0ed57b8fa746.png",
@@ -56,7 +56,7 @@ const assets = {
 } as const;
 
 import { studentNavItems } from "../../_components/nav-items";
-import { DashboardSidebar } from "@/app/dashboard/_components/sidebar-nav";
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
 
 function formatPrice(price: number) {
   return price > 0 ? `₹${price.toLocaleString("en-IN")}` : "Free";
@@ -254,7 +254,7 @@ export default async function BundleDetailPage({ params }: BundleDetailPageProps
     body: idx === 0 
       ? `Guides the overall learning pathway and helps students master the curriculum.`
       : "Adds critique, feedback, and practice review so learners stay consistent.",
-    image: mentor.image || assets.mentorAvatar,
+    image: mentor.image || null,
   }));
   
   if (mentorCards.length === 0) {
@@ -262,7 +262,7 @@ export default async function BundleDetailPage({ params }: BundleDetailPageProps
       name: "Mentor Support Team",
       subtitle: `Doubt support & guidance`,
       body: "Adds critique, feedback, and practice review so learners stay consistent across every module.",
-      image: assets.mentorAvatar,
+      image: null,
     });
   }
 
@@ -308,8 +308,7 @@ export default async function BundleDetailPage({ params }: BundleDetailPageProps
     <PageTransition>
       <main className="min-h-screen overflow-x-hidden bg-[#f9fafb] pb-24 sm:bg-[#f7f5f4] sm:pb-0">
         <div className="mx-auto max-w-[1920px] px-3 pb-14 pt-4 sm:px-6 sm:pt-6 xl:px-0 xl:pb-24">
-          <div className="grid gap-6 xl:grid-cols-[222px_minmax(0,1fr)] xl:items-start">
-            <DashboardSidebar />
+          <div className="grid gap-6 xl:items-start">
 
             <section className="relative px-0 sm:px-4 xl:pr-10">
               <div className="mx-auto max-w-[1368px]">
@@ -453,11 +452,15 @@ export default async function BundleDetailPage({ params }: BundleDetailPageProps
                             <section className="group relative overflow-hidden rounded-[18px] bg-white px-4 py-8 text-center shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.04)] transition-shadow duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.09)] xl:min-h-[247px]">
                               <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#38c1ff,#ffc107)]" />
                               <div className="mx-auto h-[82px] w-[82px] overflow-hidden rounded-full bg-[#f0f0f0] ring-3 ring-[#38c1ff]/10 ring-offset-2">
-                                <div
-                                  aria-hidden="true"
-                                  className="h-full w-full bg-cover bg-center"
-                                  style={{ backgroundImage: `url("${mentor.image}")` }}
-                                />
+                                {mentor.image ? (
+                                  <div
+                                    aria-hidden="true"
+                                    className="h-full w-full bg-cover bg-center"
+                                    style={{ backgroundImage: `url("${mentor.image}")` }}
+                                  />
+                                ) : (
+                                  <InitialsAvatar name={mentor.name} className="h-full w-full text-[26px]" />
+                                )}
                               </div>
                               <div className="mt-4 space-y-1">
                                 <p className="text-[16px] font-semibold text-black">{mentor.name}</p>
@@ -576,7 +579,7 @@ export default async function BundleDetailPage({ params }: BundleDetailPageProps
                                                           </span>
                                                         )}
                                                         {done ? (
-                                                          <span className="text-green-500 text-[16px]" aria-label="Completed">✓</span>
+                                                          <CircleCheck className="h-4 w-4 shrink-0 text-green-500" aria-label="Completed" />
                                                         ) : (
                                                           <span className="h-4 w-4 rounded-full border-2 border-[#ddd]" aria-hidden />
                                                         )}

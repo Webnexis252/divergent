@@ -62,3 +62,13 @@ _trash_png/
 _scripts/
 .next
 graphify-out/cache/
+
+# Load-test credentials written by scripts/seed-loadtest-students.mjs
+loadtests/accounts.csv
+
+# Playwright
+/test-results/
+/playwright-report/
+
+# Other Claude Code sessions' git worktrees
+.claude/worktrees/

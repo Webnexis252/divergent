@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import {
   BookOpen, ChevronDown, ChevronUp, Plus, Trash2,
   CheckCircle, Circle, Eye, EyeOff, Edit2, Check, X, Video, FileText, AlignLeft

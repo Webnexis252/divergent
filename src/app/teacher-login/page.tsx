@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { Loader2, Eye, EyeOff, KeyRound, Lock, AlertTriangle } from "lucide-react";
 
 type Tab = "otp" | "password";
@@ -80,10 +80,9 @@ function TeacherLoginInner() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full max-w-[460px]"
+        // CSS entrance (.page-enter) so the card shows at first paint, not after JS loads
+        initial={false}
+        className="page-enter relative w-full max-w-[460px]"
       >
         <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/5 shadow-[0_32px_80px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
           {/* Header */}
@@ -145,7 +144,8 @@ function TeacherLoginInner() {
               />
             </div>
 
-            <AnimatePresence mode="wait">
+            {/* initial={false}: the default tab renders visible on first load; switching tabs still animates */}
+            <AnimatePresence mode="wait" initial={false}>
               {tab === "otp" ? (
                 <motion.form
                   key="otp-form"

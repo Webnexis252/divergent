@@ -1,9 +1,10 @@
 import { NextResponse, NextRequest } from "next/server";
-import cashfree from "@/lib/cashfree";
+import cashfree, { paymentBreaker } from "@/lib/cashfree";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
+import { releaseCouponUse, reserveCouponUse } from "@/lib/coupons";
 
 export async function POST(req: NextRequest) {
   // Guard: Catch missing Cashfree credentials early and return a clear,
@@ -15,6 +16,9 @@ export async function POST(req: NextRequest) {
     );
     return apiError("Payment service is not configured. Please contact support.", 503);
   }
+
+  // A coupon use claimed below but never attached to a payment is returned in `finally`.
+  let reservedCouponCode: string | null = null;
 
   try {
     const auth = await requireAuth(req);
@@ -162,6 +166,13 @@ export async function POST(req: NextRequest) {
 
         orderAmount = Math.max(0, orderAmount - appliedCouponDiscount);
         appliedCouponCode = coupon.code;
+
+        // Claim the use atomically: the usedCount check above can race with
+        // another buyer taking the last use at the same moment.
+        if (!(await reserveCouponUse(coupon.code))) {
+          return apiError("Invalid, expired, or fully used coupon code", 400);
+        }
+        reservedCouponCode = coupon.code;
         
         if (orderAmount === 0) {
           isBypassed = true;
@@ -195,10 +206,7 @@ export async function POST(req: NextRequest) {
             discountAmount: appliedCouponDiscount,
           }
         });
-        await prisma.coupon.update({
-          where: { code: appliedCouponCode },
-          data: { usedCount: { increment: 1 } }
-        });
+        reservedCouponCode = null; // kept: used by this SUCCESS payment
       }
 
       return apiSuccess({ bypassPayment: true });
@@ -235,7 +243,7 @@ export async function POST(req: NextRequest) {
       order_note: orderNote,
     };
 
-    const response = await cashfree.PGCreateOrder(orderRequest);
+    const response = await paymentBreaker.fire(() => cashfree.PGCreateOrder(orderRequest));
 
     console.log("Cashfree PGCreateOrder response:", JSON.stringify(response?.data, null, 2));
 
@@ -261,6 +269,7 @@ export async function POST(req: NextRequest) {
         })
       },
     });
+    reservedCouponCode = null; // kept: used by this PENDING payment, released if it fails
 
     // Return the environment so the client always opens the correct
     // Cashfree SDK (production vs sandbox) regardless of NEXT_PUBLIC_ vars.
@@ -293,5 +302,11 @@ export async function POST(req: NextRequest) {
     }
     console.error("[CREATE ORDER] Unexpected error:", error);
     return apiError(error instanceof Error ? error.message : "Something went wrong while processing your payment. Please try again.", 500);
+  } finally {
+    if (reservedCouponCode) {
+      await releaseCouponUse(reservedCouponCode).catch((err) =>
+        console.error("[CREATE ORDER] Failed to release coupon reservation:", err),
+      );
+    }
   }
 }

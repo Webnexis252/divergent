@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { DeleteExamButton } from "./_components/delete-exam-button";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
 import { cx } from "@/lib/cx";
+import { FileText } from "lucide-react";
 
 export default async function AdminExamsPage() {
   const auth = await requirePageAuth(["ADMIN", "SUPER_ADMIN"]);
@@ -59,7 +60,7 @@ export default async function AdminExamsPage() {
             <div className="p-6 space-y-4">
               {exams.length === 0 ? (
                 <div className="rounded-[22px] border border-dashed border-[#d7dbe2] bg-[#fafafa] px-5 py-16 text-center">
-                  <p className="text-[40px]">📝</p>
+                  <FileText className="mx-auto h-10 w-10 text-[#9ca3af]" strokeWidth={1.5} />
                   <p className="mt-3 text-[16px] font-semibold text-[#374151]">
                     No exams yet
                   </p>

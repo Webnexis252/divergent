@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from '@node-rs/bcrypt';
 import prisma from '@/lib/prisma';
 import { getAuthCookieOptions, AUTH_COOKIE_NAME, signToken } from '@/lib/auth';
 import { LoginSchema } from '@/lib/validators';
@@ -10,7 +10,7 @@ import {
   apiServerError,
 } from '@/lib/api-response';
 import { checkRateLimit, authLimiter } from '@/lib/rate-limit';
-import { awardDailyLoginXp } from '@/lib/xp';
+import { awardDailyLoginXpInBackground } from '@/lib/xp';
 
 /**
  * POST /api/auth/login
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       return apiError('Your teacher account has been suspended. Contact an admin.', 403);
     }
 
-    await awardDailyLoginXp(user.id);
+    awardDailyLoginXpInBackground(user.id);
 
     const token = await signToken({
       userId: user.id,
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       role: user.role,
     };
 
-    const response = apiSuccess({ user: safeUser }, 'Login successful');
+    const response = await apiSuccess({ user: safeUser }, 'Login successful');
     response.cookies.set(AUTH_COOKIE_NAME, token, getAuthCookieOptions());
     return response;
   } catch (err) {

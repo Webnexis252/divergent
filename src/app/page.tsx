@@ -1,15 +1,18 @@
 "use client";
 
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useRef, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { cx } from "@/lib/cx";
 import { BrandLogo } from "@/components/ui/brand-logo";
+import { useReveal } from "@/app/dashboard/_components/motion-wrappers";
+import { Quote } from "lucide-react";
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
+import { StarRating } from "@/components/ui/star-rating";
 
 const assets = {
   hero: "/hero-illustration.png",
-  examAccent: "https://api.dicebear.com/9.x/shapes/svg?seed=5921cf41-d4df-4bb2-b14c-36fa2a3e18f5",
   featureStructured: "/images/features/structured-courses.png",
   featureLive: "/images/features/live-classes.png",
   featureCommunity: "/images/features/community-support.png",
@@ -30,8 +33,6 @@ const assets = {
   featureCommunityLearning: "/assets/ff1bb5daa3b132ba208db6ac1de6dc5103f5b7ac.png",
   featureMockTests: "/assets/059e254a057a7f64b6ef41d88a87d5cad99b61dd.png",
   growthDashboard: "/assets/2801d8b2af769c2cf34bbc5fa8ae83cbd4cea9a2.png",
-  testimonialAvatar: "https://api.dicebear.com/9.x/shapes/svg?seed=7fb76c2f-8e54-49ba-878e-5e4ff306445a",
-  testimonialQuote: "https://api.dicebear.com/9.x/shapes/svg?seed=b4f800d0-a21f-4f65-8198-fc0cd748d21b",
 } as const;
 
 const navItems = [
@@ -138,8 +139,6 @@ const testimonialCards = Array.from({ length: 3 }, () => ({
     "The structured courses and mentorship helped me stay consistent. The dashboard kept me on track every day.",
 }));
 
-const revealViewport = { once: true, amount: 0 } as const;
-
 function Reveal({
   children,
   className,
@@ -153,14 +152,18 @@ function Reveal({
   y?: number;
   id?: string;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  // Visible in the server HTML; only sections below the fold wait to be revealed
+  const visible = useReveal(ref, "0px");
+
   return (
     <motion.div
+      ref={ref}
       id={id}
       className={className}
-      initial={{ opacity: 0, y }}
+      initial={false}
+      animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y }}
       transition={{ duration: 0.48, delay }}
-      viewport={revealViewport}
-      whileInView={{ opacity: 1, y: 0 }}
     >
       {children}
     </motion.div>
@@ -271,6 +274,7 @@ function SkillCard({
         alt={title}
         className="h-auto w-full max-w-[100px] object-contain sm:max-w-[120px]"
         height={1024}
+        sizes="120px"
         src={image}
         width={1024}
       />
@@ -309,6 +313,7 @@ function StepCard({
           alt={title}
           className="relative z-10 h-auto w-full max-w-[4rem] shrink-0 object-contain sm:max-w-[5.5rem]"
           height={imageHeight}
+          sizes="88px"
           src={image}
           width={imageWidth}
         />
@@ -374,6 +379,7 @@ function FeatureSpotlight({
         alt={title}
         className="h-auto w-full max-w-[37rem] object-contain"
         height={imageHeight}
+        sizes="(max-width: 640px) 100vw, 37rem"
         src={image}
         width={imageWidth}
       />
@@ -409,22 +415,16 @@ function TestimonialCard({
 }) {
   return (
     <div className="relative rounded-[18px] bg-white px-5 pb-7 pt-6 shadow-[0_4px_10px_rgba(0,0,0,0.16)] sm:rounded-[10px] sm:px-9 sm:pb-9 sm:pt-8 sm:shadow-[0_4px_10px_rgba(0,0,0,0.25)]">
-      <Image
-        alt=""
-        aria-hidden
-        className="absolute right-7 top-5 h-auto w-[4.75rem] rotate-180 object-contain opacity-15 sm:w-[6.5rem]"
-        height={78}
-        src={assets.testimonialQuote}
-        width={105}
+      <Quote
+        aria-hidden="true"
+        className="absolute right-6 top-5 h-10 w-10 text-black opacity-[0.08] sm:h-12 sm:w-12"
+        strokeWidth={1.5}
       />
 
       <div className="flex items-center gap-5">
-        <Image
-          alt={name}
-          className="h-[4.25rem] w-[4.25rem] rounded-full object-cover sm:h-[5.0625rem] sm:w-[5.0625rem]"
-          height={81}
-          src={assets.testimonialAvatar}
-          width={81}
+        <InitialsAvatar
+          name={name}
+          className="h-[4.25rem] w-[4.25rem] text-[1.4rem] sm:h-[5.0625rem] sm:w-[5.0625rem] sm:text-[1.7rem]"
         />
 
         <div>
@@ -436,7 +436,7 @@ function TestimonialCard({
       </div>
 
       <p className="mt-8 text-[clamp(1rem,1.8vw,1.25rem)] leading-[1.45] text-black">{quote}</p>
-      <p className="mt-7 text-[1.15rem] tracking-[0.12em] text-[#ffbf00]">★★★★★</p>
+      <StarRating className="mt-7 text-[#ffbf00]" starClassName="h-5 w-5" />
     </div>
   );
 }
@@ -495,29 +495,27 @@ export default function HomePage() {
             </div>
           </Reveal>
 
-          <motion.div
-            animate={{ y: [0, -10, 0] }}
-            className="relative mx-auto w-full max-w-[44rem]"
-            initial={{ opacity: 0, x: 28 }}
-            transition={{
-              opacity: { duration: 0.55 },
-              x: { duration: 0.55 },
-              y: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-            }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={revealViewport}
-          >
-            <div className="absolute right-0 top-0 h-[16rem] w-[16rem] rounded-full bg-[#38c1ff]/45 blur-[70px] sm:h-[23rem] sm:w-[23rem]" />
-            <div className="absolute bottom-[6%] left-0 h-[15rem] w-[15rem] rounded-full bg-[#ffc107]/45 blur-[68px] sm:h-[22rem] sm:w-[22rem]" />
-            <Image
-              alt="Divergent LMS illustration"
-              className="relative z-10 h-auto w-full object-contain"
-              height={572}
-              priority
-              src={assets.hero}
-              width={701}
-            />
-          </motion.div>
+          {/* The hero image is the largest element on the page: its entrance is CSS
+              so it paints as soon as it loads instead of waiting for JavaScript. */}
+          <div className="enter-from-right">
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              className="relative mx-auto w-full max-w-[44rem]"
+              transition={{ y: { duration: 6, repeat: Infinity, ease: "easeInOut" } }}
+            >
+              <div className="absolute right-0 top-0 h-[16rem] w-[16rem] rounded-full bg-[#38c1ff]/45 blur-[70px] sm:h-[23rem] sm:w-[23rem]" />
+              <div className="absolute bottom-[6%] left-0 h-[15rem] w-[15rem] rounded-full bg-[#ffc107]/45 blur-[68px] sm:h-[22rem] sm:w-[22rem]" />
+              <Image
+                alt="Divergent LMS illustration"
+                className="relative z-10 h-auto w-full object-contain"
+                height={572}
+                priority
+                sizes="(max-width: 1024px) 100vw, 44rem"
+                src={assets.hero}
+                width={701}
+              />
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -537,6 +535,7 @@ export default function HomePage() {
                         alt={feature.title}
                         className="h-auto w-full max-w-[16rem] object-contain md:max-w-[20rem] lg:max-w-[26rem] scale-110 md:scale-125 lg:scale-[1.4]"
                         height={feature.imageHeight}
+                        sizes="(max-width: 768px) 18rem, (max-width: 1024px) 25rem, 37rem"
                         src={feature.image}
                         width={feature.imageWidth}
                       />

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { RevealSection } from "@/app/dashboard/_components/motion-wrappers";
 import type { RevenueData } from "./_types";
 

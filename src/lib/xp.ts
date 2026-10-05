@@ -1,4 +1,5 @@
 import { EnrollmentStatus, Prisma } from '@prisma/client';
+import { after } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export const COURSE_ENROLLMENT_XP = 1000;
@@ -6,7 +7,7 @@ export const DAILY_LOGIN_XP = 100;
 export const ASSIGNMENT_SUBMISSION_XP = 150;
 export const PERFECT_ATTENDANCE_STREAK_DAYS = 7;
 export const PERFECT_ATTENDANCE_STREAK_XP = 100;
-export const COMMUNITY_POST_XP_COST = 25;
+export { COMMUNITY_POST_XP_COST } from './xp-costs';
 export const DOUBT_SUBMISSION_XP_COST = 25;
 export const DOUBT_IMAGE_XP_COST = 25;
 
@@ -62,6 +63,20 @@ export async function awardDailyLoginXp(
   });
 
   return result.count > 0;
+}
+
+/**
+ * Awards the daily login XP after the response is sent (Next.js `after`), so
+ * login and signup don't wait on the write. The update is atomic and
+ * once-per-day, so running it a moment later is safe.
+ */
+export function awardDailyLoginXpInBackground(userId: string): void {
+  after(() =>
+    awardDailyLoginXp(userId).then(
+      () => undefined,
+      (err) => console.error('[DAILY_LOGIN_XP_ERROR]', { userId, err }),
+    ),
+  );
 }
 
 export async function spendStudentXp(
@@ -276,75 +291,94 @@ export async function syncPerfectAttendanceXp(
   return { awarded: false, xpAwarded: 0, streakDays, rewardBlocks };
 }
 
+export type InstallmentOptions = {
+  isInstallmentBased: boolean;
+  currentInstallment: number;
+  validUntil: Date | null;
+};
+
 export async function ensureActiveEnrollmentWithXp(
   userId: string,
   courseId: string,
   status: EnrollmentStatus = 'ACTIVE',
   reactivateExisting = true,
   bundleId?: string,
-  installmentOptions?: {
-    isInstallmentBased: boolean;
-    currentInstallment: number;
-    validUntil: Date | null;
-  }
+  installmentOptions?: InstallmentOptions
 ) {
-  return prisma.$transaction(async (tx) => {
-    const data: any = { userId, courseId, status };
-    if (bundleId) data.bundleId = bundleId;
+  return prisma.$transaction((tx) =>
+    ensureActiveEnrollmentWithXpTx(tx, userId, courseId, status, reactivateExisting, bundleId, installmentOptions),
+  );
+}
+
+/**
+ * Same as ensureActiveEnrollmentWithXp, but inside a transaction the caller
+ * already holds, so enrolling can commit or roll back together with other
+ * writes (e.g. marking a payment SUCCESS).
+ */
+export async function ensureActiveEnrollmentWithXpTx(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  courseId: string,
+  status: EnrollmentStatus = 'ACTIVE',
+  reactivateExisting = true,
+  bundleId?: string,
+  installmentOptions?: InstallmentOptions
+) {
+  const data: Prisma.EnrollmentCreateManyInput = { userId, courseId, status };
+  if (bundleId) data.bundleId = bundleId;
+  if (installmentOptions) {
+    data.isInstallmentBased = installmentOptions.isInstallmentBased;
+    data.currentInstallment = installmentOptions.currentInstallment;
+    data.validUntil = installmentOptions.validUntil;
+  }
+
+  const created = await tx.enrollment.createMany({
+    data: [data],
+    skipDuplicates: true,
+  });
+
+  if (created.count === 0) {
+    const updateData: Prisma.EnrollmentUncheckedUpdateInput = { status };
+    if (bundleId) updateData.bundleId = bundleId;
     if (installmentOptions) {
-      data.isInstallmentBased = installmentOptions.isInstallmentBased;
-      data.currentInstallment = installmentOptions.currentInstallment;
-      data.validUntil = installmentOptions.validUntil;
+      updateData.isInstallmentBased = installmentOptions.isInstallmentBased;
+      updateData.currentInstallment = installmentOptions.currentInstallment;
+      updateData.validUntil = installmentOptions.validUntil;
     }
 
-    const created = await tx.enrollment.createMany({
-      data: [data],
-      skipDuplicates: true,
-    });
-
-    if (created.count === 0) {
-      const updateData: any = { status };
-      if (bundleId) updateData.bundleId = bundleId;
-      if (installmentOptions) {
-        updateData.isInstallmentBased = installmentOptions.isInstallmentBased;
-        updateData.currentInstallment = installmentOptions.currentInstallment;
-        updateData.validUntil = installmentOptions.validUntil;
-      }
-
-      const enrollment = reactivateExisting
-        ? await tx.enrollment.update({
-            where: { userId_courseId: { userId, courseId } },
-            data: updateData,
-          })
-        : await tx.enrollment.findUnique({
-            where: { userId_courseId: { userId, courseId } },
-          });
-
-      if (!enrollment) {
-        throw new Error('Enrollment exists but could not be reloaded.');
-      }
-
-      return { created: false, enrollment };
-    }
-
-    await tx.user.updateMany({
-      where: {
-        id: userId,
-        role: 'STUDENT',
-      },
-      data: {
-        xpPoints: { increment: COURSE_ENROLLMENT_XP },
-      },
-    });
-
-    const enrollment = await tx.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-    });
+    const enrollment = reactivateExisting
+      ? await tx.enrollment.update({
+          where: { userId_courseId: { userId, courseId } },
+          data: updateData,
+        })
+      : await tx.enrollment.findUnique({
+          where: { userId_courseId: { userId, courseId } },
+        });
 
     if (!enrollment) {
-      throw new Error('Enrollment was created but could not be reloaded.');
+      throw new Error('Enrollment exists but could not be reloaded.');
     }
 
-    return { created: true, enrollment };
+    return { created: false, enrollment };
+  }
+
+  await tx.user.updateMany({
+    where: {
+      id: userId,
+      role: 'STUDENT',
+    },
+    data: {
+      xpPoints: { increment: COURSE_ENROLLMENT_XP },
+    },
   });
+
+  const enrollment = await tx.enrollment.findUnique({
+    where: { userId_courseId: { userId, courseId } },
+  });
+
+  if (!enrollment) {
+    throw new Error('Enrollment was created but could not be reloaded.');
+  }
+
+  return { created: true, enrollment };
 }

@@ -1,8 +1,9 @@
 import { NextResponse, NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "@node-rs/bcrypt";
 import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
+import { recordRegisteredInBackground } from "@/lib/auth-bloom";
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
           role: "STUDENT"
         }
       });
+      recordRegisteredInBackground(newUser);
 
       // Enroll in course immediately (offline/cash payment)
       if (courseId) {

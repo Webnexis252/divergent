@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
+import { CircleCheck } from "lucide-react";
 
 type Course = {
   id: string;
@@ -92,7 +93,7 @@ export function TeacherAssignmentModal({
           >
             {success ? (
               <div className="py-8 text-center">
-                <motion.p className="text-[48px]" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>✅</motion.p>
+                <motion.div className="flex justify-center text-[#16a34a]" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}><CircleCheck className="h-12 w-12" strokeWidth={1.75} /></motion.div>
                 <p className="mt-4 text-[20px] font-semibold text-[#15803d]">Assignment created!</p>
               </div>
             ) : (

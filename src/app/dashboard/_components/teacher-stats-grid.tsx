@@ -2,7 +2,7 @@
 
 import { AnimCard, AnimStat } from "./motion-wrappers";
 import { StatIcon } from "./teacher-icons";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 
 export const statCards = [
   {
@@ -16,7 +16,7 @@ export const statCards = [
   {
     title: "Avg Response Time",
     value: "12 min",
-    note: "3 min faster ⚡",
+    note: "3 min faster",
     icon: "clock" as const,
     iconBg: "bg-[#eff6ff]",
     iconColor: "#3b82f6",
@@ -24,7 +24,7 @@ export const statCards = [
   {
     title: "Student Satisfaction",
     value: "4.8",
-    note: "★★★★★",
+    note: "Out of 5",
     icon: "star" as const,
     iconBg: "bg-[#fefce8]",
     iconColor: "#f59e0b",

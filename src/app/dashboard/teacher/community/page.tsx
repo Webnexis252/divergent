@@ -1,11 +1,11 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { TeacherSidebar } from "../../_components/teacher-sidebar";
+import { usePolling } from "@/hooks/use-polling";
 import { PageTransition, fadeUp } from "../../_components/motion-wrappers";
-import { CornerUpLeft, Copy, Check, Pencil, Paperclip, SendHorizontal, MessageCircle, ThumbsUp } from "lucide-react";
+import { CornerUpLeft, Copy, Check, Pencil, Paperclip, SendHorizontal, MessageCircle, ThumbsUp, Globe, Hash, TriangleAlert, X, Plus } from "lucide-react";
 
 type Post = {
   id: string;
@@ -27,6 +27,8 @@ type Post = {
 };
 
 type Channel = { id: string; name: string; postCount: number };
+
+const CHANNELS_REFRESH_MS = 60_000;
 
 function timeAgo(dateStr: string) {
   const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
@@ -400,7 +402,6 @@ export default function TeacherCommunityPage() {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const feedContainerRef = useRef<HTMLDivElement>(null);
 
   // Fetch current user details
@@ -416,58 +417,107 @@ export default function TeacherCommunityPage() {
   }, []);
 
   const inflightLikesRef = useRef<Set<string>>(new Set());
+  const selectedChannelRef = useRef<string | null>(null);
+  const newestPostIdRef = useRef<string | null>(null);
+  const channelsFetchedAtRef = useRef(0);
+  const [hasOlder, setHasOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
-  const loadPosts = (chanId = selectedChannelId) => {
-    const url = chanId
-      ? `/api/community/posts?channelId=${chanId}`
-      : "/api/community/posts";
-    fetch(url)
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.success) {
-          setPosts(prev => {
-            return json.data.posts.map((newPost: Post) => {
-              if (inflightLikesRef.current.has(newPost.id)) {
-                const existing = prev.find(p => p.id === newPost.id);
-                if (existing) {
-                  return { ...newPost, likedByMe: existing.likedByMe, likeCount: existing.likeCount };
-                }
-              }
-              return newPost;
-            });
-          });
-          setChannels(json.data.channels);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  };
-
-  // Poll for new messages every 5s
-  useEffect(() => {
-    loadPosts();
-    const interval = setInterval(() => loadPosts(), 5000);
-    return () => clearInterval(interval);
-  }, [selectedChannelId]);
-
-  // Scroll to bottom helper
+  // Scrolls the feed itself; scrollIntoView would also scroll the whole page
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-    messagesEndRef.current?.scrollIntoView({ behavior });
+    const feed = feedContainerRef.current;
+    if (feed) feed.scrollTo({ top: feed.scrollHeight, behavior });
   };
 
-  // Scroll on initial load or channel switch
-  useEffect(() => {
-    if (!loading && posts.length > 0) {
-      setTimeout(() => scrollToBottom("auto"), 150);
-    }
-  }, [loading, selectedChannelId]);
+  // Resolves to whether new posts arrived, so polling can ease off when quiet
+  const loadPosts = async (): Promise<boolean> => {
+    const chanId = selectedChannelRef.current;
+    const params = new URLSearchParams();
+    if (chanId) params.set("channelId", chanId);
+    // The channel list and its post counts only refresh once a minute
+    if (Date.now() - channelsFetchedAtRef.current < CHANNELS_REFRESH_MS) params.set("channels", "0");
 
-  // Scroll when new messages are added
-  useEffect(() => {
-    if (posts.length > 0) {
-      scrollToBottom("smooth");
+    try {
+      const json = await fetch(`/api/community/posts?${params}`).then((r) => r.json());
+      if (!json.success || chanId !== selectedChannelRef.current) return false;
+      const nextPosts: Post[] = json.data.posts;
+      if (json.data.channels) {
+        setChannels(json.data.channels);
+        channelsFetchedAtRef.current = Date.now();
+      }
+
+      // Keep older posts loaded below the fresh page while the two overlap
+      const previousNewest = newestPostIdRef.current;
+      const newest = nextPosts[0]?.id ?? null;
+      newestPostIdRef.current = newest;
+      const keepOlder = previousNewest !== null && nextPosts.some((p) => p.id === previousNewest);
+      setPosts((prev) => {
+        const fresh = nextPosts.map((newPost) => {
+          if (inflightLikesRef.current.has(newPost.id)) {
+            const existing = prev.find((p) => p.id === newPost.id);
+            if (existing) {
+              return { ...newPost, likedByMe: existing.likedByMe, likeCount: existing.likeCount };
+            }
+          }
+          return newPost;
+        });
+        if (!keepOlder) return fresh;
+        const freshIds = new Set(fresh.map((p) => p.id));
+        return [...fresh, ...prev.filter((p) => !freshIds.has(p.id))];
+      });
+      if (!keepOlder) setHasOlder(Boolean(json.data.nextCursor));
+
+      if (!newest || newest === previousNewest) return false;
+      requestAnimationFrame(() => scrollToBottom(keepOlder ? "smooth" : "auto"));
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setLoading(false);
     }
-  }, [posts.length]);
+  };
+
+  // Every 5s while posts keep coming, easing off to 30s; paused in a hidden tab
+  usePolling(loadPosts, { intervalMs: 5000, maxIntervalMs: 30_000, resetKey: selectedChannelId });
+
+  const loadOlder = async () => {
+    const oldest = posts[posts.length - 1];
+    if (!oldest || loadingOlder) return;
+    const chanId = selectedChannelRef.current;
+    const feed = feedContainerRef.current;
+    const previousHeight = feed?.scrollHeight ?? 0;
+    setLoadingOlder(true);
+    try {
+      const params = new URLSearchParams({ cursor: oldest.id, channels: "0" });
+      if (chanId) params.set("channelId", chanId);
+      const json = await fetch(`/api/community/posts?${params}`).then((r) => r.json());
+      if (!json.success || chanId !== selectedChannelRef.current) return;
+      const older: Post[] = json.data.posts;
+      setPosts((prev) => {
+        const known = new Set(prev.map((p) => p.id));
+        return [...prev, ...older.filter((p) => !known.has(p.id))];
+      });
+      setHasOlder(Boolean(json.data.nextCursor));
+      // Older posts are added above what the teacher is reading; keep their place
+      requestAnimationFrame(() => {
+        if (feed) feed.scrollTop += feed.scrollHeight - previousHeight;
+      });
+    } catch {
+      // The button stays, so they can try again
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+
+  const selectChannel = (channelId: string | null) => {
+    if (channelId === selectedChannelRef.current) return;
+    selectedChannelRef.current = channelId;
+    newestPostIdRef.current = null;
+    setPosts([]);
+    setHasOlder(false);
+    setLoading(true);
+    setSelectedChannelId(channelId);
+  };
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -667,6 +717,7 @@ export default function TeacherCommunityPage() {
         setChannelType("TEXT");
         setIsPrivateChannel(false);
         setChannelFormSuccess("Channel created successfully!");
+        channelsFetchedAtRef.current = 0;
         loadPosts(); // Refresh channels list
         setTimeout(() => setShowChannelForm(false), 1500);
         return;
@@ -693,8 +744,7 @@ export default function TeacherCommunityPage() {
   return (
     <>
     <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-          <TeacherSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:gap-0">
 
           <section className="px-3 py-4 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <div className="mx-auto max-w-[1293px]">
@@ -714,7 +764,7 @@ export default function TeacherCommunityPage() {
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200/80 hover:bg-gray-200 text-gray-600 hover:text-black transition-colors"
                       title="Create Channel"
                     >
-                      <span className="text-lg leading-none">{showChannelForm ? "✕" : "+"}</span>
+                      {showChannelForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     </button>
                   </div>
 
@@ -795,7 +845,7 @@ export default function TeacherCommunityPage() {
                   <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-white">
                     {/* All channels global trigger */}
                     <div
-                      onClick={() => setSelectedChannelId(null)}
+                      onClick={() => selectChannel(null)}
                       className={`flex cursor-pointer items-center justify-between rounded-[12px] px-3 py-3 transition-colors ${
                         selectedChannelId === null
                           ? "bg-[#e8ecef] font-semibold"
@@ -804,7 +854,7 @@ export default function TeacherCommunityPage() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#00a884] to-[#05cd9c] text-white font-bold text-lg shadow-sm">
-                          🌐
+                          <Globe className="h-5 w-5" />
                         </div>
                         <div>
                           <span className="block text-[14px] text-black">
@@ -826,7 +876,7 @@ export default function TeacherCommunityPage() {
                       channels.map((ch) => (
                         <div
                           key={ch.id}
-                          onClick={() => setSelectedChannelId(ch.id)}
+                          onClick={() => selectChannel(ch.id)}
                           className={`flex cursor-pointer items-center justify-between rounded-[12px] px-3 py-3 transition-colors ${
                             selectedChannelId === ch.id
                               ? "bg-[#e8ecef] font-semibold"
@@ -858,7 +908,7 @@ export default function TeacherCommunityPage() {
                   <div className="flex items-center justify-between bg-white px-6 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)] z-10">
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
-                        {selectedChannelId ? "#" : "🌐"}
+                        {selectedChannelId ? <Hash className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
                       </div>
                       <div>
                         <h2 className="text-[15px] font-bold text-black capitalize">
@@ -898,6 +948,18 @@ export default function TeacherCommunityPage() {
                         </div>
                       ) : (
                         <div className="flex flex-col py-4 w-full">
+                          {hasOlder && (
+                            <div className="mb-3 flex justify-center">
+                              <button
+                                type="button"
+                                onClick={loadOlder}
+                                disabled={loadingOlder}
+                                className="rounded-full bg-white/95 px-4 py-1.5 text-xs font-semibold text-[#595959] shadow-sm border border-gray-100 hover:text-black disabled:opacity-60"
+                              >
+                                {loadingOlder ? "Loading…" : "Load older messages"}
+                              </button>
+                            </div>
+                          )}
                           {orderedPosts.map((post, idx) => (
                             <ChatBubble
                               key={post.id}
@@ -912,7 +974,6 @@ export default function TeacherCommunityPage() {
                               onCopy={handleCopy}
                             />
                           ))}
-                          <div ref={messagesEndRef} />
                         </div>
                       )}
                     </div>
@@ -940,8 +1001,9 @@ export default function TeacherCommunityPage() {
                       <button
                         onClick={handleCancelInputMode}
                         className="h-6 w-6 rounded-full hover:bg-black/10 flex items-center justify-center text-gray-500 hover:text-black transition-colors"
+                        aria-label="Cancel"
                       >
-                        ✕
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   )}
@@ -950,7 +1012,7 @@ export default function TeacherCommunityPage() {
                   <div className="bg-[#f0f2f5] px-3.5 py-2.5 border-t border-[#e5e7eb] z-10">
                     {formError && (
                       <div className="mb-2 rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600 border border-red-100 shadow-sm text-left">
-                        ⚠️ {formError}
+                        <TriangleAlert className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />{formError}
                       </div>
                     )}
 
@@ -967,8 +1029,9 @@ export default function TeacherCommunityPage() {
                         <button
                           onClick={() => setSelectedImageUrl("")}
                           className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs shadow-sm hover:bg-red-600"
+                          aria-label="Remove image"
                         >
-                          ✕
+                          <X className="h-3 w-3" />
                         </button>
                       </div>
                     )}
@@ -1057,8 +1120,9 @@ export default function TeacherCommunityPage() {
             <button
               onClick={() => setSelectedPost(null)}
               className="absolute top-5 right-5 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors"
+              aria-label="Close"
             >
-              ✕
+              <X className="h-4 w-4" />
             </button>
             <div className="flex items-center gap-3">
               {selectedPost.author.image ? (

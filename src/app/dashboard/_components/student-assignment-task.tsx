@@ -2,9 +2,8 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import type { ReactNode } from "react";
-import { DashboardSidebar } from "./sidebar-nav";
 import {
   AnimCard,
   AnimHeading,
@@ -15,78 +14,22 @@ import {
   StaggerGrid,
 } from "./motion-wrappers";
 import type { AssignmentTask } from "../assignments/assignments-data";
-
-const imgTaskIllustration =
-  "https://api.dicebear.com/9.x/shapes/svg?seed=9c1c3836-f9b9-477b-bb06-01dfec5a7040";
+import { NotebookPen, Clock, CircleCheck, FileText, ArrowRight } from "lucide-react";
 
 function ClockIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 7.5V12l3 2" />
-    </svg>
-  );
+  return <Clock className="h-4 w-4" />;
 }
 
 function CheckIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M7.5 12.5 10.5 15.5 16.5 9.5" />
-      <circle cx="12" cy="12" r="8.5" />
-    </svg>
-  );
+  return <CircleCheck className="h-4 w-4" />;
 }
 
 function FileIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M14 3v4a2 2 0 0 0 2 2h4" />
-      <path d="M6 3h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
-      <path d="M8 13h8" />
-      <path d="M8 17h5" />
-    </svg>
-  );
+  return <FileText className="h-4 w-4" />;
 }
 
 function ArrowIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 12h14" />
-      <path d="m13 5 7 7-7 7" />
-    </svg>
-  );
+  return <ArrowRight className="h-4 w-4" />;
 }
 
 function MetaChip({
@@ -241,8 +184,7 @@ export function StudentAssignmentTask({
   return (
     <div className="text-black">
       <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-          <DashboardSidebar />
+        <div className="mx-auto grid max-w-[1920px] lg:gap-0">
 
           <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <div className="mx-auto max-w-[1293px] space-y-8">
@@ -294,11 +236,9 @@ export function StudentAssignmentTask({
 
                     <div className="relative flex items-center justify-center">
                       <FloatPulse className="w-[220px]">
-                        <img
-                          alt=""
-                          src={imgTaskIllustration}
-                          className="mx-auto h-[220px] w-[220px] object-contain drop-shadow-[0_24px_40px_rgba(0,0,0,0.18)]"
-                        />
+                        <div className="mx-auto grid h-[180px] w-[180px] place-items-center rounded-full bg-white/70 shadow-[0_24px_40px_rgba(0,0,0,0.10)]">
+                          <NotebookPen className="h-20 w-20 text-[#38c1ff]" strokeWidth={1.25} />
+                        </div>
                       </FloatPulse>
                     </div>
                   </div>

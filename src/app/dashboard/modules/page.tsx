@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getPageAuth } from "@/lib/page-auth";
-import { DashboardSidebar } from "../../dashboard/_components/sidebar-nav";
 import { PageTransition, RevealSection, AnimCard } from "../../dashboard/_components/motion-wrappers";
 import Link from "next/link";
 import { ArrowRight, BookOpen, ChevronRight, FileText } from "lucide-react";
@@ -46,8 +45,7 @@ export default async function ModulesPage() {
   return (
     <div className="text-black bg-[#f9fafb] min-h-screen pb-24 sm:bg-[#f7f5f4] sm:pb-0">
       <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-          <DashboardSidebar />
+        <div className="mx-auto grid max-w-[1920px] lg:gap-0">
 
           <section className="min-w-0 px-0 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <div className="mx-auto max-w-[1160px] space-y-6 sm:space-y-10">

@@ -24,6 +24,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const channelId = searchParams.get('channelId') ?? undefined;
     const cursor = searchParams.get('cursor') ?? undefined;
+    // Polls pass channels=0: the channel list (with a post count per channel) only
+    // needs refreshing occasionally, not on every few-second poll
+    const includeChannels = searchParams.get('channels') !== '0';
     const take = 10;
 
     const posts = await prisma.post.findMany({
@@ -48,11 +51,13 @@ export async function GET(req: NextRequest) {
     });
 
     // Trending channels — sorted by number of posts
-    const channels = await prisma.channel.findMany({
-      where: { isPrivate: false },
-      include: { _count: { select: { posts: true } } },
-      orderBy: { createdAt: 'asc' },
-    });
+    const channels = includeChannels
+      ? await prisma.channel.findMany({
+          where: { isPrivate: false },
+          include: { _count: { select: { posts: true } } },
+          orderBy: { createdAt: 'asc' },
+        })
+      : null;
 
     const formattedPosts = posts.map((p) => ({
       id: p.id,
@@ -79,7 +84,7 @@ export async function GET(req: NextRequest) {
     return apiSuccess({
       posts: formattedPosts,
       nextCursor,
-      channels: channels.map((c) => ({
+      channels: channels?.map((c) => ({
         id: c.id,
         name: c.name,
         postCount: c._count.posts,

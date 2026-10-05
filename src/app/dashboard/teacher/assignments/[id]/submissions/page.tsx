@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
   Download,
@@ -17,7 +17,6 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { TeacherSidebar } from "@/app/dashboard/_components/teacher-sidebar";
 
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { cx } from "@/lib/cx";
@@ -234,8 +233,7 @@ export default function TeacherSubmissionsPage() {
 
   return (
     <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
-          <TeacherSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:gap-8 lg:px-0 lg:pt-8">
 
           <main className="space-y-8 lg:pr-[160px]">
             {/* Back nav */}

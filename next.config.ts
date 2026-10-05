@@ -25,10 +25,6 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "fgizpokcubuaatgeguzt.supabase.co",
-      },
-      {
-        protocol: "https",
-        hostname: "api.dicebear.com",
       }
     ],
   },
@@ -50,7 +46,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https: http:",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cashfree.com https://sandbox.cashfree.com https://*.cashfree.com https://*.daily.co https://*.upstash.io https://api.razorpay.com https://lumberjack.razorpay.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.cashfree.com https://sandbox.cashfree.com https://*.cashfree.com https://*.daily.co https://*.upstash.io https://api.razorpay.com https://lumberjack.razorpay.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io",
               "frame-src 'self' https://meet.jit.si https://*.jit.si https://*.daily.co https://sdk.cashfree.com https://*.cashfree.com https://zoho.in https://*.zoho.in https://zoho.com https://*.zoho.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://vimeo.com https://drive.google.com https://api.razorpay.com",
               "media-src 'self' https://*.supabase.co blob: data:",
               "object-src 'none'",

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from '@node-rs/bcrypt';
 import prisma from '@/lib/prisma';
 import { verifyPhoneVerifiedToken, signToken, AUTH_COOKIE_NAME, getAuthCookieOptions } from '@/lib/auth';
 import { RegisterSchema } from '@/lib/validators';
 import { apiError, apiServerError } from '@/lib/api-response';
 import { checkRateLimit, authLimiter } from '@/lib/rate-limit';
-import { awardDailyLoginXp } from '@/lib/xp';
+import { awardDailyLoginXpInBackground } from '@/lib/xp';
+import { mightBeRegistered, recordRegisteredInBackground } from '@/lib/auth-bloom';
 
 /**
  * POST /api/auth/register
@@ -58,9 +59,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      return apiError('An account with this email already exists', 409);
+    // Bloom filter first: "definitely not registered" skips the lookup. The
+    // unique constraint (P2002 below) still guards the insert either way.
+    if (await mightBeRegistered('email', email)) {
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing) {
+        return apiError('An account with this email already exists', 409);
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
@@ -76,7 +81,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    await awardDailyLoginXp(user.id);
+    recordRegisteredInBackground({ email, phone });
+    awardDailyLoginXpInBackground(user.id);
 
     // Sign auth token
     const authToken = await signToken({

@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { MoreVerticalIcon, PauseCircleIcon } from "./admin-icons";
 import { formatShortDate } from "@/lib/date-format";
 import { Target, Trash2, Lock } from "lucide-react";

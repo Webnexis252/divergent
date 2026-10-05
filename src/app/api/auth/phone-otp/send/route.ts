@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { randomInt } from 'crypto';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from '@node-rs/bcrypt';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import {
@@ -11,6 +11,7 @@ import {
 } from '@/lib/api-response';
 import { checkRateLimit, authLimiter } from '@/lib/rate-limit';
 import { sendWhatsAppOtp } from '@/lib/interakt';
+import { mightBeRegistered } from '@/lib/auth-bloom';
 
 /**
  * Validates international phone format: must start with + and contain 7–15 digits.
@@ -71,16 +72,19 @@ export async function POST(req: NextRequest) {
 
     // --- Context-specific guards ---
     if (context === 'SIGNUP') {
-      // Prevent sending OTP to a phone that's already used
-      const existing = await prisma.user.findUnique({
-        where: { phone: normalizedPhone },
-        select: { id: true },
-      });
-      if (existing) {
-        return apiError(
-          'This phone number is already registered. Please log in or use a different number.',
-          409,
-        );
+      // Prevent sending OTP to a phone that's already used. Most signup phones
+      // are new, so the Bloom filter usually lets us skip the lookup.
+      if (await mightBeRegistered('phone', normalizedPhone)) {
+        const existing = await prisma.user.findUnique({
+          where: { phone: normalizedPhone },
+          select: { id: true },
+        });
+        if (existing) {
+          return apiError(
+            'This phone number is already registered. Please log in or use a different number.',
+            409,
+          );
+        }
       }
     } else if (context === 'SETTINGS') {
       // Must be a logged-in user

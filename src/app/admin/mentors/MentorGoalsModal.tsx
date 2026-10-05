@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import type { Mentor } from "./_types";
+import { X } from "lucide-react";
 
 interface Goal {
   id: string;
@@ -123,8 +124,9 @@ export function MentorGoalsModal({
             <button
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors"
+              aria-label="Close"
             >
-              ✕
+              <X className="h-4 w-4" />
             </button>
           </div>
 

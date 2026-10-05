@@ -154,7 +154,7 @@ export function getToneHighlights(item: LiveClassItem, tone: Exclude<SessionTone
     return [
       { label: "Room Status", value: "Open and ready to join" },
       { label: "Course", value: item.courseTitle },
-      { label: "Attendance", value: attendanceMarked ? "Marked Present ✓" : "Watch 30+ min to qualify" },
+      { label: "Attendance", value: attendanceMarked ? "Marked present" : "Watch 30+ min to qualify" },
     ];
   }
   if (tone === "upcoming") {
@@ -167,7 +167,7 @@ export function getToneHighlights(item: LiveClassItem, tone: Exclude<SessionTone
   return [
     { label: "Room Status", value: "Session concluded" },
     { label: "Course", value: item.courseTitle },
-    { label: "Attendance", value: attendanceMarked ? "Verified ✓" : "Not counted" },
+    { label: "Attendance", value: attendanceMarked ? "Verified" : "Not counted" },
   ];
 }
 

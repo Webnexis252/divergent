@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { CheckCircle2, ChevronLeft, ChevronRight, Clock, Loader2 } from "lucide-react";
-import { TeacherSidebar } from "@/app/dashboard/_components/teacher-sidebar";
+import { m as motion, AnimatePresence } from "motion/react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Clock, Loader2, ClipboardCheck, PenLine } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -50,7 +49,7 @@ function SketchCompare({
         {/* Reference */}
         <div className="overflow-hidden rounded-[14px] border border-amber-200 bg-amber-50">
           <div className="border-b border-amber-200 bg-amber-100 px-4 py-2 text-[12px] font-semibold text-amber-800">
-            📋 Reference (Admin&apos;s Answer Key)
+            <ClipboardCheck className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]" />Reference (Admin&apos;s Answer Key)
           </div>
           {sketchQ.referenceImage ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -69,7 +68,7 @@ function SketchCompare({
         {/* Student's answer */}
         <div className="overflow-hidden rounded-[14px] border border-[#38c1ff]/30 bg-blue-50">
           <div className="border-b border-[#38c1ff]/30 bg-blue-100/60 px-4 py-2 text-[12px] font-semibold text-blue-800">
-            ✏️ Student&apos;s Submission
+            <PenLine className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]" />Student&apos;s Submission
           </div>
           {sketchQ.studentAnswer ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -211,8 +210,7 @@ export default function ExamReviewPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_1fr]">
-        <TeacherSidebar />
+      <div className="mx-auto grid max-w-[1920px]">
         <div className="flex min-h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-[#38c1ff]" />
         </div>
@@ -221,8 +219,7 @@ export default function ExamReviewPage() {
   }
 
   return (
-    <div className="mx-auto grid max-w-[1920px] gap-0 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <TeacherSidebar />
+    <div className="mx-auto grid max-w-[1920px] gap-0">
 
       <main className="min-h-screen bg-[#f8fafc] px-3 py-5 sm:px-6 sm:py-8 lg:px-10">
         {/* Header */}

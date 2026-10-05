@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { BrandLogo } from "@/components/ui/brand-logo";
 
 const footerVariants = {

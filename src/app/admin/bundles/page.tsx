@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import {
   PageTransition,
   RevealSection,
@@ -19,6 +19,7 @@ import {
   Eye,
   ChevronDown,
   ImagePlus,
+  Plus,
 } from "lucide-react";
 
 type Course = {
@@ -335,7 +336,7 @@ export default function AdminBundlesPage() {
                 onClick={showForm ? closeForm : openCreateForm}
                 className="rounded-[14px] bg-white/20 px-5 py-2.5 font-semibold backdrop-blur-sm hover:bg-white/30 transition"
               >
-                {showForm ? "✕ Cancel" : "+ New Bundle"}
+                {showForm ? <><X className="mr-1 inline h-4 w-4 align-[-3px]" />Cancel</> : <><Plus className="mr-1 inline h-4 w-4 align-[-3px]" />New Bundle</>}
               </motion.button>
             </div>
           </div>

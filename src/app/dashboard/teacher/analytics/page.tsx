@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
-import { TeacherSidebar } from "@/app/dashboard/_components/teacher-sidebar";
 import Image from "next/image";
+import { Users, CircleCheck, ChartNoAxesColumn, TriangleAlert } from "lucide-react";
 
 type Student = {
   id: string;
@@ -79,8 +79,7 @@ export default function TeacherAnalyticsPage() {
 
   return (
     <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-          <TeacherSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:gap-0">
           <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <div className="mx-auto max-w-[1200px] space-y-8">
 
@@ -115,15 +114,15 @@ export default function TeacherAnalyticsPage() {
               {analytics && (
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                   {[
-                    { label: "Total Enrolled", value: analytics.totalStudents, emoji: "👥" },
-                    { label: "Completed",       value: analytics.completedCount, emoji: "✅" },
-                    { label: "Avg. Progress",   value: `${analytics.avgProgress}%`, emoji: "📊" },
-                    { label: "At-Risk",         value: analytics.atRiskCount,  emoji: "⚠️" },
+                    { label: "Total Enrolled", value: analytics.totalStudents, icon: <Users className="h-6 w-6 text-[#38c1ff]" /> },
+                    { label: "Completed",       value: analytics.completedCount, icon: <CircleCheck className="h-6 w-6 text-[#16a34a]" /> },
+                    { label: "Avg. Progress",   value: `${analytics.avgProgress}%`, icon: <ChartNoAxesColumn className="h-6 w-6 text-[#6366f1]" /> },
+                    { label: "At-Risk",         value: analytics.atRiskCount,  icon: <TriangleAlert className="h-6 w-6 text-[#f59e0b]" /> },
                   ].map((s, i) => (
                     <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
                       className="rounded-[20px] bg-white p-5 shadow-[0px_4px_12px_rgba(0,0,0,0.06)]"
                     >
-                      <div className="text-2xl">{s.emoji}</div>
+                      <div>{s.icon}</div>
                       <div className="mt-2 text-[28px] font-bold text-[#101828]">{s.value}</div>
                       <div className="text-[13px] text-[#64748b]">{s.label}</div>
                     </motion.div>
@@ -155,7 +154,7 @@ export default function TeacherAnalyticsPage() {
                   {loading ? (
                     <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-16 animate-pulse rounded-xl bg-gray-100" />)}</div>
                   ) : displayed.length === 0 ? (
-                    <p className="py-12 text-center text-[#94a3b8]">{tab === "at-risk" ? "🎉 No at-risk students! Great job." : "No students found."}</p>
+                    <p className="py-12 text-center text-[#94a3b8]">{tab === "at-risk" ? "No at-risk students." : "No students found."}</p>
                   ) : (
                     <div className="space-y-3">
                       {displayed.map((s, i) => (

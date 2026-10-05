@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { 
   LayoutDashboard, 
   Video, 
@@ -24,7 +24,7 @@ import {
   FileText,
   ShieldAlert,
   TrendingUp,
-  DollarSign,
+  IndianRupee,
   Tag,
   Shield,
   Bell,
@@ -87,7 +87,7 @@ const adminItems = [
 
 const superAdminItems = [
   { label: "Business Health", href: "/admin/super/overview", icon: TrendingUp },
-  { label: "Revenue", href: "/admin/super/revenue", icon: DollarSign },
+  { label: "Revenue", href: "/admin/super/revenue", icon: IndianRupee },
   { label: "Coupons", href: "/admin/super/coupons", icon: Tag },
   { label: "Admins", href: "/admin/super/admins", icon: Shield },
   { label: "Announcements", href: "/admin/super/announcements", icon: Bell },

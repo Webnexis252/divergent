@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { ChevronDown, Search, Settings } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { usePathname } from "next/navigation";
+import { useRef } from "react";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { Badge } from "@/components/ui/badge";
 import { buttonStyles } from "@/components/ui/button";
@@ -11,9 +12,12 @@ import { useAuth } from "@/context/auth-context";
 import { cx } from "@/lib/cx";
 import { GlobalSearch } from "./global-search";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
+import { useAppHeaderHeight } from "./use-app-header-height";
 
 export function DashboardHeader() {
   const pathname = usePathname();
+  const headerRef = useRef<HTMLElement>(null);
+  useAppHeaderHeight(headerRef);
   const { user } = useAuth();
   const initials =
     user?.name
@@ -25,9 +29,10 @@ export function DashboardHeader() {
 
   return (
     <motion.header
+      ref={headerRef}
       animate={{ opacity: 1, y: 0 }}
       className="sticky top-0 z-40 border-b border-gray-100 bg-white/90 backdrop-blur-xl"
-      initial={{ opacity: 0, y: -8 }}
+      initial={false}
       transition={{ duration: 0.26 }}
     >
       <div className="mx-auto flex max-w-[1920px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">

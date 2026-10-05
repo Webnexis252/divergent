@@ -73,18 +73,33 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         // Delete existing bundle-course associations
         await tx.bundleCourse.deleteMany({ where: { bundleId: id } });
 
-        // Re-create bundle-course associations with optional teacher assignments
-        for (const c of body.courses) {
-          const bcData: any = {
-            bundle: { connect: { id } },
-            course: { connect: { id: c.courseId } },
-          };
-          if (Array.isArray(c.teacherIds) && c.teacherIds.length > 0) {
-            bcData.teachers = {
-              connect: c.teacherIds.map((tId: string) => ({ id: tId })),
-            };
-          }
-          await tx.bundleCourse.create({ data: bcData });
+        // Create all associations in one batched INSERT
+        await tx.bundleCourse.createMany({
+          data: body.courses.map((c: { courseId: string }) => ({
+            bundleId: id,
+            courseId: c.courseId,
+          })),
+          skipDuplicates: true,
+        });
+
+        // Apply teacher connections for courses that specify them (relation updates only)
+        const coursesWithTeachers = body.courses.filter(
+          (c: { courseId: string; teacherIds?: string[] }) =>
+            Array.isArray(c.teacherIds) && c.teacherIds.length > 0
+        );
+        if (coursesWithTeachers.length > 0) {
+          await Promise.all(
+            coursesWithTeachers.map((c: { courseId: string; teacherIds: string[] }) =>
+              tx.bundleCourse.update({
+                where: { bundleId_courseId: { bundleId: id, courseId: c.courseId } },
+                data: {
+                  teachers: {
+                    connect: c.teacherIds.map((tId: string) => ({ id: tId })),
+                  },
+                },
+              })
+            )
+          );
         }
       } else if (Array.isArray(courseIds)) {
         if (courseIds.length < 2) throw new Error('VALIDATION:A bundle must include at least 2 courses');

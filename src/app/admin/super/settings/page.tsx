@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
 import { formatShortDate } from "@/lib/date-format";
+import { Check } from "lucide-react";
 
 type Settings = {
   id: string;
@@ -162,7 +163,7 @@ export default function SuperAdminSettingsPage() {
                       animate={{ opacity: 1, x: 0 }}
                       className="text-[14px] font-medium text-[#15803d]"
                     >
-                      ✓ Settings saved
+                      <Check className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Settings saved
                     </motion.span>
                   )}
                 </div>

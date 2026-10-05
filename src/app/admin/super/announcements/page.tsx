@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../../_components/AdminStatCard";
 import { formatShortDate } from "@/lib/date-format";
+import { Pin } from "lucide-react";
 
 type AudienceOption =
   | "EVERYONE"
@@ -374,7 +375,7 @@ export default function AdminAnnouncementsPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          {a.isPinned && <span className="rounded-full bg-[#fef9c3] px-2 py-0.5 text-[10px] font-bold text-[#a16207]">📌 PINNED</span>}
+                          {a.isPinned && <span className="rounded-full bg-[#fef9c3] px-2 py-0.5 text-[10px] font-bold text-[#a16207] inline-flex items-center gap-1"><Pin className="h-3 w-3" />PINNED</span>}
                           <p className="font-semibold text-[#101828]">{a.title}</p>
                         </div>
                         <p className="mt-1 line-clamp-2 text-[13px] leading-6 text-[#667085]">{a.body}</p>

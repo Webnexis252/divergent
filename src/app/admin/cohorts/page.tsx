@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
+import { Users, X, Plus } from "lucide-react";
 
 type Cohort = {
   id: string;
@@ -77,7 +78,7 @@ export default function AdminCohortsPage() {
               <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }} onClick={() => setShowForm(!showForm)}
                 className="rounded-[14px] bg-white/20 px-5 py-2.5 font-semibold backdrop-blur-sm"
               >
-                {showForm ? "✕ Cancel" : "+ New Cohort"}
+                {showForm ? <><X className="mr-1 inline h-4 w-4 align-[-3px]" />Cancel</> : <><Plus className="mr-1 inline h-4 w-4 align-[-3px]" />New Cohort</>}
               </motion.button>
             </div>
           </div>
@@ -134,7 +135,7 @@ export default function AdminCohortsPage() {
                   whileHover={{ x: 4 }}
                   className="flex items-center gap-4 rounded-[16px] border border-[#f1f5f9] bg-[#fafafa] px-5 py-4"
                 >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-purple-100 text-[22px]">👥</div>
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-purple-100 text-purple-600"><Users className="h-6 w-6" /></div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-[#101828]">{c.name}</p>
                     <p className="text-[13px] text-[#94a3b8]">{c.course.title}</p>

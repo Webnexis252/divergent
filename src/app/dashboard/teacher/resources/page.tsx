@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
-import { TeacherSidebar } from "@/app/dashboard/_components/teacher-sidebar";
+import { FileText, Presentation, FileCode, Paperclip, Library, type LucideIcon, X, Plus } from "lucide-react";
 
 type Resource = {
   id: string;
@@ -26,9 +26,14 @@ type PastClass = {
   courseId?: string;
 };
 
-const typeIcons: Record<string, string> = {
-  PDF: "📄", SLIDE: "📊", CODE: "💻", OTHER: "📎",
+const typeIcons: Record<string, LucideIcon> = {
+  PDF: FileText, SLIDE: Presentation, CODE: FileCode, OTHER: Paperclip,
 };
+
+function ResourceTypeIcon({ type }: { type: string }) {
+  const Icon = typeIcons[type] ?? Paperclip;
+  return <Icon className="h-6 w-6" />;
+}
 
 export default function TeacherResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
@@ -131,8 +136,7 @@ export default function TeacherResourcesPage() {
 
   return (
     <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-          <TeacherSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-8 px-0 pb-16 lg:gap-0">
           <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px]">
             <div className="mx-auto max-w-[900px] space-y-8">
 
@@ -141,7 +145,7 @@ export default function TeacherResourcesPage() {
                   <motion.div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-white/10 blur-3xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 4, repeat: Infinity }} />
                   <div className="relative z-10 flex items-center justify-between">
                     <div>
-                      <div className="inline-flex rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest">📚 My Library</div>
+                      <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest"><Library className="h-3.5 w-3.5" />My Library</div>
                       <h1 className="mt-4 text-[32px] font-semibold tracking-tight">Resource Library</h1>
                       <p className="mt-2 text-white/80">{resources.length} resources saved.</p>
                     </div>
@@ -150,7 +154,7 @@ export default function TeacherResourcesPage() {
                       whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}
                       className="rounded-[14px] bg-white/20 px-5 py-2.5 text-sm font-semibold backdrop-blur-sm"
                     >
-                      {showForm ? "✕ Cancel" : "+ Add Resource"}
+                      {showForm ? <><X className="mr-1 inline h-4 w-4 align-[-3px]" />Cancel</> : <><Plus className="mr-1 inline h-4 w-4 align-[-3px]" />Add Resource</>}
                     </motion.button>
                   </div>
                 </div>
@@ -267,7 +271,7 @@ export default function TeacherResourcesPage() {
                           htmlFor="pdf-upload"
                           className="flex w-full cursor-pointer items-center gap-3 rounded-[12px] border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
                         >
-                          <span className="text-[20px]">📄</span>
+                          <FileText className="h-5 w-5 shrink-0" />
                           {file ? <span className="text-black font-medium truncate">{file.name}</span> : "Click to select local PDF file"}
                         </label>
                       </div>
@@ -286,7 +290,7 @@ export default function TeacherResourcesPage() {
                 <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 animate-pulse rounded-[18px] bg-gray-100" />)}</div>
               ) : resources.length === 0 ? (
                 <div className="rounded-[24px] bg-white p-12 text-center shadow-sm">
-                  <p className="text-[48px]">📚</p>
+                  <Library className="mx-auto h-12 w-12 text-[#94a3b8]" strokeWidth={1.5} />
                   <p className="mt-4 text-[18px] font-semibold text-[#101828]">No resources yet</p>
                   <p className="mt-2 text-[14px] text-[#94a3b8]">Add PDFs or question banks to a course so enrolled students can see them in Modules.</p>
                 </div>
@@ -297,8 +301,8 @@ export default function TeacherResourcesPage() {
                       whileHover={{ x: 4 }}
                       className="flex items-center gap-4 rounded-[18px] bg-white px-5 py-4 shadow-[0px_2px_8px_rgba(0,0,0,0.05)]"
                     >
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-emerald-50 text-[24px]">
-                        {typeIcons[r.type] ?? "📎"}
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-emerald-50 text-emerald-600">
+                        <ResourceTypeIcon type={r.type} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">

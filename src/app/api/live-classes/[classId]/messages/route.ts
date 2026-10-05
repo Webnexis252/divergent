@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     if (!canAccess) return apiForbidden("You do not have access to this classroom");
 
     const messages = await listLiveClassMessages(classId);
-    const response = apiSuccess(messages);
+    const response = await apiSuccess(messages);
     response.headers.set("Cache-Control", "no-store, max-age=0");
     return response;
   } catch (error) {

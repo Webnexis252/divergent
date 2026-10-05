@@ -8,4 +8,6 @@ export type Mentor = {
   mentorStatus: string | null;
   _count: { managedDoubts: number; doubtReplies: number };
   managedDoubts: { id: string }[];
+  /** First human answer to doubts assigned in the last 30 days */
+  responseTime?: { asked: number; answered: number; withinTwoHours: number; medianMinutes: number | null } | null;
 };

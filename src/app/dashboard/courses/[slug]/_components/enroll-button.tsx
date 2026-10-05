@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { m as motion, AnimatePresence } from "motion/react";
 import { CheckCircle2, Loader2, Sparkles, AlertCircle, ShieldCheck, X } from "lucide-react";
 import { PaymentGatewayModal } from "@/app/_components/payment-gateway-modal";
 

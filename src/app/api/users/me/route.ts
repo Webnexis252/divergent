@@ -10,7 +10,9 @@ import {
 /**
  * GET /api/users/me
  * Returns the authenticated user's profile.
- * Response is private-cached for 30 s so rapid re-renders don't spike the DB.
+ * Not HTTP-cached: the browser cache is keyed by URL, not by cookie, so a
+ * cached copy could show the previous user's profile after a logout / login
+ * on a shared device. AuthProvider uses the lighter GET /api/auth/session.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -75,8 +77,7 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        // 30-second private cache — safe per-user, avoids repeated DB reads on re-renders
-        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
+        'Cache-Control': 'private, no-store',
       },
     });
   } catch (err) {

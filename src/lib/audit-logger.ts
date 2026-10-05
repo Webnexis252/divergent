@@ -38,3 +38,31 @@ export async function logAudit(params: {
     console.error('[AUDIT_LOG_WRITE_ERROR]', err);
   }
 }
+
+/**
+ * Logs multiple admin/super-admin actions in a single batched INSERT.
+ * Use this instead of calling logAudit() in a loop.
+ * Fire-and-forget — errors are swallowed to not disrupt the main flow.
+ */
+export async function logAuditBatch(entries: Array<{
+  actorId: string;
+  action: AuditAction;
+  entityType: string;
+  entityId: string;
+  details?: Record<string, unknown>;
+}>) {
+  if (entries.length === 0) return;
+  try {
+    await prisma.auditLog.createMany({
+      data: entries.map((e) => ({
+        actorId: e.actorId,
+        action: e.action,
+        entityType: e.entityType,
+        entityId: e.entityId,
+        details: (e.details || {}) as Prisma.InputJsonObject,
+      })),
+    });
+  } catch (err) {
+    console.error('[AUDIT_LOG_BATCH_WRITE_ERROR]', err);
+  }
+}

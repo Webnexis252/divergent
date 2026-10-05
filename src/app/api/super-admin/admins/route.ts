@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { apiSuccess, apiCreated, apiForbidden, apiServerError, apiError } from '@/lib/api-response';
-import { hashSync } from 'bcryptjs';
+import { hash } from '@node-rs/bcrypt';
+import { recordRegisteredInBackground } from '@/lib/auth-bloom';
 
 export async function GET(req: NextRequest) {
   try {
@@ -55,11 +56,12 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         email,
-        passwordHash: hashSync(password, 10),
+        passwordHash: await hash(password, 10),
         role: 'ADMIN',
       },
       select: { id: true, name: true, email: true, role: true, createdAt: true, image: true },
     });
+    recordRegisteredInBackground(admin);
 
     return apiCreated(admin, 'Admin account created');
   } catch (err) {

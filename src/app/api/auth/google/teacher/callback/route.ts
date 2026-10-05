@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { recordRegisteredInBackground } from "@/lib/auth-bloom";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -107,6 +108,7 @@ export async function GET(req: NextRequest) {
         // No passwordHash — Google-only account until admin sets a password
       },
     });
+    recordRegisteredInBackground({ email: profile.email });
 
     return NextResponse.redirect(
       `${APP_URL}/teacher-register?status=pending&email=${encodeURIComponent(profile.email)}&name=${encodeURIComponent(profile.name)}`

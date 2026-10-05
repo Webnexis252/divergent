@@ -11,6 +11,12 @@ import {
   PenTool,
   Sparkles,
   Target,
+  Flag,
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  X,
+  Check,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
@@ -1177,7 +1183,7 @@ export default function TakeTestPage() {
         <header className="cbt-header">
           <div className="cbt-header-tabs">
             <button className="cbt-tab-close" onClick={() => setPhase("reviewing")}>
-              <span className="cbt-icon-x">✕</span>
+              <span className="cbt-icon-x"><X className="h-[1em] w-[1em]" /></span>
             </button>
             {Array.from(new Set(questions.map((q) => q.type))).map((type) => (
               <button
@@ -1209,7 +1215,7 @@ export default function TakeTestPage() {
               onClick={() => toggleFlag(currentIndex)}
               title="Mark for Review"
             >
-              ⚑
+              <Flag className="h-[1em] w-[1em]" />
             </button>
           </div>
           <div className="cbt-sub-right">
@@ -1246,19 +1252,19 @@ export default function TakeTestPage() {
                   className={`cbt-footer-btn cbt-footer-btn--mark ${flagged.has(currentIndex) ? "cbt-footer-btn--mark-active" : ""}`}
                   onClick={() => toggleFlag(currentIndex)}
                 >
-                  {flagged.has(currentIndex) ? "✓ MARKED" : "MARK FOR REVIEW"}
+                  {flagged.has(currentIndex) ? <><Check className="mr-1 inline h-[1em] w-[1em] align-[-0.15em]" />MARKED</> : "MARK FOR REVIEW"}
                 </button>
               </div>
 
               <div className="cbt-footer-nav">
-                <button className="cbt-nav-arrow" onClick={goPrev} disabled={currentIndex === 0}>
-                  ◀
+                <button className="cbt-nav-arrow" onClick={goPrev} disabled={currentIndex === 0} aria-label="Previous question">
+                  <ChevronLeft className="h-[1em] w-[1em]" />
                 </button>
                 <span>
                   {currentIndex + 1} of {questions.length}
                 </span>
-                <button className="cbt-nav-arrow" onClick={goNext} disabled={currentIndex === questions.length - 1}>
-                  ▶
+                <button className="cbt-nav-arrow" onClick={goNext} disabled={currentIndex === questions.length - 1} aria-label="Next question">
+                  <ChevronRight className="h-[1em] w-[1em]" />
                 </button>
               </div>
 
@@ -1305,7 +1311,7 @@ export default function TakeTestPage() {
       {confirmDialog && (
         <div className="cbt-dialog-overlay">
           <div className="cbt-dialog">
-            <div className="cbt-dialog-icon">⚑</div>
+            <div className="cbt-dialog-icon"><CircleAlert className="h-[1em] w-[1em]" /></div>
             <h2 className="cbt-dialog-title">{confirmDialog.title}</h2>
             <p className="cbt-dialog-body">{confirmDialog.body}</p>
             <div className="cbt-dialog-chips">

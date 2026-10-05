@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "@node-rs/bcrypt";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiSuccess, apiError, apiForbidden, apiNotFound, apiServerError } from "@/lib/api-response";

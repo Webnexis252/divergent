@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getPageAuth } from "@/lib/page-auth";
-import { DashboardSidebar } from "../../dashboard/_components/sidebar-nav";
 import { PageTransition, RevealSection, AnimCard } from "../../dashboard/_components/motion-wrappers";
 import Link from "next/link";
-import { GraduationCap, Timer, Hourglass, BadgeCheck, ChevronRight, BookOpen, AlertCircle, Zap, TrendingUp, Library, ListChecks } from "lucide-react";
+import { PageHero } from "@/components/ui/page-hero";
+import { Timer, Hourglass, BadgeCheck, ChevronRight, BookOpen, AlertCircle, Zap, TrendingUp, Library, ListChecks } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -35,29 +35,20 @@ export default async function TestsPage() {
   return (
     <div className="text-black bg-[#f9fafb] min-h-screen pb-24 sm:bg-[#f7f5f4] sm:pb-0">
       <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-0">
-          <DashboardSidebar />
+        <div className="mx-auto grid max-w-[1920px] lg:gap-0">
 
           <section className="min-w-0 space-y-6 px-4 py-5 sm:px-6 sm:py-6 sm:space-y-8 lg:px-[38px] lg:py-[18px] xl:pr-10">
             {/* Header / Hero */}
             <RevealSection>
-              <div className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(145deg,#925fe2_0%,#6b21a8_100%)] px-6 py-8 text-white shadow-[0_12px_32px_rgba(146,95,226,0.3)] sm:px-10 sm:py-10">
-                <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-                <div className="pointer-events-none absolute -left-10 -bottom-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
-                
-                <div className="relative z-10">
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 backdrop-blur-md border border-white/20">
-                    <GraduationCap className="h-4 w-4" />
-                    <span className="text-[12px] font-bold uppercase tracking-wider">Assessments</span>
-                  </div>
-                  <h1 className="text-[2.2rem] font-bold leading-tight tracking-[-0.02em] sm:text-[clamp(2rem,4vw,3rem)]">
-                    Your Tests & Exams
-                  </h1>
-                  <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-white/90 sm:text-[1.1rem]">
+              <PageHero
+                eyebrow="Assessments"
+                title="Your Tests & Exams"
+                description={
+                  <p>
                     Evaluate your knowledge, track your progress, and prepare for success. Here are all the assessments tailored for your enrolled courses.
                   </p>
-                </div>
-              </div>
+                }
+              />
             </RevealSection>
 
             {/* Content */}

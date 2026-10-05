@@ -2,8 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { motion } from "motion/react";
-import { CheckCircle2, XCircle, ArrowRight, Loader2 } from "lucide-react";
+import { m as motion } from "motion/react";
+import { CheckCircle2, Clock, XCircle, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 function PaymentStatusContent() {
@@ -26,6 +26,9 @@ function PaymentStatusContent() {
   }
 
   const isSuccess = status === "success";
+  // The bank hasn't confirmed yet (e.g. UPI awaiting approval); the webhook
+  // or the reconciliation job enrolls the student once it clears.
+  const isPending = status === "pending";
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center p-4">
@@ -45,6 +48,10 @@ function PaymentStatusContent() {
             <div className="flex h-full w-full items-center justify-center rounded-full bg-green-100 text-green-500">
               <CheckCircle2 className="h-10 w-10" />
             </div>
+          ) : isPending ? (
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-amber-100 text-amber-500">
+              <Clock className="h-10 w-10" />
+            </div>
           ) : (
             <div className="flex h-full w-full items-center justify-center rounded-full bg-red-100 text-red-500">
               <XCircle className="h-10 w-10" />
@@ -53,12 +60,14 @@ function PaymentStatusContent() {
         </motion.div>
 
         <h1 className="mb-2 text-[24px] font-bold text-gray-900">
-          {isSuccess ? "Payment Successful!" : "Payment Failed"}
+          {isSuccess ? "Payment Successful!" : isPending ? "Payment Processing" : "Payment Failed"}
         </h1>
         
         <p className="mb-8 text-[15px] leading-relaxed text-gray-500">
           {isSuccess 
             ? "Your payment has been processed successfully. You now have full access to your content." 
+            : isPending
+            ? "Your bank hasn't confirmed the payment yet. You'll be enrolled automatically as soon as it does, so please don't pay again."
             : message || "Unfortunately, we could not process your payment at this time. Please try again or use a different payment method."}
         </p>
 

@@ -71,7 +71,7 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+        "Cache-Control": "private, no-store", // marks the current user, so not shareable across logins
       },
     });
   } catch (err) {

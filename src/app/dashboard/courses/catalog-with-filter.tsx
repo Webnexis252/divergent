@@ -9,7 +9,7 @@ import { cx } from "@/lib/cx";
 
 const assets = {
   currentCourseFallback:
-    "https://api.dicebear.com/9.x/shapes/svg?seed=973b6412-1165-4257-8071-b30234e453cb",
+    "/images/course-placeholder.svg",
 } as const;
 
 function workspaceButtonStyles({

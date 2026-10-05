@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { signToken, AUTH_COOKIE_NAME, getAuthCookieOptions } from '@/lib/auth';
 import { UserRole } from '@prisma/client';
-import { awardDailyLoginXp } from '@/lib/xp';
+import { awardDailyLoginXpInBackground } from '@/lib/xp';
+import { recordRegisteredInBackground } from '@/lib/auth-bloom';
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
@@ -93,10 +94,11 @@ export async function GET(req: NextRequest) {
             email,
             name: name || 'User',
             image: picture || null,
-            role: role, 
+            role: role,
             emailVerified: new Date(),
           },
         });
+        recordRegisteredInBackground(user);
       } else {
         // Update their picture just in case it changed
         if (picture && user.image !== picture) {
@@ -119,10 +121,11 @@ export async function GET(req: NextRequest) {
             emailVerified: new Date(),
           },
         });
+        recordRegisteredInBackground(user);
       }
     }
 
-    await awardDailyLoginXp(user!.id);
+    awardDailyLoginXpInBackground(user!.id);
 
     // 4. Generate Standard Application Token (async with jose)
     const jwtToken = await signToken({

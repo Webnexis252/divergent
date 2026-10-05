@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { TriangleAlert, Timer } from "lucide-react";
 
 /**
  * Countdown timer for timed tests.
@@ -78,7 +79,7 @@ export function TestTimer({
           />
         </svg>
         <div className="test-timer__icon">
-          {isUrgent ? "⚠️" : "⏱️"}
+          {isUrgent ? <TriangleAlert className="h-[1em] w-[1em]" /> : <Timer className="h-[1em] w-[1em]" />}
         </div>
       </div>
 

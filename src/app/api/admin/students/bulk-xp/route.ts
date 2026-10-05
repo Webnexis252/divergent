@@ -7,8 +7,7 @@ import {
   apiServerError,
   apiSuccess,
 } from '@/lib/api-response';
-import { logAudit } from '@/lib/audit-logger';
-import { spendStudentXp } from '@/lib/xp';
+import { logAuditBatch } from '@/lib/audit-logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -53,24 +52,21 @@ export async function POST(req: NextRequest) {
       return apiBadRequest('No matching students found');
     }
 
-    let successCount = 0;
     const delta = direction === 'ADD' ? amountValue : -amountValue;
 
     if (direction === 'ADD') {
-      // We can use updateMany for ADD since it's just incrementing
+      // Single batched UPDATE for all matching students
       const result = await prisma.user.updateMany({
         where: whereClause,
-        data: {
-          xpPoints: { increment: amountValue },
-        },
+        data: { xpPoints: { increment: amountValue } },
       });
-      successCount = result.count;
-      
-      // Log audit for each
-      for (const student of students) {
-         await logAudit({
+      const successCount = result.count;
+
+      // Single batched INSERT for all audit logs
+      await logAuditBatch(
+        students.map((student) => ({
           actorId: auth.userId,
-          action: 'STUDENT_XP_ADJUSTED',
+          action: 'STUDENT_XP_ADJUSTED' as const,
           entityType: 'User',
           entityId: student.id,
           details: {
@@ -81,45 +77,55 @@ export async function POST(req: NextRequest) {
             newXp: student.xpPoints + amountValue,
             isBulk: true,
           },
-        });
-      }
-    } else {
-      // REMOVE requires checking minimum balance and updating individually
-      for (const student of students) {
-        if (student.xpPoints >= amountValue) {
-          const updated = await spendStudentXp(student.id, amountValue);
-          if (updated) {
-            successCount++;
-            await logAudit({
-              actorId: auth.userId,
-              action: 'STUDENT_XP_ADJUSTED',
-              entityType: 'User',
-              entityId: student.id,
-              details: {
-                amount: amountValue,
-                direction,
-                note,
-                previousXp: student.xpPoints,
-                newXp: student.xpPoints - amountValue,
-                isBulk: true,
-              },
-            });
-          }
-        }
-      }
-    }
+        })),
+      );
 
-    return apiSuccess(
-      {
-        processedCount: successCount,
-        totalAttempted: students.length,
-        delta,
-        note,
-      },
-      direction === 'ADD'
-        ? `Added ${amountValue} XP to ${successCount} student${successCount === 1 ? '' : 's'}.`
-        : `Removed ${amountValue} XP from ${successCount} student${successCount === 1 ? '' : 's'}.`,
-    );
+      return apiSuccess(
+        { processedCount: successCount, totalAttempted: students.length, delta, note },
+        `Added ${amountValue} XP to ${successCount} student${successCount === 1 ? '' : 's'}.`,
+      );
+    } else {
+      // REMOVE: filter to students who have enough balance, then batch update.
+      // The WHERE guard (xpPoints >= amountValue) is the safety check.
+      const eligible = students.filter((s) => s.xpPoints >= amountValue);
+      let successCount = 0;
+
+      if (eligible.length > 0) {
+        const eligibleIds = eligible.map((s) => s.id);
+        const result = await prisma.user.updateMany({
+          where: {
+            id: { in: eligibleIds },
+            role: 'STUDENT',
+            xpPoints: { gte: amountValue },
+          },
+          data: { xpPoints: { decrement: amountValue } },
+        });
+        successCount = result.count;
+
+        // Single batched INSERT for all audit logs
+        await logAuditBatch(
+          eligible.map((student) => ({
+            actorId: auth.userId,
+            action: 'STUDENT_XP_ADJUSTED' as const,
+            entityType: 'User',
+            entityId: student.id,
+            details: {
+              amount: amountValue,
+              direction,
+              note,
+              previousXp: student.xpPoints,
+              newXp: student.xpPoints - amountValue,
+              isBulk: true,
+            },
+          })),
+        );
+      }
+
+      return apiSuccess(
+        { processedCount: successCount, totalAttempted: students.length, delta, note },
+        `Removed ${amountValue} XP from ${successCount} student${successCount === 1 ? '' : 's'}.`,
+      );
+    }
   } catch (err) {
     console.error('[ADMIN_BULK_XP_POST_ERROR]', err);
     return apiServerError();

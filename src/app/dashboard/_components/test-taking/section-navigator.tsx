@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, CircleDot, SquareCheck, Hash, PenTool, FileText, Timer, type LucideIcon } from "lucide-react";
 
 /**
  * Horizontal tab bar for navigating between question-type sections
@@ -46,11 +46,11 @@ export function SectionNavigator({
     }
   };
 
-  const TYPE_ICONS: Record<string, string> = {
-    SCQ: "🔘",
-    MCQ: "☑️",
-    NUMERIC: "🔢",
-    SKETCH: "🎨",
+  const TYPE_ICONS: Record<string, LucideIcon> = {
+    SCQ: CircleDot,
+    MCQ: SquareCheck,
+    NUMERIC: Hash,
+    SKETCH: PenTool,
   };
 
   return (
@@ -58,7 +58,7 @@ export function SectionNavigator({
       <div className="section-nav__header">
         <span className="section-nav__part-label">{partLabel}</span>
         <span className={`section-nav__timer ${isUrgent ? "section-nav__timer--urgent" : ""}`}>
-          ⏱ {timeDisplay}
+          <Timer className="mr-1 inline h-4 w-4 align-[-3px]" />{timeDisplay}
         </span>
       </div>
 
@@ -75,6 +75,7 @@ export function SectionNavigator({
         <div className="section-nav__tab-list">
           {sections.map((sec) => {
             const isActive = sec.type === activeType;
+            const TypeIcon = TYPE_ICONS[sec.type] ?? FileText;
             return (
               <button
                 key={sec.type}
@@ -83,7 +84,7 @@ export function SectionNavigator({
                 className={`section-nav__tab ${isActive ? "section-nav__tab--active" : ""} ${sec.locked ? "section-nav__tab--locked" : ""}`}
                 title={sec.locked ? `${sec.label} is locked` : sec.label}
               >
-                <span className="section-nav__tab-icon">{TYPE_ICONS[sec.type] ?? "📝"}</span>
+                <span className="section-nav__tab-icon"><TypeIcon className="h-4 w-4" /></span>
                 <span className="section-nav__tab-label">{sec.label}</span>
                 <span className="section-nav__tab-count">
                   {sec.answeredCount}/{sec.count}

@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
-import { TeacherSidebar } from "./teacher-sidebar";
+import { m as motion, AnimatePresence } from "motion/react";
 
 import { PageTransition, RevealSection, StaggerGrid } from "./motion-wrappers";
 import { formatShortDate } from "@/lib/date-format";
+import { CircleCheck, TriangleAlert, ClipboardList, Check } from "lucide-react";
 
 type Course = { id: string; title: string };
 
@@ -169,14 +169,14 @@ function CreateAssignmentModal({
       >
         {success ? (
           <div className="py-10 text-center">
-            <motion.p
-              className="text-[52px]"
+            <motion.div
+              className="flex justify-center text-[#16a34a]"
               animate={{ scale: 1 }}
               initial={{ scale: 0 }}
               transition={{ type: "spring", stiffness: 260 }}
             >
-              ✅
-            </motion.p>
+              <CircleCheck className="h-14 w-14" strokeWidth={1.75} />
+            </motion.div>
             <p className="mt-4 text-[20px] font-semibold text-[#15803d]">
               Assignment created!
             </p>
@@ -370,7 +370,7 @@ function CreateAssignmentModal({
                       {uploading
                         ? `Uploading… ${uploadProgress}%`
                         : uploadProgress === 100
-                        ? "✓ Uploaded successfully"
+                        ? <><Check className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Uploaded successfully</>
                         : ""}
                     </p>
                   </motion.div>
@@ -379,7 +379,7 @@ function CreateAssignmentModal({
 
               {error && (
                 <p className="rounded-[10px] bg-[#fff5f5] px-4 py-2 text-[13px] text-[#dc2626]">
-                  ⚠️ {error}
+                  <TriangleAlert className="mr-1.5 inline h-4 w-4 align-[-3px]" />{error}
                 </p>
               )}
             </div>
@@ -454,8 +454,7 @@ export function TeacherAssignmentsView() {
 
   return (
     <PageTransition>
-        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-8 lg:px-0 lg:pt-8">
-          <TeacherSidebar />
+        <div className="mx-auto grid max-w-[1920px] gap-6 px-3 pb-14 pt-4 sm:px-6 sm:pt-6 lg:gap-8 lg:px-0 lg:pt-8">
 
           <main className="space-y-8 lg:pr-[160px]">
             {/* Hero */}
@@ -556,11 +555,11 @@ export function TeacherAssignmentsView() {
                     ))
                   ) : error ? (
                     <p className="rounded-[22px] border border-dashed border-[#fecaca] bg-[#fff5f5] px-5 py-12 text-center text-[14px] text-[#dc2626]">
-                      ⚠️ {error}
+                      <TriangleAlert className="mr-1.5 inline h-4 w-4 align-[-3px]" />{error}
                     </p>
                   ) : filteredAssignments.length === 0 ? (
                     <div className="rounded-[22px] border border-dashed border-[#d7dbe2] bg-[#fafafa] px-5 py-16 text-center">
-                      <p className="text-[40px]">📋</p>
+                      <ClipboardList className="mx-auto h-10 w-10 text-[#9ca3af]" strokeWidth={1.5} />
                       <p className="mt-3 text-[16px] font-semibold text-[#374151]">
                         {assignments.length === 0 ? "No assignments yet" : "No assignments found"}
                       </p>
