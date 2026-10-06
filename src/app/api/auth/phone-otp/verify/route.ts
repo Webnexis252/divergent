@@ -10,6 +10,10 @@ import {
   apiUnauthorized,
   apiServerError,
 } from '@/lib/api-response';
+import { checkRateLimit, authLimiter } from '@/lib/rate-limit';
+
+/** Wrong guesses allowed per code; with 3 codes per phone per 10 minutes, that's at most 15 guesses. */
+const MAX_OTP_ATTEMPTS = 5;
 
 /**
  * POST /api/auth/phone-otp/verify
@@ -20,8 +24,21 @@ import {
  * On success:
  *   - SIGNUP: returns a signed `phoneVerifiedToken` (15-min JWT) for the signup form.
  *   - SETTINGS: updates user.phone in the database directly.
+ *
+ * Each code allows MAX_OTP_ATTEMPTS wrong guesses, counted in the database so
+ * the limit holds across serverless instances; requests are also rate-limited per IP.
  */
 export async function POST(req: NextRequest) {
+  try {
+    const { success: withinLimit } = await checkRateLimit(req, authLimiter);
+    if (!withinLimit) {
+      return apiError('Too many attempts. Please wait a minute and try again.', 429);
+    }
+  } catch (rateLimitErr) {
+    // The per-code attempt limit below still applies if Redis is down
+    console.error('[PHONE_OTP_VERIFY] Rate limit check failed:', rateLimitErr);
+  }
+
   try {
     const body = await req.json().catch(() => null);
     if (!body) return apiBadRequest('Request body is required');
@@ -58,11 +75,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // --- Count this guess before checking it ---
+    // Claimed atomically, so parallel requests can't get more than MAX_OTP_ATTEMPTS
+    // guesses at one code. A used-up code is left in place (not deleted) until it
+    // expires, so guesses can't fall through to an older code for the same phone.
+    const claimed = await prisma.phoneOtp.updateMany({
+      where: { id: pendingOtp.id, attempts: { lt: MAX_OTP_ATTEMPTS } },
+      data: { attempts: { increment: 1 } },
+    });
+    if (claimed.count === 0) {
+      return apiError('Too many incorrect attempts. Please request a new OTP.', 429);
+    }
+
     // --- Verify OTP against stored bcrypt hash ---
     const isValid = await bcrypt.compare(otp, pendingOtp.otpHash);
 
     if (!isValid) {
-      return apiError('Invalid OTP. Please check the code and try again.', 400);
+      const attemptsLeft = MAX_OTP_ATTEMPTS - (pendingOtp.attempts + 1);
+      return attemptsLeft > 0
+        ? apiError(
+            `Invalid OTP. ${attemptsLeft} ${attemptsLeft === 1 ? 'attempt' : 'attempts'} left.`,
+            400,
+          )
+        : apiError('Too many incorrect attempts. Please request a new OTP.', 429);
     }
 
     // --- Cleanup: delete the used OTP record ---

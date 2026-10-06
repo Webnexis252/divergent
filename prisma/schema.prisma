@@ -46,6 +46,7 @@ model User {
   messages                Message[]
   notifications           Notification[]
   preference              UserPreference?
+  weeklyStudyTimes        WeeklyStudyTime[]
   payments                Payment[]
   posts                   Post[]                   @relation("PostAuthor")
   postLikes               PostLike[]
@@ -587,6 +588,9 @@ model CourseTest {
   questionsToShow  Int?
   availableFrom    DateTime?
   availableUntil   DateTime?
+  /// When the test was first published. Set by the CourseTest_set_published_at
+  /// trigger whenever status becomes PUBLISHED, so every way of publishing records it.
+  publishedAt      DateTime?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   chapter          Chapter?       @relation(fields: [chapterId], references: [id])
@@ -995,6 +999,8 @@ model PhoneOtp {
   phone     String
   context   String // "SIGNUP" | "SETTINGS"
   otpHash   String // bcrypt hash of the 6-digit OTP
+  /// Wrong guesses so far; the code stops working after MAX_OTP_ATTEMPTS
+  attempts  Int      @default(0)
   expiresAt DateTime
   createdAt DateTime @default(now())
 
@@ -1032,3 +1038,14 @@ model LiveClassReminder {
   @@id([liveClassId, userId])
 }
 
+/// Seconds a student studied (lessons watched + live classes attended) in one
+/// week, so the weekly study goal starts from zero every Monday (IST).
+model WeeklyStudyTime {
+  userId    String
+  /// The IST date of the week's Monday
+  weekStart DateTime @db.Date
+  seconds   Int      @default(0)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, weekStart])
+}

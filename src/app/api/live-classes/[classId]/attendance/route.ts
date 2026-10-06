@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { syncPerfectAttendanceXp, PERFECT_ATTENDANCE_STREAK_XP } from '@/lib/xp';
+import { addStudyTime } from '@/lib/study-time';
 import {
   getLiveClassWatchTimeDeltaSeconds,
   qualifiesForLiveClassAttendance,
@@ -119,12 +120,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         });
 
         if (watchTimeAddedSecs > 0) {
-          await tx.user.update({
-            where: { id: user.userId },
-            data: {
-              totalStudyTime: { increment: watchTimeAddedSecs },
-            },
-          });
+          await addStudyTime(tx, user.userId, watchTimeAddedSecs, now);
         }
 
         const xpReward =

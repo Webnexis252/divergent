@@ -4,42 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, m as motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  CalendarDays,
-  CheckCircle2,
-  ClipboardCheck,
-  ClipboardList,
-  Clock3,
-  SearchCheck,
-  X,
-  House,
-  BookOpen,
-  Video,
-  MessageSquareText,
-  CircleHelp,
-  NotebookPen,
-  ChartNoAxesColumn,
-  Award,
-  UserCircle,
-  UploadCloud,
-  FileText,
-  Trash2,
-  Loader2,
-} from "lucide-react";
-import { EmptyState } from "@/components/ui/empty-state";
-import { GlobalSearch } from "@/components/global-search";
-import { NotificationsDropdown } from "@/components/notifications-dropdown";
-import { Spinner } from "@/components/ui/spinner";
-import { useAuth } from "@/context/auth-context";
-import { brand } from "@/lib/brand";
+import { CheckCircle2, FileText, Loader2, Trash2, UploadCloud, X } from "lucide-react";
 import { cx } from "@/lib/cx";
-import { formatShortDate } from "@/lib/date-format";
-import {
-  AnimCard,
-  PageTransition,
-  RevealSection,
-  StaggerGrid,
-} from "../_components/motion-wrappers";
+import { ASSIGNMENT_SUBMISSION_XP } from "@/lib/xp-costs";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHero } from "@/components/ui/page-hero";
+import { AnimCard, PageTransition, RevealSection, StaggerGrid } from "../_components/motion-wrappers";
 
 type Assignment = {
   id: string;
@@ -65,864 +35,881 @@ type AssignmentsData = {
   completed: Assignment[];
 };
 
-type AssignmentFilter = "all" | "submitted" | "pending";
+type AssignmentFilter = "all" | "todo" | "submitted";
 
-type AssignmentCardItem = Assignment & {
-  bucket: keyof AssignmentsData;
-  state: "submitted" | "pending" | "late";
-};
+type AssignmentItem = Assignment & { state: "todo" | "overdue" | "submitted" };
 
-const assets = {
+const art = {
+  todo: "/assets/dashboard/quick-assignment.png",
+  overdue: "/assets/dashboard/quick-exam.png",
+  submitted: "/assets/dashboard/explore-library.png",
 } as const;
 
-const filters: Array<{
-  description: string;
-  id: AssignmentFilter;
-  label: string;
-}> = [
-  {
-    description: "All assignments across every submission state.",
-    id: "all",
-    label: "All Assignments",
-  },
-  {
-    description: "Assignments you have already submitted.",
-    id: "submitted",
-    label: "Submitted",
-  },
-  {
-    description: "Assignments still waiting for submission.",
-    id: "pending",
-    label: "Pending",
-  },
-] as const;
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
 
-const stateMeta = {
-  late: {
-    badgeClass: "bg-[#fff1f2] text-[#fb2c36]",
-    buttonLabel: "Submit Assignment",
-    helper: "Needs attention",
-    label: "Late",
-    scoreClass: "text-[#fb2c36]",
-  },
-  pending: {
-    badgeClass: "bg-[#fff7db] text-[#f59e0b]",
-    buttonLabel: "Submit Assignment",
-    helper: "Awaiting submission",
-    label: "Pending",
-    scoreClass: "text-[#8b8888]",
-  },
-  submitted: {
-    badgeClass: "bg-[#e8faed] text-[#22a447]",
-    buttonLabel: "View Details",
-    helper: "Submission recorded",
-    label: "Submitted",
-    scoreClass: "text-[#22a447]",
-  },
-} as const;
+// Brand blue darkened just enough to pass AA as small text on white.
+// globals.css sets `a { color: inherit }` outside any layer, so text colours that land on links are marked `!`
+const brandInk = "text-[color-mix(in_srgb,var(--brand-primary-strong)_72%,black)]!";
+// globals.css also sets `button { font: inherit }`, so on <button>s the type utilities go on an inner span
+const primaryAction =
+  "inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[12px] bg-(--brand-primary-strong) px-5 text-white! shadow-[0_4px_12px_rgba(32,155,210,0.28)] transition-[transform,filter,background-color] duration-150 hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0 disabled:pointer-events-none disabled:bg-black/[0.12] disabled:text-black/40! disabled:shadow-none";
+const secondaryAction = cx(
+  "inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[12px] border border-[rgba(56,193,255,0.45)] bg-white px-4 transition-colors duration-150 hover:bg-(--brand-primary-soft)",
+  brandInk,
+);
+const card = "overflow-hidden rounded-[20px] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04]";
+const sectionTitle = "text-[clamp(1.5rem,2.6vw,1.85rem)] font-semibold tracking-[-0.02em] text-black";
+const sectionLede = "mt-1 text-[14px] text-black/55";
+const pill = "inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold";
+const rowGrid =
+  "grid grid-cols-[4.75rem_minmax(0,1fr)] items-start gap-x-3 px-5 sm:grid-cols-[5.5rem_minmax(0,1fr)_auto] sm:items-center sm:gap-x-5 sm:px-6";
+// Phones: the row action sits under the text instead of squeezing it
+const rowAction = "col-start-2 mt-3 justify-self-start sm:col-start-auto sm:mt-0";
 
-function buildAssignmentCard(
-  assignment: Assignment,
-  bucket: keyof AssignmentsData,
-): AssignmentCardItem {
-  if (assignment.submission) {
-    return { ...assignment, bucket, state: "submitted" };
-  }
+const dayFormatter = new Intl.DateTimeFormat("en-IN", { day: "numeric" });
+const monthFormatter = new Intl.DateTimeFormat("en-IN", { month: "short" });
+const weekdayTimeFormatter = new Intl.DateTimeFormat("en-IN", { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true });
+const longDateFormatter = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric" });
+const longDateTimeFormatter = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", hour: "numeric", minute: "2-digit", hour12: true });
 
-  if (assignment.deadline && new Date(assignment.deadline).getTime() < Date.now()) {
-    return { ...assignment, bucket, state: "late" };
-  }
-
-  return { ...assignment, bucket, state: "pending" };
+function toItem(assignment: Assignment, now: number): AssignmentItem {
+  if (assignment.submission) return { ...assignment, state: "submitted" };
+  if (assignment.deadline && Date.parse(assignment.deadline) < now) return { ...assignment, state: "overdue" };
+  return { ...assignment, state: "todo" };
 }
 
-function formatDeadlineLabel(value: string | null) {
-  if (!value) return "No deadline";
-  return formatShortDate(value);
+function humanDuration(ms: number) {
+  if (ms < HOUR) return `${Math.max(1, Math.round(ms / 60_000))} min`;
+  if (ms < 2 * DAY) return `${Math.round(ms / HOUR)} hr`;
+  return `${Math.round(ms / DAY)} days`;
 }
 
-function formatSubmittedLabel(value: string | null | undefined) {
-  if (!value) return "Not submitted";
-  return new Date(value).toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+/** "Overdue by 2 days", "Due in 5 hr", "Due in 6 days", or null without a deadline */
+function dueStatus(deadline: string | null, now: number) {
+  if (!deadline) return null;
+  const diff = Date.parse(deadline) - now;
+  if (diff < 0) return { text: `Overdue by ${humanDuration(-diff)}`, tone: "overdue" as const };
+  return { text: `Due in ${humanDuration(diff)}`, tone: diff < 2 * DAY ? ("soon" as const) : ("later" as const) };
 }
 
-function iconBadgeClass(color: "blue" | "green" | "yellow") {
-  if (color === "green") {
-    return "bg-[linear-gradient(180deg,#c8fff0_0%,#8be9c5_100%)] text-[#22a447]";
+function scoreLabel(assignment: Assignment) {
+  const score = assignment.submission?.score;
+  return score == null ? null : `${Math.round(score)}/${assignment.points || 100}`;
+}
+
+// ─── Small pieces ─────────────────────────────────────────────────────────────
+
+function StatusPill({ assignment, now }: { assignment: AssignmentItem; now: number }) {
+  if (assignment.state === "submitted") {
+    const score = scoreLabel(assignment);
+    return score ? (
+      <span className={cx(pill, "bg-[rgba(76,175,80,0.14)] text-[#2e6b31]")}>Graded · {score}</span>
+    ) : (
+      <span className={cx(pill, "bg-(--brand-primary-soft)", brandInk)}>Submitted · awaiting grade</span>
+    );
   }
-
-  if (color === "yellow") {
-    return "bg-[linear-gradient(180deg,#fff3b3_0%,#ffd65a_100%)] text-[#f59e0b]";
-  }
-
-  return "bg-[linear-gradient(180deg,#d8f3ff_0%,#a3e2ff_100%)] text-[#1597d4]";
-}
-
-function AssignmentStatCard({
-  icon,
-  iconTone,
-  title,
-  value,
-}: {
-  icon: React.ReactNode;
-  iconTone: "blue" | "green" | "yellow";
-  title: string;
-  value: string;
-}) {
+  const due = dueStatus(assignment.deadline, now);
+  // Rows already say "No deadline" in the date column
+  if (!due) return null;
   return (
-    <AnimCard className="h-full">
-      <article className="rounded-[22px] bg-[#72d3ff] px-6 py-5 text-white shadow-[0_4px_12px_rgba(0,0,0,0.18)]">
-        <div className="flex items-start justify-between gap-4">
-          <div className={cx("grid h-16 w-16 place-items-center rounded-[20px] shadow-[0_8px_20px_rgba(255,255,255,0.25)]", iconBadgeClass(iconTone))}>
-            {icon}
-          </div>
-          <p className="pt-1 text-[clamp(2.5rem,4vw,3.4rem)] font-semibold leading-none text-[#fec600]">
-            {value}
-          </p>
-        </div>
-        <p className="mt-5 text-[clamp(1rem,2vw,1.45rem)] font-semibold text-white">
-          {title}
-        </p>
-      </article>
-    </AnimCard>
+    <span
+      className={cx(
+        pill,
+        "tabular-nums",
+        due.tone === "overdue"
+          ? "bg-[rgba(255,61,0,0.1)] text-[#b42d00]"
+          : due.tone === "soon"
+            ? "bg-[rgba(254,198,0,0.2)] text-[#6b4c00]"
+            : "bg-black/[0.05] text-black/60",
+      )}
+    >
+      {due.text}
+    </span>
   );
 }
 
-function AssignmentFilterBar({
-  activeFilter,
-  onChange,
-}: {
-  activeFilter: AssignmentFilter;
-  onChange: (value: AssignmentFilter) => void;
-}) {
-  return (
-    <RevealSection delay={0.04}>
-      <div className="rounded-[20px] bg-white px-4 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.06)]">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <p className="text-[12px] font-medium text-[#7c7a7a]">Filter:</p>
-          <div className="flex flex-wrap gap-2">
-            {filters.map((filter) => {
-              const isActive = filter.id === activeFilter;
+function CoursePill({ title }: { title: string }) {
+  return <span className={cx(pill, "truncate bg-(--brand-primary-soft)", brandInk)}>{title}</span>;
+}
 
-              return (
-                <button
-                  key={filter.id}
-                  className={cx(
-                    "rounded-[8px] px-4 py-1.5 text-[12px] font-medium transition-colors duration-150",
-                    isActive
-                      ? "bg-[#38c1ff] text-white shadow-[0_6px_16px_rgba(56,193,255,0.24)]"
-                      : "bg-[#f5f5f5] text-[#7c7a7a] hover:bg-[#ebebeb]",
-                  )}
-                  onClick={() => onChange(filter.id)}
-                  type="button"
-                >
-                  {filter.label}
-                </button>
-              );
-            })}
-          </div>
+function BriefLink({ url }: { url: string }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="relative z-10 inline-flex items-center gap-1 text-[12px] font-semibold text-black/55! underline-offset-2 transition-colors hover:text-black! hover:underline"
+    >
+      <FileText aria-hidden="true" className="h-3.5 w-3.5" />
+      Brief
+    </a>
+  );
+}
+
+function StatCard({ image, label, value, note }: { image: string; label: string; value: string; note: string }) {
+  return (
+    <AnimCard className="min-w-[220px] flex-1 snap-start sm:min-w-0">
+      <div className="flex items-center gap-4 rounded-[24px] bg-white p-3 pr-5 shadow-[0_4px_20px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04]">
+        <div className="grid h-[76px] w-[76px] shrink-0 place-items-center overflow-hidden rounded-[18px] bg-[#f4f2ff]">
+          <Image alt="" className="h-[76px] w-[76px] scale-[1.35] object-contain" height={152} src={image} width={152} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-black/55">{label}</p>
+          <p className="mt-1 text-[2rem] font-bold leading-none tracking-[-0.03em] tabular-nums text-black">{value}</p>
+          <p className="mt-1 truncate text-[12px] text-black/45">{note}</p>
         </div>
       </div>
-    </RevealSection>
-  );
-}
-
-function AssignmentCard({
-  assignment,
-  onOpenDetails,
-  onOpenSubmit,
-}: {
-  assignment: AssignmentCardItem;
-  onOpenDetails: (assignment: AssignmentCardItem) => void;
-  onOpenSubmit: (assignment: AssignmentCardItem) => void;
-}) {
-  const meta = stateMeta[assignment.state];
-  const scoreLabel =
-    assignment.submission?.score != null
-      ? `${Math.round(assignment.submission.score)}/${assignment.points || 100}`
-      : assignment.state === "submitted"
-        ? "Pending grade"
-        : meta.helper;
-
-  return (
-    <AnimCard className="h-full">
-      <article 
-        className="flex h-full cursor-pointer flex-col rounded-[22px] bg-white px-4 py-4 shadow-[0_4px_10px_rgba(0,0,0,0.08)] transition-all hover:shadow-[0_8px_20px_rgba(0,0,0,0.12)] sm:px-5 sm:py-4"
-        onClick={() => {
-          if (assignment.attachmentUrl) {
-            window.open(assignment.attachmentUrl, "_blank");
-          }
-        }}
-      >
-        <div className="space-y-4">
-          <span className="inline-flex rounded-full bg-[#f3f3f3] px-3 py-1 text-[10px] font-medium text-[#8b8888]">
-            {assignment.courseTitle}
-          </span>
-
-          <div>
-            <h3 className="text-[1.35rem] font-semibold leading-[1.15] text-black">
-              {assignment.title}
-            </h3>
-            <p className="mt-2 line-clamp-3 text-[13px] leading-6 text-[#8b8888]">
-              {assignment.description || "Assignment brief will appear here once your mentor adds it."}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 text-[12px] text-[#6f6d6d]">
-            <CalendarDays className="h-4 w-4 text-[#9b9898]" />
-            <span>
-              Deadline: <span className="font-semibold text-black">{formatDeadlineLabel(assignment.deadline)}</span>
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-1 flex-col justify-end">
-          <div className="mb-4 flex items-center justify-between gap-3 text-[11px]">
-            <span className={cx("inline-flex rounded-full px-3 py-1 font-medium", meta.badgeClass)}>
-              {meta.label}
-            </span>
-            <span className={cx("font-semibold", meta.scoreClass)}>
-              {scoreLabel}
-            </span>
-          </div>
-
-          <button
-            className="inline-flex h-[40px] items-center justify-center rounded-[10px] bg-[#38c1ff] px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(56,193,255,0.24)] transition-transform duration-150 ease-out hover:-translate-y-0.5"
-            onClick={(e) => {
-              e.stopPropagation();
-              assignment.state === "submitted"
-                ? onOpenDetails(assignment)
-                : onOpenSubmit(assignment)
-            }}
-            type="button"
-          >
-            {meta.buttonLabel}
-          </button>
-        </div>
-      </article>
     </AnimCard>
   );
 }
 
-function SubmissionModal({
+function FilterChip({ active, count, label, onClick }: { active: boolean; count: number; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cx(
+        "inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-4 transition-colors",
+        active ? "bg-(--brand-primary-strong) text-white" : "bg-white text-black/70 ring-1 ring-black/[0.06] hover:bg-black/[0.03]",
+      )}
+    >
+      <span className="text-[13px] font-semibold">{label}</span>
+      <span className={cx("text-[12px] font-semibold tabular-nums", active ? "text-white/80" : "text-black/40")}>{count}</span>
+    </button>
+  );
+}
+
+// ─── Rows ─────────────────────────────────────────────────────────────────────
+
+function AssignmentRow({
   assignment,
+  now,
+  onSubmit,
+  onDetails,
+}: {
+  assignment: AssignmentItem;
+  now: number;
+  onSubmit: (assignment: AssignmentItem) => void;
+  onDetails: (assignment: AssignmentItem) => void;
+}) {
+  const deadline = assignment.deadline ? new Date(assignment.deadline) : null;
+  const isSubmitted = assignment.state === "submitted";
+
+  return (
+    <li className={cx("py-4 transition-colors hover:bg-[#f8fcff]", rowGrid)}>
+      <div>
+        {deadline ? (
+          <time dateTime={assignment.deadline!} title={`Due ${longDateTimeFormatter.format(deadline)}`}>
+            <span className="flex items-baseline gap-1.5">
+              <span
+                className={cx(
+                  "text-[1.6rem] font-bold leading-none tracking-[-0.04em] tabular-nums",
+                  assignment.state === "overdue" ? "text-[#b42d00]" : "text-black",
+                )}
+              >
+                {dayFormatter.format(deadline)}
+              </span>
+              <span className="text-[13px] font-semibold text-black/55">{monthFormatter.format(deadline)}</span>
+            </span>
+            <span className="mt-1.5 block text-[11px] font-medium text-black/45">{weekdayTimeFormatter.format(deadline)}</span>
+          </time>
+        ) : (
+          <p className="text-[12px] font-semibold leading-tight text-black/45">No deadline</p>
+        )}
+      </div>
+
+      <div className="min-w-0">
+        <p className="text-[16px] font-semibold leading-snug text-black">{assignment.title}</p>
+        {assignment.description && (
+          <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-black/55">{assignment.description}</p>
+        )}
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <StatusPill assignment={assignment} now={now} />
+          <CoursePill title={assignment.courseTitle} />
+          {assignment.points > 0 && (
+            <span className="text-[12px] font-medium tabular-nums text-black/50">{assignment.points} points</span>
+          )}
+          {assignment.attachmentUrl && <BriefLink url={assignment.attachmentUrl} />}
+        </div>
+      </div>
+
+      <div className={rowAction}>
+        {isSubmitted ? (
+          <button type="button" onClick={() => onDetails(assignment)} className={secondaryAction}>
+            <span className="text-[14px] font-semibold">View</span>
+          </button>
+        ) : (
+          <button type="button" onClick={() => onSubmit(assignment)} className={primaryAction}>
+            <span className="text-[14px] font-semibold">Submit</span>
+          </button>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function ListSkeleton() {
+  return (
+    <div role="status" className={card}>
+      <span className="sr-only">Loading your assignments</span>
+      {[0, 1, 2].map((row) => (
+        <div key={row} className={cx(rowGrid, "border-t border-black/[0.05] py-5 first:border-t-0")}>
+          <div className="space-y-2">
+            <div className="h-6 w-12 animate-pulse rounded-md bg-black/[0.06]" />
+            <div className="h-3 w-14 animate-pulse rounded bg-black/[0.04]" />
+          </div>
+          <div className="space-y-2.5">
+            <div className="h-4 w-3/5 animate-pulse rounded bg-black/[0.07]" />
+            <div className="h-6 w-40 animate-pulse rounded-full bg-black/[0.04]" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Dialogs ──────────────────────────────────────────────────────────────────
+
+function Dialog({
+  labelledBy,
+  onClose,
+  canClose = true,
+  children,
+}: {
+  labelledBy: string;
+  onClose: () => void;
+  canClose?: boolean;
+  children: React.ReactNode;
+}) {
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && canClose) onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [canClose, onClose]);
+
+  return (
+    // z-[120]: above the phone bottom navigation (z-100)
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={labelledBy}
+      className="fixed inset-0 z-[120] flex items-end justify-center bg-black/45 backdrop-blur-[2px] sm:items-center sm:p-4"
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      initial={{ opacity: 0 }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && canClose) onClose();
+      }}
+    >
+      <motion.div
+        className="flex max-h-[92dvh] w-full max-w-[620px] flex-col overflow-hidden rounded-t-[24px] bg-white shadow-[0_24px_64px_rgba(15,23,42,0.24)] sm:rounded-[24px]"
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 24, opacity: 0 }}
+        initial={{ y: 24, opacity: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function CloseButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label="Close"
+      className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-black/45 transition-colors hover:bg-black/[0.05] hover:text-black disabled:opacity-40"
+    >
+      <X aria-hidden="true" className="h-5 w-5" />
+    </button>
+  );
+}
+
+function SubmitDialog({
+  assignment,
+  now,
   onClose,
   onSubmit,
-  submitContent,
-  setSubmitContent,
+  notes,
+  setNotes,
   submitting,
-  submitSuccess,
-  uploadedFileName,
-  uploadedFileUrl,
+  submitted,
+  rewardXp,
+  error,
+  fileName,
+  fileUrl,
+  uploadingFile,
   onFileSelected,
   onFileClear,
-  uploadingFile,
-  submitRewardXp,
 }: {
-  assignment: AssignmentCardItem;
+  assignment: AssignmentItem;
+  now: number;
   onClose: () => void;
-  onSubmit: (draft?: boolean) => void;
-  submitContent: string;
-  setSubmitContent: (value: string) => void;
+  onSubmit: () => void;
+  notes: string;
+  setNotes: (value: string) => void;
   submitting: boolean;
-  submitSuccess: boolean;
-  uploadedFileName: string;
-  uploadedFileUrl: string;
+  submitted: boolean;
+  rewardXp: number;
+  error: string;
+  fileName: string;
+  fileUrl: string;
+  uploadingFile: boolean;
   onFileSelected: (file: File) => void;
   onFileClear: () => void;
-  uploadingFile: boolean;
-  submitRewardXp: number;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-
-  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) onFileSelected(file);
-  }
-
-  const hasContent = uploadedFileUrl || submitContent.trim();
+  const canSubmit = Boolean(fileUrl || notes.trim()) && !uploadingFile && !submitting;
+  const due = dueStatus(assignment.deadline, now);
 
   return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm"
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      initial={{ opacity: 0 }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <motion.div
-        className="w-full max-w-[640px] overflow-hidden rounded-[24px] bg-white shadow-[0_32px_80px_rgba(0,0,0,0.22)]"
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.96, y: 24 }}
-        initial={{ scale: 0.96, y: 24 }}
-        transition={{ type: "spring", stiffness: 280, damping: 28 }}
-      >
-        {submitSuccess ? (
-          <div className="py-16 text-center">
-            <motion.div
-              className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#e8faed] text-[#22a447]"
-              animate={{ scale: 1 }}
-              initial={{ scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 260 }}
+    <Dialog labelledBy="submit-dialog-title" onClose={onClose} canClose={!submitting}>
+      {submitted ? (
+        <div className="px-6 py-14 text-center">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[rgba(76,175,80,0.14)] text-[#2e6b31]">
+            <CheckCircle2 aria-hidden="true" className="h-8 w-8" />
+          </div>
+          <p id="submit-dialog-title" className="mt-5 text-[20px] font-bold text-black">
+            Submitted
+          </p>
+          <p className="mt-1.5 text-[14px] text-black/60">
+            {rewardXp > 0
+              ? `Sent to your teacher for review. You earned ${rewardXp} XP.`
+              : "Your updated work was sent to your teacher for review."}
+          </p>
+        </div>
+      ) : (
+        <>
+          <header className="border-b border-black/[0.05] px-5 py-4 sm:px-7">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <CoursePill title={assignment.courseTitle} />
+                <h2 id="submit-dialog-title" className="mt-2 text-[20px] font-bold leading-snug text-black">
+                  {assignment.title}
+                </h2>
+              </div>
+              <CloseButton onClick={onClose} disabled={submitting} />
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {due ? <StatusPill assignment={assignment} now={now} /> : null}
+              {assignment.deadline && (
+                <span className="text-[12px] text-black/50">
+                  Due {longDateTimeFormatter.format(new Date(assignment.deadline))}
+                </span>
+              )}
+              <span className={cx(pill, "bg-[rgba(254,198,0,0.2)] text-[#6b4c00]")}>
+                +{ASSIGNMENT_SUBMISSION_XP} XP on your first submission
+              </span>
+            </div>
+          </header>
+
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-7">
+            {assignment.description && (
+              <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-black/65">{assignment.description}</p>
+            )}
+
+            <div
+              onDragLeave={() => setIsDragging(false)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const file = e.dataTransfer.files[0];
+                if (file) onFileSelected(file);
+              }}
+              className={cx(
+                "flex flex-col items-center justify-center rounded-[16px] border-2 border-dashed px-4 py-8 text-center transition-colors",
+                isDragging
+                  ? "border-(--brand-primary) bg-(--brand-primary-soft)"
+                  : fileName
+                    ? "border-[rgba(76,175,80,0.45)] bg-[rgba(76,175,80,0.06)]"
+                    : "border-[rgba(56,193,255,0.45)] bg-[#f8fcff]",
+              )}
             >
-              <CheckCircle2 className="h-10 w-10" />
-            </motion.div>
-            <p className="mt-6 text-[1.5rem] font-semibold text-[#15803d]">Assignment submitted!</p>
-            <p className="mt-2 text-[14px] text-[#6b7280]">
-              {submitRewardXp > 0
-                ? `Your work has been sent for review and you earned ${submitRewardXp} XP.`
-                : 'Your updated work has been sent for review.'}
-            </p>
+              <input
+                ref={fileInputRef}
+                accept=".pdf,.docx,.doc,.zip"
+                className="sr-only"
+                type="file"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onFileSelected(file);
+                  e.target.value = "";
+                }}
+              />
+              {uploadingFile ? (
+                <>
+                  <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-(--brand-primary-strong)" />
+                  <p className="mt-3 text-[14px] font-semibold text-black/70">Uploading…</p>
+                </>
+              ) : fileName ? (
+                <>
+                  <span className="grid h-12 w-12 place-items-center rounded-full bg-[rgba(76,175,80,0.14)] text-[#2e6b31]">
+                    <FileText aria-hidden="true" className="h-6 w-6" />
+                  </span>
+                  <p className="mt-3 max-w-full truncate text-[14px] font-semibold text-black">{fileName}</p>
+                  <p className="mt-0.5 text-[12px] text-black/50">Ready to submit</p>
+                  <button
+                    type="button"
+                    onClick={onFileClear}
+                    className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[#b42d00] transition-colors hover:bg-[rgba(255,61,0,0.08)]"
+                  >
+                    <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+                    <span className="text-[12px] font-semibold">Remove file</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="grid h-12 w-12 place-items-center rounded-full bg-(--brand-primary-strong) text-white">
+                    <UploadCloud aria-hidden="true" className="h-6 w-6" />
+                  </span>
+                  <p className="mt-3 text-[15px] font-semibold text-black">Drop your file here</p>
+                  <p className="mt-0.5 text-[12px] text-black/50">PDF, Word or ZIP, up to 20 MB</p>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className={cx(secondaryAction, "mt-4 h-9")}>
+                    <span className="text-[13px] font-semibold">Choose a file</span>
+                  </button>
+                </>
+              )}
+            </div>
+
+            <label className="block">
+              <span className="mb-1.5 block text-[13px] font-semibold text-black/70">Notes for your teacher</span>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                placeholder="Anything they should know, or write your answer here instead of attaching a file."
+                className="w-full resize-y rounded-[14px] bg-[#f4f6f9] px-4 py-3 text-[14px] leading-relaxed text-black outline-none ring-1 ring-black/[0.04] transition placeholder:text-black/40 focus:bg-white focus:ring-[rgba(56,193,255,0.55)]"
+              />
+            </label>
+
+            {error && (
+              <p role="alert" className="rounded-[12px] bg-[rgba(255,61,0,0.08)] px-4 py-3 text-[13px] font-medium text-[#b42d00]">
+                {error}
+              </p>
+            )}
+          </div>
+
+          <footer className="flex items-center justify-end gap-3 border-t border-black/[0.05] px-5 py-4 sm:px-7">
+            <button type="button" onClick={onClose} disabled={submitting} className={secondaryAction}>
+              <span className="text-[14px] font-semibold">Cancel</span>
+            </button>
+            <button type="button" onClick={onSubmit} disabled={!canSubmit} className={primaryAction}>
+              {submitting && <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />}
+              <span className="text-[14px] font-semibold">{submitting ? "Submitting…" : "Submit assignment"}</span>
+            </button>
+          </footer>
+        </>
+      )}
+    </Dialog>
+  );
+}
+
+function DetailsDialog({ assignment, onClose }: { assignment: AssignmentItem; onClose: () => void }) {
+  const score = scoreLabel(assignment);
+  const facts = [
+    {
+      label: "Submitted",
+      value: assignment.submission ? longDateFormatter.format(new Date(assignment.submission.submittedAt)) : "Not submitted",
+    },
+    { label: "Score", value: score ?? "Awaiting grade", highlight: Boolean(score) },
+    { label: "Deadline", value: assignment.deadline ? longDateFormatter.format(new Date(assignment.deadline)) : "No deadline" },
+    {
+      label: "Graded",
+      value: assignment.submission?.gradedAt ? longDateFormatter.format(new Date(assignment.submission.gradedAt)) : "Not yet",
+    },
+  ];
+
+  return (
+    <Dialog labelledBy="details-dialog-title" onClose={onClose}>
+      <header className="flex items-start justify-between gap-3 border-b border-black/[0.05] px-5 py-4 sm:px-7">
+        <div className="min-w-0">
+          <CoursePill title={assignment.courseTitle} />
+          <h2 id="details-dialog-title" className="mt-2 text-[20px] font-bold leading-snug text-black">
+            {assignment.title}
+          </h2>
+        </div>
+        <CloseButton onClick={onClose} />
+      </header>
+
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-7">
+        <dl className="grid grid-cols-2 gap-3">
+          {facts.map((fact) => (
+            <div key={fact.label} className="rounded-[16px] bg-[#f6f9fc] px-4 py-3">
+              <dt className="text-[12px] font-semibold text-black/50">{fact.label}</dt>
+              <dd className={cx("mt-1 text-[15px] font-semibold tabular-nums", fact.highlight ? "text-[#2e6b31]" : "text-black")}>
+                {fact.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        {assignment.submission?.feedback ? (
+          <div className="rounded-[16px] bg-[rgba(76,175,80,0.08)] px-4 py-4 ring-1 ring-[rgba(76,175,80,0.2)]">
+            <p className="text-[13px] font-semibold text-[#2e6b31]">Teacher feedback</p>
+            <p className="mt-1.5 whitespace-pre-wrap text-[14px] leading-relaxed text-black/75">{assignment.submission.feedback}</p>
           </div>
         ) : (
-          <>
-            {/* Header */}
-            <div className="border-b border-[#f0f0f0] px-7 py-5">
-              {/* Breadcrumb */}
-              <p className="text-[12px] text-[#9ca3af]">
-                Assignments
-                <span className="mx-1.5">›</span>
-                <span>{assignment.courseTitle}</span>
-                <span className="mx-1.5">›</span>
-                <span className="text-[#374151]">{assignment.title}</span>
-              </p>
-
-              <div className="mt-3 flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-[1.35rem] font-bold text-[#111827]">{assignment.title}</h3>
-                  <span className="mt-2 inline-flex rounded-full bg-[#f3f4f6] px-3 py-1 text-[12px] font-medium text-[#374151]">
-                    {assignment.courseTitle}
-                  </span>
-                </div>
-                <button
-                  className="mt-1 shrink-0 rounded-full p-1.5 text-[#9ca3af] transition-colors hover:bg-[#f3f4f6] hover:text-black"
-                  onClick={onClose}
-                  type="button"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Meta row */}
-              <div className="mt-4 flex flex-wrap items-center gap-4 text-[13px] text-[#374151]">
-                <span className="flex items-center gap-1.5">
-                  <CalendarDays className="h-3.5 w-3.5 text-[#9ca3af]" />
-                  <span className="font-medium">Deadline:</span> {assignment.deadline
-                    ? new Date(assignment.deadline).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-                    : "No deadline"}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock3 className="h-3.5 w-3.5 text-[#9ca3af]" />
-                  <span className="font-medium">Status:</span>
-                  <span className="font-semibold text-[#f59e0b]">Pending</span>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-[#9ca3af]" />
-                  <span className="font-medium">Max File Size:</span> 20MB
-                </span>
-              </div>
-              <div className="mt-4 rounded-[14px] border border-[#dcfce7] bg-[#f0fdf4] px-4 py-3 text-[13px] font-medium text-[#15803d]">
-                First-time assignment submission rewards +150 XP.
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="space-y-5 px-7 py-6">
-              {/* Drop zone */}
-              <div
-                className={cx(
-                  "relative flex cursor-pointer flex-col items-center justify-center rounded-[16px] border-2 border-dashed py-10 transition-colors",
-                  isDragging
-                    ? "border-[#38c1ff] bg-[#e0f5ff]"
-                    : uploadedFileName
-                      ? "border-[#34d399] bg-[#ecfdf5]"
-                      : "border-[#bae6fd] bg-[#f0faff] hover:border-[#38c1ff]",
-                )}
-                onDragLeave={() => setIsDragging(false)}
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDrop={handleDrop}
-                onClick={() => !uploadedFileName && fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  accept=".pdf,.docx,.doc,.zip"
-                  className="sr-only"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) onFileSelected(f); }}
-                  type="file"
-                />
-
-                {uploadingFile ? (
-                  <>
-                    <Loader2 className="h-10 w-10 animate-spin text-[#38c1ff]" />
-                    <p className="mt-3 text-[14px] font-medium text-[#38c1ff]">Uploading...</p>
-                  </>
-                ) : uploadedFileName ? (
-                  <>
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#d1fae5]">
-                      <FileText className="h-7 w-7 text-[#059669]" />
-                    </div>
-                    <p className="mt-3 max-w-[300px] truncate text-center text-[14px] font-semibold text-[#059669]">
-                      {uploadedFileName}
-                    </p>
-                    <p className="mt-1 text-[12px] text-[#6b7280]">File ready to submit</p>
-                    <button
-                      className="mt-4 flex items-center gap-1.5 rounded-full border border-[#fca5a5] bg-white px-4 py-1.5 text-[12px] font-medium text-[#ef4444] transition-colors hover:bg-[#fef2f2]"
-                      onClick={(e) => { e.stopPropagation(); onFileClear(); }}
-                      type="button"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Remove file
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#38c1ff]">
-                      <UploadCloud className="h-7 w-7 text-white" />
-                    </div>
-                    <p className="mt-3 text-[15px] font-semibold text-[#1f2937]">Drag &amp; drop your file here</p>
-                    <p className="mt-1 text-[13px] text-[#9ca3af]">Supports PDF, DOCX, ZIP</p>
-                    <button
-                      className="mt-4 rounded-full bg-[#38c1ff] px-6 py-2 text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(56,193,255,0.3)] transition-transform hover:-translate-y-0.5"
-                      onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                      type="button"
-                    >
-                      Browse Files
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Submission Notes */}
-              <div>
-                <label className="text-[14px] font-semibold text-[#111827]">
-                  Submission Notes
-                </label>
-                <textarea
-                  className="mt-2 w-full resize-none rounded-[14px] border border-[#e5e7eb] bg-white px-4 py-3 text-[14px] text-[#374151] outline-none placeholder:text-[#9ca3af] transition focus:border-[#38c1ff] focus:ring-2 focus:ring-[#38c1ff]/20"
-                  onChange={(e) => setSubmitContent(e.target.value)}
-                  placeholder="Add any notes for your instructor..."
-                  rows={4}
-                  value={submitContent}
-                />
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-end gap-3 border-t border-[#f0f0f0] px-7 py-5">
-              <button
-                className="inline-flex h-11 items-center justify-center rounded-[12px] border border-[#e5e7eb] px-6 text-[14px] font-medium text-[#374151] transition-colors hover:bg-[#f9fafb] disabled:opacity-50"
-                disabled={submitting || !hasContent}
-                onClick={() => onSubmit(true)}
-                type="button"
-              >
-                Save Draft
-              </button>
-              <button
-                className="inline-flex h-11 items-center justify-center rounded-[12px] bg-[#38c1ff] px-7 text-[14px] font-semibold text-white shadow-[0_6px_16px_rgba(56,193,255,0.3)] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-                disabled={submitting || !hasContent || uploadingFile}
-                onClick={() => onSubmit(false)}
-                type="button"
-              >
-                {submitting ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</>
-                ) : "Submit Assignment"}
-              </button>
-            </div>
-          </>
+          <p className="rounded-[16px] bg-[#f6f9fc] px-4 py-4 text-[13px] text-black/55">
+            Your teacher&apos;s feedback will appear here once they grade it.
+          </p>
         )}
-      </motion.div>
-    </motion.div>
+      </div>
+
+      <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-black/[0.05] px-5 py-4 sm:px-7">
+        <button type="button" onClick={onClose} className={secondaryAction}>
+          <span className="text-[14px] font-semibold">Close</span>
+        </button>
+        {assignment.courseSlug && (
+          <Link href={`/dashboard/courses/${assignment.courseSlug}`} className={cx(primaryAction, "text-[14px] font-semibold")}>
+            Open course
+          </Link>
+        )}
+      </footer>
+    </Dialog>
   );
 }
 
-function DetailsModal({
-  assignment,
-  onClose,
-}: {
-  assignment: AssignmentCardItem;
-  onClose: () => void;
-}) {
-  return (
-    <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      initial={{ opacity: 0 }}
-    >
-      <motion.div
-        className="w-full max-w-[560px] rounded-[24px] bg-white p-7 shadow-[0_24px_60px_rgba(0,0,0,0.18)]"
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.96, y: 24 }}
-        initial={{ scale: 0.96, y: 24 }}
-        transition={{ type: "spring", stiffness: 280, damping: 28 }}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#22a447]">
-              Submission Details
-            </p>
-            <h3 className="mt-2 text-[1.35rem] font-semibold text-black">
-              {assignment.title}
-            </h3>
-            <p className="mt-2 text-[14px] leading-6 text-[#6f6d6d]">
-              {assignment.courseTitle}
-            </p>
-          </div>
-          <button
-            className="rounded-full p-2 text-[#9ca3af] transition-colors hover:bg-[#f3f4f6] hover:text-black"
-            onClick={onClose}
-            type="button"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-[18px] bg-[#f7f5f4] px-4 py-4">
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#7c7a7a]">
-              Submitted
-            </p>
-            <p className="mt-2 text-[15px] font-semibold text-black">
-              {formatSubmittedLabel(assignment.submission?.submittedAt)}
-            </p>
-          </div>
-          <div className="rounded-[18px] bg-[#f7f5f4] px-4 py-4">
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#7c7a7a]">
-              Score
-            </p>
-            <p className="mt-2 text-[15px] font-semibold text-[#22a447]">
-              {assignment.submission?.score != null
-                ? `${Math.round(assignment.submission.score)}/${assignment.points || 100}`
-                : "Pending grade"}
-            </p>
-          </div>
-          <div className="rounded-[18px] bg-[#f7f5f4] px-4 py-4">
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#7c7a7a]">
-              Deadline
-            </p>
-            <p className="mt-2 text-[15px] font-semibold text-black">
-              {formatDeadlineLabel(assignment.deadline)}
-            </p>
-          </div>
-          <div className="rounded-[18px] bg-[#f7f5f4] px-4 py-4">
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#7c7a7a]">
-              Grading
-            </p>
-            <p className="mt-2 text-[15px] font-semibold text-black">
-              {assignment.submission?.gradedAt
-                ? `Graded ${formatSubmittedLabel(assignment.submission.gradedAt)}`
-                : "Awaiting review"}
-            </p>
-          </div>
-        </div>
-
-        {assignment.submission?.feedback && (
-          <div className="mt-4 rounded-[18px] border border-[#d1fae5] bg-[#ecfdf5] p-5">
-            <p className="text-[12px] font-bold uppercase tracking-wider text-[#059669]">
-              Teacher Feedback
-            </p>
-            <p className="mt-2 text-[14px] leading-relaxed text-[#065f46]">
-              {assignment.submission.feedback}
-            </p>
-          </div>
-        )}
-
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          {assignment.courseSlug ? (
-            <Link
-              className="inline-flex h-12 items-center justify-center rounded-[14px] bg-[#38c1ff] px-5 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(56,193,255,0.24)] transition-transform duration-150 ease-out hover:-translate-y-0.5"
-              href={`/dashboard/courses/${assignment.courseSlug}`}
-            >
-              Open Course
-            </Link>
-          ) : null}
-          <button
-            className="inline-flex h-12 items-center justify-center rounded-[14px] border border-[#e5e7eb] px-5 text-[14px] font-medium text-[#374151] transition-colors hover:bg-[#f9fafb]"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardAssignmentsPage() {
-  const { user } = useAuth();
-  const [data, setData] = useState<AssignmentsData>({
-    upcoming: [],
-    pending: [],
-    completed: [],
-  });
+  const [data, setData] = useState<AssignmentsData>({ upcoming: [], pending: [], completed: [] });
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<AssignmentFilter>("all");
-  const [submitAssignment, setSubmitAssignment] = useState<AssignmentCardItem | null>(
-    null,
-  );
-  const [detailsAssignment, setDetailsAssignment] = useState<AssignmentCardItem | null>(
-    null,
-  );
-  const [submitContent, setSubmitContent] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [filter, setFilter] = useState<AssignmentFilter>("all");
+  const [now, setNow] = useState(() => Date.now());
+
+  const [submitTarget, setSubmitTarget] = useState<AssignmentItem | null>(null);
+  const [detailsTarget, setDetailsTarget] = useState<AssignmentItem | null>(null);
+  const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitRewardXp, setSubmitRewardXp] = useState(0);
-  const [uploadedFileUrl, setUploadedFileUrl] = useState("");
-  const [uploadedFileName, setUploadedFileName] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [rewardXp, setRewardXp] = useState(0);
+  const [submitError, setSubmitError] = useState("");
+  const [fileUrl, setFileUrl] = useState("");
+  const [fileName, setFileName] = useState("");
   const [uploadingFile, setUploadingFile] = useState(false);
 
-  function fetchAssignments() {
-    setLoading(true);
-
-    fetch("/api/users/me/assignments")
-      .then((response) => response.json())
-      .then((json) => {
-        if (json.success) {
-          setData(json.data);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to load assignments", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }
-
-  useEffect(() => {
-    fetchAssignments();
+  const fetchAssignments = useCallback(async () => {
+    try {
+      const json = await fetch("/api/users/me/assignments").then((r) => r.json());
+      if (json.success) {
+        setData(json.data);
+        setLoadFailed(false);
+      } else {
+        setLoadFailed(true);
+      }
+    } catch (error) {
+      console.error("Failed to load assignments", error);
+      setLoadFailed(true);
+    } finally {
+      setLoading(false);
+      setNow(Date.now());
+    }
   }, []);
 
-  const displayName = user?.name?.trim() || "Student";
-  const upcomingAssignments = useMemo(
-    () => data.upcoming.map((assignment) => buildAssignmentCard(assignment, "upcoming")),
-    [data.upcoming],
-  );
-  const pendingAssignments = useMemo(
-    () => data.pending.map((assignment) => buildAssignmentCard(assignment, "pending")),
-    [data.pending],
-  );
-  const submittedAssignments = useMemo(
-    () => data.completed.map((assignment) => buildAssignmentCard(assignment, "completed")),
-    [data.completed],
-  );
-  const pendingAndUpcomingAssignments = useMemo(
-    () => [...upcomingAssignments, ...pendingAssignments],
-    [pendingAssignments, upcomingAssignments],
-  );
-  const allAssignments = useMemo(
-    () => [...pendingAndUpcomingAssignments, ...submittedAssignments],
-    [pendingAndUpcomingAssignments, submittedAssignments],
-  );
-  const filteredAssignments = useMemo(() => {
-    if (activeFilter === "submitted") {
-      return submittedAssignments;
-    }
+  useEffect(() => {
+    // Initial load; the fetch resolves after mount, so its state updates aren't synchronous
+    void fetchAssignments();
+  }, [fetchAssignments]);
 
-    if (activeFilter === "pending") {
-      return pendingAndUpcomingAssignments;
-    }
+  // Keep "Due in …" labels current while the page stays open
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
 
-    return allAssignments;
-  }, [activeFilter, allAssignments, pendingAndUpcomingAssignments, submittedAssignments]);
+  const { todo, submittedItems, overdueCount } = useMemo(() => {
+    const pending = [...data.upcoming, ...data.pending].map((a) => toItem(a, now));
+    // Overdue first (oldest first), then by deadline, then the ones without a deadline
+    pending.sort((a, b) => {
+      if (!a.deadline || !b.deadline) return a.deadline ? -1 : b.deadline ? 1 : 0;
+      return Date.parse(a.deadline) - Date.parse(b.deadline);
+    });
+    const done = data.completed
+      .map((a) => toItem(a, now))
+      .sort((a, b) => Date.parse(b.submission!.submittedAt) - Date.parse(a.submission!.submittedAt));
+    return { todo: pending, submittedItems: done, overdueCount: pending.filter((a) => a.state === "overdue").length };
+  }, [data, now]);
 
-  const totalAssignmentsCount = allAssignments.length;
-  const submittedAssignmentsCount = submittedAssignments.length;
-  const pendingAssignmentsCount = pendingAndUpcomingAssignments.length;
+  const total = todo.length + submittedItems.length;
+  const upNext = todo[0] ?? null;
 
-  function openSubmitModal(assignment: AssignmentCardItem) {
-    setSubmitContent("");
-    setUploadedFileUrl("");
-    setUploadedFileName("");
-    setSubmitSuccess(false);
-    setSubmitRewardXp(0);
-    setSubmitAssignment(assignment);
+  function openSubmit(assignment: AssignmentItem) {
+    setNotes("");
+    setFileUrl("");
+    setFileName("");
+    setSubmitError("");
+    setSubmitted(false);
+    setRewardXp(0);
+    setSubmitTarget(assignment);
   }
 
   const handleFileSelected = useCallback(async (file: File) => {
     setUploadingFile(true);
+    setSubmitError("");
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch("/api/upload/assignments", { method: "POST", body: form });
-      const json = await res.json();
+      const json = await fetch("/api/upload/assignments", { method: "POST", body: form }).then((r) => r.json());
       if (json.success && json.data?.url) {
-        setUploadedFileUrl(json.data.url);
-        setUploadedFileName(file.name);
+        setFileUrl(json.data.url);
+        setFileName(file.name);
       } else {
-        alert(json.message || "Upload failed. Please try again.");
+        setSubmitError(json.message || json.error || "That file couldn't be uploaded. Try again or choose another file.");
       }
     } catch {
-      alert("Upload failed. Please check your connection and try again.");
+      setSubmitError("Upload failed. Check your connection and try again.");
     } finally {
       setUploadingFile(false);
     }
   }, []);
 
-  function handleFileClear() {
-    setUploadedFileUrl("");
-    setUploadedFileName("");
-  }
-
-  function openDetailsModal(assignment: AssignmentCardItem) {
-    setDetailsAssignment(assignment);
-  }
-
-  async function handleSubmitAssignment() {
-    if (!submitAssignment || submitting) return;
-    if (!submitContent.trim() && !uploadedFileUrl) return;
+  async function handleSubmit() {
+    if (!submitTarget || submitting) return;
+    if (!notes.trim() && !fileUrl) return;
 
     setSubmitting(true);
-
+    setSubmitError("");
     try {
-      const response = await fetch(`/api/assignments/${submitAssignment.id}/submit`, {
+      const response = await fetch(`/api/assignments/${submitTarget.id}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: submitContent.trim() || undefined,
-          fileUrl: uploadedFileUrl || undefined,
-        }),
+        body: JSON.stringify({ content: notes.trim() || undefined, fileUrl: fileUrl || undefined }),
       });
       const json = await response.json();
 
       if (json.success || response.status === 201) {
-        setSubmitRewardXp(
-          typeof json?.data?.xpAwarded === "number" ? json.data.xpAwarded : 0,
-        );
-        setSubmitSuccess(true);
+        setRewardXp(typeof json?.data?.xpAwarded === "number" ? json.data.xpAwarded : 0);
+        setSubmitted(true);
         setTimeout(() => {
-          setSubmitAssignment(null);
-          fetchAssignments();
+          setSubmitTarget(null);
+          void fetchAssignments();
         }, 1800);
+        return;
       }
+      setSubmitError(json.error || json.message || "Your assignment couldn't be submitted. Please try again.");
     } catch (error) {
       console.error("Failed to submit assignment", error);
+      setSubmitError("Your assignment couldn't be submitted. Check your connection and try again.");
     } finally {
       setSubmitting(false);
     }
   }
 
+  const heroSummary = loading
+    ? "Getting your assignments ready."
+    : total === 0
+      ? "Assignments from your courses will show up here."
+      : todo.length === 0
+        ? "All caught up. Nothing is waiting to be submitted."
+        : `${todo.length} to submit${overdueCount ? `, ${overdueCount} overdue` : ""}. ${submittedItems.length} already submitted.`;
+
+  const rowProps = { now, onSubmit: openSubmit, onDetails: setDetailsTarget };
+  const showTodo = filter !== "submitted";
+  const showSubmitted = filter !== "todo";
+
   return (
-    <div className="text-black">
-      <PageTransition>
-        <main className="min-h-screen overflow-x-hidden bg-[#f9fafb] pb-24 sm:bg-[#f7f5f4] sm:pb-0">
-
-
-          <div className="mx-auto max-w-[1920px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-0 xl:py-8">
-            <div className="grid gap-6 xl:items-start">
-
-              <section className="min-w-0 px-0 sm:px-4 xl:pr-10">
-                <div className="mx-auto max-w-[1160px] space-y-5 sm:space-y-6">
-                  <RevealSection>
-                    <div className="grid gap-5 md:grid-cols-3">
-                      <AssignmentStatCard
-                        icon={<ClipboardList className="h-8 w-8" />}
-                        iconTone="blue"
-                        title="Total Assignments"
-                        value={loading ? "..." : String(totalAssignmentsCount)}
-                      />
-                      <AssignmentStatCard
-                        icon={<ClipboardCheck className="h-8 w-8" />}
-                        iconTone="green"
-                        title="Submitted"
-                        value={loading ? "..." : String(submittedAssignmentsCount)}
-                      />
-                      <AssignmentStatCard
-                        icon={<Clock3 className="h-8 w-8" />}
-                        iconTone="yellow"
-                        title="Pending"
-                        value={loading ? "..." : String(pendingAssignmentsCount)}
-                      />
+    <>
+    <PageTransition>
+      {/* overflow-x-clip, not hidden: hidden makes <main> a scroll container and breaks the sticky rail */}
+      <main className="min-h-screen overflow-x-clip bg-[#f9fafb] pb-24 text-black sm:bg-[#f7f5f4] sm:pb-0">
+        <section className="mx-auto min-w-0 max-w-[1920px] space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6 lg:px-[38px] lg:py-[18px] xl:pr-10">
+          <RevealSection>
+            <PageHero
+              eyebrow="Assignments"
+              title="Your Assignments"
+              description={<p>{heroSummary}</p>}
+              aside={
+                loading ? undefined : upNext ? (
+                  <div className="rounded-[20px] bg-white p-5 text-black shadow-[0_12px_30px_rgba(8,80,130,0.18)] sm:p-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className={cx(pill, "bg-(--brand-primary-soft)", brandInk)}>Up next</span>
+                      {upNext.points > 0 && <span className="text-[12px] font-medium text-black/50">{upNext.points} points</span>}
                     </div>
-                  </RevealSection>
+                    <p className="mt-3 line-clamp-2 text-[17px] font-bold leading-snug">{upNext.title}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <CoursePill title={upNext.courseTitle} />
+                      <StatusPill assignment={upNext} now={now} />
+                    </div>
+                    <div className="mt-5 flex gap-2">
+                      <button type="button" onClick={() => openSubmit(upNext)} className={cx(primaryAction, "flex-1")}>
+                        <span className="text-[14px] font-semibold">Submit now</span>
+                      </button>
+                      {upNext.attachmentUrl && (
+                        <a href={upNext.attachmentUrl} target="_blank" rel="noreferrer" className={cx(secondaryAction, "text-[14px] font-semibold")}>
+                          <FileText aria-hidden="true" className="h-4 w-4" />
+                          Brief
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ) : total > 0 ? (
+                  <div className="flex items-center gap-4 rounded-[20px] bg-white p-5 text-black shadow-[0_12px_30px_rgba(8,80,130,0.18)] sm:p-6">
+                    <Image alt="" className="h-20 w-20 shrink-0 scale-[1.3] object-contain" height={160} src={art.submitted} width={160} />
+                    <div>
+                      <p className="text-[16px] font-bold">All caught up</p>
+                      <p className="mt-1 text-[13px] leading-relaxed text-black/55">New assignments from your teachers will appear here.</p>
+                    </div>
+                  </div>
+                ) : undefined
+              }
+            />
+          </RevealSection>
 
-                  <AssignmentFilterBar
-                    activeFilter={activeFilter}
-                    onChange={setActiveFilter}
-                  />
-
-                  {loading ? (
-                    <RevealSection delay={0.06}>
-                      <div className="flex min-h-[18rem] items-center justify-center rounded-[24px] bg-white text-black/50 shadow-[0_4px_10px_rgba(0,0,0,0.06)]">
-                        <div className="flex items-center gap-3">
-                          <Spinner className="h-6 w-6 border-[#38c1ff] text-[#38c1ff]" />
-                          Loading assignment workspace...
-                        </div>
-                      </div>
-                    </RevealSection>
-                  ) : filteredAssignments.length === 0 ? (
-                    <RevealSection delay={0.08}>
-                      <div className="rounded-[24px] bg-white px-6 py-16 shadow-[0_4px_10px_rgba(0,0,0,0.06)]">
-                        <EmptyState
-                          description={
-                            activeFilter === "submitted"
-                              ? "Submitted assignments will appear here once you send your first one for review."
-                              : activeFilter === "pending"
-                                ? "You do not have any pending assignments right now."
-                                : "Assignments will appear here once your enrolled courses publish them."
-                          }
-                          icon={<SearchCheck className="h-6 w-6" />}
-                          title="No assignments to show"
-                        />
-                      </div>
-                    </RevealSection>
-                  ) : (
-                    <RevealSection delay={0.08}>
-                      <StaggerGrid className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                        {filteredAssignments.map((assignment) => (
-                          <AssignmentCard
-                            assignment={assignment}
-                            key={assignment.id}
-                            onOpenDetails={openDetailsModal}
-                            onOpenSubmit={openSubmitModal}
-                          />
-                        ))}
-                      </StaggerGrid>
-                    </RevealSection>
+          <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_293px] xl:items-start">
+            <div className="min-w-0 space-y-8">
+              <RevealSection delay={0.06}>
+                <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+                  <div>
+                    <h2 className={sectionTitle}>Assignments</h2>
+                    <p className={sectionLede}>Submit before the deadline, then check back for your grade.</p>
+                  </div>
+                  {total > 0 && (
+                    <div className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+                      <FilterChip active={filter === "all"} count={total} label="All" onClick={() => setFilter("all")} />
+                      <FilterChip active={filter === "todo"} count={todo.length} label="To submit" onClick={() => setFilter("todo")} />
+                      <FilterChip active={filter === "submitted"} count={submittedItems.length} label="Submitted" onClick={() => setFilter("submitted")} />
+                    </div>
                   )}
                 </div>
-              </section>
+              </RevealSection>
+
+              {loading ? (
+                <ListSkeleton />
+              ) : loadFailed && total === 0 ? (
+                <EmptyState
+                  title="Couldn't load your assignments"
+                  description="Check your connection and try again."
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoading(true);
+                        void fetchAssignments();
+                      }}
+                      className={primaryAction}
+                    >
+                      <span className="text-[14px] font-semibold">Try again</span>
+                    </button>
+                  }
+                />
+              ) : total === 0 ? (
+                <div className={cx(card, "flex flex-col items-center px-6 py-12 text-center")}>
+                  <Image alt="" className="h-28 w-28 scale-[1.3] object-contain" height={224} src={art.todo} width={224} />
+                  <p className="mt-4 text-[18px] font-bold text-black">No assignments yet</p>
+                  <p className="mt-1.5 max-w-[44ch] text-[14px] leading-relaxed text-black/55">
+                    When your teachers publish assignments in your courses, they&apos;ll appear here with their deadlines.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {showTodo && (
+                    <RevealSection delay={0.08}>
+                      <section aria-labelledby="todo-heading" className="space-y-3">
+                        <h3 id="todo-heading" className="text-[15px] font-bold text-black">
+                          To Submit <span className="font-semibold text-black/40">{todo.length}</span>
+                        </h3>
+                        {todo.length === 0 ? (
+                          <p className={cx(card, "px-6 py-8 text-center text-[14px] text-black/55")}>
+                            Nothing to submit right now.
+                          </p>
+                        ) : (
+                          <ol className={cx(card, "divide-y divide-black/[0.05]")}>
+                            {todo.map((assignment) => (
+                              <AssignmentRow key={assignment.id} assignment={assignment} {...rowProps} />
+                            ))}
+                          </ol>
+                        )}
+                      </section>
+                    </RevealSection>
+                  )}
+
+                  {showSubmitted && (
+                    <RevealSection delay={0.1}>
+                      <section aria-labelledby="submitted-heading" className="space-y-3">
+                        <h3 id="submitted-heading" className="text-[15px] font-bold text-black">
+                          Submitted <span className="font-semibold text-black/40">{submittedItems.length}</span>
+                        </h3>
+                        {submittedItems.length === 0 ? (
+                          <p className={cx(card, "px-6 py-8 text-center text-[14px] text-black/55")}>
+                            Submitted work and grades will appear here.
+                          </p>
+                        ) : (
+                          <ol className={cx(card, "divide-y divide-black/[0.05]")}>
+                            {submittedItems.map((assignment) => (
+                              <AssignmentRow key={assignment.id} assignment={assignment} {...rowProps} />
+                            ))}
+                          </ol>
+                        )}
+                      </section>
+                    </RevealSection>
+                  )}
+                </>
+              )}
             </div>
+
+            <aside
+              aria-labelledby="assignment-summary-heading"
+              className="order-first min-w-0 space-y-4 xl:sticky xl:top-[calc(var(--app-header-height)+1.5rem)] xl:order-none"
+            >
+              <div className="sr-only xl:not-sr-only">
+                <h2 id="assignment-summary-heading" className={sectionTitle}>
+                  At a Glance
+                </h2>
+                <p className={sectionLede}>Where your assignments stand.</p>
+              </div>
+              <StaggerGrid className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-1">
+                <StatCard image={art.todo} label="To submit" value={loading ? "–" : String(todo.length)} note="Not handed in yet" />
+                <StatCard image={art.overdue} label="Overdue" value={loading ? "–" : String(overdueCount)} note="Past the deadline" />
+                <StatCard image={art.submitted} label="Submitted" value={loading ? "–" : String(submittedItems.length)} note="Sent for grading" />
+              </StaggerGrid>
+            </aside>
           </div>
-        </main>
-      </PageTransition>
+        </section>
+      </main>
+    </PageTransition>
 
+      {/* Outside PageTransition: its entrance transform would pin fixed dialogs to it */}
       <AnimatePresence>
-        {submitAssignment ? (
-          <SubmissionModal
-            assignment={submitAssignment}
-            onClose={() => setSubmitAssignment(null)}
-            onSubmit={() => void handleSubmitAssignment()}
-            setSubmitContent={setSubmitContent}
-            submitContent={submitContent}
-            submitSuccess={submitSuccess}
+        {submitTarget && (
+          <SubmitDialog
+            assignment={submitTarget}
+            now={now}
+            onClose={() => setSubmitTarget(null)}
+            onSubmit={() => void handleSubmit()}
+            notes={notes}
+            setNotes={setNotes}
             submitting={submitting}
-            uploadedFileName={uploadedFileName}
-            uploadedFileUrl={uploadedFileUrl}
-            onFileSelected={handleFileSelected}
-            onFileClear={handleFileClear}
+            submitted={submitted}
+            rewardXp={rewardXp}
+            error={submitError}
+            fileName={fileName}
+            fileUrl={fileUrl}
             uploadingFile={uploadingFile}
-            submitRewardXp={submitRewardXp}
+            onFileSelected={handleFileSelected}
+            onFileClear={() => {
+              setFileUrl("");
+              setFileName("");
+            }}
           />
-        ) : null}
+        )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {detailsAssignment ? (
-          <DetailsModal
-            assignment={detailsAssignment}
-            onClose={() => setDetailsAssignment(null)}
-          />
-        ) : null}
+        {detailsTarget && <DetailsDialog assignment={detailsTarget} onClose={() => setDetailsTarget(null)} />}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
