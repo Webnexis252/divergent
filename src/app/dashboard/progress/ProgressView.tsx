@@ -59,6 +59,16 @@ const goalIcons: LucideIcon[] = [Clock, NotebookPen, Video, BookOpen];
 
 const WEEK_DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
 
+const DAY_NAMES: Record<string, string> = {
+  SUN: "Sunday",
+  MON: "Monday",
+  TUE: "Tuesday",
+  WED: "Wednesday",
+  THU: "Thursday",
+  FRI: "Friday",
+  SAT: "Saturday",
+};
+
 const displayDateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",
   day: "numeric",
@@ -142,70 +152,52 @@ function formatClassTime(value: string) {
   return classTimeFormatter.format(new Date(value));
 }
 
+// Smallest 1/2/5 × 10ⁿ step that covers `raw`
+function niceStep(raw: number) {
+  for (let magnitude = 1; ; magnitude *= 10) {
+    for (const multiple of [1, 2, 5]) {
+      if (multiple * magnitude >= raw) return multiple * magnitude;
+    }
+  }
+}
+
 function buildChartModel(chartData: ProgressData["chartData"]) {
-  const data =
-    chartData.length > 0
-      ? chartData
-      : WEEK_DAYS.map((day) => ({
-          day,
-          value: 0,
-        }));
+  const hasData = chartData.length > 0;
+  const data = hasData
+    ? chartData
+    : WEEK_DAYS.map((day) => ({
+        day,
+        value: 0,
+      }));
 
-  const width = 640;
-  const height = 240;
-  const paddingX = 26;
-  const paddingY = 18;
-  const baselineY = height - paddingY;
-  const usableHeight = height - paddingY * 2;
-  const maxValue = Math.max(...data.map((point) => point.value), 1);
-  const stepX = data.length > 1 ? (width - paddingX * 2) / (data.length - 1) : 0;
+  // Whole-number ticks on a scale of at least 4, so one lesson doesn't fill the plot
+  const maxValue = Math.max(...data.map((point) => point.value), 0);
+  const scaleMax = Math.max(maxValue, 4);
+  const step = niceStep(scaleMax / 4);
+  const top = Math.ceil(scaleMax / step) * step;
+  const ticks = Array.from({ length: top / step + 1 }, (_, index) => index * step);
 
-  const points = data.map((point, index) => {
-    const x = paddingX + stepX * index;
-    const ratio = point.value / maxValue;
-    const y = baselineY - ratio * usableHeight;
-
-    return {
-      ...point,
-      x,
-      y,
-    };
-  });
-
-  const linePath = points
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
-    .join(" ");
-
-  const firstPoint = points[0];
-  const lastPoint = points[points.length - 1];
-  const areaPath = `${linePath} L ${lastPoint.x} ${baselineY} L ${firstPoint.x} ${baselineY} Z`;
-  const total = data.reduce((sum, point) => sum + point.value, 0);
-  const bestPoint = data.reduce(
-    (best, point) => (point.value > best.value ? point : best),
-    data[0],
-  );
-  const ticks = Array.from({ length: 4 }, (_, index) => {
-    const value = Math.round((maxValue / 3) * (3 - index));
-    const y = paddingY + ((usableHeight / 3) * index);
-
-    return {
-      id: `tick-${index}`,
-      value,
-      y,
-    };
-  });
+  const bestIndex = maxValue > 0 ? data.findIndex((point) => point.value === maxValue) : -1;
 
   return {
-    areaPath,
-    baselineY,
-    bestPoint,
-    linePath,
-    points,
+    bars: data.map((point, index) => ({
+      ...point,
+      name: DAY_NAMES[point.day] ?? point.day,
+      percent: (point.value / top) * 100,
+      // The server orders the days oldest first, ending with today
+      isToday: hasData && index === data.length - 1,
+      isBest: index === bestIndex,
+    })),
     ticks,
-    total,
-    width,
-    height,
+    top,
+    total: data.reduce((sum, point) => sum + point.value, 0),
+    activeDays: data.filter((point) => point.value > 0).length,
+    bestIndex,
   };
+}
+
+function formatLessons(count: number) {
+  return `${count} ${count === 1 ? "lesson" : "lessons"}`;
 }
 
 function getToneMeta(tone: TopicMastery["tone"]) {
@@ -635,6 +627,8 @@ function PerformanceChart({
   chartData: ProgressData["chartData"];
 }) {
   const model = buildChartModel(chartData);
+  const best = model.bestIndex >= 0 ? model.bars[model.bestIndex] : null;
+  const lastIndex = model.bars.length - 1;
 
   return (
     <RevealSection delay={0.1}>
@@ -650,82 +644,141 @@ function PerformanceChart({
 
         <Surface className="mt-4 px-5 py-5 sm:px-6 sm:py-6" tone="muted">
           <div className="grid gap-3 md:grid-cols-3">
-            <PerformanceStat label="Weekly total" value={String(model.total)} />
-            <PerformanceStat label="Best day" value={model.bestPoint.day} />
+            <PerformanceStat label="Weekly total" value={formatLessons(model.total)} />
             <PerformanceStat
-              label="Peak completions"
-              value={String(model.bestPoint.value)}
+              label="Best day"
+              value={best ? (best.isToday ? "Today" : best.name) : "—"}
+            />
+            <PerformanceStat
+              label="Active days"
+              value={`${model.activeDays} of ${model.bars.length}`}
             />
           </div>
 
-          <div className="mt-6 rounded-[24px] bg-white px-4 py-5 shadow-[0_8px_20px_rgba(15,23,42,0.05)] sm:px-6">
-            <div className="grid grid-cols-[32px_minmax(0,1fr)] gap-3">
-                <div className="relative h-[240px] text-[11px] font-medium text-[#98a2b3]">
-                  {model.ticks.map((tick) => (
-                    <span
-                      key={tick.id}
-                      className="absolute left-0 -translate-y-1/2"
-                      style={{ top: tick.y }}
-                    >
-                    {tick.value}
+          <figure className="mt-6 rounded-[24px] bg-white px-4 pb-4 pt-8 shadow-[0_8px_20px_rgba(15,23,42,0.05)] sm:px-6">
+            <figcaption className="sr-only">
+              Lessons completed each day over the last 7 days
+            </figcaption>
+
+            <div className="relative h-[220px]">
+              {/* Gridlines, labelled in the left gutter */}
+              {model.ticks.map((tick) => (
+                <div
+                  key={tick}
+                  aria-hidden
+                  className="absolute inset-x-0"
+                  style={{ bottom: `${(tick / model.top) * 100}%` }}
+                >
+                  <span className="absolute left-0 w-6 -translate-y-1/2 text-right text-[11px] font-medium tabular-nums text-[#98a2b3]">
+                    {tick}
                   </span>
-                ))}
-              </div>
+                  <span
+                    className={cx(
+                      "absolute left-9 right-0 border-t",
+                      tick === 0 ? "border-[#e4e7ec]" : "border-[#f0f2f5]",
+                    )}
+                  />
+                </div>
+              ))}
 
-              <div>
-                <div className="relative h-[240px]">
-                  <div className="absolute inset-0 flex flex-col justify-between">
-                    {model.ticks.map((tick) => (
-                      <div
-                        key={`${tick.id}-line`}
-                        className="border-t border-dashed border-[#dbe4ec]"
-                      />
-                    ))}
-                  </div>
-
-                  <svg
-                    className="relative z-10 h-full w-full"
-                    fill="none"
-                    viewBox={`0 0 ${model.width} ${model.height}`}
-                    preserveAspectRatio="none"
+              <ul className="absolute inset-y-0 left-9 right-0 grid grid-cols-7">
+                {model.bars.map((bar, index) => (
+                  <li
+                    key={`${bar.day}-${index}`}
+                    aria-label={`${bar.name}${bar.isToday ? " (today)" : ""}: ${formatLessons(bar.value)}`}
+                    className="group relative flex h-full items-end justify-center rounded-t-[14px] outline-none transition-colors hover:bg-[#38c1ff]/[0.06] focus-visible:bg-[#38c1ff]/[0.06] focus-visible:ring-2 focus-visible:ring-[#38c1ff]/40"
+                    tabIndex={0}
                   >
-                    <defs>
-                      <linearGradient id="progress-chart-fill" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stopColor="#38c1ff" stopOpacity="0.24" />
-                        <stop offset="100%" stopColor="#38c1ff" stopOpacity="0.02" />
-                      </linearGradient>
-                    </defs>
+                    {bar.value > 0 ? (
+                      <motion.div
+                        className={cx(
+                          "w-[56%] max-w-[40px] rounded-t-[8px] transition-colors",
+                          bar.isToday
+                            ? "bg-[#38c1ff]"
+                            : "bg-[#a6e2ff] group-hover:bg-[#38c1ff] group-focus-visible:bg-[#38c1ff]",
+                        )}
+                        initial={{ height: 0 }}
+                        style={{ minHeight: 6 }}
+                        transition={{ delay: index * 0.06, duration: 0.6, ease: "easeOut" }}
+                        viewport={{ once: true }}
+                        whileInView={{ height: `${bar.percent}%` }}
+                      />
+                    ) : (
+                      // Zero reads as a stub on the baseline, not a missing day
+                      <div className="h-[4px] w-[56%] max-w-[40px] rounded-full bg-[#eef1f4]" />
+                    )}
 
-                    <path d={model.areaPath} fill="url(#progress-chart-fill)" />
-                    <motion.path
-                      d={model.linePath}
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      stroke="#34c8ff"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="4"
-                      transition={{ duration: 1.2, ease: "easeInOut" }}
-                      viewport={{ once: true }}
-                      whileInView={{ pathLength: 1, opacity: 1 }}
-                    />
+                    {/* Only the best day carries its value; hovering shows the rest */}
+                    {bar.isBest ? (
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[12px] font-semibold tabular-nums text-[#475467] transition-opacity group-hover:opacity-0 group-focus-visible:opacity-0"
+                        style={{ bottom: `calc(${bar.percent}% + 6px)` }}
+                      >
+                        {bar.value}
+                      </span>
+                    ) : null}
 
-                    {model.points.map((point, index) => (
-                      <g key={`${point.day}-${index}`}>
-                        <circle cx={point.x} cy={point.y} fill="#ffffff" r="8" />
-                        <circle cx={point.x} cy={point.y} fill="#34c8ff" r="4.5" />
-                      </g>
-                    ))}
-                  </svg>
+                    <span
+                      aria-hidden
+                      className={cx(
+                        "pointer-events-none absolute z-10 translate-y-1 whitespace-nowrap rounded-[10px] bg-[#0f172a] px-3 py-1.5 opacity-0 shadow-[0_8px_20px_rgba(15,23,42,0.18)] transition group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100",
+                        // Keep the edge columns' tooltips inside the card
+                        index === 0
+                          ? "left-0"
+                          : index === lastIndex
+                            ? "right-0"
+                            : "left-1/2 -translate-x-1/2",
+                      )}
+                      style={{ bottom: `calc(${bar.value > 0 ? bar.percent : 0}% + 10px)` }}
+                    >
+                      <span className="block text-[13px] font-semibold text-white">
+                        {formatLessons(bar.value)}
+                      </span>
+                      <span className="block text-[11px] text-white/60">
+                        {bar.isToday ? "Today" : bar.name}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              {model.total === 0 ? (
+                <div className="pointer-events-none absolute inset-y-0 left-9 right-0 grid place-items-center">
+                  <div className="rounded-[16px] bg-white/90 px-4 py-3 text-center">
+                    <p className="text-[14px] font-semibold text-[#344054]">
+                      No lessons this week yet
+                    </p>
+                    <p className="mt-1 text-[13px] text-[#98a2b3]">
+                      Finish one and it shows up here.
+                    </p>
+                  </div>
                 </div>
-
-                <div className="mt-3 grid grid-cols-7 gap-2 text-center text-[11px] font-semibold tracking-[0.12em] text-[#98a2b3]">
-                  {model.points.map((point) => (
-                    <span key={point.day}>{point.day}</span>
-                  ))}
-                </div>
-              </div>
+              ) : null}
             </div>
-          </div>
+
+            <div
+              aria-hidden
+              className="mt-3 ml-9 grid grid-cols-7 text-center text-[11px] font-semibold tracking-[0.12em]"
+            >
+              {model.bars.map((bar, index) => (
+                <span
+                  key={`${bar.day}-${index}`}
+                  className={bar.isToday ? "text-[#0f172a]" : "text-[#98a2b3]"}
+                >
+                  {bar.isToday ? (
+                    <>
+                      {/* "TODAY" doesn't fit a phone-width column */}
+                      <span className="sm:hidden">{bar.day}</span>
+                      <span className="hidden sm:inline">TODAY</span>
+                    </>
+                  ) : (
+                    bar.day
+                  )}
+                </span>
+              ))}
+            </div>
+          </figure>
         </Surface>
       </section>
     </RevealSection>
@@ -1083,6 +1136,9 @@ export default function ProgressView({
                       <AnimHeading className="text-[28px] font-semibold tracking-[-0.04em] text-black">
                         Weekly Goals
                       </AnimHeading>
+                      <p className="mt-1 text-[14px] text-[#667085]">
+                        Resets every Monday
+                      </p>
 
                       <div className="mt-6 space-y-4">
                         {goals.length === 0 ? (

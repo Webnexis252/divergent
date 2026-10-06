@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
 import { averageCategoryPerformanceBreakdown, type CategoryPerformanceItem } from '@/lib/test-category-performance';
 import { gradeQuestionAnswer } from '@/lib/test-grading';
+import { studyWeek } from '@/lib/study-time';
 
 /**
  * Data behind the student progress page. Shared by GET /api/users/me/progress
@@ -26,6 +27,8 @@ export type StudentProgress = Awaited<ReturnType<typeof getStudentProgress>>;
 export async function getStudentProgress(userId: string) {
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * DAY_MS);
+  // Weekly goals count from Monday 00:00 IST, so they start from zero each week
+  const week = studyWeek(now);
 
   const enrollments = await prisma.enrollment.findMany({
     where: { userId, status: 'ACTIVE' },
@@ -62,11 +65,11 @@ export async function getStudentProgress(userId: string) {
     completedProgressRows,
     recentProgress,
     user,
+    weeklyStudy,
     assignmentsSubmitted,
-    classesAttendedThisWeek,
     upcomingRows,
     pastUnattendedRows,
-    endedClassCount,
+    weeklyLectures,
   ] = await Promise.all([
     allLessonIds.length > 0
       ? prisma.lessonProgress.findMany({
@@ -80,13 +83,14 @@ export async function getStudentProgress(userId: string) {
     }),
     prisma.user.findUnique({
       where: { id: userId },
-      select: { streakCount: true, totalStudyTime: true },
+      select: { streakCount: true },
+    }),
+    prisma.weeklyStudyTime.findUnique({
+      where: { userId_weekStart: { userId, weekStart: week.weekStart } },
+      select: { seconds: true },
     }),
     prisma.assignmentSubmission.count({
-      where: { studentId: userId, submittedAt: { gte: sevenDaysAgo } },
-    }),
-    prisma.attendance.count({
-      where: { userId, joinedAt: { gte: sevenDaysAgo } },
+      where: { studentId: userId, submittedAt: { gte: week.startsAt } },
     }),
     hasCourses
       ? prisma.liveClass.findMany({
@@ -123,7 +127,7 @@ export async function getStudentProgress(userId: string) {
           },
         })
       : [],
-    hasCourses ? countEndedClasses(courseIds, now) : 0,
+    hasCourses ? countWeeklyLectures(userId, courseIds, week.startsAt, now) : { ended: 0, attended: 0 },
   ]);
 
   const completedSet = new Set(completedProgressRows.map((r) => r.lessonId));
@@ -149,12 +153,21 @@ export async function getStudentProgress(userId: string) {
   });
 
   // --- Lesson completions per day (7-day chart) ---
+  // Oldest day first, ending with today. The 7×24h query window reaches into
+  // the morning of an 8th day; those completions are left out rather than
+  // being counted under today's weekday.
   const dayLabels = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
   const completionsByDay = Array(7).fill(0);
   recentProgress.forEach((p) => {
-    completionsByDay[p.updatedAt.getDay()] += 1;
+    const daysAgo = Math.max(0, Math.ceil((startOfToday.getTime() - p.updatedAt.getTime()) / DAY_MS));
+    if (daysAgo <= 6) completionsByDay[6 - daysAgo] += 1;
   });
-  const chartData = dayLabels.map((day, i) => ({ day, value: completionsByDay[i] }));
+  const chartData = completionsByDay.map((value, i) => ({
+    day: dayLabels[(now.getDay() - (6 - i) + 7) % 7],
+    value,
+  }));
 
   // --- Live classes ---
   const upcomingClasses = upcomingRows.map((lc) => ({
@@ -182,12 +195,13 @@ export async function getStudentProgress(userId: string) {
       recordingUrl: lc.recordingUrl,
     }));
 
-  // --- Weekly goals (derived from real activity) ---
-  const studyHoursThisWeek = Math.round((user?.totalStudyTime ?? 0) / 3600);
+  // --- Weekly goals (derived from this week's activity) ---
+  const studySecondsThisWeek = weeklyStudy?.seconds ?? 0;
+  const lessonsCompletedThisWeek = recentProgress.filter((p) => p.updatedAt >= week.startsAt).length;
   const weeklyGoals = [
     {
       title: 'Complete 15 hours of study',
-      percent: Math.min(100, Math.round((studyHoursThisWeek / 15) * 100)),
+      percent: Math.min(100, Math.round((studySecondsThisWeek / (15 * 3600)) * 100)),
       color: '#62c6ff',
     },
     {
@@ -198,12 +212,12 @@ export async function getStudentProgress(userId: string) {
     {
       title: 'Attend all lectures',
       percent:
-        endedClassCount > 0 ? Math.min(100, Math.round((classesAttendedThisWeek / endedClassCount) * 100)) : 0,
+        weeklyLectures.ended > 0 ? Math.round((weeklyLectures.attended / weeklyLectures.ended) * 100) : 0,
       color: '#ff6b62',
     },
     {
       title: 'Review course materials',
-      percent: Math.min(100, Math.round((recentProgress.length / 10) * 100)),
+      percent: Math.min(100, Math.round((lessonsCompletedThisWeek / 10) * 100)),
       color: '#6271ff',
     },
   ];
@@ -229,21 +243,34 @@ export async function getStudentProgress(userId: string) {
     upcomingClasses,
     missedClasses,
     weeklyGoals,
-    weeklyStudyHours: studyHoursThisWeek,
+    // One decimal, so the first half hour of the week doesn't read as 0h
+    weeklyStudyHours: Math.round(studySecondsThisWeek / 360) / 10,
     streakCount: user?.streakCount ?? 0,
     topicMastery,
   };
 }
 
 /** Classes in these courses whose end time (start + duration) has passed. */
-async function countEndedClasses(courseIds: string[], now: Date): Promise<number> {
-  const [{ count }] = await prisma.$queryRaw<Array<{ count: number }>>`
-    SELECT COUNT(*)::int AS count
-    FROM "LiveClass"
-    WHERE "courseId" = ANY(${courseIds})
-      AND "startTime" + make_interval(mins => "duration") < ${now}
+/**
+ * This week's live classes in the student's courses that have already ended,
+ * and how many of them the student attended long enough to count.
+ */
+async function countWeeklyLectures(
+  userId: string,
+  courseIds: string[],
+  weekStartsAt: Date,
+  now: Date,
+): Promise<{ ended: number; attended: number }> {
+  const [counts] = await prisma.$queryRaw<Array<{ ended: number; attended: number }>>`
+    SELECT COUNT(*)::int AS ended, COUNT(a.id)::int AS attended
+    FROM "LiveClass" lc
+    LEFT JOIN "Attendance" a
+      ON a."liveClassId" = lc.id AND a."userId" = ${userId} AND a."isCounted"
+    WHERE lc."courseId" = ANY(${courseIds})
+      AND lc."startTime" >= ${weekStartsAt}
+      AND lc."startTime" + make_interval(mins => lc."duration") < ${now}
   `;
-  return count;
+  return counts;
 }
 
 /**

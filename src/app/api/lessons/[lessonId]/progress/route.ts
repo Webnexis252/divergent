@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { UpdateLessonProgressSchema } from '@/lib/validators';
+import { addStudyTime } from '@/lib/study-time';
 import { apiSuccess, apiError, apiUnauthorized, apiServerError } from '@/lib/api-response';
 
 type Params = { params: Promise<{ lessonId: string }> };
@@ -108,12 +109,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       },
     });
 
-    // Also update global study time
+    // Also update the student's lifetime and weekly study time
     if (watchTimeAdded && watchTimeAdded > 0) {
-      await prisma.user.update({
-        where: { id: user.userId },
-        data: { totalStudyTime: { increment: watchTimeAdded } },
-      });
+      await addStudyTime(prisma, user.userId, watchTimeAdded);
     }
 
     return apiSuccess(
