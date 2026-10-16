@@ -6,6 +6,10 @@ import { AUTH_COOKIE_NAME, JwtPayload, verifyTokenValue } from './auth';
 /**
  * Reads the auth token from cookies during page rendering and enforces RBAC
  * using the same JWT payload shape as API routes.
+ *
+ * Unlike requireAuth for API routes, roles match exactly: SUPER_ADMIN is not
+ * let into pages listed for other roles, because each dashboard page is built
+ * for one role's data (a student dashboard has nothing to show a super admin).
  */
 export async function getPageAuth(
   allowedRoles?: UserRole[],

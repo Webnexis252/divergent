@@ -24,7 +24,8 @@ function isValidPhone(phone: string): boolean {
  * Generates a cryptographically secure 6-digit OTP string.
  */
 function generateOtp(): string {
-  return String(randomInt(100000, 999999));
+  // The upper bound is exclusive, so 1000000 makes 999999 possible too
+  return String(randomInt(100000, 1000000));
 }
 
 /**

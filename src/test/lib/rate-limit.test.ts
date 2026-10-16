@@ -70,4 +70,14 @@ describe('checkRateLimit', () => {
     expect(result.limit).toBe(10);
     expect(result.resetAt).toBeGreaterThan(Date.now());
   });
+
+  it('keeps separate counts for differently named limiters', async () => {
+    const req = makeReq('10.0.0.120');
+    const busy = { name: 'busy', limit: 1, windowMs: 60_000 };
+    const quiet = { name: 'quiet', limit: 1, windowMs: 60_000 };
+
+    await checkRateLimit(req, busy);
+    expect((await checkRateLimit(req, busy)).success).toBe(false);
+    expect((await checkRateLimit(req, quiet)).success).toBe(true);
+  });
 });

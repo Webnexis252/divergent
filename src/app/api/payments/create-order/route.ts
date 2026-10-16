@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/api-response";
 import { ensureActiveEnrollmentWithXp } from "@/lib/xp";
-import { releaseCouponUse, reserveCouponUse } from "@/lib/coupons";
+import { evaluateCoupon, releaseCouponUse, reserveCouponUse } from "@/lib/coupons";
 
 export async function POST(req: NextRequest) {
   // Guard: Catch missing Cashfree credentials early and return a clear,
@@ -108,77 +108,30 @@ export async function POST(req: NextRequest) {
     let appliedCouponCode = null;
 
     if (couponCode && !isBypassed) {
-      // Don't allow coupon if it's an installment > 0
-      if (typeof installmentIndex === "number" && installmentIndex > 0) {
-        return apiError("Coupons cannot be applied to subsequent installments", 400);
-      }
-
-      const coupon = await prisma.coupon.findUnique({
-        where: { code: couponCode.toUpperCase() },
+      if (typeof couponCode !== "string") return apiError("Invalid coupon code", 400);
+      // Same rules as the coupon preview: dates, usage limits, which courses it's
+      // for, first-time / renewing buyers, the percentage cap
+      const check = await evaluateCoupon(couponCode, {
+        userId: auth.userId,
+        amount: orderAmount,
+        targetId: courseId ?? bundleId,
+        installmentIndex,
       });
+      if (!check.ok) return apiError(check.error, check.status);
 
-      if (coupon && coupon.isActive && (!coupon.validUntil || new Date(coupon.validUntil) >= new Date()) && (!coupon.startDate || new Date(coupon.startDate) <= new Date()) && coupon.usedCount < coupon.maxUses) {
-        if (coupon.minPurchase && orderAmount < coupon.minPurchase) {
-          return apiError(`Minimum purchase amount for this coupon is ${coupon.minPurchase}`, 400);
-        }
+      appliedCouponDiscount = check.discount;
+      orderAmount = check.finalAmount;
+      appliedCouponCode = check.code;
 
-        // @ts-ignore
-        if (coupon.targetUsers === "FIRST_TIME" || coupon.targetUsers === "RENEWING") {
-          const successfulPaymentsCount = await prisma.payment.count({
-            where: {
-              userId: auth.userId,
-              status: "SUCCESS"
-            }
-          });
-          
-          // @ts-ignore
-          if (coupon.targetUsers === "FIRST_TIME" && successfulPaymentsCount > 0) {
-            return apiError("This coupon is only valid for first-time purchasers.", 400);
-          }
-          // @ts-ignore
-          if (coupon.targetUsers === "RENEWING" && successfulPaymentsCount === 0) {
-            return apiError("This coupon is only valid for renewing users (users with prior purchases).", 400);
-          }
-        }
-
-        if (coupon.limitPerLearner) {
-          const userUsageCount = await prisma.payment.count({
-            where: {
-              userId: auth.userId,
-              couponCode: coupon.code,
-              status: 'SUCCESS'
-            }
-          });
-          if (userUsageCount >= coupon.limitPerLearner) {
-            return apiError(`You have already reached the usage limit for this coupon (${coupon.limitPerLearner})`, 400);
-          }
-        }
-
-        if (coupon.discountType === "PERCENTAGE") {
-          appliedCouponDiscount = Number(((orderAmount * coupon.discountValue) / 100).toFixed(2));
-          const maxDiscount = (coupon as any).maxDiscount;
-          if (maxDiscount != null && appliedCouponDiscount > maxDiscount) {
-            appliedCouponDiscount = Number(maxDiscount);
-          }
-        } else {
-          appliedCouponDiscount = Number(coupon.discountValue);
-        }
-
-        orderAmount = Math.max(0, orderAmount - appliedCouponDiscount);
-        appliedCouponCode = coupon.code;
-
-        // Claim the use atomically: the usedCount check above can race with
-        // another buyer taking the last use at the same moment.
-        if (!(await reserveCouponUse(coupon.code))) {
-          return apiError("Invalid, expired, or fully used coupon code", 400);
-        }
-        reservedCouponCode = coupon.code;
-        
-        if (orderAmount === 0) {
-          isBypassed = true;
-        }
-      } else {
+      // Claim the use atomically: the usedCount check above can race with
+      // another buyer taking the last use at the same moment.
+      if (!(await reserveCouponUse(check.code))) {
         return apiError("Invalid, expired, or fully used coupon code", 400);
+      }
+      reservedCouponCode = check.code;
+
+      if (orderAmount === 0) {
+        isBypassed = true;
       }
     }
 

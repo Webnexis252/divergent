@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { canManageCourse } from '@/lib/course-access';
 import { CreateTestQuestionSchema, UpdateTestQuestionSchema } from '@/lib/validators';
 import { reindexQuestionsBySection } from '@/lib/test-question-sections';
 import { batchUpdateOrders } from '@/lib/batch-update-orders';
@@ -25,6 +26,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { courseId, testId, questionId } = await params;
     const user = await requireAuth(req, ['ADMIN', 'MENTOR']);
     if (!user) return apiForbidden('Only admins/mentors can edit questions');
+    if (!(await canManageCourse(user, courseId))) {
+      return apiForbidden('You can only edit questions in courses you teach');
+    }
 
     // Verify the question belongs to this test and course
     const question = await prisma.testQuestion.findFirst({
@@ -76,6 +80,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const { courseId, testId, questionId } = await params;
     const user = await requireAuth(req, ['ADMIN', 'MENTOR']);
     if (!user) return apiForbidden('Only admins/mentors can delete questions');
+    if (!(await canManageCourse(user, courseId))) {
+      return apiForbidden('You can only delete questions in courses you teach');
+    }
 
     const question = await prisma.testQuestion.findFirst({
       where: { id: questionId, testId, test: { courseId } },

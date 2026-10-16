@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { shouldRetryQuery } from '@/lib/db-retry';
 
 /**
  * Prisma client singleton with connection-pool tuning for Vercel serverless.
@@ -9,10 +10,12 @@ import { PrismaClient, Prisma } from '@prisma/client';
  *    while staying well within Supabase's per-client PgBouncer limits
  *  - pool_timeout=20 prevents queries from hanging when pool is briefly full
  *
- * Retry strategy:
- *  - Covers all known Supabase/PgBouncer transient error codes:
+ * Retry strategy (see db-retry.ts):
+ *  - Reads retry on every known Supabase/PgBouncer transient error:
  *    P1001 (can't reach server), P1017 (server closed connection),
  *    P2024 (pool timeout), ECONNRESET, ECONNREFUSED, socket hang up
+ *  - Writes retry only when the query never reached Postgres, so a write
+ *    that committed before its connection dropped is never run twice
  *  - 3 retries with exponential backoff (1s, 2s, 4s)
  */
 
@@ -44,44 +47,6 @@ function buildDatabaseUrl(): string {
   }
 }
 
-/**
- * Determines if a Prisma error is a transient connection/pool error that
- * is safe to retry. Covers all known Supabase PgBouncer failure modes.
- */
-function isTransientDbError(error: unknown): boolean {
-  if (error instanceof Prisma.PrismaClientInitializationError) {
-    return true;
-  }
-
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    // P1001: Can't reach database server
-    // P1017: Server has closed the connection
-    // P2024: Timed out fetching a new connection from the connection pool
-    return ['P1001', 'P1017', 'P2024'].includes(error.code);
-  }
-
-  if (error instanceof Error) {
-    const msg = error.message.toLowerCase();
-    return (
-      msg.includes("can't reach database server") ||
-      msg.includes("server has closed the connection") ||
-      msg.includes("connection pool timed out") ||
-      msg.includes("timed out fetching") ||
-      msg.includes("econnreset") ||
-      msg.includes("econnrefused") ||
-      msg.includes("socket hang up") ||
-      msg.includes("connection terminated") ||
-      msg.includes("connection reset") ||
-      msg.includes("ssl connection has been closed") ||
-      msg.includes("remaining connection slots are reserved") ||
-      msg.includes("too many connections") ||
-      msg.includes("connection refused")
-    );
-  }
-
-  return false;
-}
-
 const prismaClientSingleton = () => {
   const log: Prisma.LogDefinition[] =
     process.env.NODE_ENV === 'development'
@@ -101,7 +66,7 @@ const prismaClientSingleton = () => {
     },
   });
 
-  // Add robust retry mechanism for all transient connection errors.
+  // Retry transient connection errors (writes only when they can't have run).
   // Uses exponential backoff: 1s, 2s, 4s between attempts.
   return client.$extends({
     query: {
@@ -116,7 +81,7 @@ const prismaClientSingleton = () => {
             } catch (error: unknown) {
               lastError = error;
 
-              if (isTransientDbError(error) && attempt < MAX_RETRIES) {
+              if (shouldRetryQuery(operation, error) && attempt < MAX_RETRIES) {
                 const delayMs = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
                 const errorMsg = error instanceof Error ? error.message : String(error);
                 const errorCode = error instanceof Prisma.PrismaClientKnownRequestError

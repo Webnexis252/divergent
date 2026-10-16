@@ -1,9 +1,12 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { courseRelation } from '@/lib/course-access';
+import { attemptQuestionIds, lockTestAttempts, questionOrderForNewAttempt } from '@/lib/test-attempts';
 import {
   apiCreated,
   apiError,
+  apiForbidden,
   apiNotFound,
   apiUnauthorized,
   apiServerError,
@@ -11,8 +14,13 @@ import {
 
 /**
  * POST /api/courses/[courseId]/tests/[testId]/start
- * Authenticated student: Start a test attempt.
- * Creates a TestAttempt, shuffles questions if configured, returns questions (without answers).
+ * Starts (or resumes) a test attempt for a student enrolled in the course, or
+ * for the course's teachers and admins. Creates a TestAttempt, shuffles
+ * questions if configured, returns questions (without answers).
+ *
+ * Checking for an unfinished attempt, counting used attempts and creating the
+ * new one are serialised per student and test, so double-clicking Start can't
+ * create two attempts or get past `maxAttempts`.
  */
 export async function POST(
   req: NextRequest,
@@ -23,17 +31,16 @@ export async function POST(
     const user = await requireAuth(req);
     if (!user) return apiUnauthorized();
 
-    const isPrivileged =
-      user.role === 'ADMIN' ||
-      user.role === 'SUPER_ADMIN' ||
-      user.role === 'MENTOR';
+    const relation = await courseRelation(user, courseId);
+    if (relation === 'none') return apiForbidden('Enroll in this course to take its tests');
+    const isManager = relation === 'manager';
 
     // Fetch the test with its questions
     const test = await prisma.courseTest.findFirst({
-      where: { 
-        id: testId, 
-        courseId, 
-        ...(isPrivileged ? {} : { status: 'PUBLISHED' }) 
+      where: {
+        id: testId,
+        courseId,
+        ...(isManager ? {} : { status: 'PUBLISHED' as const }),
       },
       include: {
         questions: { orderBy: { order: 'asc' } },
@@ -44,7 +51,7 @@ export async function POST(
 
     // Check availability window for students
     const now = new Date();
-    if (!isPrivileged) {
+    if (!isManager) {
       if (test.availableFrom && now < test.availableFrom) {
         return apiError('This test is not yet available', 403);
       }
@@ -53,117 +60,82 @@ export async function POST(
       }
     }
 
-    // Check max attempts
-    if (test.maxAttempts !== -1) {
-      const attemptCount = await prisma.testAttempt.count({
-        where: { testId, userId: user.userId, submittedAt: { not: null } },
+    const outcome = await prisma.$transaction(async (tx) => {
+      await lockTestAttempts(tx, user.userId, testId);
+
+      // Resume an attempt that was started but not submitted
+      const inProgress = await tx.testAttempt.findFirst({
+        where: { testId, userId: user.userId, submittedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, startedAt: true, questionOrder: true },
       });
-      if (attemptCount >= test.maxAttempts) {
-        return apiError(
-          `Maximum attempts reached (${test.maxAttempts}). You cannot retake this test.`,
-          403
-        );
+      if (inProgress) return { kind: 'resumed' as const, attempt: inProgress };
+
+      if (test.maxAttempts !== -1) {
+        const used = await tx.testAttempt.count({
+          where: { testId, userId: user.userId, submittedAt: { not: null } },
+        });
+        if (used >= test.maxAttempts) return { kind: 'limit' as const };
       }
-    }
 
-    // Check for an in-progress attempt (started but not submitted)
-    const inProgress = await prisma.testAttempt.findFirst({
-      where: { testId, userId: user.userId, submittedAt: null },
-      select: { id: true, startedAt: true, questionOrder: true },
-    });
-
-    if (inProgress) {
-      // Resume existing attempt — return the same question order
-      const questionOrder = (inProgress.questionOrder as string[]) || test.questions.map((q) => q.id);
-      const orderedQuestions = questionOrder
-        .map((qId) => test.questions.find((q) => q.id === qId))
-        .filter(Boolean)
-        .map((q) => ({
-          id: q!.id,
-          type: q!.type,
-          category: q!.category,
-          prompt: q!.prompt,
-          options: q!.options,
-          imageUrl: q!.imageUrl,
-          points: q!.points,
-          order: q!.order,
-        }));
-
-      // Calculate remaining time
-      const elapsed = Math.floor((now.getTime() - inProgress.startedAt.getTime()) / 1000);
-      const remainingSecs = Math.max(0, test.durationMins * 60 - elapsed);
-
-      return apiCreated({
-        attemptId: inProgress.id,
-        resumed: true,
-        test: {
-          id: test.id,
-          title: test.title,
-          description: test.description,
-          durationMins: test.durationMins,
-          remainingSecs,
-          totalQuestions: orderedQuestions.length,
-          parts: test.parts,
+      const questionIds = questionOrderForNewAttempt(
+        { shuffleQuestions: test.shuffleQuestions, questionsToShow: test.questionsToShow, hasParts: test.parts.length > 0 },
+        test.questions,
+      );
+      const attempt = await tx.testAttempt.create({
+        data: {
+          testId,
+          userId: user.userId,
+          score: 0,
+          isPassed: false,
+          answers: {},
+          questionOrder: questionIds,
+          totalPoints: test.questions
+            .filter((q) => questionIds.includes(q.id))
+            .reduce((sum, q) => sum + q.points, 0),
         },
-        questions: orderedQuestions,
+        select: { id: true, startedAt: true, questionOrder: true },
       });
-    }
-
-    // Build question order (shuffle if configured, limit if configured)
-    let questionsPool = test.questions.slice();
-    if (test.shuffleQuestions) {
-      questionsPool = shuffleArray(questionsPool);
-    }
-    
-    // Group by type: SCQ -> MCQ -> NUMERIC -> SKETCH
-    const typeOrder = { 'SCQ': 1, 'MCQ': 2, 'NUMERIC': 3, 'SKETCH': 4 };
-    questionsPool.sort((a, b) => typeOrder[a.type as keyof typeof typeOrder] - typeOrder[b.type as keyof typeof typeOrder]);
-
-    let questionIds = questionsPool.map((q) => q.id);
-    if (test.questionsToShow && test.questionsToShow < questionIds.length) {
-      // Apply limit per type if possible, or just slice. We'll just slice for now.
-      questionIds = questionIds.slice(0, test.questionsToShow);
-    }
-
-    // Create the attempt
-    const attempt = await prisma.testAttempt.create({
-      data: {
-        testId,
-        userId: user.userId,
-        score: 0,
-        isPassed: false,
-        answers: {},
-        questionOrder: questionIds,
-        totalPoints: test.questions
-          .filter((q) => questionIds.includes(q.id))
-          .reduce((sum, q) => sum + q.points, 0),
-      },
+      return { kind: 'created' as const, attempt };
     });
 
-    // Return sanitized questions (no correctAnswer or explanation)
-    const orderedQuestions = questionIds
+    if (outcome.kind === 'limit') {
+      return apiError(
+        `Maximum attempts reached (${test.maxAttempts}). You cannot retake this test.`,
+        403
+      );
+    }
+
+    // Return sanitized questions (no correctAnswer or explanation), in the attempt's order
+    const questionOrder = attemptQuestionIds(outcome.attempt.questionOrder) ?? test.questions.map((q) => q.id);
+    const orderedQuestions = questionOrder
       .map((qId) => test.questions.find((q) => q.id === qId))
-      .filter(Boolean)
+      .filter((q): q is (typeof test.questions)[number] => Boolean(q))
       .map((q) => ({
-        id: q!.id,
-        type: q!.type,
-        category: q!.category,
-        prompt: q!.prompt,
-        options: q!.options,
-        imageUrl: q!.imageUrl,
-        points: q!.points,
-        order: q!.order,
+        id: q.id,
+        type: q.type,
+        category: q.category,
+        prompt: q.prompt,
+        options: q.options,
+        imageUrl: q.imageUrl,
+        points: q.points,
+        order: q.order,
       }));
 
+    // Calculate remaining time
+    const totalSecs = test.durationMins * 60;
+    const elapsed = Math.max(0, Math.floor((now.getTime() - outcome.attempt.startedAt.getTime()) / 1000));
+    const remainingSecs = Math.max(0, totalSecs - elapsed);
+
     return apiCreated({
-      attemptId: attempt.id,
-      resumed: false,
+      attemptId: outcome.attempt.id,
+      resumed: outcome.kind === 'resumed',
       test: {
         id: test.id,
         title: test.title,
         description: test.description,
         durationMins: test.durationMins,
-        remainingSecs: test.durationMins * 60,
+        remainingSecs,
         totalQuestions: orderedQuestions.length,
         parts: test.parts,
       },
@@ -173,14 +145,4 @@ export async function POST(
     console.error('[START_TEST_ERROR]', err);
     return apiServerError();
   }
-}
-
-/** Fisher-Yates shuffle */
-function shuffleArray<T>(array: T[]): T[] {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
 }

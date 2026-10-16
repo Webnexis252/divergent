@@ -1,7 +1,27 @@
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { checkCoupon, type CouponCheck } from '@/lib/coupon-pricing';
 
 type Client = Prisma.TransactionClient | typeof prisma;
+
+/**
+ * Looks up a coupon code and checks it against this buyer and order with the
+ * shared rules in coupon-pricing.ts. Used by the coupon preview and by both
+ * checkouts, so what the student is shown is what they're charged.
+ */
+export async function evaluateCoupon(
+  code: string,
+  order: { userId: string; amount: number; targetId: string; installmentIndex?: number | null },
+): Promise<CouponCheck> {
+  const coupon = await prisma.coupon.findUnique({ where: { code: code.trim().toUpperCase() } });
+  if (!coupon) return checkCoupon(null, { ...order, successfulPayments: 0, usesByBuyer: 0 });
+
+  const [successfulPayments, usesByBuyer] = await Promise.all([
+    prisma.payment.count({ where: { userId: order.userId, status: 'SUCCESS' } }),
+    prisma.payment.count({ where: { userId: order.userId, couponCode: coupon.code, status: 'SUCCESS' } }),
+  ]);
+  return checkCoupon(coupon, { ...order, successfulPayments, usesByBuyer });
+}
 
 /**
  * Claims one use of a coupon in a single conditional UPDATE, so two buyers

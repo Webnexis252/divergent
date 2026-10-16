@@ -25,6 +25,11 @@ export interface RateLimitOptions {
   limit: number;
   /** Time window in milliseconds. */
   windowMs: number;
+  /**
+   * Which counter the request uses. Limiters with different names never share
+   * a count, even with the same numbers; defaults to "<limit>:<windowMs>".
+   */
+  name?: string;
 }
 
 export interface RateLimitResult {
@@ -54,12 +59,17 @@ function getRedis(): Redis {
   return redis;
 }
 
+/** The counter a limiter uses: its name, or its numbers when it has none. */
+function bucketName(options: RateLimitOptions): string {
+  return options.name ?? `${options.limit}:${options.windowMs}`;
+}
+
 /**
- * Returns (or creates) a `Ratelimit` instance keyed by the
- * `limit:windowMs` pair so that each preset re-uses the same object.
+ * Returns (or creates) a `Ratelimit` instance per limiter name so that each
+ * preset re-uses the same object and keeps its own counters in Redis.
  */
 function getUpstashLimiter(options: RateLimitOptions): Ratelimit {
-  const key = `${options.limit}:${options.windowMs}`;
+  const key = bucketName(options);
   let limiter = upstashLimiters.get(key);
   if (!limiter) {
     limiter = new Ratelimit({
@@ -69,7 +79,7 @@ function getUpstashLimiter(options: RateLimitOptions): Ratelimit {
         `${options.windowMs}ms` as `${number} ms`,
       ),
       analytics: false,
-      prefix: 'ratelimit',
+      prefix: `ratelimit:${key}`,
     });
     upstashLimiters.set(key, limiter);
   }
@@ -105,7 +115,7 @@ function checkInMemory(
   const windowStart = Math.floor(now / windowMs) * windowMs;
   const resetAt = windowStart + windowMs;
 
-  const key = `${ip}:${windowStart}`;
+  const key = `${bucketName(options)}:${ip}:${windowStart}`;
   const record = memStore.get(key) ?? { count: 0, resetAt };
   record.count += 1;
   memStore.set(key, record);
@@ -153,20 +163,27 @@ export async function checkRateLimit(
 
 // ─── Pre-configured limiters for common use-cases ─────────────────────────────
 
-/** Strict limiter for auth endpoints (login, register, password reset). */
+/**
+ * Strict limiter for auth endpoints (login, register, OTP send and verify,
+ * password reset). They share one budget per IP on purpose, so spreading
+ * guesses across endpoints doesn't multiply them.
+ */
 export const authLimiter: RateLimitOptions = {
+  name: 'auth',
   limit: 10,
   windowMs: 60 * 1000, // 10 requests per minute per IP
 };
 
 /** General API limiter for standard data-fetching endpoints. */
 export const apiLimiter: RateLimitOptions = {
+  name: 'api',
   limit: 120,
   windowMs: 60 * 1000, // 120 requests per minute per IP
 };
 
 /** Strict limiter for payment and sensitive operations. */
 export const sensitiveLimiter: RateLimitOptions = {
+  name: 'sensitive',
   limit: 5,
   windowMs: 60 * 1000, // 5 requests per minute per IP
 };

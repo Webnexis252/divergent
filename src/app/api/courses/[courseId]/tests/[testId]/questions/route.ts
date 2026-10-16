@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { canManageCourse } from '@/lib/course-access';
 import { CreateTestQuestionSchema, type CreateTestQuestionInput } from '@/lib/validators';
 import { reindexQuestionsBySection } from '@/lib/test-question-sections';
 import { batchUpdateOrders } from '@/lib/batch-update-orders';
@@ -25,6 +26,9 @@ export async function POST(
     const { courseId, testId } = await params;
     const user = await requireAuth(req, ['ADMIN', 'MENTOR']);
     if (!user) return apiForbidden('Only admins/mentors can add questions');
+    if (!(await canManageCourse(user, courseId))) {
+      return apiForbidden('You can only add questions to courses you teach');
+    }
 
     // Verify test exists and belongs to this course
     const test = await prisma.courseTest.findFirst({

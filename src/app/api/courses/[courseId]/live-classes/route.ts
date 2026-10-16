@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { canManageCourse, courseRelation } from '@/lib/course-access';
 import { CreateLiveClassSchema } from '@/lib/validators';
 import { assignLiveClassToMentors } from '@/lib/live-class-teacher-assignments';
 import { createDailyRoom } from '@/lib/daily';
@@ -14,6 +15,10 @@ export async function GET(req: NextRequest, { params }: Params) {
     if (!user) return apiUnauthorized();
 
     const { courseId } = await params;
+    // Class times and meeting links are for enrolled students and the course's teachers
+    if ((await courseRelation(user, courseId)) === 'none') {
+      return apiForbidden('Enroll in this course to see its classes');
+    }
 
     const classes = await prisma.liveClass.findMany({
       where: { courseId },
@@ -32,6 +37,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (!user) return apiForbidden('Only admins and mentors can schedule classes');
 
     const { courseId } = await params;
+    if (!(await canManageCourse(user, courseId))) {
+      return apiForbidden('You can only schedule classes for courses you teach');
+    }
     const body = await req.json();
     
     const parsed = CreateLiveClassSchema.safeParse({ ...body, courseId });

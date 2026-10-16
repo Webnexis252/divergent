@@ -10,9 +10,10 @@ import { Flag, Clock, CheckCircle2, ChevronRight, ChevronLeft, Image as ImageIco
 type QuestionStatus = "NOT_VISITED" | "NOT_ANSWERED" | "ANSWERED" | "MARKED_FOR_REVIEW" | "ANSWERED_AND_MARKED";
 
 type Question = {
+  // No correctAnswer or explanation: the page must never send the answer key to the browser
   id: string; type: any; category: any; prompt: string; options: any;
-  correctAnswer: any; imageUrl: string | null; points: number; negativeMarks: number;
-  allowPartialMarking: boolean; explanation: string | null; groupId: string | null;
+  imageUrl: string | null; points: number; negativeMarks: number;
+  allowPartialMarking: boolean; groupId: string | null;
 };
 type Group = { id: string; title: string | null; content: string | null; imageUrl: string | null; questions?: Question[]; };
 type Section = { id: string; title: string; questionType: string; groups: Group[]; questions: Question[]; };
@@ -196,6 +197,24 @@ export function ExamClient({ exam, parts, studentName, studentEmail, studentPhon
   const router = useRouter();
 
   const [phase, setPhase] = useState<"instructions" | "exam">("instructions");
+  const [isStarting, setIsStarting] = useState(false);
+
+  // Registers the attempt on the server before the timer starts: it checks the
+  // attempt limit and records the start time, and resumes an unfinished attempt
+  const handleStart = async () => {
+    if (isStarting) return;
+    setIsStarting(true);
+    try {
+      const res = await fetch(`/api/courses/${exam.courseId}/tests/${exam.id}/start`, { method: "POST" });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) throw new Error(json?.error || "Couldn't start the exam. Please try again.");
+      setPhase("exam");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Couldn't start the exam. Please try again.");
+    } finally {
+      setIsStarting(false);
+    }
+  };
 
   if (!parts || parts.length === 0) {
     return <div className="p-10 text-center">No parts configured for this exam.</div>;
@@ -271,10 +290,10 @@ export function ExamClient({ exam, parts, studentName, studentEmail, studentPhon
         body: JSON.stringify({ answers }),
       });
       const json = await res.json();
-      if (!json.success && !json.data) throw new Error(json.error || "Submission failed");
+      if (!json.success && !json.data) throw new Error(json.error || "Submission failed. Please try again.");
       setResult(json.data);
     } catch (err) {
-      alert("Submission failed. Please try again.");
+      alert(err instanceof Error ? err.message : "Submission failed. Please try again.");
       setIsSubmitting(false);
     }
   };
@@ -286,7 +305,7 @@ export function ExamClient({ exam, parts, studentName, studentEmail, studentPhon
   const progressPct = allSectionQs.length > 0 ? Math.round((answeredCount / allSectionQs.length) * 100) : 0;
 
   if (phase === "instructions") {
-    return <InstructionsPage exam={exam} parts={parts} onStart={() => setPhase("exam")} />;
+    return <InstructionsPage exam={exam} parts={parts} onStart={handleStart} />;
   }
 
   if (result) {

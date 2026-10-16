@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { canManageCourse } from '@/lib/course-access';
 import {
   apiSuccess,
   apiError,
@@ -36,6 +37,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     });
 
     if (!assignment) return apiNotFound('Assignment');
+    if (!(await canManageCourse(user, assignment.courseId))) {
+      return apiForbidden('You can only view submissions for courses you teach');
+    }
 
     return apiSuccess(assignment);
   } catch (err) {
@@ -68,6 +72,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Ensure the submission belongs to this assignment
     const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId } });
     if (!assignment) return apiNotFound('Assignment');
+    if (!(await canManageCourse(user, assignment.courseId))) {
+      return apiForbidden('You can only grade submissions for courses you teach');
+    }
 
     const submission = await prisma.assignmentSubmission.findFirst({
       where: { id: submissionId, assignmentId },

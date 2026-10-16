@@ -1,9 +1,27 @@
 import { requirePageAuth } from "@/lib/page-auth";
 import prisma from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { courseRelation } from "@/lib/course-access";
+import { notFound, redirect } from "next/navigation";
 import { ExamClient } from "./_components/exam-client";
 
 type Params = { params: Promise<{ slug: string; examId: string }> };
+
+// Everything the exam screen needs and nothing it mustn't have: this page's
+// props are serialised into the HTML, so answer keys, explanations and
+// reference images must never be selected here.
+const QUESTION_FIELDS_FOR_STUDENTS = {
+  id: true,
+  type: true,
+  category: true,
+  prompt: true,
+  options: true,
+  imageUrl: true,
+  points: true,
+  negativeMarks: true,
+  allowPartialMarking: true,
+  groupId: true,
+  order: true,
+} as const;
 
 export default async function ExamTakePage({ params }: Params) {
   const auth = await requirePageAuth(["STUDENT", "MENTOR", "ADMIN", "SUPER_ADMIN"]);
@@ -31,7 +49,7 @@ export default async function ExamTakePage({ params }: Params) {
             orderBy: { order: 'asc' },
             include: {
               groups: { orderBy: { order: 'asc' } },
-              questions: { orderBy: { order: 'asc' } },
+              questions: { orderBy: { order: 'asc' }, select: QUESTION_FIELDS_FOR_STUDENTS },
             }
           }
         }
@@ -41,6 +59,18 @@ export default async function ExamTakePage({ params }: Params) {
 
   if (!exam || exam.course.slug !== slug) {
     notFound();
+  }
+
+  // Teachers of this course and admins can preview any test; students need an
+  // enrollment, a published test and the availability window
+  const relation = await courseRelation(auth, exam.courseId);
+  if (relation === "none") redirect(`/dashboard/courses/${slug}`);
+  if (relation === "student") {
+    if (exam.status !== "PUBLISHED") notFound();
+    const now = new Date();
+    const outsideWindow =
+      (exam.availableFrom && now < exam.availableFrom) || (exam.availableUntil && now > exam.availableUntil);
+    if (outsideWindow) redirect(`/dashboard/courses/${slug}`);
   }
 
   // Pass necessary data to the client component

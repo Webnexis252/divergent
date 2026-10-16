@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth, verifyToken } from '@/lib/auth';
+import { canManageCourse } from '@/lib/course-access';
 import { CreateCourseTestSchema } from '@/lib/validators';
 import {
   apiSuccess,
@@ -23,10 +24,8 @@ export async function GET(
   try {
     const { courseId } = await params;
     const auth = await verifyToken(req);
-    const isPrivileged =
-      auth?.role === 'ADMIN' ||
-      auth?.role === 'SUPER_ADMIN' ||
-      auth?.role === 'MENTOR';
+    // Drafts are for this course's teachers and admins, not every teacher
+    const isPrivileged = auth ? await canManageCourse(auth, courseId) : false;
 
     // Verify course exists
     const course = await prisma.course.findUnique({
@@ -81,6 +80,9 @@ export async function POST(
     const { courseId } = await params;
     const user = await requireAuth(req, ['ADMIN', 'MENTOR']);
     if (!user) return apiForbidden('Only admins/mentors can create tests');
+    if (!(await canManageCourse(user, courseId))) {
+      return apiForbidden('You can only add tests to courses you teach');
+    }
 
     const body = await req.json();
     const parsed = CreateCourseTestSchema.safeParse({ ...body, courseId });

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { cronAuthError } from '@/lib/cron-auth';
 import { apiSuccess, apiForbidden, apiServerError } from '@/lib/api-response';
 
 /**
@@ -8,22 +9,17 @@ import { apiSuccess, apiForbidden, apiServerError } from '@/lib/api-response';
  * Deletes DoubtTicket records that have been RESOLVED for more than 24 hours.
  * Should be called by a Vercel Cron job or any scheduler.
  *
- * Protected by CRON_SECRET environment variable.
- * If CRON_SECRET is not set, falls back to checking the Authorization header
- * for a Bearer token.
+ * Protected by `Authorization: Bearer <CRON_SECRET>`, compared in constant
+ * time like the other cron routes. Refuses to run when CRON_SECRET isn't set.
  */
 export async function GET(req: NextRequest) {
   try {
-    // Verify cron secret securely
-    const cronSecret = process.env.CRON_SECRET;
-    if (!cronSecret) {
+    const authError = cronAuthError(req);
+    if (authError === 'not-configured') {
       console.error('[CRON_CLEANUP_DOUBTS] CRON_SECRET is missing in environment variables');
       return apiServerError('Cron job is not configured securely on the server.');
     }
-
-    const authHeader = req.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    if (token !== cronSecret) {
+    if (authError) {
       return apiForbidden('Invalid cron secret');
     }
 

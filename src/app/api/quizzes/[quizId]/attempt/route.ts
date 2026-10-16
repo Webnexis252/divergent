@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { hasStudentAccess } from '@/lib/course-access';
 import { SubmitQuizSchema } from '@/lib/validators';
-import { apiCreated, apiError, apiUnauthorized, apiNotFound, apiServerError } from '@/lib/api-response';
+import { apiCreated, apiError, apiForbidden, apiUnauthorized, apiNotFound, apiServerError } from '@/lib/api-response';
 
 type Params = { params: Promise<{ quizId: string }> };
 
@@ -14,10 +15,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     const { quizId } = await params;
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
-      include: { questions: true },
+      include: { questions: true, lesson: { select: { chapter: { select: { courseId: true } } } } },
     });
-    
+
     if (!quiz) return apiNotFound('Quiz');
+    if (!(await hasStudentAccess(user.userId, quiz.lesson.chapter.courseId))) {
+      return apiForbidden('Enroll in this course to take its quizzes');
+    }
 
     const body = await req.json();
     const parsed = SubmitQuizSchema.safeParse(body);

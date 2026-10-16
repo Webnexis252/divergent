@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { requireAuth, verifyToken } from '@/lib/auth';
+import { canManageCourse } from '@/lib/course-access';
 import { UpdateCourseTestSchema } from '@/lib/validators';
 import {
   apiSuccess,
@@ -21,10 +22,8 @@ export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { courseId, testId } = await params;
     const auth = await verifyToken(req);
-    const isPrivileged =
-      auth?.role === 'ADMIN' ||
-      auth?.role === 'SUPER_ADMIN' ||
-      auth?.role === 'MENTOR';
+    // Questions and answer keys are for this course's teachers and admins, not every teacher
+    const isPrivileged = auth ? await canManageCourse(auth, courseId) : false;
 
     const test = await prisma.courseTest.findFirst({
       where: {
@@ -78,6 +77,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { courseId, testId } = await params;
     const user = await requireAuth(req, ['ADMIN', 'MENTOR']);
     if (!user) return apiForbidden('Only admins/mentors can edit tests');
+    if (!(await canManageCourse(user, courseId))) {
+      return apiForbidden('You can only edit tests in courses you teach');
+    }
 
     const body = await req.json();
     const parsed = UpdateCourseTestSchema.safeParse(body);
