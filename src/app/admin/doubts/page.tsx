@@ -5,7 +5,18 @@ import { m as motion } from "motion/react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
 import { formatRelativeTime } from "@/lib/date-format";
-import { ArrowUpRight } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, CircleCheck, Inbox, MessageSquare, UserCheck } from "lucide-react";
+import { SegmentedControl } from "@/app/dashboard/_components/segmented-control";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  AdminPanel,
+  AdminPanelHeader,
+  StatusBadge,
+  adminButtonSm,
+  adminRowClass,
+} from "../_components/admin-ui";
+import type { StatusTone } from "../_components/admin-ui";
 
 type Doubt = {
   id: string;
@@ -20,18 +31,24 @@ type Doubt = {
   attachmentUrl?: string | null;
 };
 
-const priorityBadge = {
-  LOW: "bg-[#eefcf3] text-[#15803d]",
-  MEDIUM: "bg-[#fff7df] text-[#b45309]",
-  HIGH: "bg-[#fff1f2] text-[#dc2626]",
+const priorityTone: Record<string, StatusTone> = {
+  LOW: "good",
+  MEDIUM: "warning",
+  HIGH: "critical",
 };
 
-const statusBadge = {
-  OPEN: "bg-[#eff6ff] text-[#1d4ed8]",
-  ASSIGNED: "bg-[#fdf4ff] text-[#7c3aed]",
-  RESOLVED: "bg-[#f0fdf4] text-[#15803d]",
-  CLOSED: "bg-[#f1f5f9] text-[#64748b]",
+const statusTone: Record<string, StatusTone> = {
+  OPEN: "info",
+  ASSIGNED: "violet",
+  RESOLVED: "good",
+  CLOSED: "neutral",
 };
+
+function titleCase(value: string) {
+  return value.charAt(0) + value.slice(1).toLowerCase();
+}
+
+const FILTERS = ["ALL", "OPEN", "ASSIGNED", "RESOLVED", "CLOSED"] as const;
 
 export default function AdminDoubtsPage() {
   const [doubts, setDoubts] = useState<Doubt[]>([]);
@@ -99,133 +116,120 @@ export default function AdminDoubtsPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
-        {/* Hero */}
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
-          <section className="relative overflow-hidden rounded-[34px] bg-gradient-to-r from-[#dc2626] via-[#ef4444] to-[#f97316] px-8 py-10 text-white shadow-[0_24px_60px_rgba(220,38,38,0.25)]">
-            <motion.div
-              className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl"
-              animate={{ scale: [1, 1.3, 1] }}
-              transition={{ duration: 4, repeat: Infinity }}
-            />
-            <div className="relative z-10">
-              <div className="inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em]">
-                Support Queue
-              </div>
-              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em]">Doubt Management</h1>
-              <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/85">
-                All student doubt tickets across the platform. {high > 0 && <span className="font-bold text-[#fde68a]">{high} high-priority tickets need attention.</span>}
-              </p>
-            </div>
-          </section>
+          <AdminPageHeader
+            eyebrow="Support queue"
+            icon={MessageSquare}
+            title="Doubt management"
+            description="Every student doubt ticket across the platform: assign mentors, resolve and close."
+            actions={
+              !loading && high > 0 ? (
+                <StatusBadge tone="critical" icon={AlertTriangle} className="px-3 py-1.5 text-[12px]">
+                  {high} high-priority open
+                </StatusBadge>
+              ) : null
+            }
+          />
         </RevealSection>
 
-        {/* Stats */}
-        <StaggerGrid className="grid grid-cols-2 gap-6 md:grid-cols-4">
-          <AdminStatCard index={0} title="Open" value={loading ? "…" : open} caption="Awaiting assignment." tone="amber" />
-          <AdminStatCard index={1} title="Assigned" value={loading ? "…" : assigned} caption="In progress with mentor." tone="sky" />
-          <AdminStatCard index={2} title="Resolved" value={loading ? "…" : resolved} caption="Completed or closed." tone="emerald" />
-          <AdminStatCard index={3} title="High Priority" value={loading ? "…" : high} caption="Urgent open tickets." tone="slate" />
+        <StaggerGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <AdminStatCard index={0} title="Open" value={loading ? "…" : open} caption="Awaiting assignment." icon={<Inbox />} tone="amber" />
+          <AdminStatCard index={1} title="Assigned" value={loading ? "…" : assigned} caption="In progress with a mentor." icon={<UserCheck />} tone="sky" />
+          <AdminStatCard index={2} title="Resolved" value={loading ? "…" : resolved} caption="Completed or closed." icon={<CircleCheck />} tone="emerald" />
+          <AdminStatCard index={3} title="High priority" value={loading ? "…" : high} caption="Urgent open tickets." icon={<AlertTriangle />} tone="rose" />
         </StaggerGrid>
 
-        {/* Filter tabs + table */}
         <RevealSection>
-          <section className="rounded-[28px] border border-white/70 bg-white/95 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-            <div className="flex items-center justify-between gap-4 border-b border-[#eef0f3] px-6 py-5">
-              <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-[#101828]">All Tickets</h2>
-              <div className="flex items-center gap-2">
-                {(["ALL", "OPEN", "ASSIGNED", "RESOLVED", "CLOSED"] as const).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setFilter(s)}
-                    className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
-                      filter === s
-                        ? "bg-[#0f172a] text-white"
-                        : "bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <AdminPanel>
+            <AdminPanelHeader
+              icon={MessageSquare}
+              tone="sky"
+              title="All tickets"
+              description={loading ? "Loading…" : `${filtered.length} ticket${filtered.length === 1 ? "" : "s"}${filter === "ALL" ? "" : ` · ${titleCase(filter)}`}`}
+              actions={
+                <SegmentedControl
+                  size="sm"
+                  ariaLabel="Filter tickets by status"
+                  value={filter}
+                  onChange={setFilter}
+                  options={FILTERS.map((f) => ({ id: f, label: f === "ALL" ? "All" : titleCase(f) }))}
+                  className="max-w-full overflow-x-auto"
+                />
+              }
+            />
 
-            <div className="space-y-3 p-6">
+            <div className="mt-5 space-y-3">
               {loading ? (
-                [1, 2, 3].map((i) => <div key={i} className="h-20 animate-pulse rounded-[18px] bg-[#f3f4f6]" />)
+                [1, 2, 3].map((i) => <div key={i} className="h-24 animate-pulse rounded-[16px] bg-[#f1f5f9]" />)
               ) : filtered.length === 0 ? (
-                <p className="rounded-[22px] border border-dashed border-[#d7dbe2] bg-[#fafafa] px-5 py-12 text-center text-[14px] text-[#667085]">
-                  No tickets in this category.
-                </p>
+                <AdminEmptyState icon={Inbox} title="No tickets here" description="Nothing in this category right now." />
               ) : (
                 filtered.map((doubt, i) => (
                   <motion.article
                     key={doubt.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.03, duration: 0.35 }}
-                    className="rounded-[18px] border border-[#eceef2] bg-[#fcfcfd] px-5 py-4"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.25 }}
+                    className={adminRowClass}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-semibold text-[#101828]">{doubt.subject}</p>
-                        <p className="mt-0.5 text-[13px] text-[#667085]">
+                        <p className="text-[14px] font-semibold text-[#0f172a]">{doubt.subject}</p>
+                        <p className="mt-0.5 text-[12px] text-[#64748b]">
                           by {doubt.student.name ?? doubt.student.email ?? "Unknown"}
-                          {doubt.mentor && <span className="ml-2 text-[#7c3aed]">→ {doubt.mentor.name}</span>}
+                          {doubt.mentor && <span className="ml-1.5 text-[#6d28d9]">→ {doubt.mentor.name}</span>}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${priorityBadge[doubt.priority]}`}>
-                          {doubt.priority}
-                        </span>
-                        <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${statusBadge[doubt.status]}`}>
-                          {doubt.status}
-                        </span>
+                        <StatusBadge tone={priorityTone[doubt.priority] ?? "neutral"}>{titleCase(doubt.priority)}</StatusBadge>
+                        <StatusBadge tone={statusTone[doubt.status] ?? "neutral"}>{titleCase(doubt.status)}</StatusBadge>
                       </div>
                     </div>
                     {doubt.attachmentUrl && (
-                      <div className="mt-3">
-                        <a href={doubt.attachmentUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#7c3aed] hover:underline">
-                          View Attachment <ArrowUpRight className="inline h-4 w-4 align-[-3px]" />
-                        </a>
-                      </div>
+                      <a href={doubt.attachmentUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-[#0369a1] hover:underline">
+                        View attachment <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      </a>
                     )}
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-[#f1f5f9] pt-4">
-                      <div className="flex items-center gap-4 text-[12px] text-[#94a3b8]">
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#f1f5f9] pt-3">
+                      <div className="flex items-center gap-3 text-[12px] text-[#94a3b8]">
                         <span>{doubt._count.replies} replies</span>
                         <span>{formatRelativeTime(doubt.createdAt)}</span>
                       </div>
-                      
-                      <div className="flex items-center gap-2">
+
+                      <div className="flex flex-wrap items-center gap-2">
                         {doubt.status !== "RESOLVED" && doubt.status !== "CLOSED" && (
                           <select
-                            className="rounded-md border p-1 text-xs outline-none"
+                            aria-label="Assign mentor"
+                            className="h-8 rounded-[10px] border border-[#e2e8f0] bg-white px-2.5 text-[12px] text-[#334155] outline-none transition-colors hover:border-[#cbd5e1] focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
                             value={doubt.mentor?.id || ""}
                             onChange={(e) => handleAssignMentor(doubt.id, e.target.value)}
                             disabled={actionLoading === doubt.id}
                           >
-                            <option value="" disabled>Assign Mentor...</option>
+                            <option value="" disabled>Assign mentor…</option>
                             {mentors.map((m) => (
                               <option key={m.id} value={m.id}>{m.name || 'Unnamed'}</option>
                             ))}
                           </select>
                         )}
-                        
+
                         {doubt.status !== "CLOSED" && doubt.status !== "RESOLVED" && (
                           <button
+                            type="button"
                             onClick={() => handleUpdateStatus(doubt.id, "RESOLVED")}
                             disabled={actionLoading === doubt.id}
-                            className="rounded-md bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 hover:bg-green-100 disabled:opacity-50"
+                            className={adminButtonSm.primary}
                           >
+                            <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" />
                             Resolve
                           </button>
                         )}
                         {doubt.status !== "CLOSED" && (
                           <button
+                            type="button"
                             onClick={() => handleUpdateStatus(doubt.id, "CLOSED")}
                             disabled={actionLoading === doubt.id}
-                            className="rounded-md bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                            className={adminButtonSm.secondary}
                           >
                             Close
                           </button>
@@ -236,7 +240,7 @@ export default function AdminDoubtsPage() {
                 ))
               )}
             </div>
-          </section>
+          </AdminPanel>
         </RevealSection>
       </div>
     </PageTransition>

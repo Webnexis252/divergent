@@ -2,17 +2,30 @@
 
 import { m as motion, AnimatePresence } from "motion/react";
 import { useState, useEffect, useRef, useCallback } from "react";
+import type { ComponentType, ReactNode } from "react";
 import {
-  AnimCard,
-  AnimStat,
-  PageTransition,
-  RevealSection,
-  StaggerGrid,
-} from "./motion-wrappers";
-import { TrendingUp, TrendingDown } from "lucide-react";
-
+  AlertOctagon,
+  ChartLine,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+  CirclePlay,
+  Clock3,
+  MessageCircleQuestion,
+  RefreshCw,
+  TriangleAlert,
+  Trophy,
+  UserMinus,
+  Users,
+} from "lucide-react";
+import { AnimCard, PageTransition, RevealSection, StaggerGrid } from "./motion-wrappers";
+import { EnrollmentTrendChart } from "./enrollment-trend-chart";
+import type { TrendPoint } from "./enrollment-trend-chart";
+import { SegmentedControl } from "./segmented-control";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
+const whole = new Intl.NumberFormat("en-IN");
+const timeFmt = new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit" });
 
 type AnalyticsData = {
   metrics: {
@@ -24,7 +37,8 @@ type AnalyticsData = {
     dropOffRate: number;
   };
   doubtResponse?: { asked: number; answered: number; withinTwoHours: number; medianMinutes: number | null };
-  trendData: { label: string; value: number }[];
+  trendData: TrendPoint[];
+  previousEnrollments?: number;
   topStudents: { id: string; name: string; detail: string }[];
   needsAttention: { id: string; name: string; detail: string; streakCount: number }[];
   needsAttentionCount?: number;
@@ -36,18 +50,92 @@ function formatMinutes(minutes: number | null) {
   return `${(minutes / 60).toFixed(minutes < 600 ? 1 : 0)} h`;
 }
 
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 type CourseOption = {
   id: string;
   title: string;
   cohorts: { id: string; name: string }[];
 };
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+const RANGE_OPTIONS = [7, 14, 30, 90].map((d) => ({
+  id: String(d),
+  label: `${d}D`,
+  ariaLabel: `Last ${d} days`,
+}));
+
+// ─── Status tones ─────────────────────────────────────────────────────────────
+
+type Status = "good" | "warning" | "critical" | "neutral";
+
+const STATUS_STYLES: Record<Status, { badge: string; meter: string; track: string; icon: ComponentType<{ className?: string }> }> = {
+  good: { badge: "bg-[#ecfdf3] text-[#15803d]", meter: "bg-[#16a34a]", track: "bg-[#dcfce7]", icon: CircleCheck },
+  warning: { badge: "bg-[#fffbeb] text-[#b45309]", meter: "bg-[#f59e0b]", track: "bg-[#fef3c7]", icon: TriangleAlert },
+  critical: { badge: "bg-[#fef2f2] text-[#b91c1c]", meter: "bg-[#ef4444]", track: "bg-[#fee2e2]", icon: AlertOctagon },
+  neutral: { badge: "bg-[#f1f5f9] text-[#475569]", meter: "bg-[#64748b]", track: "bg-[#e2e8f0]", icon: CircleCheck },
+};
+
+function StatusBadge({ status, children }: { status: Status; children: ReactNode }) {
+  const { badge, icon: Icon } = STATUS_STYLES[status];
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${badge}`}>
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      {children}
+    </span>
+  );
+}
+
+function Meter({ value, status, label }: { value: number; status: Status; label: string }) {
+  const { meter, track } = STATUS_STYLES[status];
+  return (
+    <div
+      className={`h-1.5 overflow-hidden rounded-full ${track}`}
+      role="meter"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value}
+    >
+      <motion.div
+        className={`h-full rounded-full ${meter}`}
+        initial={{ width: 0 }}
+        animate={{ width: `${Math.min(Math.max(value, 0), 100)}%` }}
+        transition={{ duration: 0.7, ease }}
+      />
+    </div>
+  );
+}
+
+const ICON_TONES = {
+  sky: "bg-[#e0f2fe] text-[#0284c7]",
+  violet: "bg-[#ede9fe] text-[#6d28d9]",
+  amber: "bg-[#fef3c7] text-[#b45309]",
+  emerald: "bg-[#dcfce7] text-[#15803d]",
+  rose: "bg-[#ffe4e6] text-[#be123c]",
+} as const;
+
+function IconChip({ icon: Icon, tone }: { icon: ComponentType<{ className?: string }>; tone: keyof typeof ICON_TONES }) {
+  return (
+    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[12px] ${ICON_TONES[tone]}`}>
+      <Icon className="h-5 w-5" aria-hidden="true" />
+    </span>
+  );
+}
+
+// ─── Reusable dropdown ────────────────────────────────────────────────────────
 
 function ChevronIcon({ open }: { open?: boolean }) {
   return (
     <motion.svg
-      className="h-4 w-4 text-[#6b7280] shrink-0"
+      className="h-4 w-4 shrink-0 text-[#64748b]"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -56,21 +144,12 @@ function ChevronIcon({ open }: { open?: boolean }) {
       strokeLinejoin="round"
       animate={{ rotate: open ? 180 : 0 }}
       transition={{ duration: 0.2 }}
+      aria-hidden="true"
     >
       <path d="m6 9 6 6 6-6" />
     </motion.svg>
   );
 }
-
-function TrendUpIcon() {
-  return <TrendingUp className="h-4 w-4" />;
-}
-
-function TrendDownIcon() {
-  return <TrendingDown className="h-4 w-4" />;
-}
-
-// ─── Reusable dropdown ────────────────────────────────────────────────────────
 
 function FilterDropdown({
   label,
@@ -78,79 +157,96 @@ function FilterDropdown({
   options,
   onChange,
   disabled,
+  hideLabel,
 }: {
   label: string;
   value: string;
   options: { id: string; label: string }[];
   onChange: (id: string) => void;
   disabled?: boolean;
+  hideLabel?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
+  // Close on outside click or Escape
   useEffect(() => {
-    function handle(e: MouseEvent) {
+    function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, []);
 
   const selected = options.find((o) => o.id === value);
 
   return (
-    <div className="space-y-2" ref={ref}>
-      <p className="text-[13px] font-medium text-[#4b5563]">{label}</p>
+    <div className="min-w-0 space-y-2" ref={ref}>
+      <p className={hideLabel ? "sr-only" : "text-[12px] font-semibold text-[#475569]"}>{label}</p>
       <div className="relative">
-        <motion.button
+        <button
           type="button"
           disabled={disabled}
-          className={`flex h-12 w-full items-center justify-between rounded-[16px] border bg-white px-4 text-left text-[14px] font-medium shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-colors ${
-            open
-              ? "border-[#38c1ff] ring-2 ring-[#38c1ff]/20 text-[#111827]"
-              : "border-[#d9e1ec] text-[#111827] hover:border-[#b0c4d8]"
-          } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-          whileHover={disabled ? {} : { y: -1 }}
-          whileTap={disabled ? {} : { scale: 0.99 }}
-          transition={{ duration: 0.15 }}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-label={`${label}: ${selected?.label ?? value}`}
+          className={`flex h-11 w-full items-center justify-between gap-2 rounded-[12px] border bg-white px-3.5 text-left text-[14px] font-medium text-[#0f172a] transition-colors ${
+            open ? "border-[#209bd2] ring-3 ring-[#38c1ff]/20" : "border-[#e2e8f0] hover:border-[#cbd5e1]"
+          } ${disabled ? "cursor-not-allowed bg-[#f8fafc] text-[#94a3b8]" : "cursor-pointer"}`}
           onClick={() => !disabled && setOpen((o) => !o)}
         >
           <span className="truncate">{selected?.label ?? value}</span>
           <ChevronIcon open={open} />
-        </motion.button>
+        </button>
 
         <AnimatePresence>
           {open && (
             <motion.div
-              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              role="listbox"
+              aria-label={label}
+              initial={{ opacity: 0, y: -4, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.97 }}
-              transition={{ duration: 0.18, ease }}
-              className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-60 overflow-y-auto rounded-[16px] border border-[#e5e9f2] bg-white py-2 shadow-[0_20px_50px_rgba(15,23,42,0.14)]"
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.16, ease }}
+              className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-64 overflow-y-auto rounded-[14px] border border-[#e2e8f0] bg-white p-1.5 shadow-[0_20px_50px_rgba(15,23,42,0.14)]"
             >
-              {options.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(opt.id);
-                    setOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-[14px] transition-colors ${
-                    value === opt.id
-                      ? "bg-[#f0f9ff] font-semibold text-[#0284c7]"
-                      : "text-[#111827] hover:bg-[#f8fbff]"
-                  }`}
-                >
-                  {value === opt.id && (
-                    <svg className="h-3.5 w-3.5 shrink-0 text-[#0284c7]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              {options.map((opt) => {
+                const isSelected = value === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => {
+                      onChange(opt.id);
+                      setOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-left text-[14px] transition-colors ${
+                      isSelected ? "font-semibold text-[#0f172a]" : "text-[#334155] hover:bg-[#f8fafc]"
+                    }`}
+                  >
+                    <svg
+                      className={`h-4 w-4 shrink-0 text-[#209bd2] ${isSelected ? "" : "invisible"}`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.75"
+                      aria-hidden="true"
+                    >
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                  )}
-                  <span className={value === opt.id ? "" : "ml-5"}>{opt.label}</span>
-                </button>
-              ))}
+                    <span className="truncate">{opt.label}</span>
+                  </button>
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>
@@ -159,254 +255,220 @@ function FilterDropdown({
   );
 }
 
-// ─── Metric card config ───────────────────────────────────────────────────────
+// ─── KPI tile ─────────────────────────────────────────────────────────────────
 
 type MetricConfig = {
   title: string;
-  value: string | number;
-  delta: string;
-  deltaTone: string;
-  accent: string;
+  value: string;
+  icon: ComponentType<{ className?: string }>;
+  tone: keyof typeof ICON_TONES;
   note: string;
-  progress?: number;
+  status?: { tone: Status; label: string };
+  meter?: number;
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function AnalyticsMetricCard({ title, value, delta, deltaTone, accent, progress, note }: MetricConfig) {
-  const isPositive = !delta.startsWith("-");
+function AnalyticsMetricCard({ title, value, icon, tone, note, status, meter }: MetricConfig) {
   return (
-    <AnimCard className="h-full rounded-[24px] border border-[#edf0f5] bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
-      <div className="relative overflow-hidden rounded-[24px] px-5 py-5">
-        <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${accent}`} />
-        <div className="flex items-start justify-between gap-4 mt-2">
-          <div>
-            <p className="text-[14px] font-medium text-[#4b5563]">{title}</p>
-            <AnimStat className="mt-3 text-[34px] font-semibold leading-none tracking-[-0.04em] text-[#111827]">
-              {value}
-            </AnimStat>
-          </div>
-          <motion.div
-            className={`inline-flex items-center gap-1 rounded-full bg-[#f8fafc] px-3 py-1 text-[12px] font-semibold ${deltaTone}`}
-            animate={{ y: [0, -2, 0] }}
-            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-          >
-            {isPositive ? <TrendUpIcon /> : <TrendDownIcon />}
-            {delta}
-          </motion.div>
-        </div>
-
-        {typeof progress === "number" && (
-          <div className="mt-6">
-            <div className="h-2 overflow-hidden rounded-full bg-[#e5e7eb]">
-              <motion.div
-                className="h-full rounded-full bg-[#111827]"
-                initial={{ width: 0 }}
-                whileInView={{ width: `${progress}%` }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.7, ease }}
-              />
-            </div>
-          </div>
-        )}
-
-        <p className="mt-4 text-[12px] text-[#6b7280]">{note}</p>
+    <AnimCard className="h-full rounded-[20px] border border-[#e8edf3] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)] transition-shadow hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+      <div className="flex items-start justify-between gap-3">
+        <IconChip icon={icon} tone={tone} />
+        {status && <StatusBadge status={status.tone}>{status.label}</StatusBadge>}
       </div>
+      <p className="mt-5 text-[13px] font-medium text-[#64748b]">{title}</p>
+      <p className="mt-1.5 text-[30px] font-semibold leading-none tracking-[-0.03em] text-[#0f172a]">{value}</p>
+      {typeof meter === "number" && (
+        <div className="mt-4">
+          <Meter value={meter} status={status?.tone ?? "neutral"} label={title} />
+        </div>
+      )}
+      <p className="mt-3 text-[12px] leading-5 text-[#64748b]">{note}</p>
     </AnimCard>
   );
 }
 
-function AnalyticsChart({ trendData, days }: { trendData: { label: string; value: number }[], days: number }) {
-  const maxVal = Math.max(...trendData.map((d) => d.value), 1);
-  const points = trendData
-    .map((d, i) => `${i * (560 / Math.max(trendData.length - 1, 1)) + 20},${170 - (d.value / maxVal) * 130}`)
-    .join(" ");
+// ─── Doubt response ───────────────────────────────────────────────────────────
+
+function DoubtResponseCard({
+  response,
+  openDoubts,
+  days,
+}: {
+  response?: AnalyticsData["doubtResponse"];
+  openDoubts: number;
+  days: number;
+}) {
+  const withinTwoHoursPct =
+    response && response.asked > 0 ? Math.round((response.withinTwoHours / response.asked) * 100) : null;
+  const speedStatus: Status =
+    withinTwoHoursPct === null ? "neutral" : withinTwoHoursPct >= 80 ? "good" : withinTwoHoursPct >= 50 ? "warning" : "critical";
 
   return (
-    <div className="rounded-[26px] border border-[#edf0f5] bg-white px-5 py-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:px-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <section className="flex h-full flex-col rounded-[24px] border border-[#e8edf3] bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:p-6">
+      <div className="flex items-start gap-3">
+        <IconChip icon={Clock3} tone="violet" />
         <div>
-          <p className="text-[26px] font-semibold tracking-[-0.03em] text-[#111827]">Enrollment Trend</p>
-          <p className="mt-1 text-[14px] text-[#6b7280]">New student enrollments over the last {days} days.</p>
+          <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#0f172a]">Doubt response</h2>
+          <p className="mt-1 text-[13px] text-[#64748b]">How fast students get a first answer</p>
         </div>
-        <motion.div
-          className="inline-flex items-center gap-2 self-start rounded-full bg-[#ecfdf3] px-3 py-1 text-[12px] font-semibold text-[#16a34a]"
-          animate={{ y: [0, -2, 0] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <TrendUpIcon />
-          Live data
-        </motion.div>
       </div>
 
-      <div className="mt-8 overflow-hidden rounded-[22px] bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] p-4 sm:p-6">
-        <div className="grid gap-4 lg:grid-cols-[44px_minmax(0,1fr)]">
-          <div className="hidden justify-between py-2 text-[11px] text-[#9ca3af] lg:flex lg:flex-col">
-            <span>{maxVal}</span>
-            <span>{Math.round(maxVal * 0.75)}</span>
-            <span>{Math.round(maxVal * 0.5)}</span>
-            <span>{Math.round(maxVal * 0.25)}</span>
-            <span>0</span>
-          </div>
-          <div>
-            <svg viewBox="0 0 620 220" className="h-[200px] w-full" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="enroll-fill" x1="0%" x2="0%" y1="0%" y2="100%">
-                  <stop offset="0%" stopColor="#38c1ff" stopOpacity="0.24" />
-                  <stop offset="100%" stopColor="#38c1ff" stopOpacity="0.02" />
-                </linearGradient>
-              </defs>
-              {[40, 80, 120, 160].map((y) => (
-                <line key={y} x1="0" y1={y} x2="620" y2={y} stroke="#e5e7eb" strokeDasharray="6 8" />
-              ))}
-              {trendData.length > 1 && (
-                <>
-                  <motion.path
-                    key={`fill-${days}`}
-                    d={`M20,220 L${points.split(" ")[0].split(",")[0]},${170 - (trendData[0].value / maxVal) * 130} ${points} L${20 + (trendData.length - 1) * (560 / Math.max(trendData.length - 1, 1))},220 Z`}
-                    fill="url(#enroll-fill)"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.6, ease }}
-                  />
-                  <motion.polyline
-                    key={`line-${days}`}
-                    fill="none"
-                    stroke="#111827"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    points={points}
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 0.9, ease }}
-                  />
-                  {trendData.map((d, i) => (
-                    <motion.circle
-                      key={`${i}-${d.value}`}
-                      cx={i * (560 / Math.max(trendData.length - 1, 1)) + 20}
-                      cy={170 - (d.value / maxVal) * 130}
-                      r="6"
-                      fill="#ffffff"
-                      stroke="#38c1ff"
-                      strokeWidth="3"
-                      initial={{ opacity: 0, scale: 0.4 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.35, ease, delay: i * 0.05 }}
-                    />
-                  ))}
-                </>
-              )}
-            </svg>
-            <div
-              className="mt-4 grid text-center text-[12px] font-medium text-[#6b7280]"
-              style={{ gridTemplateColumns: `repeat(${trendData.length}, 1fr)` }}
-            >
-              {trendData.map((d, i) => <span key={`${d.label}-${i}`}>{d.label}</span>)}
-            </div>
-          </div>
+      <div className="mt-6 rounded-[18px] bg-[linear-gradient(135deg,#f5f3ff_0%,#f8fafc_100%)] p-5">
+        <p className="text-[12px] font-medium text-[#64748b]">Median time to first reply</p>
+        <p className="mt-2 text-[40px] font-semibold leading-none tracking-[-0.04em] text-[#0f172a]">
+          {formatMinutes(response?.medianMinutes ?? null)}
+        </p>
+        <p className="mt-2 text-[12px] text-[#64748b]">First reply from a mentor, AI answers excluded</p>
+      </div>
+
+      <div className="mt-6">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[13px] font-medium text-[#334155]">Answered within 2 hours</p>
+          {withinTwoHoursPct === null ? (
+            <span className="text-[13px] text-[#94a3b8]">No doubts yet</span>
+          ) : (
+            <StatusBadge status={speedStatus}>{withinTwoHoursPct}%</StatusBadge>
+          )}
         </div>
+        <div className="mt-3">
+          <Meter value={withinTwoHoursPct ?? 0} status={speedStatus} label="Doubts answered within 2 hours" />
+        </div>
+      </div>
+
+      <div className="min-h-6 flex-1" />
+      <dl className="grid grid-cols-3 gap-3 border-t border-[#eef1f5] pt-5">
+        {[
+          { label: "Asked", value: response?.asked ?? 0 },
+          { label: "Answered", value: response?.answered ?? 0 },
+          { label: "Open now", value: openDoubts },
+        ].map((item) => (
+          <div key={item.label}>
+            <dt className="text-[12px] text-[#64748b]">{item.label}</dt>
+            <dd className="mt-1 text-[20px] font-semibold tracking-[-0.02em] text-[#0f172a]">{whole.format(item.value)}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-3 text-[11px] text-[#94a3b8]">Asked and answered cover the last {days} days</p>
+    </section>
+  );
+}
+
+// ─── Student lists ────────────────────────────────────────────────────────────
+
+function Pager({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (page: number) => void }) {
+  if (totalPages <= 1) return null;
+  const buttonClass =
+    "grid h-8 w-8 place-items-center rounded-[10px] border border-[#e2e8f0] bg-white text-[#475569] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40";
+  return (
+    <div className="mt-4 flex items-center justify-between border-t border-[#eef1f5] pt-4">
+      <span className="text-[12px] font-medium text-[#64748b]">
+        Page {page + 1} of {totalPages}
+      </span>
+      <div className="flex gap-2">
+        <button type="button" className={buttonClass} disabled={page === 0} onClick={() => onChange(page - 1)} aria-label="Previous page">
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className={buttonClass}
+          disabled={page === totalPages - 1}
+          onClick={() => onChange(page + 1)}
+          aria-label="Next page"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );
 }
 
 function StudentStatusPanel({
-  title, subtitle, tone, students,
+  title,
+  subtitle,
+  tone,
+  students,
+  count,
 }: {
   title: string;
   subtitle: string;
   tone: "attention" | "top";
   students: { id: string; name: string; detail: string }[];
+  count?: number;
 }) {
   const [page, setPage] = useState(0);
-  const pageSize = 20;
+  const pageSize = 8;
   const totalPages = Math.ceil(students.length / pageSize);
-
-  const panelTone = tone === "attention" ? "border-[#fecaca] bg-[#fff7f7]" : "border-[#bbf7d0] bg-[#f5fff8]";
-  const badgeTone = tone === "attention" ? "bg-[#fee2e2] text-[#dc2626]" : "bg-[#dcfce7] text-[#15803d]";
-
-  const paginatedStudents = students.slice(page * pageSize, (page + 1) * pageSize);
+  const current = Math.min(page, Math.max(totalPages - 1, 0));
+  const paginatedStudents = students.slice(current * pageSize, (current + 1) * pageSize);
+  const attention = tone === "attention";
 
   return (
-    <div className={`rounded-[24px] border ${panelTone} px-5 py-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]`}>
+    <section className="flex h-full flex-col rounded-[24px] border border-[#e8edf3] bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:p-6">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[24px] font-semibold tracking-[-0.03em] text-[#111827]">{title}</p>
-          <p className="mt-1 text-[14px] text-[#6b7280]">{subtitle}</p>
+        <div className="flex items-start gap-3">
+          <IconChip icon={attention ? TriangleAlert : Trophy} tone={attention ? "rose" : "emerald"} />
+          <div>
+            <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#0f172a]">{title}</h2>
+            <p className="mt-1 text-[13px] text-[#64748b]">{subtitle}</p>
+          </div>
         </div>
-        <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${badgeTone}`}>
-          {students.length} students
+        <span className="shrink-0 rounded-full bg-[#f1f5f9] px-2.5 py-1 text-[12px] font-semibold text-[#334155]">
+          {whole.format(count ?? students.length)}
         </span>
       </div>
 
-      <div className="mt-6 space-y-3">
+      <div className="mt-5 flex-1">
         {students.length === 0 ? (
-          <p className="text-[14px] text-[#9ca3af]">
-            {tone === "attention" ? "All students are on track." : "No top performers yet — data will appear as students earn XP."}
-          </p>
-        ) : (
-          paginatedStudents.map((student, index) => (
-            <motion.article
-              key={`${student.id}-${page}-${index}`}
-              className="flex items-center justify-between gap-4 rounded-[18px] border border-white/70 bg-white/80 px-4 py-3"
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.45, ease, delay: index * 0.06 }}
-              whileHover={{ y: -4, boxShadow: "0 16px 30px rgba(15,23,42,0.08)" }}
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <motion.div
-                  className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-[13px] font-semibold ${
-                    tone === "attention" ? "bg-[#111827] text-white" : "bg-[#dcfce7] text-[#15803d]"
-                  }`}
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 3 + index * 0.2, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  {student.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
-                </motion.div>
-                <div className="min-w-0">
-                  <p className="truncate text-[15px] font-semibold text-[#111827]">{student.name}</p>
-                  <p className="truncate text-[13px] text-[#6b7280]">{student.detail}</p>
-                </div>
-              </div>
-              <span className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold ${badgeTone}`}>
-                {tone === "attention" ? "Needs follow-up" : "Top performer"}
-              </span>
-            </motion.article>
-          ))
-        )}
-
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-4 border-t border-black/5">
-            <button
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-              className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-                page === 0 ? "text-black/20" : "text-black/60 hover:bg-black/5"
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <span className="text-[12px] font-medium text-black/40">
-              Page {page + 1} of {totalPages}
+          <div className="flex h-full min-h-[160px] flex-col items-center justify-center rounded-[16px] border border-dashed border-[#e2e8f0] px-6 text-center">
+            <span className="text-[14px] font-semibold text-[#334155]">
+              {attention ? "Everyone is on track" : "No top performers yet"}
             </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={page === totalPages - 1}
-              className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-                page === totalPages - 1 ? "text-black/20" : "text-black/60 hover:bg-black/5"
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </button>
+            <span className="mt-1 text-[12px] text-[#64748b]">
+              {attention
+                ? "No students are below 40% overall performance."
+                : "Students will appear here as they complete tests and earn XP."}
+            </span>
           </div>
+        ) : (
+          <ul className="divide-y divide-[#f1f5f9]">
+            {paginatedStudents.map((student, index) => (
+              <motion.li
+                key={`${student.id}-${current}-${index}`}
+                className="flex items-center justify-between gap-4 py-3"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease, delay: index * 0.03 }}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[12px] font-semibold ${
+                      attention ? "bg-[#f1f5f9] text-[#334155]" : "bg-[#dcfce7] text-[#15803d]"
+                    }`}
+                  >
+                    {initials(student.name)}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] font-semibold text-[#0f172a]">{student.name}</p>
+                    <p className="truncate text-[12px] text-[#64748b]">{student.detail}</p>
+                  </div>
+                </div>
+                {attention ? (
+                  <StatusBadge status="critical">Follow up</StatusBadge>
+                ) : (
+                  <span className="shrink-0 text-[12px] font-semibold text-[#94a3b8]">
+                    #{current * pageSize + index + 1}
+                  </span>
+                )}
+              </motion.li>
+            ))}
+          </ul>
         )}
       </div>
-    </div>
+
+      <Pager page={current} totalPages={totalPages} onChange={setPage} />
+    </section>
   );
 }
+
 // ─── Exam Leaderboard ────────────────────────────────────────────────────────
 
 type LeaderboardData = {
@@ -421,6 +483,12 @@ type LeaderboardData = {
     totalPoints: number;
   }[];
 };
+
+const RANK_STYLES = [
+  "bg-[#fef3c7] text-[#b45309] ring-1 ring-[#fde68a]",
+  "bg-[#f1f5f9] text-[#475569] ring-1 ring-[#e2e8f0]",
+  "bg-[#ffedd5] text-[#c2410c] ring-1 ring-[#fed7aa]",
+];
 
 function ExamLeaderboard() {
   const [leaderboards, setLeaderboards] = useState<LeaderboardData[]>([]);
@@ -437,81 +505,97 @@ function ExamLeaderboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const examOptions = [
-    { id: "all", label: "Select an exam..." },
-    ...leaderboards.map((l) => ({ id: l.id, label: `${l.title} (${l.courseTitle})` }))
-  ];
-
+  const examOptions = leaderboards.map((l) => ({ id: l.id, label: `${l.title} · ${l.courseTitle}` }));
   const activeLeaderboard = leaderboards.find((l) => l.id === selectedExamId) || leaderboards[0];
 
   return (
-    <div className="rounded-[24px] border border-[#edf0f5] bg-white px-5 py-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-          <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-[#111827]">Exam League Board</h2>
-          <p className="mt-1 text-[14px] text-[#6b7280]">Top 10 scorers for each exam</p>
+    <section className="rounded-[24px] border border-[#e8edf3] bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3">
+          <IconChip icon={Trophy} tone="amber" />
+          <div>
+            <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#0f172a]">Exam leaderboard</h2>
+            <p className="mt-1 text-[13px] text-[#64748b]">Top 10 scorers for each exam</p>
+          </div>
         </div>
-        <div className="w-full sm:w-64">
-          <FilterDropdown
-            label="Filter by Exam"
-            value={selectedExamId === "all" && activeLeaderboard ? activeLeaderboard.id : selectedExamId}
-            options={examOptions.filter(o => o.id !== "all")}
-            onChange={setSelectedExamId}
-          />
-        </div>
+        {examOptions.length > 0 && activeLeaderboard && (
+          <div className="w-full sm:w-80">
+            <FilterDropdown
+              label="Exam"
+              hideLabel
+              value={activeLeaderboard.id}
+              options={examOptions}
+              onChange={setSelectedExamId}
+            />
+          </div>
+        )}
       </div>
 
-      {loading ? (
-        <div className="py-12 text-center text-[14px] text-[#8b8888]">Loading leaderboards...</div>
-      ) : leaderboards.length === 0 ? (
-        <div className="py-12 text-center text-[14px] text-[#8b8888]">No exams found.</div>
-      ) : activeLeaderboard ? (
-        <div className="space-y-3">
-          {activeLeaderboard.topStudents.length === 0 ? (
-            <p className="py-6 text-center text-[14px] text-[#9ca3af]">No attempts for this exam yet.</p>
-          ) : (
-            activeLeaderboard.topStudents.map((student, idx) => (
-              <motion.article
-                key={`${student.id}-${idx}`}
-                className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f1f5f9] bg-[#f8fafc] px-4 py-3"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.05 }}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-8 w-8 items-center justify-center font-bold text-[#64748b]">
-                    #{idx + 1}
-                  </div>
-                  <div className="h-10 w-10 overflow-hidden rounded-full bg-white border border-[#e2e8f0]">
+      <div className="mt-5">
+        {loading ? (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-[60px] animate-pulse rounded-[14px] bg-[#f1f5f9]" />
+            ))}
+          </div>
+        ) : !activeLeaderboard ? (
+          <p className="rounded-[16px] border border-dashed border-[#e2e8f0] py-10 text-center text-[13px] text-[#64748b]">
+            No exams found.
+          </p>
+        ) : activeLeaderboard.topStudents.length === 0 ? (
+          <p className="rounded-[16px] border border-dashed border-[#e2e8f0] py-10 text-center text-[13px] text-[#64748b]">
+            No attempts for this exam yet.
+          </p>
+        ) : (
+          <ol className="grid gap-x-6 gap-y-2 lg:grid-cols-2">
+            {activeLeaderboard.topStudents.map((student, idx) => {
+              const pct = Math.round((student.score / Math.max(student.totalPoints, 1)) * 100);
+              return (
+                <motion.li
+                  key={`${activeLeaderboard.id}-${student.id}-${idx}`}
+                  className="flex items-center gap-3 rounded-[14px] border border-[#f1f5f9] bg-[#fbfcfd] px-3 py-2.5"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: idx * 0.03 }}
+                >
+                  <span
+                    className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[12px] font-bold ${
+                      RANK_STYLES[idx] ?? "text-[#94a3b8]"
+                    }`}
+                  >
+                    {idx + 1}
+                  </span>
+                  <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[#e2e8f0] bg-white">
                     {student.image ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={student.image} alt="" className="h-full w-full object-cover" />
                       </>
                     ) : (
-                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#38c1ff] to-[#1b77ff] text-[12px] font-bold text-white">
-                        {student.name.substring(0, 2).toUpperCase()}
-                      </div>
+                      <span className="grid h-full w-full place-items-center bg-[#e0f2fe] text-[11px] font-semibold text-[#0369a1]">
+                        {initials(student.name)}
+                      </span>
                     )}
-                  </div>
-                  <div>
-                    <p className="text-[15px] font-semibold text-[#111827]">{student.name}</p>
-                    <p className="text-[13px] text-[#64748b]">
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-semibold text-[#0f172a]">{student.name}</p>
+                    <p className="text-[12px] tabular-nums text-[#64748b]">
                       {student.score} / {student.totalPoints} points
                     </p>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="inline-flex items-center justify-center rounded-full bg-[#fef3c7] px-3 py-1 text-[13px] font-bold text-[#d97706]">
-                    {Math.round((student.score / Math.max(student.totalPoints, 1)) * 100)}%
+                  <div className="flex w-[96px] shrink-0 flex-col items-end gap-1.5">
+                    <span className="text-[13px] font-semibold tabular-nums text-[#0f172a]">{pct}%</span>
+                    <span className="h-1.5 w-full overflow-hidden rounded-full bg-[#e0f2fe]">
+                      <span className="block h-full rounded-full bg-[#209bd2]" style={{ width: `${Math.min(pct, 100)}%` }} />
+                    </span>
                   </div>
-                </div>
-              </motion.article>
-            ))
-          )}
-        </div>
-      ) : null}
-    </div>
+                </motion.li>
+              );
+            })}
+          </ol>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -520,13 +604,11 @@ function ExamLeaderboard() {
 function ActiveFilterPills({
   courseLabel,
   cohortLabel,
-  days,
   onClearCourse,
   onClearCohort,
 }: {
   courseLabel?: string;
   cohortLabel?: string;
-  days: number;
   onClearCourse: () => void;
   onClearCohort: () => void;
 }) {
@@ -539,29 +621,54 @@ function ActiveFilterPills({
 
   return (
     <motion.div
-      className="flex flex-wrap gap-2"
-      initial={{ opacity: 0, y: -6 }}
+      className="flex flex-wrap items-center gap-2 border-t border-[#eef1f5] pt-4"
+      initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
+      <span className="text-[12px] font-medium text-[#64748b]">Filtered by</span>
       {pills.map((pill) => (
         <span
           key={pill.label}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#bae6fd] bg-[#f0f9ff] px-3 py-1 text-[12px] font-semibold text-[#0369a1]"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[#bae6fd] bg-[#f0f9ff] py-1 pl-3 pr-1.5 text-[12px] font-semibold text-[#0369a1]"
         >
           {pill.label}
           <button
             type="button"
             onClick={pill.onClear}
-            className="ml-0.5 rounded-full p-0.5 hover:bg-[#bae6fd] transition-colors"
+            aria-label={`Clear ${pill.label}`}
+            className="rounded-full p-0.5 transition-colors hover:bg-[#bae6fd]"
           >
-            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
           </button>
         </span>
       ))}
     </motion.div>
+  );
+}
+
+// ─── Loading skeleton ─────────────────────────────────────────────────────────
+
+function DashboardSkeleton() {
+  const block = "animate-pulse rounded-[24px] border border-[#eef1f5] bg-white/80";
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Loading analytics">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={`${block} h-[188px] rounded-[20px]`} />
+        ))}
+      </div>
+      <div className="grid gap-6 xl:grid-cols-3">
+        <div className={`${block} h-[470px] xl:col-span-2`} />
+        <div className={`${block} h-[470px]`} />
+      </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <div className={`${block} h-[320px]`} />
+        <div className={`${block} h-[320px]`} />
+      </div>
+    </div>
   );
 }
 
@@ -578,7 +685,12 @@ export function SharedAnalyticsDashboard({
 }) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [days, setDays] = useState(7);
+  // `days` the loaded data was computed for, so labels never run ahead of the numbers mid-refetch
+  const [loadedDays, setLoadedDays] = useState(7);
+  const requestId = useRef(0);
 
   // Filter state
   const [courses, setCourses] = useState<CourseOption[]>([]);
@@ -595,14 +707,15 @@ export function SharedAnalyticsDashboard({
       .catch(console.error);
   }, []);
 
-  // Reset cohort when course changes
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+  // A batch belongs to one course, so changing the course clears it
+  const selectCourse = (id: string) => {
+    setSelectedCourseId(id);
     setSelectedCohortId("all");
-  }, [selectedCourseId]);
+  };
 
   // Fetch analytics whenever filters change
   const fetchAnalytics = useCallback(() => {
+    const id = ++requestId.current;
     setLoading(true);
     const params = new URLSearchParams({ days: String(days) });
     if (selectedCourseId !== "all") params.set("courseId", selectedCourseId);
@@ -611,10 +724,24 @@ export function SharedAnalyticsDashboard({
     fetch(`/api/teacher/analytics?${params}`)
       .then((r) => r.json())
       .then((json) => {
-        if (json.success) setAnalytics(json.data);
+        // A slower response for an older filter must not overwrite a newer one
+        if (id !== requestId.current) return;
+        if (json.success) {
+          setAnalytics(json.data);
+          setLoadedDays(days);
+          setUpdatedAt(new Date());
+          setError(false);
+        } else {
+          setError(true);
+        }
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        console.error(err);
+        if (id === requestId.current) setError(true);
+      })
+      .finally(() => {
+        if (id === requestId.current) setLoading(false);
+      });
   }, [days, selectedCourseId, selectedCohortId]);
 
   useEffect(() => {
@@ -623,128 +750,125 @@ export function SharedAnalyticsDashboard({
   }, [fetchAnalytics]);
 
   const m = analytics?.metrics;
-  const response = analytics?.doubtResponse;
-  const answeredInTwoHoursPct =
-    response && response.asked > 0 ? Math.round((response.withinTwoHours / response.asked) * 100) : null;
   const needsAttentionShown = analytics?.needsAttention.length ?? 0;
   const needsAttentionTotal = analytics?.needsAttentionCount ?? needsAttentionShown;
 
   // Build dropdown options
   const courseOptions = [
-    { id: "all", label: "All Courses" },
+    { id: "all", label: "All courses" },
     ...courses.map((c) => ({ id: c.id, label: c.title })),
   ];
 
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
   const cohortOptions = [
-    { id: "all", label: "All Batches" },
+    { id: "all", label: "All batches" },
     ...(selectedCourse?.cohorts.map((c) => ({ id: c.id, label: c.name })) ?? []),
   ];
+
+  const completionStatus: Status = !m
+    ? "neutral"
+    : m.videoCompletionRate >= 70
+      ? "good"
+      : m.videoCompletionRate >= 40
+        ? "warning"
+        : "critical";
+  const dropOffStatus: Status = !m ? "neutral" : m.dropOffRate < 20 ? "good" : m.dropOffRate < 40 ? "warning" : "critical";
 
   const metricCards: MetricConfig[] = m
     ? [
         {
-          title: "Active Students",
-          value: m.activeStudents,
-          delta: "+live",
-          deltaTone: "text-[#16a34a]",
-          accent: "from-[#3ec7ff] via-[#7dd7ff] to-[#d7f2ff]",
-          note: "Total unique students with active enrollments",
+          title: "Active students",
+          value: whole.format(m.activeStudents),
+          icon: Users,
+          tone: "sky",
+          note: "Unique students with an active enrollment",
         },
         {
-          title: "Doubts Resolved",
-          value: m.doubtsResolved,
-          delta: `${m.openDoubts} open`,
-          deltaTone: m.openDoubts > 0 ? "text-[#f59e0b]" : "text-[#16a34a]",
-          accent: "from-[#6f63ff] via-[#b8b0ff] to-[#edeaff]",
-          note: `${m.totalDoubts} total doubts submitted in the last ${days} days`,
-        },
-        {
-          title: "Video Completion",
+          title: "Video completion",
           value: `${m.videoCompletionRate}%`,
-          delta: m.videoCompletionRate > 70 ? "Good" : "Low",
-          deltaTone: m.videoCompletionRate > 70 ? "text-[#16a34a]" : "text-[#ef4444]",
-          accent: "from-[#111827] via-[#4b5563] to-[#d1d5db]",
-          progress: m.videoCompletionRate,
-          note: "Lessons marked complete vs. total started",
+          icon: CirclePlay,
+          tone: "violet",
+          status: {
+            tone: completionStatus,
+            label: completionStatus === "good" ? "On track" : completionStatus === "warning" ? "Below target" : "Low",
+          },
+          meter: m.videoCompletionRate,
+          note: `Lessons completed of those started in the last ${loadedDays} days`,
         },
         {
-          title: "Drop-off Rate",
+          title: "Drop-off rate",
           value: `${m.dropOffRate}%`,
-          delta: m.dropOffRate < 20 ? "Healthy" : "High",
-          deltaTone: m.dropOffRate < 20 ? "text-[#16a34a]" : "text-[#ef4444]",
-          accent: "from-[#f59e0b] via-[#f7c86d] to-[#fff1cf]",
-          note: "Students with no lesson activity in this period",
+          icon: UserMinus,
+          tone: "amber",
+          status: {
+            tone: dropOffStatus,
+            label: dropOffStatus === "good" ? "Healthy" : dropOffStatus === "warning" ? "Watch" : "High",
+          },
+          meter: m.dropOffRate,
+          note: `Active students with no lesson activity in the last ${loadedDays} days`,
         },
-        ...(response
-          ? [
-              {
-                title: "First Answer Time",
-                value: formatMinutes(response.medianMinutes),
-                delta: answeredInTwoHoursPct === null ? "No doubts" : `${answeredInTwoHoursPct}% within 2h`,
-                deltaTone:
-                  answeredInTwoHoursPct === null || answeredInTwoHoursPct >= 80 ? "text-[#16a34a]" : "text-[#f59e0b]",
-                accent: "from-[#16a34a] via-[#86efac] to-[#dcfce7]",
-                note: `Median time to a first teacher reply · ${response.answered} of ${response.asked} doubts answered in the last ${days} days`,
-              },
-            ]
-          : []),
+        {
+          title: "Doubts resolved",
+          value: whole.format(m.doubtsResolved),
+          icon: MessageCircleQuestion,
+          tone: "emerald",
+          status:
+            m.openDoubts > 0
+              ? { tone: "warning", label: `${whole.format(m.openDoubts)} open` }
+              : { tone: "good", label: "All clear" },
+          note: `${whole.format(m.totalDoubts)} doubts raised in the last ${loadedDays} days`,
+        },
       ]
     : [];
 
   return (
-    <div className="space-y-8 w-full max-w-7xl">
-      {/* Hero Header */}
+    <div className="mx-auto w-full max-w-7xl space-y-6">
+      {/* Page header */}
       <RevealSection>
-        <section className="rounded-[28px] border border-[#edf0f5] bg-[radial-gradient(circle_at_top_left,rgba(56,193,255,0.12),transparent_34%),linear-gradient(135deg,#ffffff_0%,#f8fbff_48%,#fff7d6_100%)] px-6 py-7 shadow-[0_24px_60px_rgba(15,23,42,0.08)] sm:px-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-[#38c1ff]">{label}</p>
-              <h1 className="mt-3 max-w-[720px] text-[clamp(2.3rem,5vw,4.8rem)] font-semibold leading-[0.95] tracking-[-0.06em] text-[#111827]">
-                {title}
-              </h1>
-              <p className="mt-4 max-w-[620px] text-[15px] leading-7 text-[#4b5563] sm:text-[16px]">
-                {subtitle}
-              </p>
-            </div>
-            <motion.div
-              className="inline-flex items-center gap-2 self-start rounded-full border border-[#d7ecff] bg-white/90 px-4 py-2 text-[13px] font-medium text-[#111827] shadow-[0_10px_26px_rgba(15,23,42,0.05)]"
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <span className="h-2.5 w-2.5 rounded-full bg-[#22c55e]" />
-              Live data
-            </motion.div>
+        <header className="flex flex-col gap-5 pt-2 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#d7ecff] bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#209bd2]">
+              <ChartLine className="h-3.5 w-3.5" aria-hidden="true" />
+              {label}
+            </span>
+            <h1 className="mt-4 text-[32px] font-semibold leading-[1.1] tracking-[-0.04em] text-[#0f172a] sm:text-[40px]">
+              {title}
+            </h1>
+            <p className="mt-2 max-w-[640px] text-[15px] leading-6 text-[#64748b]">{subtitle}</p>
           </div>
-        </section>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-2 text-[13px] text-[#64748b]" aria-live="polite">
+              <span className={`h-2 w-2 rounded-full ${error ? "bg-[#ef4444]" : "bg-[#22c55e]"}`} aria-hidden="true" />
+              {error ? "Couldn't refresh" : updatedAt ? `Updated ${timeFmt.format(updatedAt)}` : "Loading…"}
+            </span>
+            <button
+              type="button"
+              onClick={fetchAnalytics}
+              disabled={loading}
+              className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-[#e2e8f0] bg-white px-4 text-[13px] font-semibold text-[#0f172a] shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-colors hover:border-[#cbd5e1] hover:bg-[#f8fafc] disabled:cursor-wait"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
+              Refresh
+            </button>
+          </div>
+        </header>
       </RevealSection>
 
-      {/* Filter bar */}
-      <RevealSection delay={0.04}>
-        <section className="rounded-[24px] border border-[#edf0f5] bg-white px-5 py-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:px-6 space-y-4">
-          <div className="grid gap-4 xl:grid-cols-[repeat(3,minmax(0,1fr))_auto]">
-            {/* Time Period dropdown */}
-            <FilterDropdown
-              label="Time Period"
-              value={String(days)}
-              options={[
-                { id: "7", label: "Last 7 days" },
-                { id: "14", label: "Last 14 days" },
-                { id: "30", label: "Last 30 days" },
-                { id: "90", label: "Last 90 days" },
-              ]}
-              onChange={(id) => setDays(Number(id))}
-            />
-
-            {/* Course dropdown */}
-            <FilterDropdown
-              label="Course"
-              value={selectedCourseId}
-              options={courseOptions}
-              onChange={setSelectedCourseId}
-            />
-
-            {/* Batch (Cohort) dropdown — disabled when no course selected */}
+      {/* Filter bar: scopes everything below it */}
+      <RevealSection delay={0.04} className="relative z-20">
+        <section className="space-y-4 rounded-[20px] border border-[#e8edf3] bg-white/90 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.05)] backdrop-blur sm:p-5">
+          <div className="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+            <div className="space-y-2">
+              <p className="text-[12px] font-semibold text-[#475569]">Time range</p>
+              <SegmentedControl
+                ariaLabel="Time range"
+                className="w-full lg:w-auto"
+                value={String(days)}
+                options={RANGE_OPTIONS}
+                onChange={(id) => setDays(Number(id))}
+              />
+            </div>
+            <FilterDropdown label="Course" value={selectedCourseId} options={courseOptions} onChange={selectCourse} />
             <FilterDropdown
               label="Batch"
               value={selectedCohortId}
@@ -752,105 +876,86 @@ export function SharedAnalyticsDashboard({
               onChange={setSelectedCohortId}
               disabled={selectedCourseId === "all"}
             />
-
-            {/* Quick day buttons */}
-            <div className="flex items-end gap-3">
-              {([7, 14, 30] as const).map((d) => (
-                <motion.button
-                  key={d}
-                  type="button"
-                  className={`flex h-12 flex-1 items-center justify-center rounded-[16px] text-[14px] font-semibold transition ${
-                    days === d
-                      ? "bg-[#38c1ff] text-white shadow-[0_14px_28px_rgba(56,193,255,0.28)]"
-                      : "border border-[#38c1ff] text-[#209bd2] hover:bg-[#f0f9ff]"
-                  }`}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.99 }}
-                  transition={{ duration: 0.18 }}
-                  onClick={() => setDays(d)}
-                >
-                  {d}d
-                </motion.button>
-              ))}
-            </div>
           </div>
 
-          {/* Active filter pills */}
           <ActiveFilterPills
             courseLabel={selectedCourse?.title}
             cohortLabel={selectedCourse?.cohorts.find((c) => c.id === selectedCohortId)?.name}
-            days={days}
-            onClearCourse={() => setSelectedCourseId("all")}
+            onClearCourse={() => selectCourse("all")}
             onClearCohort={() => setSelectedCohortId("all")}
           />
         </section>
       </RevealSection>
 
-      {/* Metric cards */}
-      <AnimatePresence mode="wait">
-        {loading ? (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex items-center gap-3 py-10 justify-center text-[#8b8888]"
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-              className="h-6 w-6 rounded-full border-2 border-[#38c1ff] border-t-transparent"
-            />
-            Loading analytics...
-          </motion.div>
+      {!analytics ? (
+        error ? (
+          <div className="rounded-[24px] border border-[#fecaca] bg-white p-10 text-center shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+            <p className="text-[16px] font-semibold text-[#0f172a]">Analytics couldn&apos;t be loaded</p>
+            <p className="mt-1 text-[13px] text-[#64748b]">Check your connection and try again.</p>
+            <button
+              type="button"
+              onClick={fetchAnalytics}
+              className="mt-5 inline-flex h-10 items-center gap-2 rounded-[12px] bg-[#0f172a] px-4 text-[13px] font-semibold text-white hover:bg-[#1e293b]"
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              Try again
+            </button>
+          </div>
         ) : (
-          <motion.div
-            key="content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-8"
-          >
-            <RevealSection delay={0.08}>
-              <StaggerGrid className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-                {metricCards.map((metric) => (
-                  <AnalyticsMetricCard key={metric.title} {...metric} />
-                ))}
-              </StaggerGrid>
-            </RevealSection>
+          <DashboardSkeleton />
+        )
+      ) : (
+        // A refetch keeps the current numbers on screen, dimmed, instead of flashing a spinner
+        <div
+          className={`space-y-6 transition-opacity duration-300 ${loading ? "pointer-events-none opacity-60" : "opacity-100"}`}
+          aria-busy={loading}
+        >
+          <StaggerGrid className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {metricCards.map((metric) => (
+              <AnalyticsMetricCard key={metric.title} {...metric} />
+            ))}
+          </StaggerGrid>
 
-            <RevealSection delay={0.1}>
-              <AnalyticsChart trendData={analytics?.trendData ?? []} days={days} />
-            </RevealSection>
-
-            <RevealSection delay={0.12}>
-              <div className="grid gap-5 xl:grid-cols-2">
-                <StudentStatusPanel
-                  title="Need Attention"
-                  subtitle={
-                    needsAttentionTotal > needsAttentionShown
-                      ? `Students below 40% overall performance · lowest ${needsAttentionShown} of ${needsAttentionTotal}`
-                      : "Students below 40% overall performance"
-                  }
-                  tone="attention"
-                  students={analytics?.needsAttention ?? []}
-                />
-                <StudentStatusPanel
-                  title="Top Performers"
-                  subtitle="Top scorers per course"
-                  tone="top"
-                  students={analytics?.topStudents ?? []}
+          <RevealSection delay={0.06}>
+            <div className="grid gap-6 xl:grid-cols-3">
+              <div className="min-w-0 xl:col-span-2">
+                <EnrollmentTrendChart
+                  data={analytics.trendData}
+                  days={loadedDays}
+                  previousTotal={analytics.previousEnrollments}
                 />
               </div>
-            </RevealSection>
+              <DoubtResponseCard response={analytics.doubtResponse} openDoubts={m?.openDoubts ?? 0} days={loadedDays} />
+            </div>
+          </RevealSection>
 
-            <RevealSection delay={0.14}>
-              <ExamLeaderboard />
-            </RevealSection>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          <RevealSection delay={0.08}>
+            <div className="grid gap-6 xl:grid-cols-2">
+              <StudentStatusPanel
+                title="Needs attention"
+                subtitle={
+                  needsAttentionTotal > needsAttentionShown
+                    ? `Below 40% overall performance · lowest ${needsAttentionShown} of ${whole.format(needsAttentionTotal)}`
+                    : "Students below 40% overall performance"
+                }
+                tone="attention"
+                students={analytics.needsAttention}
+                count={needsAttentionTotal}
+              />
+              <StudentStatusPanel
+                title="Top performers"
+                subtitle="Highest scorers in each course"
+                tone="top"
+                students={analytics.topStudents}
+              />
+            </div>
+          </RevealSection>
+
+          <RevealSection delay={0.1}>
+            <ExamLeaderboard />
+          </RevealSection>
+        </div>
+      )}
     </div>
   );
 }

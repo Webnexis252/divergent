@@ -17,7 +17,9 @@ import {
   Sparkles,
   Video,
 } from "lucide-react";
-import { RevealSection } from "@/app/dashboard/_components/motion-wrappers";
+import { RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
+import { AdminStatCard } from "@/app/admin/_components/AdminStatCard";
+import { AdminPageHeader, StatusBadge } from "@/app/admin/_components/admin-ui";
 import type {
   CalendarEventType,
   CalendarFeed,
@@ -605,6 +607,7 @@ export function CalendarWorkspace(props: CalendarWorkspaceProps) {
   useEffect(() => {
     if (!activeDateKey && filteredEvents.length > 0 && !loading) {
       const firstEventDate = new Date(filteredEvents[0].date);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveDateKey(`${firstEventDate.getFullYear()}-${firstEventDate.getMonth()}-${firstEventDate.getDate()}`);
     }
   }, [filteredEvents, activeDateKey, loading]);
@@ -645,109 +648,149 @@ export function CalendarWorkspace(props: CalendarWorkspaceProps) {
   }
 
   return (
-    <div className="mx-auto max-w-[1280px] space-y-8">
-      <RevealSection>
-        <section
-          className={cx(
-            "relative overflow-hidden rounded-[36px] border border-white/70 px-7 py-8 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:px-8 sm:py-9",
-            variant.gradient,
-          )}
-        >
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-[38%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.18),transparent_62%)]" />
-          <div className="pointer-events-none absolute -right-12 top-10 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
-
-          <div className="relative z-10 grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.9fr)] lg:items-end">
-            <div>
-              <div className={cx("inline-flex rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em]", variant.chipClass)}>
-                {props.eyebrow}
-              </div>
-              <h1 className="mt-5 text-[clamp(2.2rem,4.4vw,3.7rem)] font-semibold tracking-[-0.06em]">
-                {props.title}
-              </h1>
-              <p className="mt-4 max-w-2xl text-[15px] leading-7 text-white/80">
-                {props.description}
-              </p>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white/14 px-3 py-1.5 text-[12px] font-semibold">
-                  {counts.assignment} assignments
-                </span>
-                <span className="rounded-full bg-white/14 px-3 py-1.5 text-[12px] font-semibold">
-                  {counts.liveClass} live classes
-                </span>
-                <span className="rounded-full bg-white/14 px-3 py-1.5 text-[12px] font-semibold">
-                  {counts.exam} exams
-                </span>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className={cx("rounded-[24px] border px-5 py-5 backdrop-blur", variant.panelClass)}>
-                <div className="flex items-center justify-between gap-3">
-                  <CalendarDays className="h-5 w-5 text-white/82" />
-                  <span className="text-[11px] uppercase tracking-[0.18em] text-white/62">
-                    Upcoming Window
-                  </span>
+    <div className={cx("mx-auto max-w-[1280px]", props.variant === "admin" ? "space-y-6" : "space-y-8")}>
+      {props.variant === "admin" ? (
+        <>
+          <RevealSection>
+            <AdminPageHeader
+              eyebrow={props.eyebrow}
+              icon={CalendarDays}
+              title={props.title}
+              description={props.description}
+              actions={
+                <div className="flex flex-wrap gap-2">
+                  <StatusBadge tone="info">{counts.assignment} assignments</StatusBadge>
+                  <StatusBadge tone="violet">{counts.liveClass} live classes</StatusBadge>
+                  <StatusBadge tone="good">{counts.exam} exams</StatusBadge>
                 </div>
-                <p className="mt-4 text-[28px] font-semibold tracking-[-0.05em]">
-                  {counts.total}
-                </p>
-                <p className="mt-2 text-[13px] leading-6 text-white/72">
-                  {data
-                    ? `${formatWindowDate(data.windowStart)} to ${formatWindowDate(data.windowEnd)}`
-                    : "Loading current planning window"}
-                </p>
-              </div>
+              }
+            />
+          </RevealSection>
 
-              <div className={cx("rounded-[24px] border px-5 py-5 backdrop-blur", variant.panelClass)}>
-                <div className="flex items-center justify-between gap-3">
-                  <Sparkles className="h-5 w-5 text-white/82" />
-                  <span className="text-[11px] uppercase tracking-[0.18em] text-white/62">
-                    Courses in Play
-                  </span>
+          <StaggerGrid className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <AdminStatCard
+              index={0}
+              title="Visible events"
+              value={loading ? "…" : counts.total}
+              caption={
+                data
+                  ? `${formatWindowDate(data.windowStart)} to ${formatWindowDate(data.windowEnd)}`
+                  : "Everything mapped into this schedule window."
+              }
+              icon={<Layers3 />}
+              tone="sky"
+            />
+            <AdminStatCard index={1} title="Happening today" value={loading ? "…" : counts.today} caption="Deadlines and sessions landing today." icon={<Clock3 />} tone="amber" />
+            <AdminStatCard index={2} title="Due this week" value={loading ? "…" : counts.thisWeek} caption="The next seven days." icon={<CalendarDays />} tone="emerald" />
+            <AdminStatCard index={3} title="Courses represented" value={loading ? "…" : data?.courses.length ?? 0} caption="Course streams with calendar activity." icon={<BookOpenText />} tone="slate" />
+          </StaggerGrid>
+        </>
+      ) : (
+        <>
+          <RevealSection>
+            <section
+              className={cx(
+                "relative overflow-hidden rounded-[36px] border border-white/70 px-7 py-8 text-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:px-8 sm:py-9",
+                variant.gradient,
+              )}
+            >
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-[38%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.18),transparent_62%)]" />
+              <div className="pointer-events-none absolute -right-12 top-10 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
+
+              <div className="relative z-10 grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.9fr)] lg:items-end">
+                <div>
+                  <div className={cx("inline-flex rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em]", variant.chipClass)}>
+                    {props.eyebrow}
+                  </div>
+                  <h1 className="mt-5 text-[clamp(2.2rem,4.4vw,3.7rem)] font-semibold tracking-[-0.06em]">
+                    {props.title}
+                  </h1>
+                  <p className="mt-4 max-w-2xl text-[15px] leading-7 text-white/80">
+                    {props.description}
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-white/14 px-3 py-1.5 text-[12px] font-semibold">
+                      {counts.assignment} assignments
+                    </span>
+                    <span className="rounded-full bg-white/14 px-3 py-1.5 text-[12px] font-semibold">
+                      {counts.liveClass} live classes
+                    </span>
+                    <span className="rounded-full bg-white/14 px-3 py-1.5 text-[12px] font-semibold">
+                      {counts.exam} exams
+                    </span>
+                  </div>
                 </div>
-                <p className="mt-4 text-[28px] font-semibold tracking-[-0.05em]">
-                  {data?.courses.length ?? 0}
-                </p>
-                <p className="mt-2 text-[13px] leading-6 text-white/72">
-                  Calendar entries are already scoped to the courses this role can act on.
-                </p>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className={cx("rounded-[24px] border px-5 py-5 backdrop-blur", variant.panelClass)}>
+                    <div className="flex items-center justify-between gap-3">
+                      <CalendarDays className="h-5 w-5 text-white/82" />
+                      <span className="text-[11px] uppercase tracking-[0.18em] text-white/62">
+                        Upcoming Window
+                      </span>
+                    </div>
+                    <p className="mt-4 text-[28px] font-semibold tracking-[-0.05em]">
+                      {counts.total}
+                    </p>
+                    <p className="mt-2 text-[13px] leading-6 text-white/72">
+                      {data
+                        ? `${formatWindowDate(data.windowStart)} to ${formatWindowDate(data.windowEnd)}`
+                        : "Loading current planning window"}
+                    </p>
+                  </div>
+
+                  <div className={cx("rounded-[24px] border px-5 py-5 backdrop-blur", variant.panelClass)}>
+                    <div className="flex items-center justify-between gap-3">
+                      <Sparkles className="h-5 w-5 text-white/82" />
+                      <span className="text-[11px] uppercase tracking-[0.18em] text-white/62">
+                        Courses in Play
+                      </span>
+                    </div>
+                    <p className="mt-4 text-[28px] font-semibold tracking-[-0.05em]">
+                      {data?.courses.length ?? 0}
+                    </p>
+                    <p className="mt-2 text-[13px] leading-6 text-white/72">
+                      Calendar entries are already scoped to the courses this role can act on.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
+          </RevealSection>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              accent={variant.accent}
+              icon={<Layers3 className="h-5 w-5" />}
+              label="Visible Events"
+              meta="Everything currently mapped into this schedule window."
+              value={loading ? "..." : counts.total}
+            />
+            <MetricCard
+              accent={variant.accent}
+              icon={<Clock3 className="h-5 w-5" />}
+              label="Happening Today"
+              meta="Items landing today, including deadlines and sessions."
+              value={loading ? "..." : counts.today}
+            />
+            <MetricCard
+              accent={variant.accent}
+              icon={<CalendarDays className="h-5 w-5" />}
+              label="Due This Week"
+              meta="The next seven days surfaced into one planning line."
+              value={loading ? "..." : counts.thisWeek}
+            />
+            <MetricCard
+              accent={variant.accent}
+              icon={<BookOpenText className="h-5 w-5" />}
+              label="Courses Represented"
+              meta="Distinct course streams with active calendar movement."
+              value={loading ? "..." : data?.courses.length ?? 0}
+            />
           </div>
-        </section>
-      </RevealSection>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          accent={variant.accent}
-          icon={<Layers3 className="h-5 w-5" />}
-          label="Visible Events"
-          meta="Everything currently mapped into this schedule window."
-          value={loading ? "..." : counts.total}
-        />
-        <MetricCard
-          accent={variant.accent}
-          icon={<Clock3 className="h-5 w-5" />}
-          label="Happening Today"
-          meta="Items landing today, including deadlines and sessions."
-          value={loading ? "..." : counts.today}
-        />
-        <MetricCard
-          accent={variant.accent}
-          icon={<CalendarDays className="h-5 w-5" />}
-          label="Due This Week"
-          meta="The next seven days surfaced into one planning line."
-          value={loading ? "..." : counts.thisWeek}
-        />
-        <MetricCard
-          accent={variant.accent}
-          icon={<BookOpenText className="h-5 w-5" />}
-          label="Courses Represented"
-          meta="Distinct course streams with active calendar movement."
-          value={loading ? "..." : data?.courses.length ?? 0}
-        />
-      </div>
+        </>
+      )}
 
       {loading ? (
         <div className="space-y-6">

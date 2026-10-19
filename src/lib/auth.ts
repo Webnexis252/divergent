@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { SignJWT, jwtVerify } from 'jose';
 import { UserRole } from '@prisma/client';
 import { isTokenRevoked } from '@/lib/session-revocation';
+import { getDevBypassUser } from '@/lib/dev-auth-bypass';
 
 const JWT_SECRET_VALUE = process.env.JWT_SECRET!;
 export const AUTH_COOKIE_NAME = 'divergent_auth_token';
@@ -50,6 +51,8 @@ export async function signToken(payload: JwtPayload): Promise<string> {
 export async function verifyTokenValue(
   token?: string | null,
 ): Promise<JwtPayload | null> {
+  const devUser = getDevBypassUser();
+  if (devUser) return devUser;
   if (!token) return null;
 
   try {

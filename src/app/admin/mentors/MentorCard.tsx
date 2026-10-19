@@ -26,9 +26,9 @@ function RoleBadge({ role }: { role: string }) {
 
 function StatChip({ value, label }: { value: number; label: string }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl bg-[#f8f9fb] px-4 py-3">
-      <span className="text-[18px] font-bold text-[#101828]">{value}</span>
-      <span className="mt-0.5 text-[11px] text-[#667085]">{label}</span>
+    <div className="flex flex-col items-center rounded-[12px] bg-[#f8fafc] px-3 py-2.5">
+      <span className="text-[17px] font-semibold text-[#0f172a]">{value}</span>
+      <span className="mt-0.5 text-[11px] text-[#64748b]">{label}</span>
     </div>
   );
 }
@@ -78,10 +78,9 @@ export function MentorCard({
         viewport={{ once: true }}
         transition={{ delay: index * 0.04, duration: 0.35 }}
         whileHover={{ y: -5, boxShadow: "0 20px 48px rgba(124,58,237,0.10)" }}
-        className="flex flex-col overflow-hidden rounded-[24px] border border-[#eceef2] bg-white transition-shadow"
+        className="flex flex-col overflow-hidden rounded-[20px] border border-[#eef1f5] bg-white transition-[border-color,box-shadow] hover:border-[#e2e8f0]"
       >
         {/* Coloured top band */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-[#7c3aed] to-[#a78bfa]" />
 
         <div className="flex flex-1 flex-col p-5">
           {/* Header row */}
@@ -91,16 +90,16 @@ export function MentorCard({
                 <img
                   src={mentor.image}
                   alt={mentor.name ?? ""}
-                  className="h-12 w-12 shrink-0 rounded-2xl object-cover ring-2 ring-violet-100"
+                  className="h-11 w-11 shrink-0 rounded-full object-cover"
                 />
               ) : (
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#a78bfa] text-sm font-bold text-white ring-2 ring-violet-100">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#ede9fe] text-[13px] font-semibold text-[#6d28d9]">
                   {initials}
                 </div>
               )}
               <div className="min-w-0">
-                <p className="truncate font-bold text-[#101828]">{mentor.name ?? "Unnamed"}</p>
-                <p className="mt-0.5 truncate text-[12px] text-[#667085]">{mentor.email}</p>
+                <p className="truncate text-[14px] font-semibold text-[#0f172a]">{mentor.name ?? "Unnamed"}</p>
+                <p className="mt-0.5 truncate text-[12px] text-[#64748b]">{mentor.email}</p>
               </div>
             </div>
             <RoleBadge role={mentor.role} />
@@ -114,28 +113,28 @@ export function MentorCard({
           </div>
 
           {/* First-answer time over the last 30 days */}
-          <p className="mt-3 text-[12px] text-[#667085]">
+          <p className="mt-3 text-[12px] text-[#64748b]">
             First answer (30 days):{" "}
             {response && response.asked > 0 ? (
-              <span className="font-semibold text-[#101828]">
+              <span className="font-semibold text-[#0f172a]">
                 {medianAnswer ?? "not yet answered"}
                 {" · "}
                 {Math.round((response.withinTwoHours / response.asked) * 100)}% within 2h
               </span>
             ) : (
-              <span className="font-semibold text-[#101828]">no doubts assigned</span>
+              <span className="font-semibold text-[#0f172a]">no doubts assigned</span>
             )}
           </p>
 
           {/* Resolution rate bar */}
           <div className="mt-4">
             <div className="mb-1.5 flex items-center justify-between text-[11px]">
-              <span className="text-[#667085]">7-day resolution rate</span>
-              <span className="font-semibold text-[#101828]">{resolutionRate}%</span>
+              <span className="text-[#64748b]">7-day resolution rate</span>
+              <span className="font-semibold text-[#0f172a]">{resolutionRate}%</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#f0f0f5]">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#e0f2fe]">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#a78bfa]"
+                className="h-full rounded-full bg-[#209bd2]"
                 initial={{ width: 0 }}
                 whileInView={{ width: `${resolutionRate}%` }}
                 viewport={{ once: true }}
@@ -154,7 +153,7 @@ export function MentorCard({
             <button
               id={`mentor-goals-btn-${mentor.id}`}
               onClick={() => setIsGoalsOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-gray-50 hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 active:scale-95"
             >
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
@@ -164,7 +163,7 @@ export function MentorCard({
             <button
               id={`mentor-skills-btn-${mentor.id}`}
               onClick={() => setIsSkillsOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500/20 active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-gray-50 hover:text-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500/20 active:scale-95"
             >
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -177,7 +176,7 @@ export function MentorCard({
               <button
                 id={`mentor-otp-btn-${mentor.id}`}
                 onClick={onGenerateOtp}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-yellow-50 hover:border-yellow-200 hover:text-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/20 active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-yellow-50 hover:border-yellow-200 hover:text-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/20 active:scale-95"
               >
                 <KeyRound className="h-3.5 w-3.5" />
                 Reset OTP
@@ -187,7 +186,7 @@ export function MentorCard({
               <button
                 id={`mentor-setpw-btn-${mentor.id}`}
                 onClick={onSetPassword}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-gray-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-95"
               >
                 <Lock className="h-3.5 w-3.5" />
                 Set Password
@@ -199,7 +198,7 @@ export function MentorCard({
               <button
                 id={`mentor-suspend-btn-${mentor.id}`}
                 onClick={() => onSuspend(mentor.id)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
               >
                 <PauseCircle className="h-3.5 w-3.5" />
                 Suspend
@@ -209,7 +208,7 @@ export function MentorCard({
               <button
                 id={`mentor-delete-btn-${mentor.id}`}
                 onClick={() => onDelete(mentor.id)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 Delete

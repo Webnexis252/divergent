@@ -9,13 +9,13 @@ import { priorityTone } from "./_types";
 export function RecentEnrollments({ enrollments }: { enrollments: AdminOverviewData["recentEnrollments"] }) {
   return (
     <RevealSection>
-      <section className="rounded-[30px] border border-white/70 bg-white/95 p-6 shadow-[0_20px_45px_rgba(15,23,42,0.08)]">
+      <section className="rounded-[24px] border border-[#e8edf3] bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#94a3b8]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#94a3b8]">
               Enrollments
             </p>
-            <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-[#0f172a]">
+            <h2 className="mt-2 text-[18px] font-semibold tracking-[-0.02em] text-[#0f172a]">
               Recent student momentum
             </h2>
           </div>
@@ -64,11 +64,11 @@ export function RecentEnrollments({ enrollments }: { enrollments: AdminOverviewD
 export function OpenDoubts({ doubts }: { doubts: AdminOverviewData["recentDoubts"] }) {
   return (
     <RevealSection>
-      <section className="rounded-[30px] border border-white/70 bg-white/95 p-6 shadow-[0_20px_45px_rgba(15,23,42,0.08)]">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#94a3b8]">
+      <section className="rounded-[24px] border border-[#e8edf3] bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#94a3b8]">
           Support Queue
         </p>
-        <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-[#0f172a]">
+        <h2 className="mt-2 text-[18px] font-semibold tracking-[-0.02em] text-[#0f172a]">
           Open doubts
         </h2>
 

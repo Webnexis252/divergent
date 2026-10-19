@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback, lazy, Suspense, useRef } from "react";
-import { m as motion } from "motion/react";
 import {
   ArrowUpRight,
   BookOpen,
@@ -19,17 +18,26 @@ import {
   ChevronRight,
   Search,
   Star,
+  X,
 } from "lucide-react";
 import { AnimCard, PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
 import PricingPlanBuilder, { PricingPlan } from "../_components/PricingPlanBuilder";
 import { formatShortDate } from "@/lib/date-format";
 import { Field, TextAreaField, SelectField } from "@/components/ui/field";
-import { Button, buttonStyles } from "@/components/ui/button";
-import { Surface } from "@/components/ui/surface";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cx } from "@/lib/cx";
 import Link from "next/link";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  StatusBadge,
+  adminButton,
+  adminButtonSm,
+  adminInputClass,
+  adminPanelClass,
+} from "../_components/admin-ui";
 
 import type { Course, Teacher } from "./_types";
 import { teacherRoleLabel, getTeacherDisplayName } from "./_types";
@@ -289,40 +297,20 @@ export default function AdminCoursesPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
-        {/* Hero */}
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
-          <section className="relative overflow-hidden rounded-[34px] bg-gradient-to-r from-[#0369a1] via-[#0284c7] to-[#38c1ff] px-8 py-10 text-white shadow-[0_24px_60px_rgba(2,132,199,0.28)]">
-            <motion.div
-              className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl"
-              animate={{ scale: [1, 1.25, 1] }}
-              transition={{ duration: 5, repeat: Infinity }}
-            />
-            <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em]">
-                  Course Library
-                </div>
-                <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em]">Courses</h1>
-                <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/85">
-                  Manage published courses. Create new ones and track enrollment growth.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowCreate(!showCreate)}
-                className={cx(
-                  buttonStyles({
-                    variant: "secondary",
-                    size: "md",
-                    className:
-                      "shrink-0 rounded-[18px] border-white/70 bg-white/94 text-[#0284c7] hover:bg-white",
-                  }),
-                )}
-              >
-                {showCreate ? "Close Creator" : "+ New Course"}
+          <AdminPageHeader
+            eyebrow="Course library"
+            icon={BookOpen}
+            title="Courses"
+            description="Manage published courses, create new ones and track enrollment growth."
+            actions={
+              <button type="button" onClick={() => setShowCreate(!showCreate)} className={showCreate ? adminButton.secondary : adminButton.primary}>
+                {showCreate ? <X className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
+                {showCreate ? "Close creator" : "New course"}
               </button>
-            </div>
-          </section>
+            }
+          />
         </RevealSection>
 
         {/* Create form */}
@@ -332,17 +320,17 @@ export default function AdminCoursesPage() {
               <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between pb-2">
                   <div>
-                    <h2 className="text-[24px] font-bold tracking-tight text-[#0f172a]">Create New Course</h2>
+                    <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-[#0f172a]">Create new course</h2>
                     <p className="mt-1 text-[14px] text-[#64748b]">Configure your course details below. Changes are saved as a draft.</p>
                   </div>
                   <div className="flex items-center gap-2">
-                     <Badge tone="neutral" className="bg-[#f1f5f9] text-[#475569] border-[#e2e8f0]">Draft Mode</Badge>
+                     <StatusBadge>Draft</StatusBadge>
                   </div>
                 </div>
 
                 <form onSubmit={handleCreate} className="flex flex-col gap-6">
                   {/* Basic Details Card */}
-                  <Surface className="overflow-hidden border border-[#e2e8f0] bg-white p-6 shadow-sm rounded-xl">
+                  <section className="rounded-[20px] border border-[#e8edf3] bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
                     <h3 className="text-[16px] font-semibold text-[#0f172a] mb-5">Basic Details</h3>
                     <div className="grid gap-5">
                       <Field
@@ -380,10 +368,10 @@ export default function AdminCoursesPage() {
                         value={form.overviewContent}
                       />
                     </div>
-                  </Surface>
+                  </section>
 
                   {/* Pricing Card */}
-                  <Surface className="overflow-hidden border border-[#e2e8f0] bg-white p-6 shadow-sm rounded-xl">
+                  <section className="rounded-[20px] border border-[#e8edf3] bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
                     <h3 className="text-[16px] font-semibold text-[#0f172a] mb-5">Pricing & Plans</h3>
                     <div className="grid gap-5 sm:grid-cols-2">
                       <Field label="Price (INR)" onChange={e => setForm(p => ({...p, price: e.target.value}))} value={form.price} placeholder="e.g. 1500" type="number" />
@@ -422,10 +410,10 @@ export default function AdminCoursesPage() {
                         </div>
                       )}
                     </div>
-                  </Surface>
+                  </section>
 
                   {/* Social Proof Card */}
-                  <Surface className="overflow-hidden border border-[#e2e8f0] bg-white p-6 shadow-sm rounded-xl">
+                  <section className="rounded-[20px] border border-[#e8edf3] bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
                     <h3 className="text-[16px] font-semibold text-[#0f172a] mb-5">Social Proof & FAQ</h3>
                     
                     <div className="space-y-4">
@@ -559,7 +547,7 @@ export default function AdminCoursesPage() {
                         )}
                       </div>
                     </div>
-                  </Surface>
+                  </section>
 
                   {/* Actions */}
                   <div className="flex items-center justify-end gap-3 mt-2 mb-8">
@@ -598,7 +586,7 @@ export default function AdminCoursesPage() {
                 </div>
 
                 {/* Status & Visibility */}
-                <Surface className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
+                <section className="rounded-[20px] border border-[#e8edf3] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
                   <h4 className="font-semibold text-slate-900 mb-4">Status & Visibility</h4>
                   <div className="space-y-3">
                     <label className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
@@ -644,10 +632,10 @@ export default function AdminCoursesPage() {
                       </div>
                     </label>
                   </div>
-                </Surface>
+                </section>
 
                 {/* Settings & Thumbnail Form */}
-                <Surface className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
+                <section className="rounded-[20px] border border-[#e8edf3] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
                   <h4 className="font-semibold text-slate-900 mb-4">Media & Settings</h4>
                   <div className="space-y-5">
                     <div>
@@ -700,51 +688,60 @@ export default function AdminCoursesPage() {
                       </div>
                     </div>
                   </div>
-                </Surface>
+                </section>
               </div>
             </section>
           </RevealSection>
         )}
 
         {/* Stats */}
-        <StaggerGrid className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <AdminStatCard index={0} title="Total Courses" value={loading ? "…" : courses.length} caption="All courses in the system." tone="sky" />
-          <AdminStatCard index={1} title="Published" value={loading ? "…" : published} caption="Currently visible to students." tone="emerald" />
-          <AdminStatCard index={2} title="Total Enrollments" value={loading ? "…" : totalEnrollments} caption="Combined learners across all courses." tone="amber" />
+        <StaggerGrid className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <AdminStatCard index={0} title="Total courses" value={loading ? "…" : courses.length} caption="All courses in the system." icon={<BookOpen />} tone="sky" />
+          <AdminStatCard index={1} title="Published" value={loading ? "…" : published} caption="Currently visible to students." icon={<ShieldCheck />} tone="emerald" />
+          <AdminStatCard index={2} title="Total enrollments" value={loading ? "…" : totalEnrollments} caption="Combined learners across all courses." icon={<GraduationCap />} tone="amber" />
         </StaggerGrid>
 
         {/* Course table */}
         <RevealSection>
-          <section className="rounded-[28px] border border-white/70 bg-white/95 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-            <div className="flex flex-col gap-4 border-b border-[#eef0f3] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-[#101828]">Course Library</h2>
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94a3b8]" />
+          <section className={adminPanelClass}>
+            <div className="flex flex-col gap-4 border-b border-[#eef1f5] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[#e0f2fe] text-[#0284c7]">
+                  <LayoutPanelTop className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#0f172a]">Course library</h2>
+                  <p className="mt-1 text-[13px] text-[#64748b]">Open a course to manage its curriculum, exams and students</p>
+                </div>
+              </div>
+              <label className="relative w-full sm:w-72">
+                <span className="sr-only">Search courses</span>
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
                 <input
                   type="text"
-                  placeholder="Search courses..."
+                  placeholder="Search courses…"
                   value={searchQuery}
                   onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  className="w-full rounded-full border border-[#cbd5e1] pl-9 pr-4 py-2 text-sm outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]"
+                  className={`${adminInputClass} pl-10`}
                 />
-              </div>
+              </label>
             </div>
             <div className="overflow-x-auto">
               {loading ? (
                 <div className="space-y-3 p-6">
-                  {[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-[18px] bg-[#f3f4f6]" />)}
+                  {[1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-[16px] bg-[#f1f5f9]" />)}
                 </div>
               ) : (
-                <StaggerGrid className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-6">
+                <StaggerGrid className="grid gap-4 p-5 sm:p-6 md:grid-cols-2 xl:grid-cols-3">
                   {paginatedCourses.map((course) => (
                     <AnimCard key={course.id}>
-                      <div className="group relative overflow-hidden rounded-[20px] bg-white p-[10px] shadow-[0_4px_10px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-1">
-                        <Link href={`/admin/courses/${course.id}`} className="absolute inset-0 z-0" />
+                      <div className="group relative overflow-hidden rounded-[20px] border border-[#eef1f5] bg-white p-2.5 transition-[border-color,box-shadow] hover:border-[#e2e8f0] hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]">
+                        <Link href={`/admin/courses/${course.id}`} className="absolute inset-0 z-0" aria-label={`Open ${course.title}`} />
                         <article className="relative z-10 pointer-events-none">
-                          <div className="overflow-hidden rounded-[16px] bg-[#d0d0d0]">
+                          <div className="overflow-hidden rounded-[14px] bg-[#f1f5f9]">
                             <div
                               aria-hidden="true"
-                              className="h-[184px] w-full bg-cover bg-center"
+                              className="h-[176px] w-full bg-cover bg-center"
                               style={{
                                 backgroundImage: course.thumbnail
                                   ? `linear-gradient(180deg, rgba(8, 16, 24, 0.04), rgba(8, 16, 24, 0.18)), url("${course.thumbnail}")`
@@ -753,27 +750,24 @@ export default function AdminCoursesPage() {
                             />
                           </div>
 
-                          <div className="space-y-3 px-1 pb-1 pt-4">
+                          <div className="space-y-3 px-1.5 pb-1.5 pt-4">
                             <div className="space-y-1">
-                              <h3 className="text-[16px] font-semibold leading-[1.15] text-black group-hover:text-blue-600 transition-colors">
+                              <h3 className="text-[15px] font-semibold leading-snug text-[#0f172a] transition-colors group-hover:text-[#0369a1]">
                                 {course.title}
                               </h3>
-                              <p className="text-[12px] text-[#959595]">
-                                by {course.teachers?.[0]?.name ?? "Expert Mentors"}
-                              </p>
-                              <p className="text-[12px] font-medium text-black">
-                                {course._count?.enrollments ?? 0} student{(course._count?.enrollments ?? 0) === 1 ? "" : "s"}
+                              <p className="text-[12px] text-[#64748b]">
+                                by {course.teachers?.[0]?.name ?? "Expert Mentors"} · {course._count?.enrollments ?? 0} student{(course._count?.enrollments ?? 0) === 1 ? "" : "s"}
                               </p>
                             </div>
 
-                            <div className="flex items-end justify-between gap-4 pointer-events-auto">
-                              <div className="space-y-1 pointer-events-none">
-                                <p className="text-[12px] font-medium text-black">
+                            <div className="pointer-events-auto flex items-center justify-between gap-3 border-t border-[#f1f5f9] pt-3">
+                              <div className="pointer-events-none flex items-center gap-2">
+                                <span className="text-[14px] font-semibold tabular-nums text-[#0f172a]">
                                   {course.price > 0 ? `₹${course.price.toLocaleString("en-IN")}` : "Free"}
-                                </p>
-                                <p className={cx("text-[12px]", course.isPublished ? "text-[#4caf50]" : "text-[#94a3b8]")}>
+                                </span>
+                                <StatusBadge tone={course.isPublished ? "good" : "neutral"}>
                                   {course.isPublished ? "Published" : "Draft"}
-                                </p>
+                                </StatusBadge>
                               </div>
 
                               <div className="flex items-center gap-2">
@@ -783,9 +777,9 @@ export default function AdminCoursesPage() {
                                     e.stopPropagation();
                                     setEditingCourse(course);
                                   }}
-                                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-blue-200 bg-blue-50 px-3 py-1.5 text-[12px] font-semibold text-blue-600 transition-colors hover:bg-blue-100"
+                                  className={adminButtonSm.secondary}
                                 >
-                                  <Pencil className="h-3 w-3" />
+                                  <Pencil className="h-3.5 w-3.5" />
                                   Edit
                                 </button>
                                 <button
@@ -794,10 +788,10 @@ export default function AdminCoursesPage() {
                                     e.stopPropagation();
                                     handleDeleteCourse(course.id);
                                   }}
-                                  className="inline-flex items-center gap-1.5 rounded-[10px] bg-red-50 px-3 py-1.5 text-[12px] font-semibold text-red-600 transition-colors hover:bg-red-100"
+                                  aria-label={`Delete ${course.title}`}
+                                  className={adminButtonSm.danger}
                                 >
-                                  <Trash2 className="h-3 w-3" />
-                                  Delete
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               </div>
                             </div>
@@ -811,7 +805,7 @@ export default function AdminCoursesPage() {
             </div>
             
             {!loading && filteredCourses.length > 0 && (
-              <div className="flex items-center justify-end gap-4 border-t border-[#eef0f3] px-6 py-4 text-sm text-[#64748b]">
+              <div className="flex items-center justify-end gap-4 border-t border-[#eef1f5] px-6 py-4 text-[12px] font-medium text-[#64748b]">
                 <div>
                   {Math.min((currentPage - 1) * itemsPerPage + 1, filteredCourses.length)}–
                   {Math.min(currentPage * itemsPerPage, filteredCourses.length)} of {filteredCourses.length}
@@ -820,23 +814,27 @@ export default function AdminCoursesPage() {
                   <button
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="rounded p-1 hover:bg-[#f1f5f9] disabled:opacity-30 disabled:hover:bg-transparent"
+                    className="grid h-8 w-8 place-items-center rounded-[10px] border border-[#e2e8f0] bg-white text-[#475569] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <ChevronLeft className="h-5 w-5" />
+                    <ChevronLeft className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages || totalPages === 0}
-                    className="rounded p-1 hover:bg-[#f1f5f9] disabled:opacity-30 disabled:hover:bg-transparent"
+                    className="grid h-8 w-8 place-items-center rounded-[10px] border border-[#e2e8f0] bg-white text-[#475569] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <ChevronRight className="h-5 w-5" />
+                    <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             )}
             {!loading && filteredCourses.length === 0 && (
-              <div className="p-8 text-center text-sm text-[#64748b]">
-                No courses found matching "{searchQuery}"
+              <div className="p-5 sm:p-6">
+                <AdminEmptyState
+                  icon={BookOpen}
+                  title={searchQuery ? "No matching courses" : "No courses yet"}
+                  description={searchQuery ? `Nothing matches "${searchQuery}".` : "Create your first course with New course."}
+                />
               </div>
             )}
           </section>

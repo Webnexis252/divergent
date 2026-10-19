@@ -1,50 +1,63 @@
 "use client";
 
-import { m as motion } from "motion/react";
-import { RevealSection } from "@/app/dashboard/_components/motion-wrappers";
+import { ChartColumn } from "lucide-react";
+import { AdminPanel, AdminPanelHeader, SummaryFigures } from "../../_components/admin-ui";
+import { ColumnChart } from "../../_components/ColumnChart";
 import type { RevenueData } from "./_types";
 
-export default function RevenueTrend({ trend, maxTrend }: { trend: RevenueData["monthlyTrend"]; maxTrend: number }) {
-  return (
-    <RevealSection>
-      <section className="rounded-[30px] border border-white/70 bg-white/95 p-6 shadow-[0_20px_45px_rgba(15,23,42,0.08)]">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#94a3b8]">
-              Trend
-            </p>
-            <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-[#0f172a]">
-              Monthly demand trend
-            </h2>
-          </div>
-          <p className="text-sm text-[#64748b]">Enrollments used as the leading signal.</p>
-        </div>
+const whole = new Intl.NumberFormat("en-IN");
+const compact = new Intl.NumberFormat("en-IN", { notation: "compact", maximumFractionDigits: 1 });
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-        <div className="mt-10 grid grid-cols-12 items-end gap-3">
-          {(trend ?? []).map((item, index) => {
-            const height = `${Math.max((item.count / maxTrend) * 100, item.count ? 10 : 4)}%`;
-            return (
-              <div key={item.month} className="col-span-1 flex flex-col items-center gap-3">
-                <div className="flex h-60 w-full items-end justify-center rounded-[24px] bg-[#f6fafc] px-2 py-3">
-                  <motion.div
-                    className="w-full rounded-[16px] bg-[linear-gradient(180deg,#38c1ff_0%,#0f172a_100%)]"
-                    initial={{ height: 0 }}
-                    whileInView={{ height }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.55, delay: index * 0.04 }}
-                  />
-                </div>
-                <div className="text-center">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#94a3b8]">
-                    {item.month}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-[#0f172a]">{item.count}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    </RevealSection>
+/** New enrollments per calendar month this year; months still to come show as empty slots. */
+export default function RevenueTrend({ trend }: { trend: RevenueData["monthlyTrend"] }) {
+  const now = new Date();
+  // The API buckets by UTC month
+  const currentMonth = now.getUTCMonth();
+  const year = now.getUTCFullYear();
+  const months = trend ?? [];
+  const elapsed = months.slice(0, currentMonth + 1);
+
+  const total = elapsed.reduce((sum, m) => sum + m.count, 0);
+  const average = elapsed.length ? total / elapsed.length : 0;
+  const bestIndex = total > 0 ? elapsed.reduce((best, m, i) => (m.count > elapsed[best].count ? i : best), 0) : -1;
+
+  return (
+    <AdminPanel className="h-full">
+      <AdminPanelHeader
+        icon={ChartColumn}
+        tone="sky"
+        title="Enrollments by month"
+        description={`New enrollments in ${year}, the leading signal for revenue`}
+      />
+
+      <SummaryFigures
+        items={[
+          { label: "Year to date", value: whole.format(total) },
+          { label: "Monthly average", value: average >= 10 ? whole.format(Math.round(average)) : average.toFixed(1) },
+          {
+            label: "Best month",
+            value: bestIndex >= 0 ? whole.format(elapsed[bestIndex].count) : "—",
+            detail: <span className="text-[12px] text-[#64748b]">{bestIndex >= 0 ? MONTH_NAMES[bestIndex] : "No enrollments yet"}</span>,
+          },
+        ]}
+      />
+
+      <div className="mt-6">
+        <ColumnChart
+          ariaLabel={`Enrollments by month, ${year}`}
+          unit="enrollments"
+          formatValue={(v) => whole.format(v)}
+          formatTick={(v) => compact.format(v)}
+          data={months.map((m, i) => ({
+            key: m.month,
+            label: m.month.charAt(0) + m.month.slice(1).toLowerCase(),
+            detail: `${MONTH_NAMES[i]} ${year}`,
+            value: m.count,
+            pending: i > currentMonth,
+          }))}
+        />
+      </div>
+    </AdminPanel>
   );
 }

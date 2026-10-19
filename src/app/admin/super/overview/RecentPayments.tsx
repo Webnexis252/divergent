@@ -1,74 +1,70 @@
 "use client";
 
 import { m as motion } from "motion/react";
+import { Receipt } from "lucide-react";
 import { formatShortDate } from "@/lib/date-format";
-import { RevealSection } from "@/app/dashboard/_components/motion-wrappers";
+import { AdminEmptyState, AdminPanel, AdminPanelHeader, StatusBadge } from "../../_components/admin-ui";
+import type { StatusTone } from "../../_components/admin-ui";
 import type { RevenueData } from "./_types";
 
+const currency = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+const STATUS_TONE: Record<string, StatusTone> = {
+  SUCCESS: "good",
+  PENDING: "warning",
+  FAILED: "critical",
+  REFUNDED: "neutral",
+};
+
+function titleCase(value: string) {
+  return value.charAt(0) + value.slice(1).toLowerCase();
+}
+
 export default function RecentPayments({ payments }: { payments: RevenueData["recentPayments"] }) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   return (
-    <RevealSection delay={0.08}>
-      <section className="rounded-[30px] border border-white/70 bg-white/95 p-6 shadow-[0_20px_45px_rgba(15,23,42,0.08)]">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#94a3b8]">
-          Recent Transactions
-        </p>
-        <h2 className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-[#0f172a]">
-          Latest payment activity
-        </h2>
+    <AdminPanel className="h-full">
+      <AdminPanelHeader icon={Receipt} tone="emerald" title="Recent transactions" description="Latest payment activity" />
 
-        <div className="mt-6 space-y-3">
-          {payments?.length ? (
-            payments.slice(0, 8).map((payment, index) => (
-              <motion.article
-                key={payment.id}
-                initial={{ opacity: 0, y: 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.35, delay: index * 0.04 }}
-                className="rounded-[22px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-4"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-semibold text-[#0f172a]">
-                      {payment.studentName ?? "Unknown student"}
-                    </p>
-                    <p className="mt-1 text-sm text-[#64748b]">
-                      {payment.studentEmail ?? "No email"}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-[#ecfdf5] px-3 py-1 text-xs font-bold text-[#15803d]">
-                    {payment.status}
-                  </span>
+      {payments?.length ? (
+        <ul className="mt-5 divide-y divide-[#f1f5f9]">
+          {payments.slice(0, 8).map((payment, index) => (
+            <motion.li
+              key={payment.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: index * 0.03 }}
+              className="flex items-center justify-between gap-4 py-3"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#f1f5f9] text-[13px] font-semibold text-[#334155]">
+                  {(payment.studentName ?? payment.studentEmail ?? "?").slice(0, 1).toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[14px] font-semibold text-[#0f172a]">
+                    {payment.studentName ?? "Unknown student"}
+                  </p>
+                  <p className="truncate text-[12px] text-[#64748b]">
+                    {payment.studentEmail ?? "No email"} · {formatShortDate(payment.createdAt)}
+                  </p>
                 </div>
-
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-                  <div className="font-semibold text-[#0f172a]">
-                    {formatCurrency(payment.amount)}
-                    {payment.couponCode ? (
-                      <span className="ml-2 rounded-full bg-[#fff7df] px-2 py-1 text-xs font-semibold text-[#b45309]">
-                        {payment.couponCode}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="text-[#64748b]">{formatShortDate(payment.createdAt)}</div>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="text-[14px] font-semibold tabular-nums text-[#0f172a]">{currency.format(payment.amount)}</span>
+                <div className="flex items-center gap-1.5">
+                  {payment.couponCode ? <StatusBadge tone="info">{payment.couponCode}</StatusBadge> : null}
+                  <StatusBadge tone={STATUS_TONE[payment.status] ?? "neutral"}>{titleCase(payment.status)}</StatusBadge>
                 </div>
-              </motion.article>
-            ))
-          ) : (
-            <p className="rounded-[24px] border border-dashed border-[#d8e3ef] px-5 py-10 text-center text-[#64748b]">
-              No transactions yet.
-            </p>
-          )}
-        </div>
-      </section>
-    </RevealSection>
+              </div>
+            </motion.li>
+          ))}
+        </ul>
+      ) : (
+        <AdminEmptyState className="mt-5" icon={Receipt} title="No transactions yet" description="Payments will appear here as students check out." />
+      )}
+    </AdminPanel>
   );
 }

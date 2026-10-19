@@ -102,7 +102,7 @@ export function StudentTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-white/70 bg-white/95 shadow-[0_20px_45px_rgba(15,23,42,0.08)]">
+    <div className="overflow-hidden rounded-[24px] border border-[#e8edf3] bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
       <div className="grid gap-3 p-3 md:hidden">
         {students.map((student) => {
           const isExpanded = expandedRow === student.id;
@@ -126,11 +126,11 @@ export function StudentTable({
                       type="checkbox"
                       checked={selectedIds.has(student.id) || selectAllMode === "ALL"}
                       onChange={() => {}}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded accent-[#209bd2]"
                     />
                   </div>
                 )}
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,#38c1ff_0%,#0ea5e9_100%)] text-sm font-bold text-white shadow-[0_10px_24px_rgba(56,193,255,0.28)]">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#e0f2fe] text-[13px] font-semibold text-[#0369a1]">
                   {student.name?.[0]?.toUpperCase() || "S"}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -174,7 +174,7 @@ export function StudentTable({
                   >
                     <div className="mt-4 space-y-4 border-t border-[#eef2f7] pt-4">
                       <div>
-                        <h4 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]">
+                        <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#94a3b8]">
                           Recent Enrollments
                         </h4>
                         {student.enrollments.length > 0 ? (
@@ -200,7 +200,7 @@ export function StudentTable({
                                 </div>
                                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#e2e8f0]">
                                   <div
-                                    className="h-full rounded-full bg-[linear-gradient(90deg,#38c1ff_0%,#0ea5e9_100%)]"
+                                    className="h-full rounded-full bg-[#209bd2]"
                                     style={{ width: `${enrollment.progressPercent}%` }}
                                   />
                                 </div>
@@ -274,7 +274,7 @@ export function StudentTable({
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-95"
+                          className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-gray-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-95"
                           onClick={() => setAssignGoalStudent({ id: student.id, name: student.name ?? "Student" })}
                           type="button"
                         >
@@ -283,7 +283,7 @@ export function StudentTable({
                         </button>
                         {onSetPassword && (
                           <button
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 active:scale-95"
+                            className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-gray-50 hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 active:scale-95"
                             onClick={() => onSetPassword(student.id)}
                             type="button"
                           >
@@ -292,7 +292,7 @@ export function StudentTable({
                           </button>
                         )}
                         <button
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
+                          className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
                           onClick={() => onStatusChange(student.id, "SUSPENDED")}
                           type="button"
                         >
@@ -301,7 +301,7 @@ export function StudentTable({
                         </button>
                         {onDelete && (
                           <button
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
+                            className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
                             onClick={() => onDelete(student.id)}
                             type="button"
                           >
@@ -322,22 +322,22 @@ export function StudentTable({
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-[#e8eef5] bg-[#f8fbff]">
+            <tr className="border-b border-[#eef1f5] bg-[#f8fafc]">
               {canManageXp && (
-                <th className="px-6 py-4 w-12">
+                <th className="w-12 px-6 py-3">
                   <input
                     type="checkbox"
                     checked={selectAllMode === "PAGE" || selectAllMode === "ALL"}
                     onChange={handleSelectAllOnPage}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded accent-[#209bd2]"
                   />
                 </th>
               )}
-              <th className="px-6 py-4 text-sm font-semibold text-[#64748b]">Student Name</th>
-              <th className="px-6 py-4 text-sm font-semibold text-[#64748b]">Joined</th>
-              <th className="px-6 py-4 text-sm font-semibold text-[#64748b]">Total XP</th>
-              <th className="px-6 py-4 text-sm font-semibold text-[#64748b]">Courses</th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-[#64748b]">Actions</th>
+              <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#64748b]">Student Name</th>
+              <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#64748b]">Joined</th>
+              <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#64748b]">Total XP</th>
+              <th className="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#64748b]">Courses</th>
+              <th className="px-6 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-[#64748b]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -349,7 +349,7 @@ export function StudentTable({
               return (
                 <Fragment key={student.id}>
                   <tr
-                    className="cursor-pointer border-b border-[#eef2f7] transition-colors hover:bg-[#fbfdff]"
+                    className="cursor-pointer border-b border-[#f1f5f9] transition-colors hover:bg-[#fbfcfd]"
                     onClick={() => router.push(`/admin/students/${student.id}`)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -366,17 +366,17 @@ export function StudentTable({
                           type="checkbox"
                           checked={selectedIds.has(student.id) || selectAllMode === "ALL"}
                           onChange={() => {}}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 pointer-events-none"
+                          className="h-4 w-4 rounded accent-[#209bd2] pointer-events-none"
                         />
                       </td>
                     )}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="grid h-11 w-11 place-items-center rounded-full bg-[linear-gradient(135deg,#38c1ff_0%,#0ea5e9_100%)] text-sm font-bold text-white shadow-[0_10px_24px_rgba(56,193,255,0.3)]">
+                        <div className="grid h-11 w-11 place-items-center rounded-full bg-[#e0f2fe] text-[13px] font-semibold text-[#0369a1]">
                           {student.name?.[0]?.toUpperCase() || "S"}
                         </div>
                         <div>
-                          <p className="text-[15px] font-semibold text-[#0f172a]">
+                          <p className="text-[14px] font-semibold text-[#0f172a]">
                             {student.name ?? "Unnamed student"}
                           </p>
                           <p className="text-sm text-[#64748b]">{student.email ?? "No email"}</p>
@@ -418,7 +418,7 @@ export function StudentTable({
                           >
                             <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(260px,1fr)]">
                               <div className="col-span-2">
-                                <h4 className="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
+                                <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#94a3b8]">
                                   Recent Enrollments
                                 </h4>
                                 {student.enrollments.length > 0 ? (
@@ -434,7 +434,7 @@ export function StudentTable({
                                         <div className="flex items-center gap-4">
                                           <div className="h-2 w-24 overflow-hidden rounded-full bg-[#e2e8f0]">
                                             <div
-                                              className="h-full rounded-full bg-[linear-gradient(90deg,#38c1ff_0%,#0ea5e9_100%)]"
+                                              className="h-full rounded-full bg-[#209bd2]"
                                               style={{ width: `${enrollment.progressPercent}%` }}
                                             />
                                           </div>
@@ -457,7 +457,7 @@ export function StudentTable({
                               </div>
 
                               <div className="space-y-4">
-                                <h4 className="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
+                                <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#94a3b8]">
                                   Quick Actions
                                 </h4>
                                 {canManageXp ? (
@@ -519,7 +519,7 @@ export function StudentTable({
                                 ) : null}
                                 <div className="mt-3 flex flex-wrap gap-2">
                                   <button
-                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-95"
+                                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-gray-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-95"
                                     onClick={() => setAssignGoalStudent({ id: student.id, name: student.name ?? "Student" })}
                                     type="button"
                                   >
@@ -528,7 +528,7 @@ export function StudentTable({
                                   </button>
                                   {onSetPassword && (
                                     <button
-                                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 active:scale-95"
+                                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-gray-50 hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 active:scale-95"
                                       onClick={() => onSetPassword(student.id)}
                                       type="button"
                                     >
@@ -537,7 +537,7 @@ export function StudentTable({
                                     </button>
                                   )}
                                   <button
-                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
+                                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
                                     onClick={() => onStatusChange(student.id, "SUSPENDED")}
                                     type="button"
                                   >
@@ -546,7 +546,7 @@ export function StudentTable({
                                   </button>
                                   {onDelete && (
                                     <button
-                                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
+                                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e2e8f0] bg-white px-3 py-2 text-[12px] font-semibold text-[#334155] transition-all hover:bg-red-50 hover:border-red-200 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 active:scale-95"
                                       onClick={() => onDelete(student.id)}
                                       type="button"
                                     >

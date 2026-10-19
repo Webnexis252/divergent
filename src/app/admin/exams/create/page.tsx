@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { m as motion } from "motion/react";
-import { ChevronRight, Save, Loader2 } from "lucide-react";
+import { ChevronRight, FileText, Layers, ListChecks, Loader2 } from "lucide-react";
+import {
+  AdminPageHeader,
+  AdminPanel,
+  AdminPanelHeader,
+  adminButton,
+  adminInputClass,
+  adminLabelClass,
+  adminPanelClass,
+} from "../../_components/admin-ui";
 
 export default function CreateExamPage() {
   const router = useRouter();
@@ -64,85 +73,77 @@ export default function CreateExamPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-10">
+    <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-[13px] font-medium text-[#667085]">
-        <button onClick={() => router.push("/admin/exams")} className="hover:text-black">Exams</button>
-        <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-black">Create Exam</span>
-      </div>
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[13px] font-medium text-[#64748b]">
+        <button type="button" onClick={() => router.push("/admin/exams")} className="transition-colors hover:text-[#0f172a]">Exams</button>
+        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+        <span className="text-[#0f172a]">Create exam</span>
+      </nav>
+
+      <AdminPageHeader
+        eyebrow="Exam management"
+        icon={FileText}
+        title="Create a test"
+        description="Set the basics here, then add sections and questions in the exam builder."
+      />
 
       {/* ── Step 1: Details ── */}
-      <section className="overflow-hidden rounded-[24px] border border-[#e8eaef] bg-white shadow-sm">
-        <div className="border-b border-[#f0f0f5] px-6 py-5">
-          <h2 className="text-[18px] font-semibold tracking-tight text-[#101828]">1. Exam Details</h2>
-        </div>
-        <div className="grid gap-5 p-6 sm:grid-cols-2 lg:grid-cols-3">
+      <AdminPanel>
+        <AdminPanelHeader icon={ListChecks} tone="sky" title="1. Exam details" description="Title, course and timing" />
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {error && (
-            <div className="col-span-full flex items-center gap-2 rounded-[12px] bg-red-50 px-4 py-3 text-[13px] text-red-600 border border-red-100">
+            <div className="col-span-full flex items-center gap-2 rounded-[12px] border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-[13px] text-[#b91c1c]">
               {error}
             </div>
           )}
-          <div className="col-span-full sm:col-span-1 lg:col-span-2">
-            <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Exam Title *</label>
+          <label className="col-span-full block sm:col-span-1 lg:col-span-2">
+            <span className={adminLabelClass}>Exam title *</span>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. UCEED Mock Test 1"
-              className="w-full rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] outline-none focus:border-[#38c1ff] focus:ring-2 focus:ring-blue-100"
+              className={adminInputClass}
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Course *</label>
-            <select
-              value={courseId}
-              onChange={(e) => setCourseId(e.target.value)}
-              className="w-full rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] outline-none focus:border-[#38c1ff]"
-            >
+          </label>
+          <label className="block">
+            <span className={adminLabelClass}>Course *</span>
+            <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className={adminInputClass}>
               {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
             </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Duration (Minutes)</label>
+          </label>
+          <label className="block">
+            <span className={adminLabelClass}>Duration (minutes)</span>
             <input
               type="number"
               value={durationMins}
               onChange={(e) => setDurationMins(e.target.value)}
               min={1}
-              className="w-full rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] outline-none focus:border-[#38c1ff]"
+              className={adminInputClass}
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Available From (Optional)</label>
+          </label>
+          <label className="block">
+            <span className={adminLabelClass}>Available from (optional)</span>
             <input
               type="datetime-local"
               value={availableFrom}
               onChange={(e) => setAvailableFrom(e.target.value)}
-              className="w-full rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] outline-none focus:border-[#38c1ff]"
+              className={adminInputClass}
             />
-          </div>
+          </label>
         </div>
-      </section>
+      </AdminPanel>
 
       {/* ── Step 2: Next ── */}
       <motion.section
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between rounded-[24px] border border-[#e8eaef] bg-white px-6 py-5 shadow-sm"
+        className={`${adminPanelClass} flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6`}
       >
-        <div>
-          <h2 className="text-[16px] font-semibold text-[#101828]">2. Add Content</h2>
-          <p className="text-[13px] text-[#9ca3af]">
-            Proceed to the Exam Builder to add Sections and Questions.
-          </p>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex items-center gap-2 rounded-[12px] bg-[#2563eb] px-6 py-3 text-[14px] font-bold text-white shadow transition hover:bg-[#1d4ed8] disabled:opacity-60"
-        >
+        <AdminPanelHeader icon={Layers} tone="violet" title="2. Add content" description="Continue to the exam builder to add sections and questions" />
+        <button type="button" onClick={handleSave} disabled={isSaving} className={adminButton.primary}>
           {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronRight className="h-4 w-4" />}
-          {isSaving ? "Creating Exam…" : "Continue to Builder"}
+          {isSaving ? "Creating exam…" : "Continue to builder"}
         </button>
       </motion.section>
     </div>

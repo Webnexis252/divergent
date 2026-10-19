@@ -5,7 +5,18 @@ import { m as motion, AnimatePresence } from "motion/react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../../_components/AdminStatCard";
 import { formatShortDate } from "@/lib/date-format";
-import { Check } from "lucide-react";
+import { Check, Crown, Shield, ShieldCheck, UserCog, Users } from "lucide-react";
+import { SegmentedControl } from "@/app/dashboard/_components/segmented-control";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  AdminPanel,
+  AdminPanelHeader,
+  StatusBadge,
+  adminButton,
+  adminButtonSm,
+  adminInputClass,
+} from "../../_components/admin-ui";
 
 type Admin = {
   id: string;
@@ -127,33 +138,24 @@ export default function SuperAdminAdminsPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
-        {/* Hero */}
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
-          <section className="relative overflow-hidden rounded-[34px] bg-gradient-to-r from-[#1e293b] via-[#334155] to-[#475569] px-8 py-10 text-white shadow-[0_24px_60px_rgba(15,23,42,0.30)]">
-            <motion.div
-              className="pointer-events-none absolute -right-12 -top-10 h-52 w-52 rounded-full bg-[#fbbf24]/10 blur-3xl"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 5, repeat: Infinity }}
-            />
-            <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="inline-flex rounded-full bg-[#fbbf24]/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#fde68a]">
-                  Owner Controls
-                </div>
-                <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em]">Admin Accounts</h1>
-                <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/80">
-                  Grant and revoke admin access. Only super admins can manage this list.
-                </p>
-              </div>
+          <AdminPageHeader
+            eyebrow="Owner controls"
+            icon={Shield}
+            title="Admin accounts"
+            description="Grant and revoke admin access. Only super admins can manage this list."
+            actions={
               <button
+                type="button"
                 onClick={() => { setShowCreate(!showCreate); setError(""); setSuccess(""); }}
-                className="shrink-0 rounded-2xl bg-[#fbbf24] px-6 py-3 text-[14px] font-semibold text-[#1e293b] transition hover:bg-[#f59e0b]"
+                className={showCreate ? adminButton.secondary : adminButton.primary}
               >
-                {showCreate ? "Close Panel" : "+ Manage Admins"}
+                <UserCog className="h-4 w-4" aria-hidden="true" />
+                {showCreate ? "Close panel" : "Manage admins"}
               </button>
-            </div>
-          </section>
+            }
+          />
         </RevealSection>
 
         {/* Success/error banner */}
@@ -161,7 +163,7 @@ export default function SuperAdminAdminsPage() {
           {success && (
             <motion.div
               initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="rounded-[16px] bg-[#f0fdf4] border border-[#bbf7d0] px-5 py-4 text-[14px] font-medium text-[#15803d]"
+              className="rounded-[14px] border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-[13px] font-medium text-[#15803d]"
             >
               <Check className="mr-1.5 inline h-4 w-4 align-[-3px]" />{success}
             </motion.div>
@@ -169,10 +171,10 @@ export default function SuperAdminAdminsPage() {
         </AnimatePresence>
 
         {/* Stats */}
-        <StaggerGrid className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <AdminStatCard index={0} title="Super Admins" value={loading ? "…" : superAdmins.length} caption="Owners with full system access." tone="amber" />
-          <AdminStatCard index={1} title="Admins" value={loading ? "…" : regularAdmins.length} caption="Platform managers." tone="sky" />
-          <AdminStatCard index={2} title="Total Staff" value={loading ? "…" : admins.length} caption="All admin-level accounts." tone="slate" />
+        <StaggerGrid className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <AdminStatCard index={0} title="Super admins" value={loading ? "…" : superAdmins.length} caption="Owners with full system access." icon={<Crown />} tone="amber" />
+          <AdminStatCard index={1} title="Admins" value={loading ? "…" : regularAdmins.length} caption="Platform managers." icon={<ShieldCheck />} tone="sky" />
+          <AdminStatCard index={2} title="Total staff" value={loading ? "…" : admins.length} caption="All admin-level accounts." icon={<Users />} tone="slate" />
         </StaggerGrid>
 
         {/* Manage panel */}
@@ -180,24 +182,25 @@ export default function SuperAdminAdminsPage() {
           {showCreate && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
               <RevealSection>
-                <section className="rounded-[28px] border border-[#fde68a]/50 bg-[#fffbeb] p-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-[18px] font-semibold text-[#92400e]">Manage Admin Accounts</h2>
-                    <div className="flex gap-1 rounded-xl bg-white/50 p-1">
-                      <button 
-                        onClick={() => setMode("create")}
-                        className={`rounded-lg px-4 py-1.5 text-[12px] font-semibold transition ${mode === "create" ? "bg-[#fbbf24] text-[#1e293b]" : "text-[#92400e] hover:bg-white/80"}`}
-                      >
-                        Create New
-                      </button>
-                      <button 
-                        onClick={() => setMode("promote")}
-                        className={`rounded-lg px-4 py-1.5 text-[12px] font-semibold transition ${mode === "promote" ? "bg-[#fbbf24] text-[#1e293b]" : "text-[#92400e] hover:bg-white/80"}`}
-                      >
-                        Promote Existing
-                      </button>
-                    </div>
-                  </div>
+                <AdminPanel>
+                  <AdminPanelHeader
+                    icon={UserCog}
+                    tone="amber"
+                    title="Manage admin accounts"
+                    description="Create a new admin, or promote an existing student or mentor"
+                    actions={
+                      <SegmentedControl
+                        size="sm"
+                        ariaLabel="How to add an admin"
+                        value={mode}
+                        onChange={setMode}
+                        options={[
+                          { id: "create", label: "Create new" },
+                          { id: "promote", label: "Promote existing" },
+                        ]}
+                      />
+                    }
+                  />
 
                   {mode === "create" ? (
                     <form onSubmit={handleCreate} className="mt-5 grid gap-4 sm:grid-cols-3">
@@ -207,14 +210,14 @@ export default function SuperAdminAdminsPage() {
                         { label: "Password *", key: "password", type: "password", placeholder: "min. 8 characters" },
                       ].map((f) => (
                         <div key={f.key}>
-                          <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">{f.label}</label>
+                          <label className="mb-1.5 block text-[12px] font-semibold text-[#475569]">{f.label}</label>
                           <input
                             required
                             type={f.type}
                             placeholder={f.placeholder}
                             value={form[f.key as keyof typeof form]}
                             onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))}
-                            className="h-12 w-full rounded-[14px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                            className={adminInputClass}
                           />
                         </div>
                       ))}
@@ -229,7 +232,7 @@ export default function SuperAdminAdminsPage() {
                                 setSearchQuery(form.email);
                                 setError("");
                               }}
-                              className="mt-2 text-[12px] font-bold text-[#92400e] underline decoration-[#fbbf24] underline-offset-4 hover:text-[#b45309]"
+                              className="mt-2 text-[12px] font-semibold text-[#0369a1] underline underline-offset-4 hover:text-[#0c4a6e]"
                             >
                               Promote this existing user to Admin instead?
                             </button>
@@ -237,10 +240,10 @@ export default function SuperAdminAdminsPage() {
                         </div>
                       )}
                       <div className="flex gap-3 sm:col-span-3">
-                        <button type="submit" disabled={saving} className="rounded-[14px] bg-[#0f172a] px-6 py-3 text-[14px] font-semibold text-white disabled:opacity-50 transition hover:bg-[#1e293b]">
-                          {saving ? "Creating…" : "Create Admin"}
+                        <button type="submit" disabled={saving} className={adminButton.primary}>
+                          {saving ? "Creating…" : "Create admin"}
                         </button>
-                        <button type="button" onClick={() => setShowCreate(false)} className="rounded-[14px] bg-white px-6 py-3 text-[14px] font-semibold text-[#64748b] transition hover:bg-[#f1f5f9]">
+                        <button type="button" onClick={() => setShowCreate(false)} className={adminButton.secondary}>
                           Cancel
                         </button>
                       </div>
@@ -248,19 +251,19 @@ export default function SuperAdminAdminsPage() {
                   ) : (
                     <div className="mt-5 space-y-4">
                       <div>
-                        <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Search Users (Students/Mentors)</label>
+                        <label className="mb-1.5 block text-[12px] font-semibold text-[#475569]">Search students and mentors</label>
                         <input
                           type="text"
                           placeholder="Search by name or email..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="h-12 w-full rounded-[14px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15"
+                          className={adminInputClass}
                         />
                       </div>
 
                       <div className="max-h-[240px] space-y-2 overflow-y-auto pr-2 custom-scrollbar">
                         {searching ? (
-                          <p className="py-4 text-center text-[13px] text-[#92400e]">Searching...</p>
+                          <p className="py-4 text-center text-[13px] text-[#64748b]">Searching...</p>
                         ) : searchResults.length > 0 ? (
                           searchResults.map((user) => (
                             <button
@@ -270,10 +273,10 @@ export default function SuperAdminAdminsPage() {
                                   prev.includes(user.id) ? prev.filter(id => id !== user.id) : [...prev, user.id]
                                 );
                               }}
-                              className={`flex w-full items-center justify-between gap-4 rounded-[14px] border p-3 transition ${selectedUserIds.includes(user.id) ? "border-[#f59e0b] bg-[#fef3c7]" : "border-transparent bg-white hover:bg-white/80"}`}
+                              className={`flex w-full items-center justify-between gap-4 rounded-[14px] border p-3 transition-colors ${selectedUserIds.includes(user.id) ? "border-[#209bd2] bg-[#f0f9ff]" : "border-[#eef1f5] bg-white hover:bg-[#f8fafc]"}`}
                             >
                               <div className="flex items-center gap-3">
-                                <div className="grid h-8 w-8 place-items-center rounded-lg bg-slate-200 text-xs font-bold text-slate-600">
+                                <div className="grid h-8 w-8 place-items-center rounded-full bg-[#f1f5f9] text-[12px] font-semibold text-[#334155]">
                                   {(user.name ?? "U")[0].toUpperCase()}
                                 </div>
                                 <div className="text-left">
@@ -281,11 +284,11 @@ export default function SuperAdminAdminsPage() {
                                   <p className="text-[11px] text-[#64748b]">{user.email}</p>
                                 </div>
                               </div>
-                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{user.role}</span>
+                              <StatusBadge>{user.role.charAt(0) + user.role.slice(1).toLowerCase()}</StatusBadge>
                             </button>
                           ))
                         ) : searchQuery.length >= 2 ? (
-                          <p className="py-4 text-center text-[13px] text-[#92400e]">No non-admin users found.</p>
+                          <p className="py-4 text-center text-[13px] text-[#64748b]">No non-admin users found.</p>
                         ) : (
                           <p className="py-4 text-center text-[13px] text-[#94a3b8]">Type at least 2 characters to search.</p>
                         )}
@@ -294,25 +297,25 @@ export default function SuperAdminAdminsPage() {
                       {error && <p className="text-[13px] text-[#dc2626]">{error}</p>}
                       
                       <div className="flex items-center justify-between pt-2">
-                        <p className="text-[12px] font-medium text-[#92400e]">
+                        <p className="text-[12px] font-medium text-[#64748b]">
                           {selectedUserIds.length} user(s) selected
                         </p>
                         <div className="flex gap-3">
                           <button 
                             onClick={handlePromote}
                             disabled={saving || selectedUserIds.length === 0} 
-                            className="rounded-[14px] bg-[#0f172a] px-6 py-3 text-[14px] font-semibold text-white disabled:opacity-50 transition hover:bg-[#1e293b]"
+                            className={adminButton.primary}
                           >
-                            {saving ? "Promoting…" : "Make Admin(s)"}
+                            {saving ? "Promoting…" : "Make admin"}
                           </button>
-                          <button type="button" onClick={() => setShowCreate(false)} className="rounded-[14px] bg-white px-6 py-3 text-[14px] font-semibold text-[#64748b] transition hover:bg-[#f1f5f9]">
+                          <button type="button" onClick={() => setShowCreate(false)} className={adminButton.secondary}>
                             Cancel
                           </button>
                         </div>
                       </div>
                     </div>
                   )}
-                </section>
+                </AdminPanel>
               </RevealSection>
             </motion.div>
           )}
@@ -320,15 +323,13 @@ export default function SuperAdminAdminsPage() {
 
         {/* Admin list */}
         <RevealSection>
-          <section className="rounded-[28px] border border-white/70 bg-white/95 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-            <div className="border-b border-[#eef0f3] px-6 py-5">
-              <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-[#101828]">Admin Roster</h2>
-            </div>
-            <div className="space-y-3 p-6">
+          <AdminPanel>
+            <AdminPanelHeader icon={Users} tone="slate" title="Admin roster" description="Everyone with admin-level access" />
+            <div className="mt-5 divide-y divide-[#f1f5f9]">
               {loading ? (
-                [1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-[18px] bg-[#f3f4f6]" />)
+                [1, 2, 3].map((i) => <div key={i} className="my-2 h-14 animate-pulse rounded-[14px] bg-[#f1f5f9]" />)
               ) : admins.length === 0 ? (
-                <p className="text-center text-[14px] text-[#667085]">No admin accounts.</p>
+                <AdminEmptyState icon={Users} title="No admin accounts" />
               ) : (
                 admins.map((admin, i) => (
                   <motion.article
@@ -336,27 +337,27 @@ export default function SuperAdminAdminsPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="flex items-center justify-between gap-4 rounded-[18px] border border-[#eceef2] bg-[#fcfcfd] px-5 py-4"
+                    className="flex flex-wrap items-center justify-between gap-4 py-3"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-[#1e293b] to-[#475569] text-sm font-bold text-white">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#f1f5f9] text-[13px] font-semibold text-[#334155]">
                         {(admin.name ?? admin.email ?? "A")[0].toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-semibold text-[#101828]">{admin.name ?? "Unnamed"}</p>
-                        <p className="text-[13px] text-[#667085]">{admin.email}</p>
+                        <p className="truncate text-[14px] font-semibold text-[#0f172a]">{admin.name ?? "Unnamed"}</p>
+                        <p className="truncate text-[12px] text-[#64748b]">{admin.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${admin.role === "SUPER_ADMIN" ? "bg-[#fef9c3] text-[#a16207]" : "bg-[#eff6ff] text-[#1d4ed8]"}`}>
-                        {admin.role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
-                      </span>
+                      <StatusBadge tone={admin.role === "SUPER_ADMIN" ? "warning" : "info"} icon={admin.role === "SUPER_ADMIN" ? Crown : ShieldCheck}>
+                        {admin.role === "SUPER_ADMIN" ? "Super admin" : "Admin"}
+                      </StatusBadge>
                       <span className="text-[12px] text-[#94a3b8]">{formatShortDate(admin.createdAt)}</span>
                       {admin.role === "ADMIN" && (
                         <button
                           onClick={() => handleRevoke(admin.id)}
                           disabled={revoking === admin.id}
-                          className="rounded-[12px] bg-[#fff1f2] px-3 py-1.5 text-[12px] font-semibold text-[#dc2626] transition hover:bg-[#fee2e2] disabled:opacity-50"
+                          className={adminButtonSm.danger}
                         >
                           {revoking === admin.id ? "Revoking…" : "Revoke"}
                         </button>
@@ -366,7 +367,7 @@ export default function SuperAdminAdminsPage() {
                 ))
               )}
             </div>
-          </section>
+          </AdminPanel>
         </RevealSection>
       </div>
     </PageTransition>

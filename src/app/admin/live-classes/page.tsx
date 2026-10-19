@@ -4,12 +4,15 @@ import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import { m as motion, AnimatePresence } from "motion/react";
 import {
   AlertTriangle,
+  CalendarClock,
   Check,
+  CircleCheck,
   Clock,
   Edit2,
   Film,
   Link2,
   Loader2,
+  Plus,
   Radio,
   Trash2,
   UploadCloud,
@@ -22,6 +25,16 @@ import {
   StaggerGrid,
 } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  AdminPanelHeader,
+  StatusBadge,
+  adminButton,
+  adminButtonSm,
+  adminPanelClass,
+  adminTable,
+} from "../_components/admin-ui";
 import { formatShortDate } from "@/lib/date-format";
 import { buttonStyles } from "@/components/ui/button";
 import { cx } from "@/lib/cx";
@@ -282,224 +295,147 @@ export default function AdminLiveClassesPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
         {/* Hero */}
         <RevealSection>
-          <section className="relative overflow-hidden rounded-[34px] bg-gradient-to-r from-[#7c3aed] via-[#8b5cf6] to-[#a78bfa] px-8 py-10 text-white shadow-[0_24px_60px_rgba(124,58,237,0.28)]">
-            <motion.div
-              className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl"
-              animate={{ scale: [1, 1.25, 1] }}
-              transition={{ duration: 5, repeat: Infinity }}
-            />
-            <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em]">
-                  Scheduling
-                </div>
-                <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em]">
-                  Live Classes
-                </h1>
-                <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/85">
-                  Schedule live sessions for any course. The class instantly
-                  appears on the teacher&apos;s control panel and in enrolled students&apos;
-                  dashboards.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowSchedule(true)}
-                className={cx(
-                  buttonStyles({
-                    variant: "secondary",
-                    size: "md",
-                    className:
-                      "shrink-0 rounded-[18px] border-white/70 bg-white/94 text-[#7c3aed] hover:bg-white",
-                  }),
-                )}
-              >
-                + Schedule Class
+          <AdminPageHeader
+            eyebrow="Scheduling"
+            icon={Video}
+            title="Live classes"
+            description="Schedule live sessions for any course. They appear right away on the teacher's control panel and in enrolled students' dashboards."
+            actions={
+              <button type="button" onClick={() => setShowSchedule(true)} className={adminButton.primary}>
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                Schedule class
               </button>
-            </div>
-          </section>
+            }
+          />
         </RevealSection>
 
         {/* Stats */}
-        <StaggerGrid className="grid grid-cols-1 gap-6 md:grid-cols-4">
-          <AdminStatCard
-            index={0}
-            title="Total Classes"
-            value={loading ? "…" : classes.length}
-            caption="All live classes across the platform."
-            tone="sky"
-          />
-          <AdminStatCard
-            index={1}
-            title="Live Now"
-            value={loading ? "…" : liveCount}
-            caption="Classes currently in session."
-            tone="emerald"
-          />
-          <AdminStatCard
-            index={2}
-            title="Upcoming"
-            value={loading ? "…" : upcomingCount}
-            caption="Scheduled sessions not yet started."
-            tone="amber"
-          />
-          <AdminStatCard
-            index={3}
-            title="Completed"
-            value={loading ? "…" : completedCount}
-            caption="Sessions that have wrapped up."
-            tone="slate"
-          />
+        <StaggerGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <AdminStatCard index={0} title="Total classes" value={loading ? "…" : classes.length} caption="All live classes across the platform." icon={<Video />} tone="sky" />
+          <AdminStatCard index={1} title="Live now" value={loading ? "…" : liveCount} caption="Classes currently in session." icon={<Radio />} tone="emerald" />
+          <AdminStatCard index={2} title="Upcoming" value={loading ? "…" : upcomingCount} caption="Scheduled sessions not yet started." icon={<CalendarClock />} tone="amber" />
+          <AdminStatCard index={3} title="Completed" value={loading ? "…" : completedCount} caption="Sessions that have wrapped up." icon={<CircleCheck />} tone="slate" />
         </StaggerGrid>
 
         {/* Table */}
         <RevealSection>
-          <section className="rounded-[28px] border border-white/70 bg-white/95 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-            <div className="border-b border-[#eef0f3] px-6 py-5">
-              <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-[#101828]">
-                All Live Classes
-              </h2>
-              <p className="mt-1 text-[13px] text-[#667085]">
-                {classes.length} total class{classes.length !== 1 ? "es" : ""}
-              </p>
+          <section className={adminPanelClass}>
+            <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+              <AdminPanelHeader
+                icon={Video}
+                tone="violet"
+                title="All live classes"
+                description={`${classes.length} total class${classes.length !== 1 ? "es" : ""}`}
+              />
             </div>
-            <div className="overflow-x-auto">
+            <div className="mt-5 overflow-x-auto">
               {loading ? (
-                <div className="space-y-3 p-6">
+                <div className="space-y-3 px-5 pb-6 sm:px-6">
                   {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="h-16 animate-pulse rounded-[18px] bg-[#f3f4f6]"
-                    />
+                    <div key={i} className="h-16 animate-pulse rounded-[16px] bg-[#f1f5f9]" />
                   ))}
                 </div>
               ) : classes.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                  <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-[20px] bg-[#f0f4ff] text-[#7c3aed]">
-                    <Video className="h-6 w-6" />
-                  </div>
-                  <p className="text-[16px] font-semibold text-[#101828]">
-                    No live classes yet
-                  </p>
-                  <p className="mt-2 text-[14px] text-[#64748b]">
-                    Schedule your first class and it will appear for teachers and
-                    students instantly.
-                  </p>
-                  <button
-                    onClick={() => setShowSchedule(true)}
-                    className={cx(
-                      buttonStyles({ size: "sm", className: "mt-5" }),
-                    )}
-                  >
-                    + Schedule Class
-                  </button>
+                <div className="px-5 pb-6 sm:px-6">
+                  <AdminEmptyState
+                    icon={Video}
+                    title="No live classes yet"
+                    description="Schedule your first class and it will appear for teachers and students instantly."
+                    action={
+                      <button type="button" onClick={() => setShowSchedule(true)} className={adminButton.primary}>
+                        <Plus className="h-4 w-4" aria-hidden="true" />
+                        Schedule class
+                      </button>
+                    }
+                  />
                 </div>
               ) : (
-                <table className="w-full text-left text-[14px]">
-                  <thead>
-                    <tr className="border-b border-[#eef0f3] text-[12px] font-semibold uppercase tracking-[0.12em] text-[#94a3b8]">
-                      <th className="px-6 py-5">Class</th>
-                      <th className="px-6 py-5">Course</th>
-                      <th className="px-6 py-5">Teacher</th>
-                      <th className="px-6 py-5">Date &amp; Time</th>
-                      <th className="px-6 py-5">Duration</th>
-                      <th className="px-6 py-5">Attendees</th>
-                      <th className="px-6 py-5">Status</th>
-                      <th className="px-6 py-5">Actions</th>
+                <table className={adminTable.table}>
+                  <thead className={adminTable.head}>
+                    <tr>
+                      <th className={adminTable.th}>Class</th>
+                      <th className={adminTable.th}>Course</th>
+                      <th className={adminTable.th}>Teacher</th>
+                      <th className={adminTable.th}>Date &amp; time</th>
+                      <th className={adminTable.th}>Duration</th>
+                      <th className={`${adminTable.th} text-center`}>Attendees</th>
+                      <th className={adminTable.th}>Status</th>
+                      <th className={adminTable.th}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {classes.map((cls, i) => {
-                      const status = getLiveClassStatus(
-                        cls.startTime,
-                        cls.duration,
-                      );
+                      const status = getLiveClassStatus(cls.startTime, cls.duration);
                       return (
                         <motion.tr
                           key={cls.id}
                           initial={{ opacity: 0 }}
-                          whileInView={{ opacity: 1 }}
-                          transition={{ delay: i * 0.03 }}
-                          className="border-b border-[#f1f5f9] last:border-none hover:bg-[#f8fafc]"
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                          className={adminTable.row}
                         >
-                          <td className="px-6 py-6">
-                            <p className="font-semibold text-[#101828] text-[15px]">
-                              {cls.title}
-                            </p>
+                          <td className={adminTable.td}>
+                            <p className="font-semibold text-[#0f172a]">{cls.title}</p>
                             {cls.description && (
-                              <p className="mt-1 line-clamp-1 text-[13px] text-[#94a3b8] max-w-[200px]">
-                                {cls.description}
-                              </p>
+                              <p className="mt-0.5 line-clamp-1 max-w-[220px] text-[12px] text-[#94a3b8]">{cls.description}</p>
                             )}
                           </td>
-                          <td className="px-6 py-6 text-[#475569]">
-                            {cls.course.title}
-                          </td>
-                          <td className="px-6 py-6">
+                          <td className={adminTable.td}>{cls.course.title}</td>
+                          <td className={adminTable.td}>
                             {cls.course.teacher ? (
-                              <span className="font-semibold text-[#101828]">
-                                {cls.course.teacher.name ??
-                                  cls.course.teacher.email}
+                              <span className="font-medium text-[#0f172a]">
+                                {cls.course.teacher.name ?? cls.course.teacher.email}
                               </span>
                             ) : (
-                              <span className="text-[13px] text-[#94a3b8]">
-                                Not assigned
-                              </span>
+                              <span className="text-[#94a3b8]">Not assigned</span>
                             )}
                           </td>
-                          <td className="px-6 py-6 text-[#475569]">
-                            {new Date(cls.startTime).toLocaleDateString(
-                              "en-IN",
-                              {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
+                          <td className={`${adminTable.td} whitespace-nowrap`}>
+                            {new Date(cls.startTime).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </td>
-                          <td className="px-6 py-6 text-[#475569]">
+                          <td className={`${adminTable.td} whitespace-nowrap`}>
                             <span className="inline-flex items-center gap-1.5">
-                              <Clock className="h-4 w-4 text-[#94a3b8]" />
+                              <Clock className="h-3.5 w-3.5 text-[#94a3b8]" aria-hidden="true" />
                               {formatDuration(cls.duration)}
                             </span>
                           </td>
-                          <td className="px-6 py-6 font-semibold text-[#101828] text-center">
+                          <td className={`${adminTable.td} text-center font-semibold tabular-nums text-[#0f172a]`}>
                             {cls._count.attendances}
                           </td>
-                          <td className="px-6 py-6">
+                          <td className={adminTable.td}>
                             {status === "live" ? (
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ecfdf5] px-3 py-1.5 text-[11px] font-bold text-[#15803d]">
-                                <Radio className="h-3.5 w-3.5 animate-pulse" />
-                                Live
-                              </span>
+                              <StatusBadge tone="good" icon={Radio}>Live</StatusBadge>
                             ) : status === "upcoming" ? (
-                              <span className="rounded-full bg-[#eff6ff] px-3 py-1.5 text-[11px] font-bold text-[#2563eb]">
-                                Upcoming
-                              </span>
+                              <StatusBadge tone="info">Upcoming</StatusBadge>
                             ) : (
-                              <span className="rounded-full bg-[#f1f5f9] px-3 py-1.5 text-[11px] font-bold text-[#64748b]">
-                                Completed
-                              </span>
+                              <StatusBadge tone="neutral">Completed</StatusBadge>
                             )}
                           </td>
-                          <td className="px-6 py-6">
+                          <td className={adminTable.td}>
                             <div className="flex items-center gap-2">
                               <button
+                                type="button"
                                 onClick={() => {
                                   setEditTarget(cls);
                                   setShowSchedule(true);
                                 }}
-                                className="inline-flex items-center gap-1.5 rounded-[12px] border border-[#fde68a] bg-[#fffbeb] px-3 py-1.5 text-[12px] font-semibold text-[#b45309] transition hover:bg-[#fef3c7]"
+                                className={adminButtonSm.secondary}
                               >
-                                <Edit2 className="h-3 w-3" />
+                                <Edit2 className="h-3.5 w-3.5" aria-hidden="true" />
                                 Edit
                               </button>
                               {status === "completed" && (
                                 <button
+                                  type="button"
                                   onClick={() => {
                                     setRecordingTarget(cls);
                                     setRecordingTab("link");
@@ -508,25 +444,21 @@ export default function AdminLiveClassesPage() {
                                     setRecordingError("");
                                     setRecordingSuccess("");
                                   }}
-                                  className={cx(
-                                    "inline-flex items-center gap-1.5 rounded-[12px] border px-3 py-1.5 text-[12px] font-semibold transition",
-                                    cls.recordingUrl
-                                      ? "border-[#bbf7d0] bg-[#f0fdf4] text-[#15803d] hover:bg-[#dcfce7]"
-                                      : "border-[#dbeafe] bg-[#eff6ff] text-[#2563eb] hover:bg-[#dbeafe]"
-                                  )}
+                                  className={adminButtonSm.secondary}
                                 >
-                                  <Film className="h-3 w-3" />
-                                  {cls.recordingUrl ? "Edit Recording" : "Upload Recording"}
+                                  <Film className={`h-3.5 w-3.5 ${cls.recordingUrl ? "text-[#15803d]" : ""}`} aria-hidden="true" />
+                                  {cls.recordingUrl ? "Edit recording" : "Upload recording"}
                                 </button>
                               )}
                               <button
+                                type="button"
                                 onClick={() => {
                                   setCancelTarget(cls);
                                   setCancelError("");
                                 }}
-                                className="inline-flex items-center gap-1.5 rounded-[12px] border border-[#fee2e2] bg-[#fef2f2] px-3 py-1.5 text-[12px] font-semibold text-[#dc2626] transition hover:bg-[#fee2e2]"
+                                className={adminButtonSm.danger}
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                                 Cancel
                               </button>
                             </div>

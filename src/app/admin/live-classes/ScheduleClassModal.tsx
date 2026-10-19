@@ -205,7 +205,7 @@ export default function ScheduleClassModal({
                   {editTarget ? "Update Live Class" : "New Live Class"}
                 </Badge>
               </div>
-              <h2 className="mt-3 text-[24px] font-semibold tracking-[-0.04em] text-[#0f172a]">
+              <h2 className="mt-3 text-[22px] font-semibold tracking-[-0.03em] text-[#0f172a]">
                 {editTarget ? "Edit Live Class" : "Schedule a Live Class"}
               </h2>
               <p className="mt-1 text-[13px] text-[#64748b]">

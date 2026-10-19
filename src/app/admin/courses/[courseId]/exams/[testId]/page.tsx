@@ -9,6 +9,7 @@ import {
   X, Check, AlertCircle, CircleDot, CheckSquare, Hash, Palette, MoreVertical, Pencil, Settings
 } from "lucide-react";
 import { BuilderDrawer } from "./_components/builder-drawer";
+import { StatusBadge, adminButton, adminLabelClass, adminTextareaClass } from "../../../../_components/admin-ui";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 // Types
@@ -404,49 +405,46 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
         
         {/* Sticky Header with Glassmorphism */}
         <RevealSection>
-          <div className="sticky top-0 z-40 -mx-4 sm:-mx-6 lg:-mx-10 px-4 sm:px-6 lg:px-10 py-5 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-[0_4px_32px_-12px_rgba(0,0,0,0.1)] mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all">
+          <div className="sticky top-0 z-40 -mx-4 sm:-mx-6 lg:-mx-10 px-4 sm:px-6 lg:px-10 py-5 bg-white/85 backdrop-blur-xl border-b border-[#eef1f5] mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all">
             <div>
-              <button onClick={() => router.push(`/admin/courses/${courseId}/exams`)} className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-blue-600 hover:text-blue-800 transition-colors">
-                &larr; Back to Exams
+              <button type="button" onClick={() => router.push(`/admin/courses/${courseId}/exams`)} className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-[#64748b] transition-colors hover:text-[#0f172a]">
+                &larr; Back to exams
               </button>
-              <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent flex items-center gap-3">
-                Exam Builder
+              <h1 className="flex items-center gap-3 text-[28px] font-semibold tracking-[-0.03em] text-[#0f172a]">
+                Exam builder
                 {test && (
-                  <span className={`text-[12px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider ${test.status === 'PUBLISHED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {test.status}
-                  </span>
+                  <StatusBadge tone={test.status === "PUBLISHED" ? "good" : "neutral"}>
+                    {test.status.charAt(0) + test.status.slice(1).toLowerCase()}
+                  </StatusBadge>
                 )}
               </h1>
-              <p className="mt-1 text-[15px] font-medium text-slate-500">{test ? test.title : "Loading workspace..."}</p>
+              <p className="mt-1 text-[14px] text-[#64748b]">{test ? test.title : "Loading workspace…"}</p>
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
               {test && (
                 <>
-                  <button 
+                  <button
+                    type="button"
                     onClick={() => setSettingsModalOpen(true)}
-                    className="flex items-center gap-2 rounded-xl px-4 py-3 text-[14px] font-bold shadow-sm transition-all duration-200 active:scale-[0.98] border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                    className={adminButton.secondary}
                   >
                     <Settings className="h-4 w-4" /> Settings
                   </button>
                   <button 
                     onClick={handleTogglePublish}
                     disabled={isPublishing}
-                    className={`flex items-center gap-2 rounded-xl px-6 py-3 text-[14px] font-bold shadow-sm transition-all duration-200 active:scale-[0.98] ${
-                      test.status === "PUBLISHED" 
-                        ? "bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200" 
-                        : "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-[0_4px_14px_rgba(5,150,105,0.3)]"
-                    } disabled:opacity-50`}
+                    className={test.status === "PUBLISHED" ? adminButton.secondary : adminButton.primary}
                   >
-                    {isPublishing ? "Saving..." : test.status === "PUBLISHED" ? "Unpublish Exam" : "Publish Exam"}
+                    {isPublishing ? "Saving…" : test.status === "PUBLISHED" ? "Unpublish exam" : "Publish exam"}
                   </button>
                 </>
               )}
               <button 
                 onClick={() => setPartModalOpen(true)} 
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-[14px] font-bold text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 active:scale-[0.98]"
+                className={adminButton.secondary}
               >
-                <Plus className="h-4 w-4" /> Add Part
+                <Plus className="h-4 w-4" /> Add part
               </button>
             </div>
           </div>
@@ -454,18 +452,18 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
 
         {loading ? (
           <div className="animate-pulse space-y-6">
-            <div className="h-40 rounded-3xl bg-slate-200/60"></div>
-            <div className="h-40 rounded-3xl bg-slate-200/60"></div>
+            <div className="h-40 rounded-[24px] bg-white/70"></div>
+            <div className="h-40 rounded-[24px] bg-white/70"></div>
           </div>
         ) : parts.length === 0 ? (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-slate-200 bg-slate-50/50 py-24 text-center px-6"
           >
-            <div className="rounded-full bg-blue-100 p-5 text-blue-600 mb-6 shadow-inner">
-              <Target className="h-10 w-10" />
+            <div className="mb-5 rounded-full border border-[#e2e8f0] bg-white p-4 text-[#209bd2] shadow-[0_6px_16px_rgba(15,23,42,0.06)]">
+              <Target className="h-7 w-7" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Empty Canvas</h3>
+            <h3 className="text-[20px] font-semibold tracking-[-0.02em] text-[#0f172a]">Empty canvas</h3>
             <p className="mt-2 text-[15px] max-w-md text-slate-500 leading-relaxed">Your exam doesn't have any parts yet. Start building your structure by adding your first Part.</p>
             <button 
               onClick={() => setPartModalOpen(true)} 
@@ -483,7 +481,7 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
                   <div className="sticky top-[80px] z-30 bg-white/95 backdrop-blur-xl px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-t-[28px] shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)]">
                     <div className="flex flex-col">
                       <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-1">Part {index + 1}</span>
-                      <h2 className="text-2xl font-extrabold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tight">{part.title}</h2>
+                      <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-[#0f172a]">{part.title}</h2>
                       {part.durationMins && (
                          <div className="mt-2.5 inline-flex w-fit items-center gap-1.5 rounded-lg bg-orange-50 border border-orange-100 px-3 py-1.5 text-[12px] font-bold text-orange-700">
                            <Clock className="h-3.5 w-3.5" /> {part.durationMins} Min Limit
@@ -656,26 +654,26 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
       <Modal isOpen={partModalOpen} onClose={() => setPartModalOpen(false)} title="Create New Part">
         <form onSubmit={handleAddPartSubmit} className="space-y-5">
           <div>
-            <label className="mb-1.5 block text-[13px] font-bold text-slate-700">Part Title</label>
+            <label className={adminLabelClass}>Part Title</label>
             <input 
               autoFocus
               value={partTitle}
               onChange={(e) => setPartTitle(e.target.value)}
               placeholder="e.g. Part A - Physics"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+              className={adminTextareaClass}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[13px] font-bold text-slate-700">Duration (Minutes)</label>
+            <label className={adminLabelClass}>Duration (Minutes)</label>
             <input 
               type="number"
               value={partDuration}
               onChange={(e) => setPartDuration(e.target.value)}
               placeholder="Leave blank for no limit"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+              className={adminTextareaClass}
             />
           </div>
-          <button type="submit" className="w-full rounded-xl bg-blue-600 py-3 text-[14px] font-bold text-white shadow-sm hover:bg-blue-700 transition-colors">
+          <button type="submit" className={`${adminButton.primary} w-full`}>
             Create Part
           </button>
         </form>
@@ -685,17 +683,17 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
       <Modal isOpen={sectionModalOpen} onClose={() => setSectionModalOpen(false)} title="Create New Section">
         <form onSubmit={handleAddSectionSubmit} className="space-y-5">
           <div>
-            <label className="mb-1.5 block text-[13px] font-bold text-slate-700">Section Title</label>
+            <label className={adminLabelClass}>Section Title</label>
             <input 
               autoFocus
               value={sectionTitle}
               onChange={(e) => setSectionTitle(e.target.value)}
               placeholder="e.g. Multiple Choice Questions"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+              className={adminTextareaClass}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[13px] font-bold text-slate-700">Question Type</label>
+            <label className={adminLabelClass}>Question Type</label>
             <div className="grid grid-cols-2 gap-3">
               {(["SCQ", "MCQ", "NUMERIC", "SKETCH"] as QuestionType[]).map((type) => (
                 <button
@@ -712,7 +710,7 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
               ))}
             </div>
           </div>
-          <button type="submit" className="mt-6 w-full rounded-xl bg-blue-600 py-3 text-[14px] font-bold text-white shadow-sm hover:bg-blue-700 transition-colors">
+          <button type="submit" className={`${adminButton.primary} mt-6 w-full`}>
             Create Section
           </button>
         </form>
@@ -731,32 +729,32 @@ export default function ExamContentBuilder({ params }: { params: Promise<{ cours
       <Modal isOpen={settingsModalOpen} onClose={() => setSettingsModalOpen(false)} title="Exam Settings">
         <form onSubmit={handleSaveSettings} className="space-y-5">
           <div>
-            <label className="mb-1.5 block text-[13px] font-bold text-slate-700">Exam Title</label>
+            <label className={adminLabelClass}>Exam Title</label>
             <input 
               required
               value={settingsForm.title}
               onChange={(e) => setSettingsForm({ ...settingsForm, title: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+              className={adminTextareaClass}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[13px] font-bold text-slate-700">Description</label>
+            <label className={adminLabelClass}>Description</label>
             <textarea 
               value={settingsForm.description}
               onChange={(e) => setSettingsForm({ ...settingsForm, description: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+              className={adminTextareaClass}
               rows={3}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[13px] font-bold text-slate-700">Total Duration (Minutes)</label>
+            <label className={adminLabelClass}>Total Duration (Minutes)</label>
             <input 
               type="number"
               min="1"
               required
               value={settingsForm.durationMins}
               onChange={(e) => setSettingsForm({ ...settingsForm, durationMins: parseInt(e.target.value) || 0 })}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[14px] font-medium text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+              className={adminTextareaClass}
             />
             <p className="mt-1.5 text-[12px] text-slate-500">
               This is the overall time limit for the entire exam. It determines what students see on the dashboard.

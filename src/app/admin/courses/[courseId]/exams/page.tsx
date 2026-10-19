@@ -5,6 +5,21 @@ import { useRouter } from "next/navigation";
 import { m as motion, AnimatePresence } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
 import { formatShortDate } from "@/lib/date-format";
+import { ChevronLeft, ClipboardCheck, FileText, Plus, X } from "lucide-react";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  AdminPanel,
+  AdminPanelHeader,
+  StatusBadge,
+  adminButton,
+  adminButtonSm,
+  adminInputClass,
+  adminLabelClass,
+  adminPanelClass,
+  adminRowClass,
+  adminTextareaClass,
+} from "../../../_components/admin-ui";
 
 type TestItem = {
   id: string;
@@ -123,34 +138,33 @@ export default function AdminCourseExamsPage({ params }: { params: Promise<{ cou
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#64748b] transition-colors hover:text-[#0f172a]"
+        >
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          Back
+        </button>
+
         <RevealSection>
-          <div className="flex items-center justify-between">
-            <div>
-              <button 
-                onClick={() => router.back()}
-                className="mb-4 text-sm text-blue-600 hover:underline"
-              >
-                &larr; Back to Courses
+          <AdminPageHeader
+            eyebrow="Exam management"
+            icon={FileText}
+            title="Manage exams"
+            description={courseTitle ? `For ${courseTitle}` : "Loading…"}
+            actions={
+              <button type="button" onClick={() => setShowCreate(!showCreate)} className={showCreate ? adminButton.secondary : adminButton.primary}>
+                {showCreate ? <X className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
+                {showCreate ? "Cancel" : "Create exam"}
               </button>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Manage Exams
-              </h1>
-              <p className="mt-2 text-gray-600">
-                {courseTitle ? `For course: ${courseTitle}` : "Loading..."}
-              </p>
-            </div>
-            <button
-              onClick={() => setShowCreate(!showCreate)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-            >
-              {showCreate ? "Cancel" : "+ Create Exam"}
-            </button>
-          </div>
+            }
+          />
         </RevealSection>
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-red-600">
+          <div className="rounded-[14px] border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-[13px] text-[#b91c1c]">
             {error}
           </div>
         )}
@@ -163,123 +177,118 @@ export default function AdminCourseExamsPage({ params }: { params: Promise<{ cou
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <RevealSection>
-                <form onSubmit={handleCreate} className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
-                  <h2 className="text-xl font-semibold">New Exam</h2>
-                  
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">Title *</label>
-                      <input 
-                        required
-                        value={form.title}
-                        onChange={e => setForm({...form, title: e.target.value})}
-                        className="w-full rounded-md border p-2"
-                        placeholder="Midterm Exam"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">Type</label>
-                      <select 
-                        value={form.type}
-                        onChange={e => setForm({...form, type: e.target.value})}
-                        className="w-full rounded-md border p-2"
-                      >
-                        <option value="COURSE_EXAM">Course Exam</option>
-                        <option value="MOCK_TEST">Mock Test</option>
-                        <option value="CHAPTER_TEST">Chapter Test</option>
-                      </select>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="mb-1 block text-sm font-medium">Description</label>
-                      <textarea 
-                        value={form.description}
-                        onChange={e => setForm({...form, description: e.target.value})}
-                        className="w-full rounded-md border p-2"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">Duration (mins)</label>
-                      <input 
-                        type="number"
-                        min="1"
-                        value={form.durationMins}
-                        onChange={e => setForm({...form, durationMins: parseInt(e.target.value)})}
-                        className="w-full rounded-md border p-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium">Passing Score (%)</label>
-                      <input 
-                        type="number"
-                        min="1"
-                        max="100"
-                        value={form.passingScore}
-                        onChange={e => setForm({...form, passingScore: parseInt(e.target.value)})}
-                        className="w-full rounded-md border p-2"
-                      />
-                    </div>
-                  </div>
+              <form onSubmit={handleCreate} className={`${adminPanelClass} space-y-5 p-5 sm:p-6`}>
+                <AdminPanelHeader icon={Plus} tone="sky" title="New exam" description="Add questions after you save it" />
 
-                  <div className="flex justify-end pt-4">
-                    <button 
-                      type="submit" 
-                      disabled={saving}
-                      className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <label className="block">
+                    <span className={adminLabelClass}>Title *</span>
+                    <input
+                      required
+                      value={form.title}
+                      onChange={e => setForm({...form, title: e.target.value})}
+                      className={adminInputClass}
+                      placeholder="Midterm exam"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className={adminLabelClass}>Type</span>
+                    <select
+                      value={form.type}
+                      onChange={e => setForm({...form, type: e.target.value})}
+                      className={adminInputClass}
                     >
-                      {saving ? "Saving..." : "Save Exam"}
-                    </button>
-                  </div>
-                </form>
-              </RevealSection>
+                      <option value="COURSE_EXAM">Course exam</option>
+                      <option value="MOCK_TEST">Mock test</option>
+                      <option value="CHAPTER_TEST">Chapter test</option>
+                    </select>
+                  </label>
+                  <label className="block md:col-span-2">
+                    <span className={adminLabelClass}>Description</span>
+                    <textarea
+                      value={form.description}
+                      onChange={e => setForm({...form, description: e.target.value})}
+                      className={adminTextareaClass}
+                      rows={3}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className={adminLabelClass}>Duration (mins)</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={form.durationMins}
+                      onChange={e => setForm({...form, durationMins: parseInt(e.target.value)})}
+                      className={adminInputClass}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className={adminLabelClass}>Passing score (%)</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={form.passingScore}
+                      onChange={e => setForm({...form, passingScore: parseInt(e.target.value)})}
+                      className={adminInputClass}
+                    />
+                  </label>
+                </div>
+
+                <div className="flex justify-end">
+                  <button type="submit" disabled={saving} className={adminButton.primary}>
+                    {saving ? "Saving…" : "Save exam"}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           )}
         </AnimatePresence>
 
         <RevealSection>
-          <div className="space-y-4">
-            {loading ? (
-              <p>Loading exams...</p>
-            ) : tests.length === 0 ? (
-              <p className="text-gray-500">No exams created yet.</p>
-            ) : (
-              tests.map(test => (
-                <div key={test.id} className="flex items-center justify-between rounded-xl border bg-white p-6 shadow-sm">
-                  <div>
-                    <h3 className="text-lg font-semibold">{test.title}</h3>
-                    <div className="mt-2 flex gap-4 text-sm text-gray-600">
-                      <span>{test.durationMins} mins</span>
-                      <span>•</span>
-                      <span>Pass: {test.passingScore}%</span>
-                      <span>•</span>
-                      <span>Questions: {test._count.questions}</span>
-                      <span>•</span>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        test.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {test.status}
-                      </span>
+          <AdminPanel>
+            <AdminPanelHeader
+              icon={ClipboardCheck}
+              tone="slate"
+              title="Exams in this course"
+              description={loading ? "Loading…" : `${tests.length} exam${tests.length === 1 ? "" : "s"}`}
+            />
+            <div className="mt-5 space-y-3">
+              {loading ? (
+                [1, 2].map((i) => <div key={i} className="h-20 animate-pulse rounded-[16px] bg-[#f1f5f9]" />)
+              ) : tests.length === 0 ? (
+                <AdminEmptyState icon={FileText} title="No exams yet" description="Create the first one with Create exam." />
+              ) : (
+                tests.map(test => (
+                  <div key={test.id} className={`${adminRowClass} flex flex-wrap items-center justify-between gap-4`}>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-[15px] font-semibold text-[#0f172a]">{test.title}</h3>
+                        <StatusBadge tone={test.status === "PUBLISHED" ? "good" : "warning"}>
+                          {test.status.charAt(0) + test.status.slice(1).toLowerCase()}
+                        </StatusBadge>
+                      </div>
+                      <p className="mt-1 text-[12px] text-[#64748b]">
+                        {test.durationMins} mins · Pass {test.passingScore}% · {test._count.questions} questions
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/admin/courses/${courseId}/exams/${test.id}`)}
+                        className={adminButtonSm.secondary}
+                      >
+                        Manage questions
+                      </button>
+                      <button type="button" onClick={() => handleDelete(test.id)} className={adminButtonSm.danger}>
+                        Delete
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => router.push(`/admin/courses/${courseId}/exams/${test.id}`)}
-                      className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
-                    >
-                      Manage Questions
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(test.id)}
-                      className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          </AdminPanel>
         </RevealSection>
       </div>
     </PageTransition>

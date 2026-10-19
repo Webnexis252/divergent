@@ -9,6 +9,7 @@ import { LessonCompleteButton } from "./_components/lesson-complete-button";
 import { ChevronLeft, ChevronRight, BookOpen, CircleCheck } from "lucide-react";
 import Link from "next/link";
 import { verifyTokenValue, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { sanitizeLessonHtml } from "@/lib/sanitize-lesson-html";
 import { cookies } from "next/headers";
 
 type Props = {
@@ -165,7 +166,7 @@ export default async function LessonPage({ params }: Props) {
           ) : (
             <div
               className="prose max-w-none p-8 dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: lesson.bodyText || "" }}
+              dangerouslySetInnerHTML={{ __html: sanitizeLessonHtml(lesson.bodyText) }}
             />
           )}
         </div>

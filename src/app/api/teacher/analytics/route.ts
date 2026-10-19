@@ -39,6 +39,8 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
     const windowStart = new Date(now.getTime() - days * DAY_MS);
+    // Enrollments are read back one extra window so the chart can compare against the previous period
+    const comparisonStart = new Date(now.getTime() - 2 * days * DAY_MS);
     // A relation filter rather than an `IN (...)` list of every cohort member's id
     const cohortStudents = cohortId ? { student: { cohortStudents: { some: { cohortId } } } } : {};
 
@@ -80,7 +82,7 @@ export async function GET(req: NextRequest) {
       }),
 
       summarizeLessonProgress(windowStart, scope),
-      countEnrollmentsByDay(windowStart, scope),
+      countEnrollmentsByDay(comparisonStart, scope),
       rankStudentPerformance(now, scope),
       summarizeDoubtResponseTimes(windowStart, scope),
     ]);
@@ -95,13 +97,20 @@ export async function GET(req: NextRequest) {
       ? Math.round(((activeStudents - lessonProgress.learners) / activeStudents) * 100)
       : 0;
 
-    // Enrollments per UTC day for each of the last `days` days
-    const trendData: { label: string; value: number }[] = [];
-    for (let i = days - 1; i >= 0; i--) {
+    // Enrollments per UTC day for each of the last `days` days, plus the total
+    // for the `days` days before them (the comparison period)
+    const trendData: { date: string; label: string; value: number }[] = [];
+    let previousEnrollments = 0;
+    for (let i = 2 * days - 1; i >= 0; i--) {
       const day = new Date(now.getTime() - i * DAY_MS);
       const key = day.toISOString().slice(0, 10);
+      const value = enrollmentsByDay.get(key) ?? 0;
+      if (i >= days) {
+        previousEnrollments += value;
+        continue;
+      }
       const label = day.toLocaleDateString('en-IN', { weekday: 'short', timeZone: 'UTC' });
-      trendData.push({ label, value: enrollmentsByDay.get(key) ?? 0 });
+      trendData.push({ date: key, label, value });
     }
 
     return apiSuccess({
@@ -115,6 +124,7 @@ export async function GET(req: NextRequest) {
       },
       doubtResponse,
       trendData,
+      previousEnrollments,
       topStudents: performance.topStudents,
       needsAttention: performance.needsAttention,
       needsAttentionCount: performance.needsAttentionCount,

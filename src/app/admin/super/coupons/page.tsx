@@ -9,7 +9,18 @@ import {
 } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../../_components/AdminStatCard";
 import { formatShortDate } from "@/lib/date-format";
-import { Pencil, X, Plus } from "lucide-react";
+import { CircleCheck, CircleSlash, Pencil, Plus, Tag, TicketPercent, Users, X } from "lucide-react";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  IconChip,
+  StatusBadge,
+  adminButton,
+  adminButtonSm,
+  adminInputClass,
+  adminLabelClass,
+  adminPanelClass,
+} from "../../_components/admin-ui";
 
 type CourseOption = {
   id: string;
@@ -53,8 +64,7 @@ const EMPTY_FORM = {
   applicableCourseIds: [] as string[],
 };
 
-const inputCls =
-  "h-11 w-full rounded-[10px] border border-[#fde68a] bg-white px-4 text-[14px] outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/15 transition";
+const inputCls = adminInputClass;
 
 // ─── Course Multi‑Picker ────────────────────────────────────────────────────
 function CoursePicker({
@@ -78,14 +88,14 @@ function CoursePicker({
     );
 
   return (
-    <div className="w-full rounded-[12px] border border-[#fde68a] bg-white shadow-sm overflow-hidden flex flex-col">
+    <div className="flex w-full flex-col overflow-hidden rounded-[12px] border border-[#e2e8f0] bg-white">
       {/* Search */}
-      <div className="p-2 border-b border-[#fef3c7] bg-gray-50">
+      <div className="border-b border-[#eef1f5] bg-[#f8fafc] p-2">
         <input
           placeholder="Search courses to apply coupon..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-[8px] border border-gray-200 bg-white px-3 py-2 text-[13px] outline-none focus:border-[#f59e0b]"
+          className="w-full rounded-[8px] border border-[#e2e8f0] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
         />
       </div>
       
@@ -94,14 +104,14 @@ function CoursePicker({
         <button
           type="button"
           onClick={() => onChange([])}
-          className="w-full px-4 py-2 text-left text-[12px] text-[#d97706] font-semibold hover:bg-[#fffbeb] transition border-b border-[#fef3c7]"
+          className="w-full border-b border-[#eef1f5] px-4 py-2 text-left text-[12px] font-semibold text-[#0369a1] transition-colors hover:bg-[#f0f9ff]"
         >
           <X className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Clear selection (apply to all courses)
         </button>
       )}
       
       {/* List */}
-      <ul className="max-h-52 overflow-y-auto divide-y divide-[#fef3c7]">
+      <ul className="max-h-52 divide-y divide-[#f1f5f9] overflow-y-auto">
         {filtered.length === 0 ? (
           <li className="px-4 py-4 text-center text-[13px] text-[#94a3b8]">No courses found</li>
         ) : (
@@ -109,12 +119,12 @@ function CoursePicker({
             const checked = selected.includes(c.id);
             return (
               <li key={c.id}>
-                <label className={`flex cursor-pointer items-center gap-3 px-4 py-2.5 transition ${checked ? "bg-[#fffbeb]" : "hover:bg-[#fffbeb]/60"}`}>
+                <label className={`flex cursor-pointer items-center gap-3 px-4 py-2.5 transition ${checked ? "bg-[#f0f9ff]" : "hover:bg-[#f8fafc]"}`}>
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggle(c.id)}
-                    className="h-4 w-4 rounded border-gray-300 text-[#d97706] focus:ring-[#f59e0b]"
+                    className="h-4 w-4 rounded accent-[#209bd2]"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-medium text-[#0f172a] truncate">{c.title}</p>
@@ -122,7 +132,7 @@ function CoursePicker({
                       <p className="text-[11px] text-[#94a3b8]">{c.category}</p>
                     )}
                   </div>
-                  <span className="text-[12px] font-semibold text-[#d97706] shrink-0">
+                  <span className="shrink-0 text-[12px] font-semibold tabular-nums text-[#334155]">
                     ₹{c.price.toLocaleString("en-IN")}
                   </span>
                 </label>
@@ -160,13 +170,20 @@ function CouponForm({
   isEdit?: boolean;
 }) {
   return (
-    <section className="rounded-[28px] border border-[#fde68a]/60 bg-[#fffbeb] p-6">
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-[18px] font-semibold text-[#92400e]">{title}</h2>
+    <section className={`${adminPanelClass} p-5 sm:p-6`}>
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <IconChip icon={TicketPercent} tone="amber" />
+          <div>
+            <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#0f172a]">{title}</h2>
+            <p className="mt-1 text-[13px] text-[#64748b]">Codes are uppercase letters and numbers, up to 15 characters</p>
+          </div>
+        </div>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full p-2 text-[#94a3b8] hover:bg-[#fef3c7] hover:text-[#b45309] transition"
+          aria-label="Close"
+          className="rounded-full p-2 text-[#94a3b8] transition-colors hover:bg-[#f1f5f9] hover:text-[#0f172a]"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -178,7 +195,7 @@ function CouponForm({
           {/* Coupon Code */}
           <div>
             <div className="flex justify-between mb-1.5">
-              <label className="text-[13px] font-medium text-[#0f172a]">
+              <label className="text-[12px] font-semibold text-[#475569]">
                 Coupon Code{!isEdit && "*"}
               </label>
               <span className="text-[12px] text-[#64748b]">{form.code.length}/15</span>
@@ -208,7 +225,7 @@ function CouponForm({
           {/* Coupon Name */}
           <div>
             <div className="flex justify-between mb-1.5">
-              <label className="text-[13px] font-medium text-[#0f172a]">Coupon Name</label>
+              <label className="text-[12px] font-semibold text-[#475569]">Coupon Name</label>
               <span className="text-[12px] text-[#64748b]">{form.name.length}/60</span>
             </div>
             <input
@@ -225,7 +242,7 @@ function CouponForm({
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Discount Type */}
           <div>
-            <label className="mb-2 block text-[13px] font-medium text-[#0f172a]">Discount Type*</label>
+            <label className="mb-2 block text-[12px] font-semibold text-[#475569]">Discount Type*</label>
             <div className="flex gap-4">
               {(["FIXED", "PERCENTAGE"] as const).map((t) => (
                 <label key={t} className="flex items-center gap-2 text-[14px] text-[#334155] cursor-pointer">
@@ -235,7 +252,7 @@ function CouponForm({
                     value={t}
                     checked={form.discountType === t}
                     onChange={() => setForm((p) => ({ ...p, discountType: t }))}
-                    className="accent-[#16a34a] w-4 h-4"
+                    className="h-4 w-4 accent-[#209bd2]"
                   />
                   {t === "FIXED" ? "Fixed (₹)" : "Percentage (%)"}
                 </label>
@@ -245,7 +262,7 @@ function CouponForm({
 
           {/* Discount Value */}
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">
+            <label className={adminLabelClass}>
               Discount Value*{" "}
               <span className="text-[#94a3b8]">
                 ({form.discountType === "PERCENTAGE" ? "%" : "₹"})
@@ -273,7 +290,7 @@ function CouponForm({
                 className="col-span-1 sm:col-span-2"
               >
                 <div className="w-full sm:w-1/2 sm:pr-2">
-                  <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">
+                  <label className={adminLabelClass}>
                     Max Discount Amount (₹)
                     <span className="ml-2 text-[11px] font-normal text-[#94a3b8]">
                       (leave empty for no limit)
@@ -295,7 +312,7 @@ function CouponForm({
 
         {/* Target Audience */}
         <div>
-          <label className="mb-2 block text-[13px] font-medium text-[#0f172a]">Target Audience</label>
+          <label className="mb-2 block text-[12px] font-semibold text-[#475569]">Target Audience</label>
           <div className="flex flex-wrap gap-4">
             {(["ALL", "FIRST_TIME", "RENEWING"] as const).map((t) => (
               <label key={t} className="flex items-center gap-2 text-[14px] text-[#334155] cursor-pointer">
@@ -305,7 +322,7 @@ function CouponForm({
                   value={t}
                   checked={form.targetUsers === t}
                   onChange={() => setForm((p) => ({ ...p, targetUsers: t }))}
-                  className="accent-[#16a34a] w-4 h-4"
+                  className="h-4 w-4 accent-[#209bd2]"
                 />
                 {t === "ALL" ? "All Users" : t === "FIRST_TIME" ? "First Time Users" : "Renewing Users"}
               </label>
@@ -316,7 +333,7 @@ function CouponForm({
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Start Date */}
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Start Date</label>
+            <label className={adminLabelClass}>Start Date</label>
             <input
               type="date"
               value={form.startDate}
@@ -326,7 +343,7 @@ function CouponForm({
           </div>
           {/* Expiry Date */}
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Expiry Date</label>
+            <label className={adminLabelClass}>Expiry Date</label>
             <input
               type="date"
               value={form.validUntil}
@@ -339,7 +356,7 @@ function CouponForm({
         <div className="grid gap-4 sm:grid-cols-3">
           {/* Max Uses */}
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Max Uses</label>
+            <label className={adminLabelClass}>Max Uses</label>
             <input
               type="number"
               placeholder="100"
@@ -351,7 +368,7 @@ function CouponForm({
           </div>
           {/* Min Purchase */}
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Min Purchase (₹)</label>
+            <label className={adminLabelClass}>Min Purchase (₹)</label>
             <input
               type="number"
               placeholder="0"
@@ -363,7 +380,7 @@ function CouponForm({
           </div>
           {/* Limit Per Learner */}
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">Limit / Learner</label>
+            <label className={adminLabelClass}>Limit / Learner</label>
             <input
               type="number"
               placeholder="1"
@@ -377,7 +394,7 @@ function CouponForm({
 
         {/* Applicable Courses */}
         <div>
-          <label className="mb-1.5 block text-[13px] font-medium text-[#0f172a]">
+          <label className={adminLabelClass}>
             Applicable Courses
             <span className="ml-2 text-[11px] font-normal text-[#94a3b8]">
               (leave empty = valid for ALL courses)
@@ -393,12 +410,12 @@ function CouponForm({
               {form.applicableCourseIds.map((id) => {
                 const c = allCourses.find((x) => x.id === id);
                 return (
-                  <span key={id} className="inline-flex items-center gap-1.5 rounded-full bg-[#fef3c7] px-2.5 py-1 text-[11px] font-semibold text-[#b45309]">
+                  <span key={id} className="inline-flex items-center gap-1.5 rounded-full border border-[#bae6fd] bg-[#f0f9ff] px-2.5 py-1 text-[11px] font-semibold text-[#0369a1]">
                     {c?.title ?? id}
                     <button
                       type="button"
                       onClick={() => setForm((p) => ({ ...p, applicableCourseIds: p.applicableCourseIds.filter((x) => x !== id) }))}
-                      className="hover:text-[#7c2d12]"
+                      className="hover:text-[#0c4a6e]"
                     >
                       ×
                     </button>
@@ -415,14 +432,14 @@ function CouponForm({
           <button
             type="submit"
             disabled={saving}
-            className="rounded-[14px] bg-[#d97706] px-6 py-3 text-[14px] font-semibold text-white disabled:opacity-50 transition hover:bg-[#b45309]"
+            className={adminButton.primary}
           >
             {saving ? "Saving…" : submitLabel}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-[14px] bg-white px-6 py-3 text-[14px] font-semibold text-[#64748b] border border-[#e2e8f0] transition hover:bg-[#f1f5f9]"
+            className={adminButton.secondary}
           >
             Cancel
           </button>
@@ -570,40 +587,31 @@ export default function AdminCouponsPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
-        {/* Hero */}
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
-          <section className="relative overflow-hidden rounded-[34px] bg-gradient-to-r from-[#b45309] via-[#d97706] to-[#f59e0b] px-8 py-10 text-white shadow-[0_24px_60px_rgba(180,83,9,0.28)]">
-            <motion.div
-              className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-3xl"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 5, repeat: Infinity }}
-            />
-            <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="inline-flex rounded-full bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em]">
-                  Owner Controls
-                </div>
-                <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em]">Coupons &amp; Discounts</h1>
-                <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/88">
-                  Create and manage promotional codes with course-level targeting and usage limits.
-                </p>
-              </div>
+          <AdminPageHeader
+            eyebrow="Owner controls"
+            icon={TicketPercent}
+            title="Coupons & discounts"
+            description="Promotional codes with course-level targeting and usage limits."
+            actions={
               <button
+                type="button"
                 onClick={() => { setShowCreate((v) => !v); setEditingCoupon(null); }}
-                className="shrink-0 rounded-2xl bg-white px-6 py-3 text-[14px] font-semibold text-[#b45309] transition hover:bg-white/90"
+                className={showCreate ? adminButton.secondary : adminButton.primary}
               >
-                {showCreate ? <><X className="mr-1 inline h-4 w-4 align-[-3px]" />Cancel</> : <><Plus className="mr-1 inline h-4 w-4 align-[-3px]" />New Coupon</>}
+                {showCreate ? <X className="h-4 w-4" aria-hidden="true" /> : <Plus className="h-4 w-4" aria-hidden="true" />}
+                {showCreate ? "Cancel" : "New coupon"}
               </button>
-            </div>
-          </section>
+            }
+          />
         </RevealSection>
 
         {/* Stats */}
-        <StaggerGrid className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <AdminStatCard index={0} title="Total Codes" value={loading ? "…" : coupons.length} caption="All coupons created." tone="amber" />
-          <AdminStatCard index={1} title="Active" value={loading ? "…" : active} caption="Currently redeemable." tone="emerald" />
-          <AdminStatCard index={2} title="Total Uses" value={loading ? "…" : totalUses} caption="Redemptions across all codes." tone="sky" />
+        <StaggerGrid className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <AdminStatCard index={0} title="Total codes" value={loading ? "…" : coupons.length} caption="All coupons created." icon={<Tag />} tone="amber" />
+          <AdminStatCard index={1} title="Active" value={loading ? "…" : active} caption="Currently redeemable." icon={<CircleCheck />} tone="emerald" />
+          <AdminStatCard index={2} title="Total uses" value={loading ? "…" : totalUses} caption="Redemptions across all codes." icon={<Users />} tone="sky" />
         </StaggerGrid>
 
         {/* Create Form */}
@@ -617,7 +625,7 @@ export default function AdminCouponsPage() {
               style={{ overflow: "hidden" }}
             >
               <CouponForm
-                title="Create Coupon"
+                title="Create coupon"
                 form={createForm}
                 setForm={setCreateForm}
                 allCourses={allCourses}
@@ -625,7 +633,7 @@ export default function AdminCouponsPage() {
                 error={createError}
                 onSubmit={handleCreate}
                 onCancel={() => setShowCreate(false)}
-                submitLabel="Create Coupon"
+                submitLabel="Create coupon"
               />
             </motion.div>
           )}
@@ -641,15 +649,9 @@ export default function AdminCouponsPage() {
               exit={{ opacity: 0, height: 0 }}
               style={{ overflow: "hidden" }}
             >
-              <div className="rounded-[28px] border-2 border-[#f59e0b] bg-[#fffbeb] p-1">
-                <div className="flex items-center gap-2 px-5 pt-4 pb-0">
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-[#d97706]">
-                    <Pencil className="mr-1 inline h-3 w-3 align-[-1px]" />Editing
-                  </span>
-                  <span className="font-mono text-[14px] font-black text-[#0f172a]">{editingCoupon.code}</span>
-                </div>
+              <div>
                 <CouponForm
-                  title=""
+                  title={`Edit ${editingCoupon.code}`}
                   isEdit
                   form={editForm}
                   setForm={setEditForm}
@@ -658,7 +660,7 @@ export default function AdminCouponsPage() {
                   error={editError}
                   onSubmit={handleEdit}
                   onCancel={() => setEditingCoupon(null)}
-                  submitLabel="Save Changes"
+                  submitLabel="Save changes"
                 />
               </div>
             </motion.div>
@@ -670,11 +672,11 @@ export default function AdminCouponsPage() {
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {loading ? (
               [1, 2, 3].map((i) => (
-                <div key={i} className="h-52 animate-pulse rounded-[28px] bg-white/70" />
+                <div key={i} className="h-52 animate-pulse rounded-[24px] bg-white/70" />
               ))
             ) : coupons.length === 0 ? (
-              <div className="md:col-span-2 xl:col-span-3 rounded-[22px] border border-dashed border-[#fde68a] bg-[#fffbeb] px-5 py-14 text-center text-[14px] text-[#92400e]">
-                No coupons yet. Create your first one above.
+              <div className={`${adminPanelClass} p-5 md:col-span-2 xl:col-span-3`}>
+                <AdminEmptyState icon={TicketPercent} title="No coupons yet" description="Create your first one with New coupon." />
               </div>
             ) : (
               coupons.map((coupon, i) => {
@@ -691,67 +693,65 @@ export default function AdminCouponsPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.04, duration: 0.4 }}
-                    whileHover={{ y: -4, boxShadow: "0 16px 32px rgba(15,23,42,0.1)" }}
-                    className={`relative overflow-hidden rounded-[28px] border bg-white/95 p-6 shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition-all ${
-                      isEditing ? "border-[#f59e0b] ring-2 ring-[#f59e0b]/30" : "border-white/70"
+                    whileHover={{ y: -3 }}
+                    className={`relative flex flex-col overflow-hidden rounded-[20px] border bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)] transition-shadow hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] ${
+                      isEditing ? "border-[#209bd2] ring-3 ring-[#38c1ff]/20" : "border-[#e8edf3]"
                     }`}
                   >
                     {/* Header row */}
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#94a3b8]">
-                          Discount Code
-                        </p>
-                        <h3 className="mt-2 font-mono text-[26px] font-black tracking-[0.12em] text-[#0f172a]">
+                        <span className="inline-flex rounded-[8px] border border-dashed border-[#cbd5e1] bg-[#f8fafc] px-2.5 py-1 font-mono text-[18px] font-bold tracking-[0.1em] text-[#0f172a]">
                           {coupon.code}
-                        </h3>
-                        <p className="mt-1 text-[16px] font-semibold text-[#16a34a]">
+                        </span>
+                        <p className="mt-3 text-[22px] font-semibold leading-none tracking-[-0.02em] text-[#0f172a]">
                           {coupon.discountType === "PERCENTAGE"
-                            ? `${coupon.discountValue}% OFF`
-                            : `₹${coupon.discountValue} OFF`}
+                            ? `${coupon.discountValue}% off`
+                            : `₹${coupon.discountValue} off`}
                         </p>
                         {coupon.targetUsers !== "ALL" && (
-                          <div className="mt-2 inline-flex rounded bg-[#fef3c7] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#b45309] uppercase">
-                            {coupon.targetUsers === "FIRST_TIME" ? "First Time Only" : "Renewing Only"}
-                          </div>
+                          <StatusBadge tone="violet" className="mt-2">
+                            {coupon.targetUsers === "FIRST_TIME" ? "First-time buyers" : "Renewals only"}
+                          </StatusBadge>
                         )}
                       </div>
 
                       {/* Actions */}
                       <div className="flex flex-col items-end gap-2 shrink-0">
                         <button
+                          type="button"
                           onClick={() => toggleCoupon(coupon)}
                           disabled={toggling === coupon.id}
-                          className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition ${
+                          title={coupon.isActive ? "Click to disable" : "Click to enable"}
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors disabled:opacity-50 ${
                             coupon.isActive
-                              ? "bg-[#ecfdf5] text-[#15803d] hover:bg-[#dcfce7]"
-                              : "bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]"
-                          } disabled:opacity-50`}
+                              ? "bg-[#ecfdf3] text-[#15803d] hover:bg-[#dcfce7]"
+                              : "bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0]"
+                          }`}
                         >
+                          {coupon.isActive ? <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" /> : <CircleSlash className="h-3.5 w-3.5" aria-hidden="true" />}
                           {toggling === coupon.id ? "…" : coupon.isActive ? "Active" : "Disabled"}
                         </button>
                         <button
+                          type="button"
                           onClick={() => isEditing ? setEditingCoupon(null) : openEdit(coupon)}
-                          className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition ${
-                            isEditing
-                              ? "bg-[#f59e0b] text-white hover:bg-[#d97706]"
-                              : "bg-[#fef3c7] text-[#b45309] hover:bg-[#fde68a]"
-                          }`}
+                          className={isEditing ? adminButtonSm.primary : adminButtonSm.secondary}
                         >
-                          {isEditing ? <><X className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Close</> : <><Pencil className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />Edit</>}
+                          {isEditing ? <X className="h-3.5 w-3.5" aria-hidden="true" /> : <Pencil className="h-3.5 w-3.5" aria-hidden="true" />}
+                          {isEditing ? "Close" : "Edit"}
                         </button>
                       </div>
                     </div>
 
                     {/* Usage bar */}
                     <div className="mt-5">
-                      <div className="flex items-center justify-between text-[13px] text-[#64748b]">
+                      <div className="flex items-center justify-between text-[12px] text-[#64748b]">
                         <span>Usage</span>
-                        <span>{coupon.usedCount} / {coupon.maxUses}</span>
+                        <span className="font-semibold tabular-nums text-[#334155]">{coupon.usedCount} / {coupon.maxUses}</span>
                       </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e2e8f0]">
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e0f2fe]">
                         <motion.div
-                          className="h-full rounded-full bg-gradient-to-r from-[#f59e0b] to-[#ef4444]"
+                          className={`h-full rounded-full ${usagePct >= 90 ? "bg-[#ef4444]" : usagePct >= 70 ? "bg-[#f59e0b]" : "bg-[#209bd2]"}`}
                           initial={{ width: 0 }}
                           whileInView={{ width: `${usagePct}%` }}
                           viewport={{ once: true }}
@@ -780,17 +780,15 @@ export default function AdminCouponsPage() {
                     {/* Applicable Courses */}
                     {courseNames.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-[#f1f5f9]">
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-[#94a3b8] mb-1.5">
-                          Valid for
-                        </p>
+                        <p className="mb-1.5 text-[11px] font-medium text-[#94a3b8]">Valid for</p>
                         <div className="flex flex-wrap gap-1.5">
                           {courseNames.slice(0, 3).map((name, idx) => (
-                            <span key={idx} className="inline-flex rounded-full bg-[#fef3c7] px-2.5 py-0.5 text-[11px] font-semibold text-[#b45309]">
+                            <span key={idx} className="inline-flex max-w-full truncate rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-[11px] font-semibold text-[#475569]">
                               {name}
                             </span>
                           ))}
                           {courseNames.length > 3 && (
-                            <span className="inline-flex rounded-full bg-[#fef3c7] px-2.5 py-0.5 text-[11px] font-semibold text-[#b45309]">
+                            <span className="inline-flex rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-[11px] font-semibold text-[#475569]">
                               +{courseNames.length - 3} more
                             </span>
                           )}
@@ -798,7 +796,7 @@ export default function AdminCouponsPage() {
                       </div>
                     )}
                     {courseNames.length === 0 && (
-                      <p className="mt-3 text-[11px] text-[#cbd5e1]">Valid for all courses</p>
+                      <p className="mt-3 border-t border-[#f1f5f9] pt-3 text-[11px] text-[#94a3b8]">Valid for all courses</p>
                     )}
                   </motion.article>
                 );

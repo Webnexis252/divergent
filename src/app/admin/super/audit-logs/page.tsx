@@ -3,7 +3,17 @@
 import { useEffect, useState } from "react";
 import { m as motion } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
-import { Lock, ClipboardList } from "lucide-react";
+import { ClipboardList, History, ScrollText, Search } from "lucide-react";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  AdminPanel,
+  AdminPanelHeader,
+  StatusBadge,
+  adminInputClass,
+  adminToolbarClass,
+} from "../../_components/admin-ui";
+import type { StatusTone } from "../../_components/admin-ui";
 
 type AuditLog = {
   id: string;
@@ -15,21 +25,26 @@ type AuditLog = {
   actor: { id: string; name: string | null; email: string | null; role: string };
 };
 
-const actionColors: Record<string, string> = {
-  COURSE_CREATED: "bg-green-100 text-green-700",
-  COURSE_DELETED: "bg-red-100 text-red-700",
-  COURSE_UPDATED: "bg-blue-100 text-blue-700",
-  STUDENT_SUSPENDED: "bg-orange-100 text-orange-700",
-  STUDENT_ACTIVATED: "bg-emerald-100 text-emerald-700",
-  PAYMENT_REFUNDED: "bg-purple-100 text-purple-700",
-  MENTOR_ASSIGNED_TO_DOUBT: "bg-sky-100 text-sky-700",
-  DOUBT_RESOLVED: "bg-teal-100 text-teal-700",
-  DOUBT_CLOSED: "bg-slate-100 text-slate-700",
-  POST_DELETED: "bg-rose-100 text-rose-700",
-  POST_FLAGGED: "bg-amber-100 text-amber-700",
-  COHORT_CREATED: "bg-violet-100 text-violet-700",
-  USER_ROLE_UPDATED: "bg-indigo-100 text-indigo-700",
+const actionTones: Record<string, StatusTone> = {
+  COURSE_CREATED: "good",
+  COURSE_DELETED: "critical",
+  COURSE_UPDATED: "info",
+  STUDENT_SUSPENDED: "warning",
+  STUDENT_ACTIVATED: "good",
+  PAYMENT_REFUNDED: "violet",
+  MENTOR_ASSIGNED_TO_DOUBT: "info",
+  DOUBT_RESOLVED: "good",
+  DOUBT_CLOSED: "neutral",
+  POST_DELETED: "critical",
+  POST_FLAGGED: "warning",
+  COHORT_CREATED: "good",
+  USER_ROLE_UPDATED: "violet",
 };
+
+function actionLabel(action: string) {
+  const words = action.toLowerCase().replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
 
 const entityTypes = ["", "Course", "User", "Payment", "DoubtTicket", "Post", "Cohort"];
 
@@ -60,68 +75,66 @@ export default function AuditLogsPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
 
         <RevealSection>
-          <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#334155] px-8 py-10 text-white shadow-[0_24px_60px_rgba(15,23,42,0.4)]">
-            <motion.div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-blue-500/10 blur-3xl" animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 6, repeat: Infinity }} />
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-widest"><Lock className="h-3.5 w-3.5" />Governance</div>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight">Audit Logs</h1>
-              <p className="mt-2 text-white/70">Complete trail of all administrative actions on the platform.</p>
-            </div>
-          </div>
+          <AdminPageHeader
+            eyebrow="Governance"
+            icon={ScrollText}
+            title="Audit logs"
+            description="A complete trail of every administrative action on the platform."
+          />
         </RevealSection>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search action, actor, entity..."
-            className="flex-1 min-w-[200px] rounded-[12px] border px-4 py-2.5 text-sm outline-none focus:border-[#38c1ff]"
-          />
-          <select value={entityType} onChange={(e) => setEntityType(e.target.value)}
-            className="rounded-[12px] border px-4 py-2.5 text-sm outline-none focus:border-[#38c1ff]"
-          >
-            {entityTypes.map(t => <option key={t} value={t}>{t || "All Entities"}</option>)}
-          </select>
+        <div className={`${adminToolbarClass} grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]`}>
+          <label className="relative block">
+            <span className="sr-only">Search audit events</span>
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search action, actor or entity…"
+              className={`${adminInputClass} pl-10`}
+            />
+          </label>
+          <label className="block">
+            <span className="sr-only">Entity type</span>
+            <select value={entityType} onChange={(e) => setEntityType(e.target.value)} className={adminInputClass}>
+              {entityTypes.map(t => <option key={t} value={t}>{t || "All entities"}</option>)}
+            </select>
+          </label>
         </div>
 
         {/* Logs table */}
-        <div className="rounded-[24px] bg-white shadow-[0px_4px_20px_rgba(0,0,0,0.06)] overflow-hidden">
-          <div className="border-b px-6 py-5">
-            <h2 className="text-[18px] font-semibold text-[#101828]">
-              {filtered.length} Event{filtered.length !== 1 ? "s" : ""}
-            </h2>
-          </div>
-          <div className="divide-y">
+        <AdminPanel>
+          <AdminPanelHeader
+            icon={History}
+            tone="slate"
+            title="Activity"
+            description={`${filtered.length} event${filtered.length !== 1 ? "s" : ""}${search || entityType ? " matching your filters" : ""}`}
+          />
+          <div className="mt-4 divide-y divide-[#f1f5f9]">
             {loading ? (
-              <div className="p-6 space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-16 animate-pulse rounded-[12px] bg-gray-100" />)}</div>
+              <div className="space-y-3 py-2">{[1,2,3,4].map(i => <div key={i} className="h-14 animate-pulse rounded-[12px] bg-[#f1f5f9]" />)}</div>
             ) : filtered.length === 0 ? (
-              <div className="py-16 text-center">
-                <ClipboardList className="mx-auto h-10 w-10 text-[#94a3b8]" strokeWidth={1.5} />
-                <p className="mt-4 text-[17px] font-semibold text-[#101828]">No audit events found</p>
-                <p className="mt-2 text-[13px] text-[#94a3b8]">Administrative actions will appear here as they happen.</p>
-              </div>
+              <AdminEmptyState icon={ClipboardList} title="No audit events found" description="Administrative actions will appear here as they happen." />
             ) : (
               filtered.map((log, i) => (
                 <motion.div key={log.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                  className="flex flex-wrap items-start gap-4 px-6 py-4 hover:bg-gray-50/50 transition"
+                  className="flex flex-wrap items-start gap-4 py-3.5"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[14px] font-bold text-slate-600">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f1f5f9] text-[13px] font-semibold text-[#334155]">
                       {log.actor.name?.charAt(0) ?? '?'}
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${actionColors[log.action] ?? "bg-gray-100 text-gray-700"}`}>
-                          {log.action.replace(/_/g, " ")}
-                        </span>
-                        <span className="text-[13px] font-medium text-[#101828]">{log.actor.name ?? "Unknown"}</span>
+                        <StatusBadge tone={actionTones[log.action] ?? "neutral"}>{actionLabel(log.action)}</StatusBadge>
+                        <span className="text-[13px] font-semibold text-[#0f172a]">{log.actor.name ?? "Unknown"}</span>
                         <span className="text-[12px] text-[#94a3b8]">({log.actor.role})</span>
                       </div>
-                      <p className="mt-0.5 text-[12px] text-[#94a3b8] truncate">
+                      <p className="mt-1 truncate text-[12px] text-[#94a3b8]">
                         Entity: {log.entityType} · ID: {log.entityId.slice(0, 12)}…
                       </p>
                     </div>
@@ -138,7 +151,7 @@ export default function AuditLogsPage() {
               ))
             )}
           </div>
-        </div>
+        </AdminPanel>
       </div>
     </PageTransition>
   );

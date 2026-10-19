@@ -1,13 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, X, UserCheck, Trash2 } from "lucide-react";
+import type { ComponentType } from "react";
+import { CalendarClock, Check, Download, Trash2, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { Surface } from "@/components/ui/surface";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Button } from "@/components/ui/button";
 import { m as motion, AnimatePresence } from "motion/react";
+import { formatShortDate } from "@/lib/date-format";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  AdminPanel,
+  AdminPanelHeader,
+  StatusBadge,
+  adminButton,
+} from "../../_components/admin-ui";
+import type { IconTone } from "../../_components/admin-ui";
 
 interface ApprovalRequest {
   id: string;
@@ -21,6 +28,19 @@ interface ApprovalRequest {
     email: string;
   };
 }
+
+type RequestGroupConfig = {
+  key: string;
+  title: string;
+  description: string;
+  icon: ComponentType<{ className?: string }>;
+  tone: IconTone;
+  requests: ApprovalRequest[];
+  onAction: (id: string, action: "APPROVE" | "REJECT") => void;
+  approveLabel: string;
+  destructive?: boolean;
+  hideContact?: boolean;
+};
 
 export default function StudentApprovalsPage() {
   const [studentRequests, setStudentRequests] = useState<ApprovalRequest[]>([]);
@@ -124,284 +144,173 @@ export default function StudentApprovalsPage() {
   const teacherSuspensionRequests = teacherRequests.filter(req => req.type === "SUSPEND");
   const teacherDeletionRequests = teacherRequests.filter(req => req.type === "DELETE");
 
+  const groups: RequestGroupConfig[] = [
+    {
+      key: "create",
+      title: "Student creation",
+      description: "New student accounts requested by admins",
+      icon: UserPlus,
+      tone: "sky",
+      requests: creationRequests,
+      onAction: handleAction,
+      approveLabel: "Approve",
+    },
+    {
+      key: "suspend",
+      title: "Student suspension",
+      description: "Accounts admins want to suspend",
+      icon: UserX,
+      tone: "amber",
+      requests: suspensionRequests,
+      onAction: handleAction,
+      approveLabel: "Approve suspension",
+      destructive: true,
+    },
+    {
+      key: "delete",
+      title: "Student deletion",
+      description: "Permanent account deletions; this can't be undone",
+      icon: Trash2,
+      tone: "rose",
+      requests: deletionRequests,
+      onAction: handleAction,
+      approveLabel: "Confirm deletion",
+      destructive: true,
+    },
+    {
+      key: "extend",
+      title: "Installment extensions",
+      description: "Requests to push an installment due date",
+      icon: CalendarClock,
+      tone: "violet",
+      requests: extensionRequests,
+      onAction: handleAction,
+      approveLabel: "Approve extension",
+    },
+    {
+      key: "teacher-suspend",
+      title: "Teacher suspension",
+      description: "Mentor accounts admins want to suspend",
+      icon: UserX,
+      tone: "amber",
+      requests: teacherSuspensionRequests,
+      onAction: handleTeacherAction,
+      approveLabel: "Approve suspension",
+      destructive: true,
+    },
+    {
+      key: "teacher-delete",
+      title: "Teacher deletion",
+      description: "Permanent mentor deletions; this can't be undone",
+      icon: Trash2,
+      tone: "rose",
+      requests: teacherDeletionRequests,
+      onAction: handleTeacherAction,
+      approveLabel: "Confirm deletion",
+      destructive: true,
+    },
+    {
+      key: "export",
+      title: "Data exports",
+      description: "Student data exports awaiting sign-off",
+      icon: Download,
+      tone: "slate",
+      requests: exportRequests,
+      onAction: handleExportAction,
+      approveLabel: "Approve",
+      hideContact: true,
+    },
+  ];
+  const pendingTotal = groups.reduce((sum, g) => sum + g.requests.length, 0);
+
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
-          <Surface className="relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8">
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-[32%] bg-[radial-gradient(circle_at_center,rgba(56,193,255,0.14),transparent_72%)]" />
-            <div className="relative z-10">
-              <SectionHeading
-                eyebrow="Super Admin"
-                title="Admin Requests"
-                description="Review and approve student creation and suspension requests initiated by administrators."
-              />
-            </div>
-          </Surface>
+          <AdminPageHeader
+            eyebrow="Super admin"
+            icon={UserCheck}
+            title="Admin requests"
+            description="Review and approve account, installment and data-export requests raised by administrators."
+            actions={
+              !loading ? (
+                <StatusBadge tone={pendingTotal > 0 ? "warning" : "good"} className="px-3 py-1.5 text-[12px]">
+                  {pendingTotal > 0 ? `${pendingTotal} pending` : "All clear"}
+                </StatusBadge>
+              ) : null
+            }
+          />
         </RevealSection>
 
         <RevealSection delay={0.06}>
           {loading ? (
-            <Surface className="h-64 animate-pulse">
-              <span className="sr-only">Loading approval requests</span>
-            </Surface>
-          ) : (studentRequests.length === 0 && teacherRequests.length === 0 && exportRequests.length === 0) ? (
-            <EmptyState
-              icon={<UserCheck className="h-6 w-6" />}
-              title="No pending requests"
-              description="There are currently no actions awaiting approval."
-            />
+            <div className="space-y-6">
+              {[0, 1].map((i) => (
+                <div key={i} className="h-48 animate-pulse rounded-[24px] bg-white/70">
+                  <span className="sr-only">Loading approval requests</span>
+                </div>
+              ))}
+            </div>
+          ) : pendingTotal === 0 ? (
+            <AdminPanel>
+              <AdminEmptyState
+                icon={UserCheck}
+                title="No pending requests"
+                description="There are currently no actions awaiting approval."
+              />
+            </AdminPanel>
           ) : (
-            <div className="space-y-8">
-              {creationRequests.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-gray-900 px-1">Student Creation Requests</h2>
-                  {creationRequests.map((req) => (
-                    <Surface key={req.id} className="p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">{req.name}</h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
-                            <span>Email: {req.email}</span>
-                            {req.phone && <span>Phone: {req.phone}</span>}
+            <div className="space-y-6">
+              {groups
+                .filter((group) => group.requests.length > 0)
+                .map((group) => (
+                  <AdminPanel key={group.key}>
+                    <AdminPanelHeader
+                      icon={group.icon}
+                      tone={group.tone}
+                      title={group.title}
+                      description={group.description}
+                      actions={<StatusBadge tone={group.destructive ? "critical" : "info"}>{group.requests.length} pending</StatusBadge>}
+                    />
+                    <ul className="mt-5 divide-y divide-[#f1f5f9]">
+                      {group.requests.map((req) => (
+                        <li key={req.id} className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="truncate text-[14px] font-semibold text-[#0f172a]">
+                              {group.key === "export" ? "Student data export" : req.name}
+                            </p>
+                            {!group.hideContact && (
+                              <p className="mt-0.5 truncate text-[12px] text-[#64748b]">
+                                {req.email}
+                                {req.phone ? ` · ${req.phone}` : ""}
+                              </p>
+                            )}
+                            <p className="mt-1 text-[12px] text-[#94a3b8]">
+                              Requested by {req.admin.name || req.admin.email} · {formatShortDate(req.createdAt)}
+                            </p>
                           </div>
-                          <div className="mt-2 text-xs font-medium text-gray-400">
-                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
+                          <div className="flex shrink-0 items-center gap-2">
+                            <button type="button" onClick={() => group.onAction(req.id, "REJECT")} className={adminButton.secondary}>
+                              <X className="h-4 w-4" aria-hidden="true" /> Reject
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => group.onAction(req.id, "APPROVE")}
+                              className={group.destructive ? adminButton.destructive : adminButton.primary}
+                            >
+                              {group.key.endsWith("delete") ? (
+                                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                              ) : (
+                                <Check className="h-4 w-4" aria-hidden="true" />
+                              )}
+                              {group.approveLabel}
+                            </button>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleAction(req.id, "REJECT")}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <X className="mr-2 h-4 w-4" /> Reject
-                          </Button>
-                          <Button
-                            onClick={() => handleAction(req.id, "APPROVE")}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            <Check className="mr-2 h-4 w-4" /> Approve
-                          </Button>
-                        </div>
-                      </div>
-                    </Surface>
-                  ))}
-                </div>
-              )}
-
-              {suspensionRequests.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-gray-900 px-1">Account Suspension Requests</h2>
-                  {suspensionRequests.map((req) => (
-                    <Surface key={req.id} className="border-red-200 bg-red-50/30 p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-red-700">Suspend: {req.name}</h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
-                            <span>Email: {req.email}</span>
-                          </div>
-                          <div className="mt-2 text-xs font-medium text-gray-500">
-                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleAction(req.id, "REJECT")}
-                            className="text-gray-600 hover:text-gray-900"
-                          >
-                            <X className="mr-2 h-4 w-4" /> Reject
-                          </Button>
-                          <Button
-                            onClick={() => handleAction(req.id, "APPROVE")}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                          >
-                            <Check className="mr-2 h-4 w-4" /> Approve Suspension
-                          </Button>
-                        </div>
-                      </div>
-                    </Surface>
-                  ))}
-                </div>
-              )}
-
-              {deletionRequests.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-gray-900 px-1">Account Deletion Requests</h2>
-                  {deletionRequests.map((req) => (
-                    <Surface key={req.id} className="border-red-400 bg-red-100 p-6 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-bold text-red-800">DELETE ACCOUNT: {req.name}</h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-red-900/80">
-                            <span>Email: {req.email}</span>
-                          </div>
-                          <div className="mt-2 text-xs font-medium text-red-700/70">
-                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleAction(req.id, "REJECT")}
-                            className="text-red-900 hover:text-red-950 bg-red-50 hover:bg-red-200"
-                          >
-                            <X className="mr-2 h-4 w-4" /> Reject
-                          </Button>
-                          <Button
-                            onClick={() => handleAction(req.id, "APPROVE")}
-                            className="bg-red-600 hover:bg-red-700 text-white font-bold"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Confirm Deletion
-                          </Button>
-                        </div>
-                      </div>
-                    </Surface>
-                  ))}
-                </div>
-              )}
-
-              {extensionRequests.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-gray-900 px-1">Installment Extension Requests</h2>
-                  {extensionRequests.map((req) => (
-                    <Surface key={req.id} className="border-amber-200 bg-amber-50/30 p-6 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-bold text-amber-800">EXTEND DUE DATE: {req.name}</h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-amber-900/80">
-                            <span>Email: {req.email}</span>
-                          </div>
-                          <div className="mt-2 text-xs font-medium text-amber-700/70">
-                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleAction(req.id, "REJECT")}
-                            className="text-amber-900 hover:text-amber-950 bg-amber-50 hover:bg-amber-200"
-                          >
-                            <X className="mr-2 h-4 w-4" /> Reject
-                          </Button>
-                          <Button
-                            onClick={() => handleAction(req.id, "APPROVE")}
-                            className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
-                          >
-                            <Check className="mr-2 h-4 w-4" /> Approve Extension
-                          </Button>
-                        </div>
-                      </div>
-                    </Surface>
-                  ))}
-                </div>
-              )}
-
-              {teacherSuspensionRequests.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-gray-900 px-1">Teacher Suspension Requests</h2>
-                  {teacherSuspensionRequests.map((req) => (
-                    <Surface key={req.id} className="border-red-200 bg-red-50/30 p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-red-700">Suspend: {req.name}</h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
-                            <span>Email: {req.email}</span>
-                          </div>
-                          <div className="mt-2 text-xs font-medium text-gray-500">
-                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleTeacherAction(req.id, "REJECT")}
-                            className="text-gray-600 hover:text-gray-900"
-                          >
-                            <X className="mr-2 h-4 w-4" /> Reject
-                          </Button>
-                          <Button
-                            onClick={() => handleTeacherAction(req.id, "APPROVE")}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                          >
-                            <Check className="mr-2 h-4 w-4" /> Approve Suspension
-                          </Button>
-                        </div>
-                      </div>
-                    </Surface>
-                  ))}
-                </div>
-              )}
-
-              {teacherDeletionRequests.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-gray-900 px-1">Teacher Deletion Requests</h2>
-                  {teacherDeletionRequests.map((req) => (
-                    <Surface key={req.id} className="border-red-400 bg-red-100 p-6 shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-bold text-red-800">DELETE TEACHER: {req.name}</h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-red-900/80">
-                            <span>Email: {req.email}</span>
-                          </div>
-                          <div className="mt-2 text-xs font-medium text-red-700/70">
-                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleTeacherAction(req.id, "REJECT")}
-                            className="text-red-900 hover:text-red-950 bg-red-50 hover:bg-red-200"
-                          >
-                            <X className="mr-2 h-4 w-4" /> Reject
-                          </Button>
-                          <Button
-                            onClick={() => handleTeacherAction(req.id, "APPROVE")}
-                            className="bg-red-600 hover:bg-red-700 text-white font-bold"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Confirm Deletion
-                          </Button>
-                        </div>
-                      </div>
-                    </Surface>
-                  ))}
-                </div>
-              )}
-
-              {exportRequests.length > 0 && (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold text-gray-900 px-1">Data Export Requests</h2>
-                  {exportRequests.map((req) => (
-                    <Surface key={req.id} className="p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">Student Data Export</h3>
-                          <div className="mt-2 text-xs font-medium text-gray-400">
-                            Requested by: {req.admin.name || req.admin.email} • {new Date(req.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleExportAction(req.id, "REJECT")}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <X className="mr-2 h-4 w-4" /> Reject
-                          </Button>
-                          <Button
-                            onClick={() => handleExportAction(req.id, "APPROVE")}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            <Check className="mr-2 h-4 w-4" /> Approve
-                          </Button>
-                        </div>
-                      </div>
-                    </Surface>
-                  ))}
-                </div>
-              )}
+                        </li>
+                      ))}
+                    </ul>
+                  </AdminPanel>
+                ))}
             </div>
           )}
         </RevealSection>
@@ -414,11 +323,13 @@ export default function StudentApprovalsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className={`fixed bottom-6 right-6 z-50 rounded-2xl px-5 py-3 text-[14px] font-semibold text-white shadow-xl ${
-              toast.ok ? "bg-[#15803d]" : "bg-[#dc2626]"
+            role="status"
+            className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-[14px] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_18px_40px_rgba(15,23,42,0.2)] ${
+              toast.ok ? "bg-[#15803d]" : "bg-[#b91c1c]"
             }`}
           >
-            {toast.ok ? <Check className="mr-1.5 inline h-4 w-4 align-[-3px]" /> : <X className="mr-1.5 inline h-4 w-4 align-[-3px]" />}{toast.msg}
+            {toast.ok ? <Check className="h-4 w-4" aria-hidden="true" /> : <X className="h-4 w-4" aria-hidden="true" />}
+            {toast.msg}
           </motion.div>
         )}
       </AnimatePresence>

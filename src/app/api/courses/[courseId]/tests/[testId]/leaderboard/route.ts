@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
-import { apiUnauthorized, apiServerError } from "@/lib/api-response";
+import { courseRelation } from "@/lib/course-access";
+import { apiForbidden, apiNotFound, apiUnauthorized, apiServerError } from "@/lib/api-response";
 
 /**
  * GET /api/courses/[courseId]/tests/[testId]/leaderboard
@@ -18,7 +19,14 @@ export async function GET(
     const user = await requireAuth(req);
     if (!user) return apiUnauthorized();
 
-    const { testId } = await params;
+    const { courseId, testId } = await params;
+
+    // Names and scores are for the course's own students and teachers
+    if ((await courseRelation(user, courseId)) === "none") {
+      return apiForbidden("Enroll in this course to see its leaderboards");
+    }
+    const test = await prisma.courseTest.findFirst({ where: { id: testId, courseId }, select: { id: true } });
+    if (!test) return apiNotFound("Test");
 
     const attempts = await prisma.testAttempt.findMany({
       where: {

@@ -5,12 +5,30 @@ import { format } from "date-fns";
 import {
   Loader2,
   AlertCircle,
+  CalendarCheck,
+  CalendarX,
   CheckCircle2,
+  Clock,
   Search,
   X,
   Banknote,
   Upload,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
+import { AdminStatCard } from "../_components/AdminStatCard";
+import {
+  AdminPanelHeader,
+  StatusBadge,
+  adminButton,
+  adminButtonSm,
+  adminInputClass,
+  adminLabelClass,
+  adminPanelClass,
+  adminTable,
+  adminToolbarClass,
+} from "../_components/admin-ui";
+import type { IconTone } from "../_components/admin-ui";
 import { useRouter } from "next/navigation";
 
 type InstallmentData = {
@@ -145,15 +163,15 @@ function CashPaymentModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f172a]/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-[24px] border border-[#e8edf3] bg-white shadow-[0_40px_80px_rgba(15,23,42,0.18)]">
+        <div className="flex items-center justify-between border-b border-[#f1f5f9] p-6">
+          <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#0f172a]">
             Record Cash Payment
           </h2>
           <button
             onClick={onClose}
-            className="rounded-full p-2 text-gray-400 hover:bg-gray-50 hover:text-gray-500"
+            className="rounded-full p-2 text-[#94a3b8] hover:bg-[#f8fafc] hover:text-gray-500"
           >
             <X className="h-5 w-5" />
           </button>
@@ -161,14 +179,14 @@ function CashPaymentModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
+            <div className="flex items-center gap-2 rounded-[12px] border border-[#fecaca] bg-[#fef2f2] p-3 text-[#b91c1c]">
               <AlertCircle className="h-4 w-4" />
               <p className="text-sm">{error}</p>
             </div>
           )}
 
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className={adminLabelClass}>
               Student & Course
             </label>
             {!!initialStudent ? (
@@ -176,7 +194,7 @@ function CashPaymentModal({
                 type="text"
                 disabled
                 value={`${initialStudent.studentName} (${initialStudent.courseTitle})`}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 cursor-not-allowed"
+                className={`${adminInputClass} cursor-not-allowed bg-[#f8fafc] text-[#64748b]`}
               />
             ) : (
               <>
@@ -194,11 +212,11 @@ function CashPaymentModal({
                     }
                   }}
                   onFocus={() => setIsDropdownOpen(true)}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[#38c1ff] focus:outline-none focus:ring-1 focus:ring-[#38c1ff]"
+                  className={adminInputClass}
                   required={!selectedStudentId}
                 />
                 {isDropdownOpen && studentSearch && !selectedStudentId && (
-                  <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg text-sm">
+                  <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-[12px] border border-[#e2e8f0] bg-white py-1 text-sm shadow-[0_20px_50px_rgba(15,23,42,0.14)]">
                     {data
                       .filter(
                         (d) =>
@@ -212,15 +230,15 @@ function CashPaymentModal({
                       .map((d) => (
                         <li
                           key={d.id}
-                          className="cursor-pointer px-4 py-2 hover:bg-[#38c1ff]/10 hover:text-[#0284c7]"
+                          className="cursor-pointer px-4 py-2 hover:bg-[#f0f9ff] hover:text-[#0369a1]"
                           onClick={() => {
                             setStudentSearch(`${d.studentName} (${d.courseTitle})`);
                             handleStudentChange(d.id);
                             setIsDropdownOpen(false);
                           }}
                         >
-                          <div className="font-medium text-gray-900">{d.studentName}</div>
-                          <div className="text-xs text-gray-500">{d.courseTitle}</div>
+                          <div className="font-medium text-[#0f172a]">{d.studentName}</div>
+                          <div className="text-xs text-[#64748b]">{d.courseTitle}</div>
                         </li>
                       ))}
                     {data.filter(
@@ -228,7 +246,7 @@ function CashPaymentModal({
                         d.studentName.toLowerCase().includes(studentSearch.toLowerCase()) ||
                         d.courseTitle.toLowerCase().includes(studentSearch.toLowerCase())
                     ).length === 0 && (
-                      <li className="px-4 py-2 text-gray-500">No matching students found</li>
+                      <li className="px-4 py-2 text-[#64748b]">No matching students found</li>
                     )}
                   </ul>
                 )}
@@ -238,13 +256,13 @@ function CashPaymentModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className={adminLabelClass}>
                 Installment Number
               </label>
               <select
                 value={installmentIndex}
                 onChange={(e) => setInstallmentIndex(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[#38c1ff] focus:outline-none focus:ring-1 focus:ring-[#38c1ff]"
+                className={adminInputClass}
                 required
               >
                 <option value="">Select...</option>
@@ -259,14 +277,14 @@ function CashPaymentModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className={adminLabelClass}>
                 Amount Paid (₹)
               </label>
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[#38c1ff] focus:outline-none focus:ring-1 focus:ring-[#38c1ff]"
+                className={adminInputClass}
                 required
               />
             </div>
@@ -274,61 +292,61 @@ function CashPaymentModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className={adminLabelClass}>
                 Payment Date
               </label>
               <input
                 type="datetime-local"
                 value={paymentDate}
                 onChange={(e) => setPaymentDate(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[#38c1ff] focus:outline-none focus:ring-1 focus:ring-[#38c1ff]"
+                className={adminInputClass}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className={adminLabelClass}>
                 Reference Number{" "}
-                <span className="text-gray-400 font-normal">(Optional)</span>
+                <span className="text-[#94a3b8] font-normal">(Optional)</span>
               </label>
               <input
                 type="text"
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
                 placeholder="e.g. Receipt #123"
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[#38c1ff] focus:outline-none focus:ring-1 focus:ring-[#38c1ff]"
+                className={adminInputClass}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className={adminLabelClass}>
               Notes{" "}
-              <span className="text-gray-400 font-normal">(Optional)</span>
+              <span className="text-[#94a3b8] font-normal">(Optional)</span>
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[#38c1ff] focus:outline-none focus:ring-1 focus:ring-[#38c1ff]"
+              className={adminInputClass}
             ></textarea>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className={adminLabelClass}>
               Receipt Photo URL{" "}
-              <span className="text-gray-400 font-normal">(Optional)</span>
+              <span className="text-[#94a3b8] font-normal">(Optional)</span>
             </label>
             <input
               type="text"
               value={receiptUrl}
               onChange={(e) => setReceiptUrl(e.target.value)}
               placeholder="https://..."
-              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-[#38c1ff] focus:outline-none focus:ring-1 focus:ring-[#38c1ff]"
+              className={adminInputClass}
             />
           </div>
 
           {showConfirm && (
-            <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+            <div className="flex items-start gap-3 rounded-[12px] border border-[#fde68a] bg-[#fffbeb] p-4 text-[#92400e]">
               <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
               <div>
                 <h3 className="font-semibold">Confirm Cash Payment</h3>
@@ -339,23 +357,23 @@ function CashPaymentModal({
             </div>
           )}
 
-          <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-100 pt-6">
+          <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#f1f5f9] pt-6">
             <button
               type="button"
               onClick={() => showConfirm ? setShowConfirm(false) : onClose()}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#38c1ff]"
+              className={adminButton.secondary}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center justify-center rounded-xl bg-[#38c1ff] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0284c7] focus:outline-none focus:ring-2 focus:ring-[#38c1ff] disabled:opacity-50"
+              className={adminButton.primary}
             >
               {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Banknote className="h-4 w-4 mr-2" />
+                <Banknote className="h-4 w-4" />
               )}
               {showConfirm ? "Yes, Confirm Payment" : "Record Payment"}
             </button>
@@ -435,202 +453,89 @@ export function AdminInstallmentsClient({
   const expiredInstallments = filteredData.filter((d) => d.isExpired);
   const activeInstallments = filteredData.filter((d) => !d.isExpired);
 
+  const pendingRequests = filteredData.filter((d) => d.hasPendingRequest).length;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
-          <AlertCircle className="h-5 w-5" />
-          <p className="text-sm">{error}</p>
+        <div className="flex items-center gap-2 rounded-[14px] border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-[13px] text-[#b91c1c]">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <p>{error}</p>
         </div>
       )}
 
-      {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Search Bar */}
-        <div className="relative max-w-md flex-1">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
+      <StaggerGrid className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <AdminStatCard index={0} title="Expired" value={expiredInstallments.length} caption="Past their installment due date." icon={<CalendarX />} tone="rose" />
+        <AdminStatCard index={1} title="Active plans" value={activeInstallments.length} caption="Students paying on schedule." icon={<CalendarCheck />} tone="emerald" />
+        <AdminStatCard index={2} title="Extensions pending" value={pendingRequests} caption="Waiting on super admin approval." icon={<Clock />} tone="amber" />
+      </StaggerGrid>
+
+      <div className={`${adminToolbarClass} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
+        <label className="relative max-w-md flex-1">
+          <span className="sr-only">Search by student name</span>
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
           <input
             type="text"
-            placeholder="Search by student name..."
+            placeholder="Search by student name…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm placeholder:text-gray-500 focus:border-[#38c1ff] focus:outline-none focus:ring-1 focus:ring-[#38c1ff] shadow-sm"
+            className={`${adminInputClass} pl-10`}
           />
-        </div>
+        </label>
 
-        <button
-          onClick={() => openCashModal()}
-          className="inline-flex items-center justify-center rounded-xl bg-[#38c1ff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#0284c7] focus:outline-none focus:ring-2 focus:ring-[#38c1ff] transition-colors"
-        >
-          <Banknote className="mr-2 h-4 w-4" />
-          Record Cash Payment
+        <button type="button" onClick={() => openCashModal()} className={adminButton.primary}>
+          <Banknote className="h-4 w-4" aria-hidden="true" />
+          Record cash payment
         </button>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900">
-            Expired Installments
-          </h2>
-          <p className="text-sm text-gray-500">
-            Students whose installment valid date has passed
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-              <tr>
-                <th className="px-6 py-3">Student</th>
-                <th className="px-6 py-3">Course</th>
-                <th className="px-6 py-3">Installment</th>
-                <th className="px-6 py-3">Expired On</th>
-                <th className="px-6 py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
-              {expiredInstallments.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-8 text-center text-gray-500"
-                  >
-                    No expired installments found.
-                  </td>
-                </tr>
-              ) : (
-                expiredInstallments.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-gray-900">
-                        {item.studentName}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {item.studentEmail}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4 font-medium text-gray-900">
-                      {item.courseTitle}
-                    </td>
-                    <td className="px-6 py-4">
-                      {item.currentInstallment + 1} of {item.totalInstallments}
-                      <p className="text-xs font-semibold text-[#38c1ff]">
-                        ₹{item.nextAmount.toLocaleString("en-IN")}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4 text-red-600 font-medium">
-                      {item.validUntil
-                        ? format(new Date(item.validUntil), "PPp")
-                        : "Unknown"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {item.hasPendingRequest ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
-                            Pending Approval
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleRequestExtension(item)}
-                            disabled={loadingId === item.id}
-                            className="inline-flex items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50"
-                          >
-                            {loadingId === item.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              "Request Extension"
-                            )}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => openCashModal(item)}
-                          className="inline-flex items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
-                        >
-                          <Banknote className="h-4 w-4 mr-1.5 text-green-600" />
-                          Record Cash
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <InstallmentTable
+        title="Expired installments"
+        description="Students whose installment due date has passed"
+        icon={CalendarX}
+        tone="rose"
+        dateLabel="Expired on"
+        dateClass="text-[#b91c1c]"
+        rows={expiredInstallments}
+        emptyText="No expired installments."
+        renderActions={(item) => (
+          <div className="flex items-center gap-2">
+            {item.hasPendingRequest ? (
+              <StatusBadge tone="warning" icon={Clock}>Pending approval</StatusBadge>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleRequestExtension(item)}
+                disabled={loadingId === item.id}
+                className={adminButtonSm.secondary}
+              >
+                {loadingId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Request extension"}
+              </button>
+            )}
+            <button type="button" onClick={() => openCashModal(item)} className={adminButtonSm.secondary}>
+              <Banknote className="h-3.5 w-3.5 text-[#15803d]" aria-hidden="true" />
+              Record cash
+            </button>
+          </div>
+        )}
+      />
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900">
-            Active Installments
-          </h2>
-          <p className="text-sm text-gray-500">
-            Students currently on active installment plans
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-              <tr>
-                <th className="px-6 py-3">Student</th>
-                <th className="px-6 py-3">Course</th>
-                <th className="px-6 py-3">Installment</th>
-                <th className="px-6 py-3">Valid Until</th>
-                <th className="px-6 py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
-              {activeInstallments.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-8 text-center text-gray-500"
-                  >
-                    No active installments found.
-                  </td>
-                </tr>
-              ) : (
-                activeInstallments.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-gray-900">
-                        {item.studentName}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {item.studentEmail}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4 font-medium text-gray-900">
-                      {item.courseTitle}
-                    </td>
-                    <td className="px-6 py-4">
-                      {item.currentInstallment + 1} of {item.totalInstallments}
-                      <p className="text-xs font-semibold text-[#38c1ff]">
-                        ₹{item.nextAmount.toLocaleString("en-IN")}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4 text-green-600 font-medium">
-                      {item.validUntil
-                        ? format(new Date(item.validUntil), "PPp")
-                        : "Unknown"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => openCashModal(item)}
-                        className="inline-flex items-center justify-center rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
-                      >
-                        <Banknote className="h-4 w-4 mr-1.5 text-green-600" />
-                        Record Cash
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <InstallmentTable
+        title="Active installments"
+        description="Students currently on an active installment plan"
+        icon={CalendarCheck}
+        tone="emerald"
+        dateLabel="Valid until"
+        dateClass="text-[#334155]"
+        rows={activeInstallments}
+        emptyText="No active installments."
+        renderActions={(item) => (
+          <button type="button" onClick={() => openCashModal(item)} className={adminButtonSm.secondary}>
+            <Banknote className="h-3.5 w-3.5 text-[#15803d]" aria-hidden="true" />
+            Record cash
+          </button>
+        )}
+      />
 
       <CashPaymentModal
         isOpen={isCashModalOpen}
@@ -639,5 +544,83 @@ export function AdminInstallmentsClient({
         initialStudent={selectedInstallmentForCash}
       />
     </div>
+  );
+}
+
+function InstallmentTable({
+  title,
+  description,
+  icon,
+  tone,
+  dateLabel,
+  dateClass,
+  rows,
+  emptyText,
+  renderActions,
+}: {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  tone: IconTone;
+  dateLabel: string;
+  dateClass: string;
+  rows: InstallmentData[];
+  emptyText: string;
+  renderActions: (item: InstallmentData) => React.ReactNode;
+}) {
+  return (
+    <section className={adminPanelClass}>
+      <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+        <AdminPanelHeader
+          icon={icon}
+          tone={tone}
+          title={title}
+          description={description}
+          actions={<StatusBadge>{rows.length}</StatusBadge>}
+        />
+      </div>
+      <div className={`${adminTable.wrap} mt-5`}>
+        <table className={adminTable.table}>
+          <thead className={adminTable.head}>
+            <tr>
+              <th className={adminTable.th}>Student</th>
+              <th className={adminTable.th}>Course</th>
+              <th className={adminTable.th}>Installment</th>
+              <th className={adminTable.th}>{dateLabel}</th>
+              <th className={adminTable.th}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr className="border-t border-[#f1f5f9]">
+                <td colSpan={5} className="px-5 py-10 text-center text-[13px] text-[#64748b]">
+                  {emptyText}
+                </td>
+              </tr>
+            ) : (
+              rows.map((item) => (
+                <tr key={item.id} className={adminTable.row}>
+                  <td className={adminTable.td}>
+                    <p className="font-semibold text-[#0f172a]">{item.studentName}</p>
+                    <p className="text-[12px] text-[#64748b]">{item.studentEmail}</p>
+                  </td>
+                  <td className={`${adminTable.td} font-medium text-[#0f172a]`}>{item.courseTitle}</td>
+                  <td className={adminTable.td}>
+                    {item.currentInstallment + 1} of {item.totalInstallments}
+                    <p className="text-[12px] font-semibold tabular-nums text-[#0369a1]">
+                      ₹{item.nextAmount.toLocaleString("en-IN")}
+                    </p>
+                  </td>
+                  <td className={`${adminTable.td} font-medium ${dateClass}`}>
+                    {item.validUntil ? format(new Date(item.validUntil), "PPp") : "Unknown"}
+                  </td>
+                  <td className={adminTable.td}>{renderActions(item)}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

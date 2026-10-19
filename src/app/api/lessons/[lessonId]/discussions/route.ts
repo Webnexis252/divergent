@@ -1,9 +1,33 @@
 import { type NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { apiSuccess, apiUnauthorized, apiServerError, apiError } from "@/lib/api-response";
+import { requireAuth, type JwtPayload } from "@/lib/auth";
+import { courseRelation } from "@/lib/course-access";
+import { apiSuccess, apiUnauthorized, apiServerError, apiError, apiForbidden } from "@/lib/api-response";
 
 type Props = { params: Promise<{ lessonId: string }> };
+
+const MAX_MESSAGE_LENGTH = 2000;
+
+/**
+ * Who can take part in a lesson's discussion: students enrolled in the course
+ * and its teachers. A free-preview lesson's discussion can also be read by
+ * anyone signed in, like the lesson itself, but only the course's own people
+ * can post.
+ */
+async function discussionAccess(auth: JwtPayload, lessonId: string) {
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    select: { title: true, isFreePreview: true, chapter: { select: { courseId: true } } },
+  });
+  if (!lesson) return null;
+
+  const relation = await courseRelation(auth, lesson.chapter.courseId);
+  return {
+    lesson,
+    canRead: relation !== "none" || lesson.isFreePreview,
+    canPost: relation !== "none",
+  };
+}
 
 /**
  * GET /api/lessons/[lessonId]/discussions
@@ -15,6 +39,9 @@ export async function GET(req: NextRequest, { params }: Props) {
     if (!auth) return apiUnauthorized();
 
     const { lessonId } = await params;
+    const access = await discussionAccess(auth, lessonId);
+    if (!access) return apiError("Lesson not found", 404);
+    if (!access.canRead) return apiForbidden("Enroll in this course to see its discussions");
 
     const channelName = `lesson_${lessonId}`;
 
@@ -59,15 +86,19 @@ export async function POST(req: NextRequest, { params }: Props) {
     if (!auth) return apiUnauthorized();
 
     const { lessonId } = await params;
-    const body = (await req.json()) as { body?: string };
+    const body = (await req.json().catch(() => ({}))) as { body?: unknown };
+    const text = typeof body.body === "string" ? body.body.trim() : "";
 
-    if (!body.body?.trim()) {
+    if (!text) {
       return apiError("Message body is required", 400);
     }
+    if (text.length > MAX_MESSAGE_LENGTH) {
+      return apiError(`Messages can be at most ${MAX_MESSAGE_LENGTH} characters`, 400);
+    }
 
-    // Verify the lesson exists
-    const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
-    if (!lesson) return apiError("Lesson not found", 404);
+    const access = await discussionAccess(auth, lessonId);
+    if (!access) return apiError("Lesson not found", 404);
+    if (!access.canPost) return apiForbidden("Enroll in this course to join its discussions");
 
     const channelName = `lesson_${lessonId}`;
 
@@ -80,7 +111,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       channel = await prisma.channel.create({
         data: {
           name: channelName,
-          description: `Discussion for lesson: ${lesson.title}`,
+          description: `Discussion for lesson: ${access.lesson.title}`,
           type: "TEXT",
         },
       });
@@ -90,7 +121,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       data: {
         channelId: channel.id,
         authorId: auth.userId,
-        body: body.body.trim(),
+        body: text,
       },
       select: {
         id: true,

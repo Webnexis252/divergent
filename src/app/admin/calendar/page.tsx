@@ -15,8 +15,8 @@ export default async function AdminCalendarPage() {
               : "Keep live classes, assignments, and exams aligned across the platform with one operational schedule view."
           }
           endpoint="/api/admin/calendar"
-          eyebrow={auth.role === "SUPER_ADMIN" ? "Owner Control Layer" : "Operations Layer"}
-          title={auth.role === "SUPER_ADMIN" ? "Command Calendar" : "Operations Calendar"}
+          eyebrow={auth.role === "SUPER_ADMIN" ? "Owner control" : "Operations"}
+          title={auth.role === "SUPER_ADMIN" ? "Command calendar" : "Operations calendar"}
           variant="admin"
         />
       </div>

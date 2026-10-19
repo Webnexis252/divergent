@@ -4,10 +4,24 @@ const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
+// Usage: node scripts/seed-superadmin.js <email> <password> [name]
+// There is no default password: a known one would let anyone sign in as the
+// super admin of any database this was run against.
+const MIN_PASSWORD_LENGTH = 12;
+
 async function main() {
-  const email = process.argv[2] || 'owner@divergentclasses.com';
-  const password = process.argv[3] || 'SuperSecret123!';
+  const email = process.argv[2];
+  const password = process.argv[3];
   const name = process.argv[4] || 'Institute Owner';
+
+  if (!email || !password) {
+    console.error('Usage: node scripts/seed-superadmin.js <email> <password> [name]');
+    process.exit(1);
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    console.error(`The password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+    process.exit(1);
+  }
 
   console.log(`\n👑 Bootstrapping SUPER_ADMIN account...`);
   console.log(`Email: ${email}`);
@@ -34,7 +48,7 @@ async function main() {
         role: 'SUPER_ADMIN'
       }
     });
-    console.log(`✅ Successfully created SUPER_ADMIN: ${email} (Password: ${password})`);
+    console.log(`✅ Successfully created SUPER_ADMIN: ${email}`);
   }
 }
 

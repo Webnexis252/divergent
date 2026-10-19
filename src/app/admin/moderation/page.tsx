@@ -5,7 +5,16 @@ import Image from "next/image";
 import { m as motion } from "motion/react";
 import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
-import { TriangleAlert, ThumbsUp, MessageCircle, ShieldCheck, Siren, CircleCheck, MessageSquareText } from "lucide-react";
+import { TriangleAlert, ThumbsUp, MessageCircle, ShieldAlert, Siren, CircleCheck, MessageSquareText, Percent } from "lucide-react";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  AdminPanel,
+  AdminPanelHeader,
+  StatusBadge,
+  adminButtonSm,
+  adminRowClass,
+} from "../_components/admin-ui";
 
 type FlaggedPost = {
   id: string;
@@ -61,8 +70,8 @@ function ModerationPostCard({
       </div>
 
       <div className="flex flex-col w-full">
-        <div className={`relative rounded-[16px] rounded-tl-sm px-4 py-3 shadow-sm border ${
-          post.isFlagged ? "border-red-300 bg-[#fff5f5]" : "border-[#e5e7eb] bg-white"
+        <div className={`relative rounded-[16px] rounded-tl-sm border px-4 py-3 ${
+          post.isFlagged ? "border-[#fecaca] bg-[#fffafa]" : "border-[#eef1f5] bg-white"
         }`}>
           <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
             <div className="flex items-center gap-2">
@@ -71,47 +80,45 @@ function ModerationPostCard({
               </span>
               <span className="text-[12px] text-[#94a3b8]">{post.author.email}</span>
               {post.channel && (
-                <span className="text-[11px] text-[#38c1ff] font-medium bg-[#f0f9ff] px-2 py-0.5 rounded-full">
+                <span className="rounded-full bg-[#f0f9ff] px-2 py-0.5 text-[11px] font-semibold text-[#0369a1]">
                   #{post.channel.name}
                 </span>
               )}
               {post.isFlagged && (
-                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700 uppercase tracking-wider">
-                  Flagged
-                </span>
+                <StatusBadge tone="critical" icon={TriangleAlert}>Flagged</StatusBadge>
               )}
             </div>
 
             <div className="flex gap-2">
               {post.isFlagged && (
-                <button onClick={() => onUnflag(post.id)} className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors">
+                <button type="button" onClick={() => onUnflag(post.id)} className={adminButtonSm.secondary}>
                   Approve
                 </button>
               )}
-              <button onClick={() => onDelete(post.id)} disabled={deletingId === post.id} className="rounded-md bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-sm hover:bg-red-700 disabled:opacity-50 transition-colors">
+              <button type="button" onClick={() => onDelete(post.id)} disabled={deletingId === post.id} className={adminButtonSm.destructive}>
                 {deletingId === post.id ? "Deleting…" : "Delete"}
               </button>
             </div>
           </div>
 
-          <h4 className="text-[15px] font-bold text-black mb-1">{post.title}</h4>
+          <h4 className="mb-1 text-[15px] font-semibold text-[#0f172a]">{post.title}</h4>
           
           {post.body && (
-            <p className="text-[14px] leading-relaxed text-[#303030] whitespace-pre-wrap">
+            <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-[#334155]">
               {post.body}
             </p>
           )}
 
           {post.flagReason && (
-            <div className="mt-3 rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-[12px] text-red-700 flex gap-2 items-start">
-              <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500" />
+            <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-[#fee2e2] bg-[#fef2f2] px-3 py-2 text-[12px] text-[#b91c1c]">
+              <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <div>
                 <span className="font-semibold">Flag reason:</span> {post.flagReason}
               </div>
             </div>
           )}
 
-          <div className="flex items-center gap-4 mt-3 pt-2 border-t border-black/5 text-[11px] text-[#8b8888]">
+          <div className="mt-3 flex items-center gap-4 border-t border-[#f1f5f9] pt-2 text-[11px] text-[#94a3b8]">
             <span>{new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             <span className="flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> {post._count.likes}</span>
             <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> {post._count.replies}</span>
@@ -175,76 +182,64 @@ export default function AdminModerationPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
-
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
-          <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#dc2626] via-[#ef4444] to-[#f97316] px-8 py-10 text-white shadow-[0_24px_60px_rgba(220,38,38,0.25)]">
-            <motion.div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl" animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 5, repeat: Infinity }} />
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-widest"><ShieldCheck className="h-3.5 w-3.5" />Safety</div>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight">Content Moderation</h1>
-              <p className="mt-2 text-white/80">Review and manage flagged community posts to maintain platform safety.</p>
-            </div>
-          </div>
+          <AdminPageHeader
+            eyebrow="Safety"
+            icon={ShieldAlert}
+            title="Content moderation"
+            description="Review flagged community posts and overdue evaluations to keep the platform safe."
+          />
         </RevealSection>
 
-        <StaggerGrid className="grid grid-cols-2 gap-5 md:grid-cols-4">
-          <AdminStatCard index={0} title="Total Posts" value={loading ? "…" : totalPosts} caption="Community posts." tone="sky" />
-          <AdminStatCard index={1} title="Flagged" value={loading ? "…" : flagged.length} caption="Awaiting review." tone="amber" />
-          <AdminStatCard index={2} title="Flag Rate" value={loading ? "…" : totalPosts > 0 ? `${((flagged.length / totalPosts) * 100).toFixed(1)}%` : "0%"} caption="Of all posts." tone="slate" />
-          <AdminStatCard index={3} title="Overdue Reviews" value={loading ? "…" : overdueReviews.length} caption=">24h SLA breached." tone="rose" />
+        <StaggerGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <AdminStatCard index={0} title="Total posts" value={loading ? "…" : totalPosts} caption="Community posts." icon={<MessageSquareText />} tone="sky" />
+          <AdminStatCard index={1} title="Flagged" value={loading ? "…" : flagged.length} caption="Awaiting review." icon={<TriangleAlert />} tone="amber" />
+          <AdminStatCard index={2} title="Flag rate" value={loading ? "…" : totalPosts > 0 ? `${((flagged.length / totalPosts) * 100).toFixed(1)}%` : "0%"} caption="Of all posts." icon={<Percent />} tone="slate" />
+          <AdminStatCard index={3} title="Overdue reviews" value={loading ? "…" : overdueReviews.length} caption="Past the 24-hour review window." icon={<Siren />} tone="rose" />
         </StaggerGrid>
 
         {overdueReviews.length > 0 && (
-          <div className="rounded-[28px] bg-red-50 border border-red-200 shadow-[0px_4px_20px_rgba(220,38,38,0.06)] overflow-hidden">
-            <div className="border-b border-red-200 px-6 py-5 bg-white flex items-center justify-between">
-              <div>
-                <h2 className="text-[18px] font-bold text-red-700 flex items-center gap-2">
-                  <Siren className="h-5 w-5 animate-pulse" /> SLA Breaches: Overdue Sketch Evaluations
-                </h2>
-                <p className="text-[13px] text-red-600/80 mt-1">Teachers have not evaluated these sketch questions for over 24 hours.</p>
-              </div>
-            </div>
-            <div className="p-6 space-y-3">
+          <AdminPanel>
+            <AdminPanelHeader
+              icon={Siren}
+              tone="rose"
+              title="Overdue sketch evaluations"
+              description="Teachers haven't evaluated these sketch questions for over 24 hours"
+              actions={<StatusBadge tone="critical">{overdueReviews.length} overdue</StatusBadge>}
+            />
+            <div className="mt-5 space-y-3">
               {overdueReviews.map((review) => {
                 const hoursOverdue = Math.floor((Date.now() - new Date(review.submittedAt).getTime()) / (1000 * 60 * 60));
                 return (
-                  <div key={review.attemptId} className="bg-white p-4 rounded-[16px] shadow-sm border border-red-100 flex items-center justify-between">
-                    <div>
-                      <h4 className="text-[15px] font-bold text-gray-900">{review.examTitle}</h4>
-                      <div className="text-[13px] text-gray-600 flex items-center gap-2 mt-1">
-                        <span>Course: <strong>{review.courseTitle}</strong></span>
-                        <span>•</span>
-                        <span>Student: <strong>{review.studentName}</strong></span>
-                      </div>
-                      <div className="mt-2 text-[12px] font-medium text-red-600 bg-red-100/50 w-fit px-2 py-1 rounded">
-                        Assigned Teachers: {review.assignedTeachers.length > 0 ? review.assignedTeachers.join(", ") : "None"}
-                      </div>
+                  <div key={review.attemptId} className={`${adminRowClass} flex items-center justify-between gap-4`}>
+                    <div className="min-w-0">
+                      <h4 className="truncate text-[14px] font-semibold text-[#0f172a]">{review.examTitle}</h4>
+                      <p className="mt-0.5 text-[12px] text-[#64748b]">
+                        {review.courseTitle} · {review.studentName}
+                      </p>
+                      <p className="mt-1.5 text-[12px] text-[#94a3b8]">
+                        Assigned: {review.assignedTeachers.length > 0 ? review.assignedTeachers.join(", ") : "Nobody"}
+                      </p>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-black text-red-600">{hoursOverdue}h</div>
-                      <div className="text-[11px] font-bold uppercase tracking-wider text-red-400">Overdue</div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[20px] font-semibold tabular-nums text-[#b91c1c]">{hoursOverdue}h</div>
+                      <div className="text-[11px] text-[#94a3b8]">overdue</div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </AdminPanel>
         )}
 
-        <div className="rounded-[28px] bg-white shadow-[0px_4px_20px_rgba(0,0,0,0.06)]">
-          <div className="border-b px-6 py-5">
-            <h2 className="text-[18px] font-semibold text-[#101828]">Flagged Posts</h2>
-          </div>
-          <div className="p-6 space-y-4">
+        <AdminPanel>
+          <AdminPanelHeader icon={TriangleAlert} tone="amber" title="Flagged posts" description="Approve to keep a post, or delete it" />
+          <div className="mt-5 space-y-1">
             {loading ? (
-              [1,2,3].map(i => <div key={i} className="h-28 animate-pulse rounded-[16px] bg-gray-100" />)
+              [1,2,3].map(i => <div key={i} className="mb-3 h-28 animate-pulse rounded-[16px] bg-[#f1f5f9]" />)
             ) : flagged.length === 0 ? (
-              <div className="py-16 text-center">
-                <CircleCheck className="mx-auto h-12 w-12 text-[#16a34a]" strokeWidth={1.5} />
-                <p className="mt-4 text-[18px] font-semibold text-[#101828]">No flagged posts</p>
-                <p className="mt-2 text-[14px] text-[#94a3b8]">The community is clean. No reports to review.</p>
-              </div>
+              <AdminEmptyState icon={CircleCheck} title="No flagged posts" description="The community is clean. No reports to review." />
             ) : (
               flagged.map((post) => (
                 <ModerationPostCard
@@ -257,26 +252,24 @@ export default function AdminModerationPage() {
               ))
             )}
           </div>
-        </div>
+        </AdminPanel>
 
-        <div className="rounded-[28px] bg-white shadow-[0px_4px_20px_rgba(0,0,0,0.06)]">
-          <div className="border-b px-6 py-5">
-            <h2 className="text-[18px] font-semibold text-[#101828]">All Community Posts</h2>
-            <p className="mt-1 text-[13px] text-[#94a3b8]">
-              Delete any community post from here, whether it has been flagged or not.
-            </p>
-          </div>
-          <div className="space-y-4 p-6">
+        <AdminPanel>
+          <AdminPanelHeader
+            icon={MessageSquareText}
+            tone="sky"
+            title="All community posts"
+            description="Delete any community post from here, whether it has been flagged or not"
+          />
+          <div className="mt-5 space-y-1">
             {loading ? (
-              [1, 2, 3].map(i => <div key={i} className="h-28 animate-pulse rounded-[16px] bg-gray-100" />)
+              [1, 2, 3].map(i => <div key={i} className="mb-3 h-28 animate-pulse rounded-[16px] bg-[#f1f5f9]" />)
             ) : posts.length === 0 ? (
-              <div className="py-16 text-center">
-                <MessageSquareText className="mx-auto h-12 w-12 text-[#94a3b8]" strokeWidth={1.5} />
-                <p className="mt-4 text-[18px] font-semibold text-[#101828]">No community posts yet</p>
-                <p className="mt-2 text-[14px] text-[#94a3b8]">
-                  Posts will appear here once learners or mentors start publishing.
-                </p>
-              </div>
+              <AdminEmptyState
+                icon={MessageSquareText}
+                title="No community posts yet"
+                description="Posts will appear here once learners or mentors start publishing."
+              />
             ) : (
               posts.map((post) => (
                 <ModerationPostCard
@@ -289,7 +282,7 @@ export default function AdminModerationPage() {
               ))
             )}
           </div>
-        </div>
+        </AdminPanel>
       </div>
     </PageTransition>
   );

@@ -32,10 +32,11 @@ export function DeleteExamButton({ examId, courseId }: { examId: string; courseI
     <button 
       onClick={handleDelete}
       disabled={isDeleting}
-      className="ml-4 rounded-md p-2 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
-      title="Delete Exam"
+      className="ml-4 rounded-[10px] p-2 text-[#94a3b8] transition-colors hover:bg-[#fef2f2] hover:text-[#b91c1c] disabled:opacity-50"
+      title="Delete exam"
+      aria-label="Delete exam"
     >
-      <Trash2 className="h-5 w-5" />
+      <Trash2 className="h-4 w-4" />
     </button>
   );
 }

@@ -9,6 +9,19 @@ import {
   StaggerGrid,
 } from "@/app/dashboard/_components/motion-wrappers";
 import { AdminStatCard } from "../_components/AdminStatCard";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  AdminPanel,
+  AdminPanelHeader,
+  StatusBadge,
+  adminButton,
+  adminButtonSm,
+  adminInputClass,
+  adminRowClass,
+  adminToolbarClass,
+} from "../_components/admin-ui";
+import type { StatusTone } from "../_components/admin-ui";
 import { formatShortDate } from "@/lib/date-format";
 import {
   Search,
@@ -31,6 +44,7 @@ import {
   TriangleAlert,
   ClipboardList,
   Check,
+  PencilLine,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -73,10 +87,10 @@ type AssignmentInfo = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STATUS_BADGE: Record<string, string> = {
-  ACTIVE: "bg-[#ecfdf5] text-[#15803d]",
-  DRAFT: "bg-[#f1f5f9] text-[#64748b]",
-  CLOSED: "bg-[#fff1f2] text-[#dc2626]",
+const STATUS_TONE: Record<string, StatusTone> = {
+  ACTIVE: "good",
+  DRAFT: "neutral",
+  CLOSED: "critical",
 };
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const;
@@ -217,7 +231,7 @@ function CreateAssignmentModal({
                 <select
                   value={courseId}
                   onChange={(e) => setCourseId(e.target.value)}
-                  className="mt-1 w-full rounded-[12px] border border-[#d1d5db] bg-[#f9fafb] px-4 py-3 text-[14px] text-black outline-none transition focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20"
+                  className="mt-1 w-full rounded-[12px] border border-[#e2e8f0] bg-white px-4 py-3 text-[14px] text-[#0f172a] outline-none transition focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
                 >
                   {courses.length === 0 ? (
                     <option value="">No courses available</option>
@@ -233,7 +247,7 @@ function CreateAssignmentModal({
                 <input
                   type="text" value={title} onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Mid-term Project Submission"
-                  className="mt-1 w-full rounded-[12px] border border-[#d1d5db] bg-[#f9fafb] px-4 py-3 text-[14px] text-black outline-none transition focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20"
+                  className="mt-1 w-full rounded-[12px] border border-[#e2e8f0] bg-white px-4 py-3 text-[14px] text-[#0f172a] outline-none transition focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
                 />
               </div>
 
@@ -242,13 +256,13 @@ function CreateAssignmentModal({
                 <div className="flex-1">
                   <label className="text-[13px] font-medium text-[#374151]">Points</label>
                   <input type="number" value={points} onChange={(e) => setPoints(e.target.value)} min={0}
-                    className="mt-1 w-full rounded-[12px] border border-[#d1d5db] bg-[#f9fafb] px-4 py-3 text-[14px] text-black outline-none transition focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20"
+                    className="mt-1 w-full rounded-[12px] border border-[#e2e8f0] bg-white px-4 py-3 text-[14px] text-[#0f172a] outline-none transition focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
                   />
                 </div>
                 <div className="flex-1">
                   <label className="text-[13px] font-medium text-[#374151]">Deadline</label>
                   <input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)}
-                    className="mt-1 w-full rounded-[12px] border border-[#d1d5db] bg-[#f9fafb] px-4 py-3 text-[14px] text-black outline-none transition focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20"
+                    className="mt-1 w-full rounded-[12px] border border-[#e2e8f0] bg-white px-4 py-3 text-[14px] text-[#0f172a] outline-none transition focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
                   />
                 </div>
               </div>
@@ -258,7 +272,7 @@ function CreateAssignmentModal({
                 <label className="text-[13px] font-medium text-[#374151]">Instructions</label>
                 <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)}
                   placeholder="Add instructions or useful links..."
-                  className="mt-1 w-full resize-none rounded-[12px] border border-[#d1d5db] bg-[#f9fafb] px-4 py-3 text-[14px] text-black outline-none transition focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20"
+                  className="mt-1 w-full resize-none rounded-[12px] border border-[#e2e8f0] bg-white px-4 py-3 text-[14px] text-[#0f172a] outline-none transition focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
                 />
               </div>
 
@@ -267,7 +281,7 @@ function CreateAssignmentModal({
                 <label className="text-[13px] font-medium text-[#374151]">Attachment <span className="font-normal text-[#9ca3af]">(PDF, max 10 MB)</span></label>
                 {!pdfFile ? (
                   <motion.div
-                    className={`mt-1 flex flex-col items-center justify-center gap-2 rounded-[14px] border-2 border-dashed px-6 py-7 cursor-pointer transition-colors ${dragOver ? "border-[#d97706] bg-[#fffbeb]" : "border-[#d1d5db] bg-[#f9fafb] hover:border-[#d97706] hover:bg-[#fffbeb]"}`}
+                    className={`mt-1 flex flex-col items-center justify-center gap-2 rounded-[14px] border-2 border-dashed px-6 py-7 cursor-pointer transition-colors ${dragOver ? "border-[#209bd2] bg-[#f0f9ff]" : "border-[#d1d5db] bg-[#f9fafb] hover:border-[#cbd5e1] hover:bg-[#fffbeb]"}`}
                     onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files[0]) uploadPdf(e.dataTransfer.files[0]); }}
@@ -275,10 +289,10 @@ function CreateAssignmentModal({
                     whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                   >
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#fff7ed]">
-                      <FileText className="h-5 w-5 text-[#d97706]" />
+                      <FileText className="h-5 w-5 text-[#209bd2]" />
                     </div>
                     <p className="text-[13px] font-medium text-[#374151]">Drag & drop PDF here</p>
-                    <p className="text-[12px] text-[#9ca3af]">or <span className="text-[#d97706] underline">browse files</span></p>
+                    <p className="text-[12px] text-[#9ca3af]">or <span className="text-[#0369a1] underline">browse files</span></p>
                     <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { if (e.target.files?.[0]) uploadPdf(e.target.files[0]); }} />
                   </motion.div>
                 ) : (
@@ -298,7 +312,7 @@ function CreateAssignmentModal({
                       )}
                     </div>
                     <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#e5e7eb]">
-                      <motion.div className={`h-full rounded-full ${uploadProgress === 100 ? "bg-[#22c55e]" : "bg-[#d97706]"}`}
+                      <motion.div className={`h-full rounded-full ${uploadProgress === 100 ? "bg-[#22c55e]" : "bg-[#209bd2]"}`}
                         initial={{ width: 0 }} animate={{ width: `${uploadProgress}%` }} transition={{ duration: 0.3, ease: "easeOut" }}
                       />
                     </div>
@@ -316,7 +330,7 @@ function CreateAssignmentModal({
               <motion.button
                 onClick={handleSubmit}
                 disabled={submitting || uploading || !title.trim() || !courseId}
-                className="flex-1 rounded-[12px] bg-gradient-to-r from-[#d97706] to-[#f59e0b] py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(217,119,6,0.28)] disabled:opacity-50"
+                className="flex-1 rounded-[12px] bg-[#0f172a] py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e293b] disabled:opacity-50"
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
               >
                 {submitting ? "Creating..." : uploading ? "Uploading PDF…" : "Post Assignment"}
@@ -368,7 +382,7 @@ function GradeModal({
         <div className="border-b border-[#f0f0f0] px-7 py-5">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#d97706]">Grade Submission</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#209bd2]">Grade Submission</p>
               <h3 className="mt-1 text-[18px] font-bold text-[#111827]">{submission.studentName}</h3>
               <p className="text-[13px] text-[#6b7280]">{submission.studentEmail}</p>
             </div>
@@ -394,19 +408,19 @@ function GradeModal({
           )}
           <div>
             <label className="text-[13px] font-semibold text-[#374151]">Score <span className="font-normal text-[#9ca3af]">/ {maxPoints}</span></label>
-            <input className="mt-2 w-full rounded-[12px] border border-[#e5e7eb] px-4 py-2.5 text-[15px] font-semibold text-[#111827] outline-none transition focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20"
+            <input className="mt-2 w-full rounded-[12px] border border-[#e5e7eb] px-4 py-2.5 text-[15px] font-semibold text-[#111827] outline-none transition focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
               max={maxPoints} min={0} onChange={(e) => setScore(e.target.value)} placeholder={`0 – ${maxPoints}`} type="number" value={score} />
           </div>
           <div>
             <label className="text-[13px] font-semibold text-[#374151]">Feedback</label>
-            <textarea className="mt-2 w-full resize-none rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] text-[#374151] outline-none placeholder:text-[#9ca3af] transition focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20"
+            <textarea className="mt-2 w-full resize-none rounded-[12px] border border-[#e5e7eb] px-4 py-3 text-[14px] text-[#374151] outline-none placeholder:text-[#9ca3af] transition focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
               onChange={(e) => setFeedback(e.target.value)} placeholder="Write constructive feedback..." rows={4} value={feedback} />
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t border-[#f0f0f0] px-7 py-5">
           <button className="inline-flex h-10 items-center rounded-[12px] border border-[#e5e7eb] px-5 text-[13px] font-medium text-[#374151] hover:bg-[#f9fafb]" onClick={onClose} type="button">Cancel</button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-[#d97706] px-6 text-[13px] font-semibold text-white shadow-[0_4px_12px_rgba(217,119,6,0.3)] hover:-translate-y-0.5 disabled:opacity-50 transition-transform"
+          <button className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-[#0f172a] px-6 text-[13px] font-semibold text-white transition-colors hover:bg-[#1e293b] disabled:opacity-50 transition-transform"
             disabled={saving || score === ""} onClick={() => void handleSave()} type="button">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             Save Grade
@@ -479,7 +493,7 @@ function SubmissionsDrawer({
         {/* Drawer header */}
         <div className="sticky top-0 z-10 flex items-start justify-between border-b border-[#f0f0f0] bg-white px-7 py-5">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d97706]">{assignment.course?.title ?? "Unknown Course"}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#209bd2]">{assignment.course?.title ?? "Unknown Course"}</p>
             <h2 className="mt-1 text-[20px] font-bold tracking-[-0.03em] text-[#111827]">{assignment.title}</h2>
             <p className="mt-1 text-[13px] text-[#6b7280]">
               {assignment.points} pts{assignment.deadline && ` · Due ${formatShortDate(assignment.deadline)}`}
@@ -565,7 +579,7 @@ function SubmissionsDrawer({
                     </a>
                   )}
                   <button
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#fff7ed] px-3 py-1 text-[12px] font-semibold text-[#d97706] hover:bg-[#fed7aa]"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#f0f9ff] px-3 py-1 text-[12px] font-semibold text-[#0369a1] hover:bg-[#e0f2fe]"
                     onClick={() => setGradingSubmission(sub)} type="button"
                   >
                     <Star className="h-3.5 w-3.5" />
@@ -716,199 +730,170 @@ export default function AdminAssignmentsPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
 
-        {/* ── Hero ── */}
         <RevealSection>
-          <section className="relative overflow-hidden rounded-[34px] bg-gradient-to-r from-[#d97706] via-[#f59e0b] to-[#fbbf24] px-8 py-10 text-white shadow-[0_24px_60px_rgba(217,119,6,0.28)]">
-            <motion.div
-              className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl"
-              animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 4.5, repeat: Infinity }}
-            />
-            <motion.div
-              className="pointer-events-none absolute -bottom-8 left-1/2 h-36 w-36 rounded-full bg-white/8 blur-2xl"
-              animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 6, repeat: Infinity, delay: 1 }}
-            />
-            <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <div className="inline-flex rounded-full bg-white/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em]">
-                  Admin Control
-                </div>
-                <h1 className="mt-4 text-[clamp(2rem,5vw,3.8rem)] font-semibold leading-[0.95] tracking-[-0.05em]">
-                  Assignments
-                </h1>
-                <p className="mt-3 max-w-[520px] text-[15px] leading-7 text-white/88">
-                  Create, assign, and monitor assignments across all courses. Track submissions and grade student work from one place.
-                </p>
-              </div>
-              <motion.button
-                onClick={() => setShowCreate(true)}
-                className="mt-2 shrink-0 inline-flex items-center gap-2 rounded-[16px] bg-white px-6 py-3 text-[14px] font-semibold text-[#b45309] shadow-[0_8px_24px_rgba(0,0,0,0.14)] transition hover:shadow-[0_12px_28px_rgba(0,0,0,0.18)]"
-                whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}
-              >
-                <Plus className="h-4 w-4" />
-                New Assignment
-              </motion.button>
-            </div>
-          </section>
+          <AdminPageHeader
+            eyebrow="Admin control"
+            icon={ClipboardList}
+            title="Assignments"
+            description="Create, assign and monitor assignments across all courses, and grade student work in one place."
+            actions={
+              <button type="button" onClick={() => setShowCreate(true)} className={adminButton.primary}>
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                New assignment
+              </button>
+            }
+          />
         </RevealSection>
 
         {/* ── Stat cards ── */}
-        <StaggerGrid className="grid grid-cols-2 gap-5 md:grid-cols-4">
-          <AdminStatCard index={0} title="Total" value={loading ? "…" : assignments.length} caption="All assignments in system." tone="sky" />
-          <AdminStatCard index={1} title="Active" value={loading ? "…" : active} caption="Currently accepting submissions." tone="emerald" />
-          <AdminStatCard index={2} title="Submissions" value={loading ? "…" : totalSubs} caption={`${graded} graded`} tone="amber" />
-          <AdminStatCard index={3} title="Drafts" value={loading ? "…" : draft} caption="Not yet published." tone="slate" />
+        <StaggerGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <AdminStatCard index={0} title="Total" value={loading ? "…" : assignments.length} caption="All assignments in the system." icon={<ClipboardList />} tone="sky" />
+          <AdminStatCard index={1} title="Active" value={loading ? "…" : active} caption="Currently accepting submissions." icon={<CircleCheck />} tone="emerald" />
+          <AdminStatCard index={2} title="Submissions" value={loading ? "…" : totalSubs} trend={loading ? undefined : `${graded} graded`} caption="Work handed in across assignments." icon={<FileText />} tone="amber" />
+          <AdminStatCard index={3} title="Drafts" value={loading ? "…" : draft} caption="Not yet published." icon={<PencilLine />} tone="slate" />
         </StaggerGrid>
 
         {/* ── Filter bar ── */}
         <RevealSection>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+          <div className={`${adminToolbarClass} grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_180px]`}>
+            <label className="relative">
+              <span className="sr-only">Search assignments</span>
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
               <input
                 type="text" value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search assignments…"
-                className="h-11 w-full rounded-[12px] border border-[#e5e7eb] bg-white pl-10 pr-4 text-[14px] text-[#111827] placeholder:text-[#9ca3af] outline-none transition focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20"
+                className={`${adminInputClass} pl-10`}
               />
-            </div>
+            </label>
 
-            {/* Course filter */}
-            <div className="relative">
-              <BookOpen className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9ca3af]" />
-              <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)}
-                className="h-11 appearance-none rounded-[12px] border border-[#e5e7eb] bg-white pl-9 pr-9 text-[14px] text-[#374151] outline-none transition focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20 cursor-pointer">
-                <option value="all">All Courses</option>
+            <label className="relative">
+              <span className="sr-only">Course</span>
+              <BookOpen className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
+              <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className={`${adminInputClass} cursor-pointer appearance-none pl-10 pr-9`}>
+                <option value="all">All courses</option>
                 {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9ca3af]" />
-            </div>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
+            </label>
 
-            {/* Status filter */}
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9ca3af]" />
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-11 appearance-none rounded-[12px] border border-[#e5e7eb] bg-white pl-9 pr-9 text-[14px] text-[#374151] outline-none transition focus:border-[#d97706] focus:ring-2 focus:ring-[#d97706]/20 cursor-pointer">
-                <option value="all">All Status</option>
+            <label className="relative">
+              <span className="sr-only">Status</span>
+              <Filter className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={`${adminInputClass} cursor-pointer appearance-none pl-10 pr-9`}>
+                <option value="all">All statuses</option>
                 <option value="ACTIVE">Active</option>
                 <option value="DRAFT">Draft</option>
                 <option value="CLOSED">Closed</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9ca3af]" />
-            </div>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
+            </label>
           </div>
         </RevealSection>
 
         {/* ── Assignments list ── */}
         <RevealSection>
-          <section className="overflow-hidden rounded-[28px] border border-[#e8eaef] bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-            <div className="flex items-center justify-between gap-4 border-b border-[#eef0f3] px-6 py-5">
-              <div>
-                <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-[#101828]">All Assignments</h2>
-                <p className="mt-0.5 text-[13px] text-[#667085]">
-                  {loading ? "Loading…" : `${assignments.length} result${assignments.length !== 1 ? "s" : ""}`}
-                </p>
-              </div>
-              <motion.button
-                onClick={() => setShowCreate(true)}
-                className="inline-flex items-center gap-1.5 rounded-[12px] bg-gradient-to-r from-[#d97706] to-[#f59e0b] px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_6px_16px_rgba(217,119,6,0.25)]"
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              >
-                <Plus className="h-4 w-4" />New
-              </motion.button>
-            </div>
+          <AdminPanel>
+            <AdminPanelHeader
+              icon={ClipboardList}
+              tone="amber"
+              title="All assignments"
+              description={loading ? "Loading…" : `${assignments.length} result${assignments.length !== 1 ? "s" : ""}`}
+            />
 
-            <div className="space-y-3 p-5">
+            <div className="mt-5 space-y-3">
               {loading ? (
-                [1, 2, 3, 4].map((i) => <div key={i} className="h-24 animate-pulse rounded-[18px] bg-[#f3f4f6]" />)
+                [1, 2, 3, 4].map((i) => <div key={i} className="h-24 animate-pulse rounded-[16px] bg-[#f1f5f9]" />)
               ) : error ? (
-                <p className="rounded-[22px] border border-dashed border-[#fecaca] bg-[#fff5f5] px-5 py-12 text-center text-[14px] text-[#dc2626]"><TriangleAlert className="mr-1.5 inline h-4 w-4 align-[-3px]" />{error}</p>
-              ) : assignments.length === 0 ? (
-                <div className="rounded-[22px] border border-dashed border-[#d7dbe2] bg-[#fafafa] px-5 py-16 text-center">
-                  <ClipboardList className="mx-auto h-10 w-10 text-[#9ca3af]" strokeWidth={1.5} />
-                  <p className="mt-3 text-[16px] font-semibold text-[#374151]">No assignments found</p>
-                  <p className="mt-2 text-[13px] text-[#667085]">
-                    {search || courseFilter !== "all" || statusFilter !== "all"
-                      ? "Try adjusting your filters."
-                      : "Click \"New Assignment\" to create the first one."}
-                  </p>
+                <div className="flex items-center justify-center gap-2 rounded-[16px] border border-dashed border-[#fecaca] bg-[#fef2f2] px-5 py-12 text-[13px] font-medium text-[#b91c1c]">
+                  <TriangleAlert className="h-4 w-4" aria-hidden="true" />{error}
                 </div>
+              ) : assignments.length === 0 ? (
+                <AdminEmptyState
+                  icon={ClipboardList}
+                  title="No assignments found"
+                  description={
+                    search || courseFilter !== "all" || statusFilter !== "all"
+                      ? "Try adjusting your filters."
+                      : "Create the first one with New assignment."
+                  }
+                />
               ) : (
                 <AnimatePresence>
                   {assignments.map((a, i) => (
                     <motion.article
                       key={a.id}
-                      className="group rounded-[18px] border border-[#eceef2] bg-[#fcfcfd] px-5 py-4"
-                      initial={{ opacity: 0, y: 12 }}
+                      className={`group ${adminRowClass}`}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.97 }}
-                      transition={{ delay: i * 0.03, duration: 0.32, ease }}
-                      whileHover={{ y: -3, boxShadow: "0 10px 24px rgba(15,23,42,0.07)" }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.25, ease }}
                       layout
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-semibold text-[#101828] truncate">{a.title}</p>
-                            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${STATUS_BADGE[a.status] ?? STATUS_BADGE.DRAFT}`}>
-                              {a.status}
-                            </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate text-[14px] font-semibold text-[#0f172a]">{a.title}</p>
+                            <StatusBadge tone={STATUS_TONE[a.status] ?? "neutral"}>
+                              {a.status.charAt(0) + a.status.slice(1).toLowerCase()}
+                            </StatusBadge>
                           </div>
-                          <p className="mt-0.5 text-[13px] text-[#667085]">
+                          <p className="mt-0.5 text-[12px] text-[#64748b]">
                             {a.course?.title ?? "No course"} · {a.points} pts
-                            {a.deadline && <span className="ml-2">· Due {formatShortDate(a.deadline)}</span>}
+                            {a.deadline && <span> · Due {formatShortDate(a.deadline)}</span>}
                           </p>
                         </div>
 
                         {/* Status changer */}
-                        <div className="relative shrink-0">
+                        <label className="relative shrink-0">
+                          <span className="sr-only">Change status</span>
                           <select
                             value={a.status}
                             onChange={(e) => handleStatusChange(a, e.target.value as "DRAFT" | "ACTIVE" | "CLOSED")}
                             onClick={(e) => e.stopPropagation()}
-                            className="appearance-none rounded-[10px] border border-[#e5e7eb] bg-white px-3 py-1.5 pr-7 text-[12px] font-medium text-[#374151] outline-none cursor-pointer transition hover:border-[#d97706]"
+                            className="h-8 cursor-pointer appearance-none rounded-[10px] border border-[#e2e8f0] bg-white pl-3 pr-7 text-[12px] font-medium text-[#334155] outline-none transition-colors hover:border-[#cbd5e1] focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
                           >
                             <option value="DRAFT">Draft</option>
                             <option value="ACTIVE">Active</option>
                             <option value="CLOSED">Closed</option>
                           </select>
-                          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[#9ca3af]" />
-                        </div>
+                          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
+                        </label>
                       </div>
 
-                      <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-[#94a3b8]">
+                      <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-[#f1f5f9] pt-3 text-[12px] text-[#94a3b8]">
                         <span>{a.submissions?.length ?? 0} submissions</span>
                         <span>{a.submissions?.filter((s) => s.score !== null).length ?? 0} graded</span>
                         <span>Created {formatShortDate(a.createdAt)}</span>
 
                         {a.attachmentUrl && (
                           <a href={a.attachmentUrl} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-full bg-[#fee2e2] px-2.5 py-0.5 text-[11px] font-semibold text-[#dc2626] hover:bg-[#fecaca]">
-                            <FileText className="h-3 w-3" />PDF
+                            className="inline-flex items-center gap-1 rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-[11px] font-semibold text-[#475569] transition-colors hover:bg-[#e2e8f0]">
+                            <FileText className="h-3 w-3" aria-hidden="true" />PDF
                           </a>
                         )}
 
-                        <button
-                          onClick={() => setViewingAssignment(a)}
-                          className="inline-flex items-center gap-1 rounded-full bg-[#e0f2fe] px-2.5 py-0.5 text-[11px] font-semibold text-[#0284c7] hover:bg-[#bae6fd]"
-                        >
-                          View Submissions →
-                        </button>
-
-                        <button
-                          onClick={() => setDeletingAssignment(a)}
-                          className="ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-[#9ca3af] opacity-0 transition group-hover:opacity-100 hover:bg-[#fee2e2] hover:text-[#dc2626]"
-                        >
-                          <Trash2 className="h-3 w-3" />Delete
-                        </button>
+                        <div className="ml-auto flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setDeletingAssignment(a)}
+                            aria-label={`Delete ${a.title}`}
+                            className="grid h-8 w-8 place-items-center rounded-[10px] text-[#94a3b8] transition-colors hover:bg-[#fef2f2] hover:text-[#b91c1c]"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                          <button type="button" onClick={() => setViewingAssignment(a)} className={adminButtonSm.secondary}>
+                            View submissions
+                          </button>
+                        </div>
                       </div>
                     </motion.article>
                   ))}
                 </AnimatePresence>
               )}
             </div>
-          </section>
+          </AdminPanel>
         </RevealSection>
       </div>
 

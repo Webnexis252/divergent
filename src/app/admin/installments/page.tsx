@@ -2,6 +2,9 @@ import { getPageAuth } from "@/lib/page-auth";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { AdminInstallmentsClient } from "@/app/admin/installments/AdminInstallmentsClient";
+import { IndianRupee } from "lucide-react";
+import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
+import { AdminPageHeader } from "../_components/admin-ui";
 
 export const dynamic = "force-dynamic";
 
@@ -127,19 +130,19 @@ export default async function AdminInstallmentsPage() {
   }).filter((enr) => enr.currentInstallment < enr.totalInstallments);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Installments
-          </h1>
-          <p className="text-sm text-slate-500">
-            Manage student installment plans and request extensions
-          </p>
-        </div>
-      </div>
+    <PageTransition>
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
+        <RevealSection>
+          <AdminPageHeader
+            eyebrow="Payments"
+            icon={IndianRupee}
+            title="Installments"
+            description="Track student installment plans, record cash payments and request due-date extensions."
+          />
+        </RevealSection>
 
-      <AdminInstallmentsClient initialData={formattedData} adminId={auth.userId} />
-    </div>
+        <AdminInstallmentsClient initialData={formattedData} adminId={auth.userId} />
+      </div>
+    </PageTransition>
   );
 }

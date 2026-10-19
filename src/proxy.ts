@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import type { JWTPayload } from 'jose';
 import { jwtVerify } from 'jose';
 import { isTokenRevoked } from '@/lib/session-revocation';
+import { getDevBypassUser } from '@/lib/dev-auth-bypass';
 
 // AUTH_COOKIE_NAME is hardcoded to avoid importing lib/auth which relies on node jsonwebtoken
 
@@ -20,8 +21,8 @@ export async function proxy(request: NextRequest) {
   
   // 1. Get token
   const token = request.cookies.get('divergent_auth_token')?.value || request.cookies.get('token')?.value;
-  let user: AuthPayload | null = null;
-  if (token) {
+  let user: AuthPayload | null = getDevBypassUser();
+  if (!user && token) {
     try {
       const secret = new TextEncoder().encode(process.env.JWT_SECRET || '');
       const { payload } = await jwtVerify(token, secret);

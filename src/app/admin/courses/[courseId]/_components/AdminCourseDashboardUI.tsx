@@ -21,8 +21,17 @@ import {
   Clock,
   CheckCircle2,
   Check,
+  BookOpen,
 } from "lucide-react";
 import { PageTransition } from "@/app/dashboard/_components/motion-wrappers";
+import {
+  AdminPageHeader,
+  adminButton,
+  adminButtonSm,
+  adminInputClass,
+  adminLabelClass,
+  adminPanelClass,
+} from "../../../_components/admin-ui";
 import { formatShortDate } from "@/lib/date-format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -99,9 +108,9 @@ function statusBadge(status: string) {
     PUBLISHED: "bg-green-100 text-green-700",
     DRAFT: "bg-yellow-100 text-yellow-700",
     ACTIVE: "bg-blue-100 text-blue-700",
-    CLOSED: "bg-gray-100 text-gray-600",
+    CLOSED: "bg-[#f1f5f9] text-[#475569]",
   };
-  return map[status] ?? "bg-gray-100 text-gray-600";
+  return map[status] ?? "bg-[#f1f5f9] text-[#475569]";
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -373,53 +382,54 @@ export default function AdminCourseDashboardUI({
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-5xl p-4 sm:p-6 lg:p-8">
-        {/* ── Page header ── */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin/courses"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm transition-transform hover:scale-105"
-            >
-              <ChevronLeft className="h-5 w-5 text-gray-600" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
-              <p className="text-sm text-gray-500">Course Management Dashboard</p>
-            </div>
-          </div>
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
+        <Link
+          href="/admin/courses"
+          className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#64748b] transition-colors hover:text-[#0f172a]"
+        >
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          Back to courses
+        </Link>
 
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-full border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-        </div>
+        <AdminPageHeader
+          eyebrow="Course management"
+          icon={BookOpen}
+          title={course.title}
+          description="Exams, assignments and curriculum for this course."
+          actions={
+            <label className="relative w-full sm:w-72">
+              <span className="sr-only">Search items</span>
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
+              <input
+                type="text"
+                placeholder="Search items…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`${adminInputClass} pl-10`}
+              />
+            </label>
+          }
+        />
 
         <div className="space-y-6">
           {/* ═══════════════════════════════════════════════════════════════
               EXAMS SECTION
           ═══════════════════════════════════════════════════════════════ */}
-          <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <section className={`overflow-hidden ${adminPanelClass}`}>
             {/* Accordion header */}
-            <div className="flex items-center justify-between bg-gray-50 px-6 py-4">
+            <div className="flex items-center justify-between px-6 py-4">
               <button
                 className="flex flex-1 items-center gap-3 transition-colors hover:opacity-80"
                 onClick={() => setExamsOpen(!examsOpen)}
               >
                 <FileText className="h-5 w-5 text-blue-500" />
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-[16px] font-semibold tracking-[-0.01em] text-[#0f172a]">
                   Exams ({course.tests.length})
                 </h2>
                 {examsOpen ? (
-                  <ChevronUp className="ml-auto h-5 w-5 text-gray-400" />
+                  <ChevronUp className="ml-auto h-5 w-5 text-[#94a3b8]" />
                 ) : (
-                  <ChevronDown className="ml-auto h-5 w-5 text-gray-400" />
+                  <ChevronDown className="ml-auto h-5 w-5 text-[#94a3b8]" />
                 )}
               </button>
               <button
@@ -428,7 +438,7 @@ export default function AdminCourseDashboardUI({
                   setExamsOpen(true);
                   setShowExamForm((v) => !v);
                 }}
-                className="ml-4 flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+                className={`ml-4 ${adminButtonSm.primary}`}
               >
                 {showExamForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
                 {showExamForm ? "Cancel" : "Create Exam"}
@@ -443,13 +453,13 @@ export default function AdminCourseDashboardUI({
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="overflow-hidden border-b border-gray-100"
+                  className="overflow-hidden border-b border-[#f1f5f9]"
                 >
                   <form
                     onSubmit={handleCreateExam}
-                    className="bg-blue-50/40 px-6 py-5"
+                    className="bg-[#f8fafc] px-6 py-5"
                   >
-                    <h3 className="mb-4 text-sm font-semibold text-gray-800">
+                    <h3 className="mb-4 text-sm font-semibold text-[#1e293b]">
                       New Exam
                     </h3>
                     {examError && (
@@ -459,7 +469,7 @@ export default function AdminCourseDashboardUI({
                     )}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       <div className="lg:col-span-2">
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Title *
                         </label>
                         <input
@@ -467,17 +477,17 @@ export default function AdminCourseDashboardUI({
                           value={examForm.title}
                           onChange={(e) => setExamForm({ ...examForm, title: e.target.value })}
                           placeholder="e.g. Midterm Exam"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Type
                         </label>
                         <select
                           value={examForm.type}
                           onChange={(e) => setExamForm({ ...examForm, type: e.target.value })}
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          className={adminInputClass}
                         >
                           <option value="COURSE_EXAM">Course Exam</option>
                           <option value="MOCK_TEST">Mock Test</option>
@@ -485,18 +495,18 @@ export default function AdminCourseDashboardUI({
                         </select>
                       </div>
                       <div className="sm:col-span-2 lg:col-span-3">
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Description
                         </label>
                         <textarea
                           rows={2}
                           value={examForm.description}
                           onChange={(e) => setExamForm({ ...examForm, description: e.target.value })}
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Duration (mins)
                         </label>
                         <input
@@ -506,11 +516,11 @@ export default function AdminCourseDashboardUI({
                           onChange={(e) =>
                             setExamForm({ ...examForm, durationMins: parseInt(e.target.value) })
                           }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Passing Score (%)
                         </label>
                         <input
@@ -521,11 +531,11 @@ export default function AdminCourseDashboardUI({
                           onChange={(e) =>
                             setExamForm({ ...examForm, passingScore: parseInt(e.target.value) })
                           }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Max Attempts
                         </label>
                         <input
@@ -535,18 +545,18 @@ export default function AdminCourseDashboardUI({
                           onChange={(e) =>
                             setExamForm({ ...examForm, maxAttempts: parseInt(e.target.value) })
                           }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Available From (optional)
                         </label>
                         <input
                           type="datetime-local"
                           value={examForm.availableFrom}
                           onChange={(e) => setExamForm({ ...examForm, availableFrom: e.target.value })}
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          className={adminInputClass}
                         />
                       </div>
                     </div>
@@ -554,7 +564,7 @@ export default function AdminCourseDashboardUI({
                       <button
                         type="submit"
                         disabled={savingExam}
-                        className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                        className={adminButton.primary}
                       >
                         {savingExam && <Loader2 className="h-4 w-4 animate-spin" />}
                         {savingExam ? "Creating..." : "Create Exam"}
@@ -569,7 +579,7 @@ export default function AdminCourseDashboardUI({
             {examsOpen && (
               <div className="p-6">
                 {examGroups.length === 0 ? (
-                  <p className="text-center text-sm text-gray-400">
+                  <p className="text-center text-sm text-[#94a3b8]">
                     No exams created yet. Click &quot;Create Exam&quot; to add one.
                   </p>
                 ) : (
@@ -580,31 +590,31 @@ export default function AdminCourseDashboardUI({
                       return (
                         <div
                           key={group.key}
-                          className="overflow-hidden rounded-xl border border-gray-100 bg-gray-50/50"
+                          className="overflow-hidden rounded-[14px] border border-[#eef1f5] bg-[#fbfcfd]"
                         >
                           <button
                             onClick={() => toggleMonth("exams", group.key)}
                             className="flex w-full items-center justify-between px-4 py-3 hover:bg-gray-100/50"
                           >
-                            <h3 className="text-sm font-semibold text-gray-700">
+                            <h3 className="text-sm font-semibold text-[#334155]">
                               {group.label} ({group.items.length})
                             </h3>
                             {isMonthOpen ? (
-                              <ChevronUp className="h-4 w-4 text-gray-400" />
+                              <ChevronUp className="h-4 w-4 text-[#94a3b8]" />
                             ) : (
-                              <ChevronDown className="h-4 w-4 text-gray-400" />
+                              <ChevronDown className="h-4 w-4 text-[#94a3b8]" />
                             )}
                           </button>
                           {isMonthOpen && (
-                            <div className="divide-y divide-gray-100 bg-white px-4">
+                            <div className="divide-y divide-[#f1f5f9] bg-white px-4">
                               {group.items.map((test) => (
                                 <div
                                   key={test.id}
                                   className="flex flex-wrap items-center justify-between gap-3 py-3"
                                 >
                                   <div className="min-w-0">
-                                    <p className="font-medium text-gray-900">{test.title}</p>
-                                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                    <p className="font-medium text-[#0f172a]">{test.title}</p>
+                                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[#64748b]">
                                       <span className="flex items-center gap-1">
                                         <Clock className="h-3 w-3" />
                                         {test.durationMins}m
@@ -647,20 +657,20 @@ export default function AdminCourseDashboardUI({
           {/* ═══════════════════════════════════════════════════════════════
               LIVE CLASSES SECTION
           ═══════════════════════════════════════════════════════════════ */}
-          <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between bg-gray-50 px-6 py-4">
+          <section className={`overflow-hidden ${adminPanelClass}`}>
+            <div className="flex items-center justify-between px-6 py-4">
               <button
                 className="flex flex-1 items-center gap-3 transition-colors hover:opacity-80"
                 onClick={() => setLiveClassesOpen(!liveClassesOpen)}
               >
                 <Video className="h-5 w-5 text-purple-500" />
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-[16px] font-semibold tracking-[-0.01em] text-[#0f172a]">
                   Live Classes ({course.liveClasses.length})
                 </h2>
                 {liveClassesOpen ? (
-                  <ChevronUp className="ml-auto h-5 w-5 text-gray-400" />
+                  <ChevronUp className="ml-auto h-5 w-5 text-[#94a3b8]" />
                 ) : (
-                  <ChevronDown className="ml-auto h-5 w-5 text-gray-400" />
+                  <ChevronDown className="ml-auto h-5 w-5 text-[#94a3b8]" />
                 )}
               </button>
               <button
@@ -669,7 +679,7 @@ export default function AdminCourseDashboardUI({
                   setLiveClassesOpen(true);
                   setShowLiveClassForm((v) => !v);
                 }}
-                className="ml-4 flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-purple-700"
+                className={`ml-4 ${adminButtonSm.primary}`}
               >
                 {showLiveClassForm ? (
                   <X className="h-3.5 w-3.5" />
@@ -688,10 +698,10 @@ export default function AdminCourseDashboardUI({
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="overflow-hidden border-b border-gray-100"
+                  className="overflow-hidden border-b border-[#f1f5f9]"
                 >
-                  <form onSubmit={handleCreateLiveClass} className="bg-purple-50/40 px-6 py-5">
-                    <h3 className="mb-4 text-sm font-semibold text-gray-800">
+                  <form onSubmit={handleCreateLiveClass} className="bg-[#f8fafc] px-6 py-5">
+                    <h3 className="mb-4 text-sm font-semibold text-[#1e293b]">
                       Schedule Live Class
                     </h3>
                     {liveClassError && (
@@ -701,7 +711,7 @@ export default function AdminCourseDashboardUI({
                     )}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       <div className="sm:col-span-2">
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Title *
                         </label>
                         <input
@@ -711,11 +721,11 @@ export default function AdminCourseDashboardUI({
                             setLiveClassForm({ ...liveClassForm, title: e.target.value })
                           }
                           placeholder="e.g. Introduction to Chapter 3"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Duration (mins) *
                         </label>
                         <input
@@ -726,11 +736,11 @@ export default function AdminCourseDashboardUI({
                           onChange={(e) =>
                             setLiveClassForm({ ...liveClassForm, duration: parseInt(e.target.value) })
                           }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div className="sm:col-span-2 lg:col-span-3">
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Description
                         </label>
                         <textarea
@@ -739,11 +749,11 @@ export default function AdminCourseDashboardUI({
                           onChange={(e) =>
                             setLiveClassForm({ ...liveClassForm, description: e.target.value })
                           }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Start Date & Time *
                         </label>
                         <input
@@ -753,11 +763,11 @@ export default function AdminCourseDashboardUI({
                           onChange={(e) =>
                             setLiveClassForm({ ...liveClassForm, startTime: e.target.value })
                           }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Meeting URL
                         </label>
                         <input
@@ -767,17 +777,17 @@ export default function AdminCourseDashboardUI({
                             setLiveClassForm({ ...liveClassForm, meetingUrl: e.target.value })
                           }
                           placeholder="https://meet.google.com/..."
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div className="sm:col-span-1 lg:col-span-1 relative" ref={teacherDropdownRef}>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Assign Teacher (optional)
                         </label>
                         <button
                           type="button"
                           onClick={() => setIsTeacherDropdownOpen(!isTeacherDropdownOpen)}
-                          className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none hover:bg-gray-50 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                          className="flex w-full items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm text-[#334155] outline-none hover:bg-[#f8fafc] focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                         >
                           <span className="truncate">
                             {liveClassForm.teacherId
@@ -785,7 +795,7 @@ export default function AdminCourseDashboardUI({
                                 availableTeachers.find((t) => t.id === liveClassForm.teacherId)?.email
                               : "No Teacher Assigned"}
                           </span>
-                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                          <ChevronDown className="h-4 w-4 text-[#94a3b8]" />
                         </button>
 
                         <AnimatePresence>
@@ -795,7 +805,7 @@ export default function AdminCourseDashboardUI({
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -5 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-100 bg-white py-1 shadow-lg ring-1 ring-black/5"
+                              className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-[#f1f5f9] bg-white py-1 shadow-lg ring-1 ring-black/5"
                             >
                               <button
                                 type="button"
@@ -803,9 +813,9 @@ export default function AdminCourseDashboardUI({
                                   setLiveClassForm({ ...liveClassForm, teacherId: "" });
                                   setIsTeacherDropdownOpen(false);
                                 }}
-                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-purple-50"
+                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[#f8fafc]"
                               >
-                                <span className={!liveClassForm.teacherId ? "font-medium text-purple-600" : "text-gray-700"}>
+                                <span className={!liveClassForm.teacherId ? "font-medium text-purple-600" : "text-[#334155]"}>
                                   No Teacher Assigned
                                 </span>
                                 {!liveClassForm.teacherId && <Check className="h-4 w-4 text-purple-600" />}
@@ -818,9 +828,9 @@ export default function AdminCourseDashboardUI({
                                     setLiveClassForm({ ...liveClassForm, teacherId: t.id });
                                     setIsTeacherDropdownOpen(false);
                                   }}
-                                  className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-purple-50"
+                                  className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[#f8fafc]"
                                 >
-                                  <span className={liveClassForm.teacherId === t.id ? "font-medium text-purple-600" : "text-gray-700"}>
+                                  <span className={liveClassForm.teacherId === t.id ? "font-medium text-purple-600" : "text-[#334155]"}>
                                     {t.name || t.email}
                                   </span>
                                   {liveClassForm.teacherId === t.id && <Check className="h-4 w-4 text-purple-600" />}
@@ -835,7 +845,7 @@ export default function AdminCourseDashboardUI({
                       <button
                         type="submit"
                         disabled={savingLiveClass}
-                        className="flex items-center gap-2 rounded-lg bg-purple-600 px-5 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-60"
+                        className={adminButton.primary}
                       >
                         {savingLiveClass && <Loader2 className="h-4 w-4 animate-spin" />}
                         {savingLiveClass ? "Scheduling..." : "Schedule Class"}
@@ -850,7 +860,7 @@ export default function AdminCourseDashboardUI({
             {liveClassesOpen && (
               <div className="p-6">
                 {classGroups.length === 0 ? (
-                  <p className="text-center text-sm text-gray-400">
+                  <p className="text-center text-sm text-[#94a3b8]">
                     No live classes scheduled. Click &quot;Schedule Class&quot; to add one.
                   </p>
                 ) : (
@@ -861,31 +871,31 @@ export default function AdminCourseDashboardUI({
                       return (
                         <div
                           key={group.key}
-                          className="overflow-hidden rounded-xl border border-gray-100 bg-gray-50/50"
+                          className="overflow-hidden rounded-[14px] border border-[#eef1f5] bg-[#fbfcfd]"
                         >
                           <button
                             onClick={() => toggleMonth("classes", group.key)}
                             className="flex w-full items-center justify-between px-4 py-3 hover:bg-gray-100/50"
                           >
-                            <h3 className="text-sm font-semibold text-gray-700">
+                            <h3 className="text-sm font-semibold text-[#334155]">
                               {group.label} ({group.items.length})
                             </h3>
                             {isMonthOpen ? (
-                              <ChevronUp className="h-4 w-4 text-gray-400" />
+                              <ChevronUp className="h-4 w-4 text-[#94a3b8]" />
                             ) : (
-                              <ChevronDown className="h-4 w-4 text-gray-400" />
+                              <ChevronDown className="h-4 w-4 text-[#94a3b8]" />
                             )}
                           </button>
                           {isMonthOpen && (
-                            <div className="divide-y divide-gray-100 bg-white px-4">
+                            <div className="divide-y divide-[#f1f5f9] bg-white px-4">
                               {group.items.map((cls) => (
                                 <div
                                   key={cls.id}
                                   className="flex flex-wrap items-start justify-between gap-4 py-3"
                                 >
                                   <div className="min-w-0">
-                                    <p className="font-medium text-gray-900">{cls.title}</p>
-                                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                    <p className="font-medium text-[#0f172a]">{cls.title}</p>
+                                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[#64748b]">
                                       <span className="flex items-center gap-1">
                                         <Calendar className="h-3 w-3" />
                                         {formatShortDate(new Date(cls.startTime).toISOString())}
@@ -940,7 +950,7 @@ export default function AdminCourseDashboardUI({
                                             setRecordingUrl(cls.recordingUrl || "");
                                             setRecordingInputId(cls.id);
                                           }}
-                                          className="text-xs font-medium text-blue-600 hover:underline"
+                                          className="text-[12px] font-semibold text-[#0369a1] hover:underline"
                                         >
                                           Edit Link
                                         </button>
@@ -952,18 +962,18 @@ export default function AdminCourseDashboardUI({
                                           value={recordingUrl}
                                           onChange={(e) => setRecordingUrl(e.target.value)}
                                           placeholder="Paste recording URL..."
-                                          className="w-52 rounded-lg border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500"
+                                          className="h-8 w-52 rounded-[10px] border border-[#e2e8f0] bg-white px-3 text-[13px] outline-none focus:border-[#209bd2] focus:ring-2 focus:ring-[#38c1ff]/20"
                                         />
                                         <button
                                           onClick={() => handleSaveRecording(cls.id)}
                                           disabled={savingRecording || !recordingUrl.trim()}
-                                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                                          className={adminButtonSm.primary}
                                         >
                                           {savingRecording ? "Saving..." : "Save"}
                                         </button>
                                         <button
                                           onClick={() => setRecordingInputId(null)}
-                                          className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200"
+                                          className={adminButtonSm.secondary}
                                         >
                                           Cancel
                                         </button>
@@ -984,7 +994,7 @@ export default function AdminCourseDashboardUI({
                                     {/* Delete */}
                                     <button
                                       onClick={() => handleDeleteLiveClass(cls.id)}
-                                      className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                                      className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94a3b8] transition-colors hover:bg-red-50 hover:text-red-500"
                                       title="Delete live class"
                                     >
                                       <Trash2 className="h-3.5 w-3.5" />
@@ -1006,20 +1016,20 @@ export default function AdminCourseDashboardUI({
           {/* ═══════════════════════════════════════════════════════════════
               ASSIGNMENTS SECTION
           ═══════════════════════════════════════════════════════════════ */}
-          <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between bg-gray-50 px-6 py-4">
+          <section className={`overflow-hidden ${adminPanelClass}`}>
+            <div className="flex items-center justify-between px-6 py-4">
               <button
                 className="flex flex-1 items-center gap-3 transition-colors hover:opacity-80"
                 onClick={() => setAssignmentsOpen(!assignmentsOpen)}
               >
                 <FileText className="h-5 w-5 text-amber-500" />
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-[16px] font-semibold tracking-[-0.01em] text-[#0f172a]">
                   Assignments ({course.assignments.length})
                 </h2>
                 {assignmentsOpen ? (
-                  <ChevronUp className="ml-auto h-5 w-5 text-gray-400" />
+                  <ChevronUp className="ml-auto h-5 w-5 text-[#94a3b8]" />
                 ) : (
-                  <ChevronDown className="ml-auto h-5 w-5 text-gray-400" />
+                  <ChevronDown className="ml-auto h-5 w-5 text-[#94a3b8]" />
                 )}
               </button>
               <button
@@ -1028,7 +1038,7 @@ export default function AdminCourseDashboardUI({
                   setAssignmentsOpen(true);
                   setShowAssignmentForm((v) => !v);
                 }}
-                className="ml-4 flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-600"
+                className={`ml-4 ${adminButtonSm.primary}`}
               >
                 {showAssignmentForm ? (
                   <X className="h-3.5 w-3.5" />
@@ -1047,13 +1057,13 @@ export default function AdminCourseDashboardUI({
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="overflow-hidden border-b border-gray-100"
+                  className="overflow-hidden border-b border-[#f1f5f9]"
                 >
                   <form
                     onSubmit={handleCreateAssignment}
-                    className="bg-amber-50/40 px-6 py-5"
+                    className="bg-[#f8fafc] px-6 py-5"
                   >
-                    <h3 className="mb-4 text-sm font-semibold text-gray-800">
+                    <h3 className="mb-4 text-sm font-semibold text-[#1e293b]">
                       New Assignment
                     </h3>
                     {assignmentError && (
@@ -1063,7 +1073,7 @@ export default function AdminCourseDashboardUI({
                     )}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       <div className="sm:col-span-2">
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Title *
                         </label>
                         <input
@@ -1073,11 +1083,11 @@ export default function AdminCourseDashboardUI({
                             setAssignmentForm({ ...assignmentForm, title: e.target.value })
                           }
                           placeholder="e.g. Portfolio Project — Week 3"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Points
                         </label>
                         <input
@@ -1087,11 +1097,11 @@ export default function AdminCourseDashboardUI({
                           onChange={(e) =>
                             setAssignmentForm({ ...assignmentForm, points: parseInt(e.target.value) || 0 })
                           }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div className="sm:col-span-2 lg:col-span-3">
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Description / Instructions
                         </label>
                         <textarea
@@ -1100,11 +1110,11 @@ export default function AdminCourseDashboardUI({
                           onChange={(e) =>
                             setAssignmentForm({ ...assignmentForm, description: e.target.value })
                           }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Deadline (optional)
                         </label>
                         <input
@@ -1113,11 +1123,11 @@ export default function AdminCourseDashboardUI({
                           onChange={(e) =>
                             setAssignmentForm({ ...assignmentForm, deadline: e.target.value })
                           }
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                          className={adminInputClass}
                         />
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                        <label className={adminLabelClass}>
                           Attachment (File or URL)
                         </label>
                         <div className="flex items-center gap-2">
@@ -1130,9 +1140,9 @@ export default function AdminCourseDashboardUI({
                                 setAssignmentForm({ ...assignmentForm, attachmentUrl: "" });
                               }
                             }}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none file:mr-4 file:rounded-full file:border-0 file:bg-amber-50 file:px-4 file:py-1 file:text-sm file:font-semibold file:text-amber-700 hover:file:bg-amber-100 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                            className="w-full rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm outline-none file:mr-4 file:rounded-full file:border-0 file:bg-amber-50 file:px-4 file:py-1 file:text-sm file:font-semibold file:text-amber-700 hover:file:bg-amber-100 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                           />
-                          <span className="text-sm font-medium text-gray-500">OR</span>
+                          <span className="text-sm font-medium text-[#64748b]">OR</span>
                           <input
                             type="url"
                             disabled={!!assignmentFile}
@@ -1141,7 +1151,7 @@ export default function AdminCourseDashboardUI({
                               setAssignmentForm({ ...assignmentForm, attachmentUrl: e.target.value })
                             }
                             placeholder="https://..."
-                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 disabled:opacity-50 disabled:bg-gray-50"
+                            className={`${adminInputClass} disabled:bg-[#f8fafc] disabled:opacity-50`}
                           />
                         </div>
                         {assignmentFile && (
@@ -1165,7 +1175,7 @@ export default function AdminCourseDashboardUI({
                       <button
                         type="submit"
                         disabled={savingAssignment}
-                        className="flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
+                        className={adminButton.primary}
                       >
                         {savingAssignment && <Loader2 className="h-4 w-4 animate-spin" />}
                         {savingAssignment || uploadingAssignment ? "Creating..." : "Create Assignment"}
@@ -1180,7 +1190,7 @@ export default function AdminCourseDashboardUI({
             {assignmentsOpen && (
               <div className="p-6">
                 {assignmentGroups.length === 0 ? (
-                  <p className="text-center text-sm text-gray-400">
+                  <p className="text-center text-sm text-[#94a3b8]">
                     No assignments created yet. Click &quot;Add Assignment&quot; to create one.
                   </p>
                 ) : (
@@ -1191,31 +1201,31 @@ export default function AdminCourseDashboardUI({
                       return (
                         <div
                           key={group.key}
-                          className="overflow-hidden rounded-xl border border-gray-100 bg-gray-50/50"
+                          className="overflow-hidden rounded-[14px] border border-[#eef1f5] bg-[#fbfcfd]"
                         >
                           <button
                             onClick={() => toggleMonth("assignments", group.key)}
                             className="flex w-full items-center justify-between px-4 py-3 hover:bg-gray-100/50"
                           >
-                            <h3 className="text-sm font-semibold text-gray-700">
+                            <h3 className="text-sm font-semibold text-[#334155]">
                               {group.label} ({group.items.length})
                             </h3>
                             {isMonthOpen ? (
-                              <ChevronUp className="h-4 w-4 text-gray-400" />
+                              <ChevronUp className="h-4 w-4 text-[#94a3b8]" />
                             ) : (
-                              <ChevronDown className="h-4 w-4 text-gray-400" />
+                              <ChevronDown className="h-4 w-4 text-[#94a3b8]" />
                             )}
                           </button>
                           {isMonthOpen && (
-                            <div className="divide-y divide-gray-100 bg-white px-4">
+                            <div className="divide-y divide-[#f1f5f9] bg-white px-4">
                               {group.items.map((assignment) => (
                                 <div
                                   key={assignment.id}
                                   className="flex flex-wrap items-start justify-between gap-3 py-3"
                                 >
                                   <div className="min-w-0">
-                                    <p className="font-medium text-gray-900">{assignment.title}</p>
-                                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                    <p className="font-medium text-[#0f172a]">{assignment.title}</p>
+                                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[#64748b]">
                                       <span>
                                         Created:{" "}
                                         {formatShortDate(new Date(assignment.createdAt).toISOString())}
@@ -1246,7 +1256,7 @@ export default function AdminCourseDashboardUI({
                                   </div>
                                   <button
                                     onClick={() => handleDeleteAssignment(assignment.id)}
-                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[#94a3b8] transition-colors hover:bg-red-50 hover:text-red-500"
                                     title="Delete assignment"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />

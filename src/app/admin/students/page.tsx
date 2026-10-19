@@ -4,12 +4,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { GraduationCap, Search, Sparkles, Users, Download, UserPlus, UserCheck, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
 import { m as motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import { MetricCard } from "@/components/ui/metric-card";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { Surface } from "@/components/ui/surface";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Button } from "@/components/ui/button";
-import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
+import { PageTransition, RevealSection, StaggerGrid } from "@/app/dashboard/_components/motion-wrappers";
+import { AdminStatCard } from "../_components/AdminStatCard";
+import {
+  AdminEmptyState,
+  AdminPageHeader,
+  AdminPanel,
+  adminButton,
+  adminInputClass,
+  adminToolbarClass,
+} from "../_components/admin-ui";
 import { useAuth } from "@/context/auth-context";
 import { AddStudentModal } from "./_components/AddStudentModal";
 import type { StudentRecord } from "./_types";
@@ -276,111 +280,90 @@ export default function AdminStudentsPage() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10 lg:px-10">
+      <div className="mx-auto max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
         <RevealSection>
-          <Surface className="relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8">
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-[32%] bg-[radial-gradient(circle_at_center,rgba(56,193,255,0.14),transparent_72%)]" />
-            <div className="relative z-10 space-y-8">
-              <SectionHeading
-                eyebrow="Student Management"
-                title="A cleaner operating view of the learner base."
-                description="Search by name or email, scan the highest-value numbers first, and expand into course-level detail without the screen feeling like internal tooling."
+          <AdminPageHeader
+            eyebrow="Student management"
+            icon={Users}
+            title="Students"
+            description="Search by name or email, scan the key numbers first, then open a student for course-level detail."
+            actions={
+              <>
+                {user?.role === "SUPER_ADMIN" && (
+                  <Link href="/admin/super/approvals" className={adminButton.secondary}>
+                    <UserCheck className="h-4 w-4" aria-hidden="true" />
+                    Approvals
+                  </Link>
+                )}
+                <button type="button" onClick={() => setIsAddModalOpen(true)} className={adminButton.primary}>
+                  <UserPlus className="h-4 w-4" aria-hidden="true" />
+                  Add student
+                </button>
+              </>
+            }
+          />
+        </RevealSection>
+
+        <StaggerGrid className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <AdminStatCard index={0} title="Students" value={stats.totalStudents} caption="Learners in the current directory view." icon={<Users />} tone="sky" />
+          <AdminStatCard index={1} title="Enrollments" value={stats.enrollmentCount} caption="Course seats held by the students in view." icon={<GraduationCap />} tone="emerald" />
+          <AdminStatCard index={2} title="Average XP" value={stats.avgXp} caption="A quick read on learner momentum." icon={<Sparkles />} tone="amber" />
+        </StaggerGrid>
+
+        <RevealSection delay={0.04} className="relative z-10">
+          <div className={`${adminToolbarClass} flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between`}>
+            <form className="relative w-full lg:max-w-md" onSubmit={handleSearch} role="search">
+              <label htmlFor="student-search" className="sr-only">Search students</label>
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" aria-hidden="true" />
+              <input
+                id="student-search"
+                className={`${adminInputClass} pl-10`}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by name or email, then press Enter"
+                type="text"
+                value={search}
               />
-
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <form className="relative w-full max-w-xl" onSubmit={handleSearch}>
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-(--text-subtle)" />
-                  <input
-                    className="h-14 w-full rounded-(--radius-pill) border border-(--line-soft) bg-white/88 pl-12 pr-5 text-[15px] text-(--text-strong) shadow-(--shadow-soft) transition-[border-color,box-shadow] duration-150 ease-out focus-visible:border-(--brand-primary-strong) focus-visible:outline-none"
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search students by name or email"
-                    type="text"
-                    value={search}
-                  />
-                </form>
-                <div className="flex items-center gap-3 shrink-0 flex-wrap">
-                  {user?.role === "SUPER_ADMIN" && (
-                    <Link href="/admin/super/approvals">
-                      <Button variant="secondary" size="lg" className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-none">
-                        <UserCheck className="h-[18px] w-[18px]" />
-                        Approvals
-                      </Button>
-                    </Link>
-                  )}
-                  <Button onClick={() => setIsAddModalOpen(true)} size="lg" className="bg-(--brand-primary-strong) text-white hover:bg-(--brand-primary-strong)/90">
-                    <UserPlus className="h-[18px] w-[18px]" />
-                    Add Student
-                  </Button>
-                  
-                  {exportStatus === "APPROVED" ? (
-                    <>
-                      <Button onClick={handleExportToExcel} variant="secondary" size="lg" type="button">
-                        <Download className="h-[18px] w-[18px]" />
-                        Export Students
-                      </Button>
-                      <Button onClick={handleExportEnrollmentsCsv} variant="secondary" size="lg" type="button">
-                        <Download className="h-[18px] w-[18px]" />
-                        Export Enrollments (CSV)
-                      </Button>
-                    </>
-                  ) : exportStatus === "PENDING" ? (
-                    <Button variant="secondary" size="lg" type="button" disabled>
-                      <Download className="h-[18px] w-[18px]" />
-                      Export Pending Approval
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="secondary" 
-                      size="lg" 
-                      type="button" 
-                      onClick={handleRequestExport}
-                      disabled={exportLoading}
-                    >
-                      <Download className="h-[18px] w-[18px]" />
-                      Request Export Approval
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                <MetricCard
-                  accent="var(--brand-primary-strong)"
-                  icon={<Users className="h-5 w-5" />}
-                  label="Students"
-                  meta="Learners currently visible in the filtered directory."
-                  value={stats.totalStudents}
-                />
-                <MetricCard
-                  accent="var(--success)"
-                  icon={<GraduationCap className="h-5 w-5" />}
-                  label="Enrollments"
-                  meta="Total course seats attached to the students in view."
-                  value={stats.enrollmentCount}
-                />
-                <MetricCard
-                  accent="var(--warning)"
-                  icon={<Sparkles className="h-5 w-5" />}
-                  label="Average XP"
-                  meta="A quick read on learner momentum across the filtered cohort."
-                  value={stats.avgXp}
-                />
-              </div>
+            </form>
+            <div className="flex flex-wrap items-center gap-2">
+              {exportStatus === "APPROVED" ? (
+                <>
+                  <button onClick={handleExportToExcel} className={adminButton.secondary} type="button">
+                    <Download className="h-4 w-4" aria-hidden="true" />
+                    Export students
+                  </button>
+                  <button onClick={handleExportEnrollmentsCsv} className={adminButton.secondary} type="button">
+                    <Download className="h-4 w-4" aria-hidden="true" />
+                    Export enrollments (CSV)
+                  </button>
+                </>
+              ) : exportStatus === "PENDING" ? (
+                <button className={adminButton.secondary} type="button" disabled>
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                  Export pending approval
+                </button>
+              ) : (
+                <button className={adminButton.secondary} type="button" onClick={handleRequestExport} disabled={exportLoading}>
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                  Request export approval
+                </button>
+              )}
             </div>
-          </Surface>
+          </div>
         </RevealSection>
 
         <RevealSection delay={0.06}>
           {loading ? (
-            <Surface className="h-96 animate-pulse">
+            <div className="h-96 animate-pulse rounded-[24px] bg-white/70">
               <span className="sr-only">Loading students</span>
-            </Surface>
+            </div>
           ) : students.length === 0 ? (
-            <EmptyState
-              description="No students matched the current search. Try a broader name or email query to repopulate the directory."
-              icon={<Users className="h-6 w-6" />}
-              title="No students found"
-            />
+            <AdminPanel>
+              <AdminEmptyState
+                icon={Users}
+                title="No students found"
+                description="No students matched the current search. Try a broader name or email."
+              />
+            </AdminPanel>
           ) : (
             <>
               <StudentTable
@@ -396,14 +379,14 @@ export default function AdminStudentsPage() {
                 students={students}
                 totalStudents={total}
               />
-              <div className="mt-4 flex items-center justify-end gap-4 text-[13px] font-medium text-[#64748b]">
+              <div className="mt-4 flex items-center justify-end gap-4 text-[12px] font-medium text-[#64748b]">
                 <span>
                   {students.length > 0 ? (page - 1) * 20 + 1 : 0}–
                   {Math.min(page * 20, total)} of {total}
                 </span>
-                <div className="flex gap-1">
+                <div className="flex gap-2">
                   <button
-                    className="rounded p-1 transition hover:bg-[#f1f5f9] disabled:opacity-50 disabled:hover:bg-transparent"
+                    className="grid h-8 w-8 place-items-center rounded-[10px] border border-[#e2e8f0] bg-white text-[#475569] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40"
                     disabled={page <= 1}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     title="Previous page"
@@ -411,7 +394,7 @@ export default function AdminStudentsPage() {
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                   <button
-                    className="rounded p-1 transition hover:bg-[#f1f5f9] disabled:opacity-50 disabled:hover:bg-transparent"
+                    className="grid h-8 w-8 place-items-center rounded-[10px] border border-[#e2e8f0] bg-white text-[#475569] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40"
                     disabled={page >= totalPages}
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     title="Next page"
@@ -432,11 +415,13 @@ export default function AdminStudentsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className={`fixed bottom-6 right-6 z-50 rounded-2xl px-5 py-3 text-[14px] font-semibold text-white shadow-xl ${
-              toast.ok ? "bg-[#15803d]" : "bg-[#dc2626]"
+            role="status"
+            className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-[14px] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_18px_40px_rgba(15,23,42,0.2)] ${
+              toast.ok ? "bg-[#15803d]" : "bg-[#b91c1c]"
             }`}
           >
-            {toast.ok ? <Check className="mr-1.5 inline h-4 w-4 align-[-3px]" /> : <X className="mr-1.5 inline h-4 w-4 align-[-3px]" />}{toast.msg}
+            {toast.ok ? <Check className="h-4 w-4" aria-hidden="true" /> : <X className="h-4 w-4" aria-hidden="true" />}
+            {toast.msg}
           </motion.div>
         )}
       </AnimatePresence>
