@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
-import CustomCursor from "@/components/CustomCursor";
 import { MotionProvider } from "@/components/providers/motion-provider";
 import { AuthProvider } from "@/context/auth-context";
 import { GlobalAppFooter } from "@/components/global-app-footer";
@@ -47,15 +46,16 @@ export default function RootLayout({
       <body className="min-h-screen">
         <MotionProvider>
           <AuthProvider>
-            <CustomCursor />
             <div className="flex min-h-screen flex-col">
               <div className="flex-1">{children}</div>
               <GlobalAppFooter />
             </div>
           </AuthProvider>
         </MotionProvider>
-        {/* Real-user page speed (Core Web Vitals) in the Vercel dashboard. */}
-        <SpeedInsights />
+        {/* Real-user page speed (Core Web Vitals) in the Vercel dashboard. Its
+            script only exists on Vercel, so elsewhere (local, Amplify) it just
+            fails to load and the CSP logs an error. */}
+        {process.env.VERCEL ? <SpeedInsights /> : null}
       </body>
     </html>
   );
