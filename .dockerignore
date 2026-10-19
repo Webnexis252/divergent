@@ -1,0 +1,34 @@
+# Keep secrets, build output and local clutter out of the image.
+# Bare patterns (*.png, *.md) match the repo root only.
+.env*
+!.env.example
+.git
+.github
+.next
+node_modules
+coverage
+test-results
+playwright-report
+tmp
+_tmpinit
+_trash_png
+_scripts
+divergent
+divergent.pdf
+divergent.zip
+*.zip
+*.pdf
+*.png
+.venv
+.zencoder
+.zenflow
+.gstack
+.claude
+graphify-out
+public/uploads
+loadtests
+e2e
+docs
+*.md
+*.log
+*.tsbuildinfo

@@ -2,8 +2,9 @@
  * Checks the deployment's environment variables for settings that are missing
  * or unsafe in production. Reports variable names only, never their values.
  *
- * Run at server start (src/instrumentation.ts logs problems to the Vercel
- * logs) and on demand via GET /api/health/config with the cron secret.
+ * Run at server start (src/instrumentation.ts logs problems to the server
+ * logs: CloudWatch on AWS, the Vercel logs on Vercel) and on demand via
+ * GET /api/health/config with the cron secret.
  */
 
 export type ConfigCheck = {
@@ -96,13 +97,21 @@ export function checkProductionConfig(env: Env = process.env): ConfigCheck[] {
 
   // ── Monitoring ──
   if (!set(env, 'SENTRY_DSN')) {
-    add('SENTRY_DSN', 'warning', 'Not set: server errors are not reported anywhere but the Vercel logs.');
+    add('SENTRY_DSN', 'warning', 'Not set: server errors are not reported anywhere but the server logs.');
   }
 
   return problems;
 }
 
-/** Only the production deployment is held to these rules (not previews or local dev). */
+/**
+ * Which deployment this is: APP_ENV on AWS (set it to "production" on the live
+ * app, "staging" elsewhere), VERCEL_ENV on Vercel, NODE_ENV otherwise.
+ */
+export function deploymentEnvironment(env: Env = process.env): string | undefined {
+  return env.APP_ENV?.trim() || env.VERCEL_ENV || env.NODE_ENV;
+}
+
+/** Only the production deployment is held to these rules (not previews, staging or local dev). */
 export function isProductionDeployment(env: Env = process.env): boolean {
-  return env.VERCEL_ENV === 'production';
+  return env.APP_ENV?.trim() ? env.APP_ENV.trim() === 'production' : env.VERCEL_ENV === 'production';
 }

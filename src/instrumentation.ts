@@ -16,7 +16,7 @@ export async function register() {
   const Sentry = await import('@sentry/nextjs');
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
-    environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+    environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV,
     tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 0),
     // Student data stays out of error reports. Sentry 11 collects cookies,
     // headers, query strings and request bodies by default; turn all of it off.
@@ -32,7 +32,7 @@ export const onRequestError: Instrumentation.onRequestError = async (...args) =>
 
 /**
  * Logs missing or unsafe production settings once per server start, so they
- * show up in the Vercel logs (names only, never values). See
+ * show up in the server logs (names only, never values). See
  * src/lib/production-config.ts; GET /api/health/config returns the same list.
  */
 async function reportConfigProblems() {

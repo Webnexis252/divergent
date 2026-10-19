@@ -1,0 +1,25 @@
+# AWS Amplify Hosting build settings. Amplify reads this from the repo root.
+# Set the app's environment variables in Amplify console → Hosting →
+# Environment variables (list in docs/deploy-aws.md). They reach the build only,
+# so write-runtime-env.mjs copies the server-side ones into .env.production
+# for the running app.
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 22 && nvm use 22
+        - node -v
+        - npm ci
+    build:
+      commands:
+        - node scripts/write-runtime-env.mjs
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .next/cache/**/*
+      - node_modules/**/*

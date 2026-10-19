@@ -1,0 +1,211 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Scheduled jobs for the Divergent Classes LMS. EventBridge Scheduler calls a
+  small Lambda, which calls GET /api/cron/<job> on the app with
+  "Authorization: Bearer <CRON_SECRET>". Replaces the crons in vercel.json.
+  Deploy in the app's region; see docs/deploy-aws.md.
+
+Parameters:
+  AppUrl:
+    Type: String
+    Description: Public URL of the app, no trailing slash (e.g. https://lms.example.com)
+    AllowedPattern: '^https://[^/]+$'
+  CronSecret:
+    Type: String
+    NoEcho: true
+    MinLength: 16
+    Description: Same value as the app's CRON_SECRET
+  AlarmEmail:
+    Type: String
+    Default: ''
+    Description: Optional. Email that is told when a job fails (confirm the subscription email AWS sends).
+  EnableClassReminders:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+    Description: Every 5 minutes. Does nothing until INTERAKT_CLASS_REMINDER_TEMPLATE_NAME is set on the app.
+  EnableCleanupDoubts:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+    Description: Daily. Permanently deletes doubts resolved more than 24 hours ago. Was never scheduled on Vercel, so off by default.
+
+Conditions:
+  HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, '']]
+  ClassReminders: !Equals [!Ref EnableClassReminders, 'true']
+  CleanupDoubts: !Equals [!Ref EnableCleanupDoubts, 'true']
+
+Resources:
+  CronCallerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  CronCaller:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Calls an LMS /api/cron route with the cron secret
+      Runtime: nodejs22.x
+      Handler: index.handler
+      Role: !GetAtt CronCallerRole.Arn
+      Timeout: 300
+      MemorySize: 128
+      Environment:
+        Variables:
+          APP_URL: !Ref AppUrl
+          CRON_SECRET: !Ref CronSecret
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            const url = process.env.APP_URL + event.path;
+            const started = Date.now();
+            const res = await fetch(url, {
+              headers: { Authorization: 'Bearer ' + process.env.CRON_SECRET },
+              signal: AbortSignal.timeout(290000),
+            });
+            const body = (await res.text()).slice(0, 2000);
+            console.log(JSON.stringify({ path: event.path, status: res.status, ms: Date.now() - started, body }));
+            // A thrown error marks the run as failed in CloudWatch (and the alarm)
+            if (!res.ok) throw new Error(event.path + ' returned HTTP ' + res.status);
+            return { status: res.status };
+          };
+
+  CronCallerLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${CronCaller}
+      RetentionInDays: 30
+
+  # Jobs are not retried: the next run picks up whatever this one missed, and
+  # a retry could send weekly emails or WhatsApp reminders twice.
+  CronCallerNoRetry:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      FunctionName: !Ref CronCaller
+      Qualifier: $LATEST
+      MaximumRetryAttempts: 0
+
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: scheduler.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: { 'aws:SourceAccount': !Ref AWS::AccountId }
+      Policies:
+        - PolicyName: invoke-cron-caller
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt CronCaller.Arn
+
+  # Times are India time (Asia/Kolkata), matching the UTC times vercel.json used.
+  RebuildAuthBloom:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: Rebuilds the sign-in Bloom filter (03:00 IST daily)
+      ScheduleExpression: cron(0 3 * * ? *)
+      ScheduleExpressionTimezone: Asia/Kolkata
+      FlexibleTimeWindow: { Mode: 'OFF' }
+      Target:
+        Arn: !GetAtt CronCaller.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{"path":"/api/cron/rebuild-auth-bloom"}'
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
+  ReconcilePayments:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: Confirms or expires unfinished payments (03:30 IST daily)
+      ScheduleExpression: cron(30 3 * * ? *)
+      ScheduleExpressionTimezone: Asia/Kolkata
+      FlexibleTimeWindow: { Mode: 'OFF' }
+      Target:
+        Arn: !GetAtt CronCaller.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{"path":"/api/cron/reconcile-payments"}'
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
+  WeeklyReports:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: Weekly progress emails (Sunday 19:00 IST). Inert until WEEKLY_REPORTS_ENABLED=true.
+      ScheduleExpression: cron(0 19 ? * SUN *)
+      ScheduleExpressionTimezone: Asia/Kolkata
+      FlexibleTimeWindow: { Mode: 'OFF' }
+      Target:
+        Arn: !GetAtt CronCaller.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{"path":"/api/cron/weekly-reports"}'
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
+  ClassRemindersSchedule:
+    Type: AWS::Scheduler::Schedule
+    Condition: ClassReminders
+    Properties:
+      Description: WhatsApp reminders 5-15 minutes before live classes
+      ScheduleExpression: rate(5 minutes)
+      FlexibleTimeWindow: { Mode: 'OFF' }
+      Target:
+        Arn: !GetAtt CronCaller.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{"path":"/api/cron/class-reminders"}'
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
+  CleanupDoubtsSchedule:
+    Type: AWS::Scheduler::Schedule
+    Condition: CleanupDoubts
+    Properties:
+      Description: Deletes doubts resolved more than 24 hours ago (04:00 IST daily)
+      ScheduleExpression: cron(0 4 * * ? *)
+      ScheduleExpressionTimezone: Asia/Kolkata
+      FlexibleTimeWindow: { Mode: 'OFF' }
+      Target:
+        Arn: !GetAtt CronCaller.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{"path":"/api/cron/cleanup-doubts"}'
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasAlarmEmail
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlarmEmail
+
+  CronFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasAlarmEmail
+    Properties:
+      AlarmDescription: An LMS scheduled job failed. Check the CronCaller logs in CloudWatch.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref CronCaller
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+
+Outputs:
+  CronCallerLogGroup:
+    Description: Where each job's status code and response are logged
+    Value: !Ref CronCallerLogs

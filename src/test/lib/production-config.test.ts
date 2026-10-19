@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkProductionConfig } from '@/lib/production-config';
+import { checkProductionConfig, deploymentEnvironment, isProductionDeployment } from '@/lib/production-config';
 
 const ready = {
   JWT_SECRET: 'x'.repeat(48),
@@ -52,5 +52,20 @@ describe('checkProductionConfig', () => {
     const output = JSON.stringify(checkProductionConfig({ ...ready, JWT_SECRET: 'short-secret-value', RAZORPAY_KEY_ID: 'rzp_test_SECRET123' }));
     expect(output).not.toContain('short-secret-value');
     expect(output).not.toContain('SECRET123');
+  });
+});
+
+describe('isProductionDeployment', () => {
+  it('uses APP_ENV on AWS and VERCEL_ENV on Vercel', () => {
+    expect(isProductionDeployment({ APP_ENV: 'production' })).toBe(true);
+    expect(isProductionDeployment({ APP_ENV: 'staging', VERCEL_ENV: 'production' })).toBe(false);
+    expect(isProductionDeployment({ VERCEL_ENV: 'production' })).toBe(true);
+    expect(isProductionDeployment({ NODE_ENV: 'production' })).toBe(false);
+  });
+
+  it('names the deployment from APP_ENV first', () => {
+    expect(deploymentEnvironment({ APP_ENV: 'staging', VERCEL_ENV: 'preview', NODE_ENV: 'production' })).toBe('staging');
+    expect(deploymentEnvironment({ VERCEL_ENV: 'preview', NODE_ENV: 'production' })).toBe('preview');
+    expect(deploymentEnvironment({ NODE_ENV: 'production' })).toBe('production');
   });
 });

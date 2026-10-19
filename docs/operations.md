@@ -6,7 +6,8 @@ by itself.
 
 ## 0. Launch checklist
 
-1. **Vercel plan**: Hobby is for non-commercial projects only; a paid client LMS needs Pro.
+1. **Hosting**: on AWS, follow [deploy-aws.md](deploy-aws.md) (it replaces steps 1–2 here).
+   On Vercel, Hobby is for non-commercial projects only; a paid client LMS needs Pro.
 2. **Environment variables** for Production in Vercel: at minimum `JWT_SECRET` (48+ random
    characters), `CRON_SECRET`, `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`,
    `NEXT_PUBLIC_APP_URL`, live payment keys (`RAZORPAY_KEY_ID` must not start with

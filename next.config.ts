@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
   compress: true,
   // Remove X-Powered-By header (minor security improvement)
   poweredByHeader: false,
+  // Docker / App Runner / ECS builds set NEXT_OUTPUT=standalone (see Dockerfile)
+  // to get a self-contained server.js. Amplify Hosting packages the normal
+  // .next output itself, so it leaves this unset.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
+  // With several instances behind a load balancer, a fixed id per build stops
+  // a browser on the old version from loading assets from the new one.
+  deploymentId: process.env.DEPLOYMENT_ID || undefined,
   // Allow 60s for static page generation (prevents timeouts under load)
   staticPageGenerationTimeout: 60,
   // In-memory cache for the Next.js data cache (0 = disabled, which was wrong).

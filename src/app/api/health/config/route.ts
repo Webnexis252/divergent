@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cronAuthError } from '@/lib/cron-auth';
-import { checkProductionConfig, isProductionDeployment } from '@/lib/production-config';
+import { checkProductionConfig, deploymentEnvironment, isProductionDeployment } from '@/lib/production-config';
 
 /**
  * GET /api/health/config
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const problems = checkProductionConfig();
   return NextResponse.json(
     {
-      environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+      environment: deploymentEnvironment(),
       enforced: isProductionDeployment(),
       ready: problems.every((p) => p.level !== 'error'),
       problems,

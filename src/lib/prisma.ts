@@ -22,6 +22,8 @@ import { shouldRetryQuery } from '@/lib/db-retry';
 /**
  * Ensures the DATABASE_URL has correct pool settings for Vercel serverless.
  * Uses connection_limit=3 to support small bursts without exhausting the DB.
+ * Long-running servers (Docker / App Runner / ECS) serve many requests at once
+ * and should raise it with DATABASE_CONNECTION_LIMIT (see docs/deploy-aws.md).
  */
 function buildDatabaseUrl(): string {
   const baseUrl = process.env.DATABASE_URL || '';
@@ -32,7 +34,8 @@ function buildDatabaseUrl(): string {
     const url = new URL(baseUrl);
     // connection_limit=3: allows concurrent queries within a single serverless function
     // while staying well within Supabase PgBouncer limits.
-    url.searchParams.set('connection_limit', '3');
+    const limit = Number.parseInt(process.env.DATABASE_CONNECTION_LIMIT ?? '', 10);
+    url.searchParams.set('connection_limit', String(limit > 0 ? limit : 3));
     // pool_timeout: wait max 20s for a free connection before erroring.
     url.searchParams.set('pool_timeout', '20');
     // Ensure SSL is always required (Supabase requirement).

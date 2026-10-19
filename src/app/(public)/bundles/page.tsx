@@ -4,6 +4,8 @@ import { Package } from "lucide-react";
 import Image from "next/image";
 
 export const metadata = { title: "Course Bundles - Divergent" };
+// Rendered per request: built once, the page would never show bundles published after a deploy
+export const dynamic = "force-dynamic";
 
 export default async function PublicBundlesPage() {
   const bundles = await (prisma as any).bundle.findMany({
