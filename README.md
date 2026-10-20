@@ -9,7 +9,7 @@ It is one Next.js app deployed on Vercel, with PostgreSQL (Supabase) through Pri
 | Role | What they can do |
 | --- | --- |
 | **Student** | Buy courses and bundles (coupons, EMI plans), watch lessons and track progress, take exams with negative and partial marking, join live classes, ask doubts, chat in the community, earn XP and certificates, set weekly study goals |
-| **Teacher** (`MENTOR`) | Schedule and run live classes, build tests and grade sketch answers, review assignments, answer doubts, see analytics for the courses they teach |
+| **Teacher** (`MENTOR`) | Schedule and run live classes, build tests and grade sketch answers, review assignments, answer doubts, see analytics for the courses they teach, including which exam questions look wrong |
 | **Admin** | Manage courses, chapters, lessons, exams, cohorts, students, installments and moderation |
 | **Super admin** | Everything an admin can, plus admins, approvals, coupons, revenue, announcements, audit logs and institute settings |
 
@@ -22,6 +22,7 @@ It is one Next.js app deployed on Vercel, with PostgreSQL (Supabase) through Pri
 | Auth | JWT (`jose`, HS256) in an httpOnly cookie, bcrypt, Google OAuth, phone OTP over WhatsApp |
 | Redis | Upstash: rate limits, session revocation, signup Bloom filters |
 | Background jobs | Upstash QStash (retried batches) and Vercel Cron |
+| Question analytics | Python 3.12, pandas, psycopg: a nightly Lambda (`services/question-analytics`) |
 | Payments | Razorpay and Cashfree, with webhooks and nightly reconciliation |
 | Live video | Daily.co rooms, behind a circuit breaker |
 | Messaging | Interakt (WhatsApp OTPs and class reminders), Nodemailer (email) |
@@ -40,6 +41,7 @@ flowchart LR
   API --> R[("Upstash Redis")]
   API --> Q["Upstash QStash"] -->|signed POST| J["/api/jobs/:name"]
   Cron["Vercel Cron"] --> C["/api/cron/*"]
+  Nightly["Nightly Python job<br/>services/question-analytics"] -->|QuestionStat| DB
   API <-->|orders, webhooks| Pay["Razorpay / Cashfree"]
   API --> Daily["Daily.co"]
 ```
@@ -47,6 +49,7 @@ flowchart LR
 - **Pages** are protected by `src/proxy.ts` (Next 16's name for middleware), which redirects by role. Every API route checks auth again with `requireAuth` or `withApiHandler`.
 - **Course access** lives in `src/lib/course-access.ts`: admins manage every course, teachers only the courses they teach, and students only see content for courses they are enrolled in.
 - **Payments** reach their outcome through the browser's verify call, the gateway webhook or the reconciliation cron. All three call `completePayment` in `src/lib/payments.ts`, which marks the payment paid and enrolls the student exactly once.
+- **Question analytics** run nightly in Python (`services/question-analytics`). The job re-grades each student's first attempt, works out how hard each question was and whether it separates strong and weak students, and writes the `QuestionStat` table, which teachers see under Analytics → Questions. Its grader is a port of `src/lib/test-grading.ts`, and both run the same test cases.
 - **Exams** start and submit through `src/app/api/courses/[courseId]/tests/[testId]/{start,submit}`. The attempt limit and XP are decided in one locked transaction, and grading lives in `src/lib/test-grading.ts`.
 
 ## Getting started
@@ -123,5 +126,7 @@ prisma/              Schema, migrations, seeds
 scripts/             Admin, seeding and verification scripts
 e2e/                 Playwright tests
 loadtests/           k6 exam-day load test
+services/
+  question-analytics/ Nightly Python job: exam question analysis (see its README)
 docs/                Operations guide and plans
 ```

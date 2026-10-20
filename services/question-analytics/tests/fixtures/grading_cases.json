@@ -1,0 +1,44 @@
+{
+  "about": "Shared by src/test/lib/grading-parity.test.ts (TypeScript, the app) and tests/test_grading.py (Python, the analytics job). Both graders must give these exact results. Add a case here whenever grading changes.",
+  "cases": [
+    { "name": "SCQ: trailing space is trimmed", "question": { "type": "SCQ", "points": 4, "correctAnswer": ["B"] }, "answer": "B ", "expected": { "isCorrect": true, "pointsAwarded": 4 } },
+    { "name": "SCQ: wrong answer takes the negative mark", "question": { "type": "SCQ", "points": 4, "negativeMarks": 1, "correctAnswer": ["B"] }, "answer": "A", "expected": { "isCorrect": false, "pointsAwarded": -1 } },
+    { "name": "SCQ: blank answer is a skip", "question": { "type": "SCQ", "points": 4, "negativeMarks": 1, "correctAnswer": ["B"] }, "answer": "   ", "expected": { "isCorrect": false, "pointsAwarded": 0 } },
+    { "name": "SCQ: null answer is a skip", "question": { "type": "SCQ", "points": 4, "negativeMarks": 1, "correctAnswer": ["B"] }, "answer": null, "expected": { "isCorrect": false, "pointsAwarded": 0 } },
+    { "name": "SCQ: an array answer counts as a skip", "question": { "type": "SCQ", "points": 4, "negativeMarks": 1, "correctAnswer": ["B"] }, "answer": ["B"], "expected": { "isCorrect": false, "pointsAwarded": 0 } },
+    { "name": "SCQ: key stored as a plain string", "question": { "type": "SCQ", "points": 2, "correctAnswer": "B" }, "answer": "B", "expected": { "isCorrect": true, "pointsAwarded": 2 } },
+    { "name": "SCQ: numeric key compares as its JavaScript string", "question": { "type": "SCQ", "points": 2, "correctAnswer": [12] }, "answer": "12", "expected": { "isCorrect": true, "pointsAwarded": 2 } },
+    { "name": "SCQ: key 1.0 is the string 1, as in JavaScript", "question": { "type": "SCQ", "points": 2, "correctAnswer": [1.0] }, "answer": "1", "expected": { "isCorrect": true, "pointsAwarded": 2 } },
+    { "name": "SCQ: byte order mark is trimmed like JavaScript", "question": { "type": "SCQ", "points": 2, "correctAnswer": ["B"] }, "answer": "﻿B", "expected": { "isCorrect": true, "pointsAwarded": 2 } },
+    { "name": "SCQ: control character is not trimmed in JavaScript", "question": { "type": "SCQ", "points": 2, "negativeMarks": 0.5, "correctAnswer": ["B"] }, "answer": "\u001cB", "expected": { "isCorrect": false, "pointsAwarded": -0.5 } },
+    { "name": "SCQ: comparison is case-sensitive", "question": { "type": "SCQ", "points": 2, "correctAnswer": ["B"] }, "answer": "b", "expected": { "isCorrect": false, "pointsAwarded": 0 } },
+
+    { "name": "MCQ: same set in any order", "question": { "type": "MCQ", "points": 5, "correctAnswer": ["A", "C"] }, "answer": ["C", "A"], "expected": { "isCorrect": true, "pointsAwarded": 5 } },
+    { "name": "MCQ: incomplete without partial marking takes the negative mark", "question": { "type": "MCQ", "points": 5, "negativeMarks": 1, "correctAnswer": ["A", "C"] }, "answer": ["A"], "expected": { "isCorrect": false, "pointsAwarded": -1 } },
+    { "name": "MCQ: incomplete with partial marking", "question": { "type": "MCQ", "points": 5, "allowPartialMarking": true, "correctAnswer": ["A", "C"] }, "answer": ["A"], "expected": { "isCorrect": false, "pointsAwarded": 2.5 } },
+    { "name": "MCQ: any wrong option cancels partial marking", "question": { "type": "MCQ", "points": 5, "negativeMarks": 1, "allowPartialMarking": true, "correctAnswer": ["A", "C"] }, "answer": ["A", "B"], "expected": { "isCorrect": false, "pointsAwarded": -1 } },
+    { "name": "MCQ: empty selection is a skip", "question": { "type": "MCQ", "points": 5, "negativeMarks": 1, "correctAnswer": ["A", "C"] }, "answer": [], "expected": { "isCorrect": false, "pointsAwarded": 0 } },
+    { "name": "MCQ: a single string answer is one selection", "question": { "type": "MCQ", "points": 5, "correctAnswer": ["A"] }, "answer": "A", "expected": { "isCorrect": true, "pointsAwarded": 5 } },
+    { "name": "MCQ: duplicate selections count twice for partial marks", "question": { "type": "MCQ", "points": 5, "allowPartialMarking": true, "correctAnswer": ["A", "C"] }, "answer": ["A", "A"], "expected": { "isCorrect": false, "pointsAwarded": 5 } },
+    { "name": "MCQ: duplicate selections are not an exact match", "question": { "type": "MCQ", "points": 5, "negativeMarks": 2, "correctAnswer": ["A", "C"] }, "answer": ["A", "C", "C"], "expected": { "isCorrect": false, "pointsAwarded": -2 } },
+    { "name": "MCQ: blank entries are dropped", "question": { "type": "MCQ", "points": 5, "correctAnswer": ["A", "C"] }, "answer": ["  ", "A", "C"], "expected": { "isCorrect": true, "pointsAwarded": 5 } },
+
+    { "name": "NUMERIC: exact match ignores case and spaces", "question": { "type": "NUMERIC", "points": 3, "correctAnswer": ["12E3"] }, "answer": " 12e3 ", "expected": { "isCorrect": true, "pointsAwarded": 3 } },
+    { "name": "NUMERIC: exact match compares text, not value", "question": { "type": "NUMERIC", "points": 3, "negativeMarks": 1, "correctAnswer": ["12"] }, "answer": "12.0", "expected": { "isCorrect": false, "pointsAwarded": -1 } },
+    { "name": "NUMERIC: range includes its ends", "question": { "type": "NUMERIC", "points": 3, "correctAnswer": ["1.5", "2.5"] }, "answer": "2.5", "expected": { "isCorrect": true, "pointsAwarded": 3 } },
+    { "name": "NUMERIC: outside the range", "question": { "type": "NUMERIC", "points": 3, "negativeMarks": 1, "correctAnswer": ["1.5", "2.5"] }, "answer": "2.6", "expected": { "isCorrect": false, "pointsAwarded": -1 } },
+    { "name": "NUMERIC: hex parses as in JavaScript Number()", "question": { "type": "NUMERIC", "points": 3, "correctAnswer": ["0", "20"] }, "answer": " 0x10 ", "expected": { "isCorrect": true, "pointsAwarded": 3 } },
+    { "name": "NUMERIC: non-Latin digits are not a number", "question": { "type": "NUMERIC", "points": 3, "negativeMarks": 1, "correctAnswer": ["0", "20"] }, "answer": "١٢", "expected": { "isCorrect": false, "pointsAwarded": -1 } },
+    { "name": "NUMERIC: underscores are not a number", "question": { "type": "NUMERIC", "points": 3, "negativeMarks": 1, "correctAnswer": ["0", "20"] }, "answer": "1_0", "expected": { "isCorrect": false, "pointsAwarded": -1 } },
+    { "name": "NUMERIC: Infinity as a range end", "question": { "type": "NUMERIC", "points": 3, "correctAnswer": ["0", "Infinity"] }, "answer": "1e308", "expected": { "isCorrect": true, "pointsAwarded": 3 } },
+    { "name": "NUMERIC: inf is not a number", "question": { "type": "NUMERIC", "points": 3, "negativeMarks": 1, "correctAnswer": ["0", "Infinity"] }, "answer": "inf", "expected": { "isCorrect": false, "pointsAwarded": -1 } },
+    { "name": "NUMERIC: signed hex is not a number", "question": { "type": "NUMERIC", "points": 3, "negativeMarks": 1, "correctAnswer": ["-5", "5"] }, "answer": "-0x1", "expected": { "isCorrect": false, "pointsAwarded": -1 } },
+    { "name": "NUMERIC: leading-dot and trailing-dot decimals", "question": { "type": "NUMERIC", "points": 3, "correctAnswer": [".5", "5."] }, "answer": "1", "expected": { "isCorrect": true, "pointsAwarded": 3 } },
+    { "name": "NUMERIC: blank answer is a skip", "question": { "type": "NUMERIC", "points": 3, "negativeMarks": 1, "correctAnswer": ["12"] }, "answer": "", "expected": { "isCorrect": false, "pointsAwarded": 0 } },
+    { "name": "NUMERIC: a number (not text) answer is a skip", "question": { "type": "NUMERIC", "points": 3, "negativeMarks": 1, "correctAnswer": ["12"] }, "answer": 12, "expected": { "isCorrect": false, "pointsAwarded": 0 } },
+    { "name": "NUMERIC: a blank range end leaves an exact match", "question": { "type": "NUMERIC", "points": 3, "correctAnswer": ["", "5"] }, "answer": "5", "expected": { "isCorrect": true, "pointsAwarded": 3 } },
+
+    { "name": "SKETCH: left for the teacher", "question": { "type": "SKETCH", "points": 10, "correctAnswer": [] }, "answer": "https://example.com/sketch.png", "expected": { "isCorrect": null, "pointsAwarded": 0 } },
+    { "name": "MULTIPLE_RESPONSE: not graded by the app", "question": { "type": "MULTIPLE_RESPONSE", "points": 2, "correctAnswer": ["A"] }, "answer": ["A"], "expected": { "isCorrect": false, "pointsAwarded": 0 } }
+  ]
+}

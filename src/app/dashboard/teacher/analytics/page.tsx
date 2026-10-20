@@ -5,6 +5,7 @@ import { m as motion } from "motion/react";
 import { PageTransition, RevealSection } from "@/app/dashboard/_components/motion-wrappers";
 import Image from "next/image";
 import { Users, CircleCheck, ChartNoAxesColumn, TriangleAlert } from "lucide-react";
+import { AnalyticsTabs } from "./_components/analytics-tabs";
 
 type Student = {
   id: string;
@@ -89,7 +90,7 @@ export default function TeacherAnalyticsPage() {
                   <motion.div className="pointer-events-none absolute -right-16 -bottom-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 5, repeat: Infinity }} />
                   <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
                     <div>
-                      <div className="inline-flex rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest">Cohort Analytics</div>
+                      <AnalyticsTabs />
                       <h1 className="mt-4 text-[32px] font-semibold tracking-tight">Student Performance</h1>
                       {analytics && (
                         <p className="mt-2 text-white/80">{analytics.atRiskCount} at-risk students detected across {analytics.totalStudents} enrolled.</p>

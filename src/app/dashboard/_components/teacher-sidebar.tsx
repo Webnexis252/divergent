@@ -32,7 +32,6 @@ function isTeacherItemActive(pathname: string, href: string): boolean {
   // Exact matches: their sub-paths belong to other items or have no sidebar
   if (
     href === "/dashboard/teacher/overview" ||
-    href === "/dashboard/teacher/analytics" ||
     href === "/dashboard/teacher/profile" ||
     href === "/dashboard/teacher/settings"
   ) {

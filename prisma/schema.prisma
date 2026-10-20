@@ -601,6 +601,7 @@ model CourseTest {
   attempts         TestAttempt[]
   questions        TestQuestion[]
   parts            TestPart[]
+  questionStats    QuestionStat[]
 
   @@index([courseId])
   @@index([chapterId])
@@ -670,6 +671,7 @@ model TestQuestion {
   section   TestSection?       @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   groupId   String?
   group     TestQuestionGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  stat      QuestionStat?
 
   @@index([testId])
   @@index([partId])
@@ -1051,4 +1053,33 @@ model WeeklyStudyTime {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, weekStart])
+}
+
+/// Item analysis of one exam question, from each student's first submitted
+/// attempt. Written nightly by the Python job in services/question-analytics
+/// (it replaces a test's rows in one transaction); the app only reads it.
+model QuestionStat {
+  questionId     String       @id
+  testId         String
+  /// Students whose first attempt showed the question
+  studentCount   Int
+  answeredCount  Int
+  /// Full marks; partial MCQ marks aren't counted here but are in `difficulty`
+  correctCount   Int
+  /// Sketch answers still waiting for a teacher's grade
+  pendingCount   Int          @default(0)
+  /// Average share of the marks students got, 0 to 1 (skips and negative marks count as 0)
+  difficulty     Float?
+  /// Top 27% minus bottom 27% of students (ranked on the rest of the test), -1 to 1.
+  /// Null when too few students answered.
+  discrimination Float?
+  /// [{ answer, count, isCorrect }]; `answer: null` counts answers matching no current option
+  answerCounts   Json
+  /// Names in src/lib/question-stats.ts (QUESTION_FLAGS)
+  flags          String[]
+  computedAt     DateTime
+  question       TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  test           CourseTest   @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@index([testId])
 }

@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Nightly exam question analysis for the Divergent Classes LMS. EventBridge
+  Scheduler starts a Python Lambda (container image from
+  services/question-analytics), which reads exam attempts from Postgres and
+  rewrites the QuestionStat table. The app only reads that table, so this
+  stack can be removed without affecting it. See services/question-analytics/README.md.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: ECR image for services/question-analytics, built for arm64 (e.g. 123456789012.dkr.ecr.ap-south-1.amazonaws.com/question-analytics:2026-10-21)
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+    MinLength: 20
+    Description: Postgres URL for the question_analytics user from services/question-analytics/sql/analytics_role.sql (Supabase pooler, port 6543)
+  MinStudents:
+    Type: Number
+    Default: 20
+    MinValue: 5
+    Description: Questions answered by fewer students get numbers but no flags
+  ScheduleState:
+    Type: String
+    AllowedValues: [ENABLED, DISABLED]
+    Default: ENABLED
+    Description: DISABLED pauses the nightly run without deleting anything
+  AlarmEmail:
+    Type: String
+    Default: ''
+    Description: Optional. Email that is told when a run fails (confirm the subscription email AWS sends).
+
+Conditions:
+  HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, '']]
+
+Resources:
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  QuestionAnalytics:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Recomputes per-question exam statistics (QuestionStat)
+      PackageType: Image
+      Code:
+        ImageUri: !Ref ImageUri
+      Architectures: [arm64]
+      Role: !GetAtt FunctionRole.Arn
+      # One run handles every test; at today's size it takes seconds
+      Timeout: 900
+      MemorySize: 1024
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          MIN_STUDENTS: !Ref MinStudents
+
+  QuestionAnalyticsLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${QuestionAnalytics}
+      RetentionInDays: 30
+
+  # No retries: tomorrow's run recomputes everything anyway
+  QuestionAnalyticsNoRetry:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      FunctionName: !Ref QuestionAnalytics
+      Qualifier: $LATEST
+      MaximumRetryAttempts: 0
+
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: scheduler.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: { 'aws:SourceAccount': !Ref AWS::AccountId }
+      Policies:
+        - PolicyName: invoke-question-analytics
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt QuestionAnalytics.Arn
+
+  # 02:00 India time, before the other nightly jobs in cron-schedules.yaml
+  NightlySchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: Nightly exam question analysis (02:00 IST)
+      ScheduleExpression: cron(0 2 * * ? *)
+      ScheduleExpressionTimezone: Asia/Kolkata
+      FlexibleTimeWindow: { Mode: 'OFF' }
+      State: !Ref ScheduleState
+      Target:
+        Arn: !GetAtt QuestionAnalytics.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{}'
+        RetryPolicy: { MaximumRetryAttempts: 0 }
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasAlarmEmail
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlarmEmail
+
+  FailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasAlarmEmail
+    Properties:
+      AlarmDescription: The nightly question analysis failed. Check its logs in CloudWatch.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref QuestionAnalytics
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+
+Outputs:
+  FunctionName:
+    Description: Run it by hand with "aws lambda invoke --function-name <this> out.json"
+    Value: !Ref QuestionAnalytics
+  LogGroup:
+    Description: One JSON line per test analysed, plus a run summary
+    Value: !Ref QuestionAnalyticsLogs

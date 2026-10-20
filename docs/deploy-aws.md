@@ -154,6 +154,10 @@ Jobs are not retried (a retry could send emails twice); with `AlarmEmail` set, a
 email. Each run's status and response are in CloudWatch under the stack's `CronCallerLogGroup`.
 Run a job by hand from the Lambda console with the test event `{"path": "/api/cron/reconcile-payments"}`.
 
+The nightly exam question analysis is separate: a Python Lambda that reads the database directly
+instead of calling the app. It has its own stack, [`infra/aws/question-analytics.yaml`](../infra/aws/question-analytics.yaml)
+(daily 02:00 IST); see [`services/question-analytics/README.md`](../services/question-analytics/README.md).
+
 ## After each deploy
 
 ```bash
